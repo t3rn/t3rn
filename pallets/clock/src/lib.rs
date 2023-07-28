@@ -38,7 +38,7 @@ pub mod pallet {
     use sp_std::prelude::*;
     use t3rn_primitives::clock::OnHookQueues;
 
-    const FIVE: Weight = 5;
+    const FIVE: u64 = 5;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_account_manager::Config {
