@@ -365,6 +365,8 @@ mod tests {
                     GatewayVendor::Kusama => *b"ksma",
                     GatewayVendor::Polkadot => *b"pdot",
                     GatewayVendor::Ethereum => *b"eth2",
+                    GatewayVendor::Sepolia => *b"sepl",
+                    GatewayVendor::XBI => *b"xbi_",
                 };
                 let origin = Origin::root();
                 let result = Portal::turn_on(origin, gateway_id);

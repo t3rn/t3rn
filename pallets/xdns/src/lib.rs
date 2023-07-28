@@ -372,11 +372,6 @@ pub mod pallet {
 
             for gateway in Self::fetch_full_gateway_records() {
                 let gateway_id = gateway.gateway_record.gateway_id;
-                // ToDo: Uncomment when eth2::turn_on implemented
-                if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
-                    continue
-                }
-
                 let last_finality_verifier_update = VerifierOverviewStoreHistory::<T>::get(
                     &gateway.gateway_record.verification_vendor,
                 )

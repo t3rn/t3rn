@@ -1008,6 +1008,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -1148,6 +1149,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
  "pallet-rewards",
+ "pallet-sepolia-finality-verifier",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -7192,6 +7194,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-sepolia-finality-verifier"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=sepolia#24ca611b648086ce0b1d02603533456bcc6a4173"
+dependencies = [
+ "eth_trie",
+ "ethereum-types 0.14.1",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "keccak-hash 0.10.0",
+ "log",
+ "milagro_bls",
+ "num-traits",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-trie",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "t3rn-primitives",
+ "typenum",
+]
+
+[[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
@@ -12622,6 +12660,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -12720,6 +12759,7 @@ dependencies = [
  "pallet-portal",
  "pallet-randomness-collective-flip",
  "pallet-rewards",
+ "pallet-sepolia-finality-verifier",
  "pallet-timestamp",
  "pallet-treasury",
  "pallet-xdns",
