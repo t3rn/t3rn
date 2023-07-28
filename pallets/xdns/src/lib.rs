@@ -182,6 +182,22 @@ pub mod pallet {
                         // Return the weight consumed by the migration.
                         Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
                     }
+                    // Storage Migration: Another Raw XDNS storage entry kill
+                    // Storage Migration Details: 27-07-2023; v1.4.44-rc -> v1.4.45-rc
+                    //     Many Collators on t0rn hit: frame_support::storage: (key, value) failed to decode at [84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    //      18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250, 191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204, 8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101, 171, 135, 85,]
+                    2 => {
+                        // Manually kill the old XDNS storage entry (XDNSRegistry is now replaced by Gateways)
+                        frame_support::storage::unhashed::kill(&[84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                            18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                            191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                            8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                            171, 135, 85,]);
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
+                    }
                     // Add more migration cases here, if needed in the future
                     _ => {
                         // No migration needed.
