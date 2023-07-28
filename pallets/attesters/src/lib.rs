@@ -1666,7 +1666,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut aggregated_weight: Weight = 0;
+            let mut aggregated_weight: Weight = Zero::zero();
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() && Self::is_last_transition_attested() {
                 // Process pending unnominations
@@ -1772,11 +1772,11 @@ pub mod attesters_test {
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
         AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
-        CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee, Event, ExtBuilder,
+        CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee, ExtBuilder,
         FullSideEffects, LatencyStatus, MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations,
-        PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards, RuntimeOrigin,
-        SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET,
-        POLKADOT_TARGET,
+        PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards, RuntimeEvent as Event,
+        RuntimeOrigin, SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals,
+        ETHEREUM_TARGET, POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
