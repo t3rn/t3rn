@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.45.0-rc.0] - 2023-07-28
+### :sparkles: New Features
+- [`12050ac`](https://github.com/t3rn/t3rn/commit/12050ac82ea545076b1edbdf27c7c1817fd701d1) - extend GatewayVendor select with XBI and Sepolia *(PR [#1224](https://github.com/t3rn/t3rn/pull/1224) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.44.2-rc.0] - 2023-07-28
 ### :bug: Bug Fixes
 - [`25073b1`](https://github.com/t3rn/t3rn/commit/25073b1f98f92ce246333de14e829e03774a7780) - remove remaining deprecated XDNS records with storage migration *(PR [#1225](https://github.com/t3rn/t3rn/pull/1225) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1432,3 +1437,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.44.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.4-rc.0...v1.44.0-rc.0
 [v1.44.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.0-rc.0...v1.44.1-rc.0
 [v1.44.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.1-rc.0...v1.44.2-rc.0
+[v1.45.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.2-rc.0...v1.45.0-rc.0
