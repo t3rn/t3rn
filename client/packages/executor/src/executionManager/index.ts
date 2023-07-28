@@ -562,18 +562,19 @@ export class ExecutionManager {
     sfx.on("Notification", (notification: Notification) => {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
-          this.circuitRelayer
-            .bidSfx(
-              notification.payload.sfxId,
-              notification.payload.bidAmount as BN,
-            )
-            .then(() => {
-              sfx.bidAccepted(notification.payload.bidAmount as number);
-            })
-            .catch((e) => {
-              logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
-              sfx.bidRejected(e);
-            });
+          // TODO: uncomment submitting bids when we are ready
+          // this.circuitRelayer
+          //   .bidSfx(
+          //     notification.payload.sfxId,
+          //     notification.payload.bidAmount as BN,
+          //   )
+          //   .then(() => {
+          //     sfx.bidAccepted(notification.payload.bidAmount as number);
+          //   })
+          //   .catch((e) => {
+          //     logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
+          //     sfx.bidRejected(e);
+          //   });
         }
       }
     });
