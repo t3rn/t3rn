@@ -235,6 +235,7 @@ export class AttestationManager {
 
     const encodedABI = contractMethod.encodeABI();
 
+    try {
     const gasPrice = await this.web3.eth.getGasPrice();
     const estimatedGas = await contractMethod.estimateGas({
       from: this.wallet.address,
@@ -253,7 +254,6 @@ export class AttestationManager {
       transactionObject,
     );
 
-    try {
       const transactionReceipt = await this.web3.eth.sendSignedTransaction(
         signedTransaction.rawTransaction,
       );
@@ -263,9 +263,8 @@ export class AttestationManager {
       );
       this.prometheus.attestationBatchesProcessed.inc();
     } catch (error) {
-      logger.warn({ error: error }, "Error sending transaction: ");
-      this.prometheus.attestatonBatchesFailed.inc();
-      // throw new Error("Error sending transaction: " + error);
+      logger.warn({ error: error.innerError.message }, "Error sending transaction: ");
+      this.prometheus.attestatonBatchesFailed.inc({ error: error.innerError.message });
     }
   }
 
