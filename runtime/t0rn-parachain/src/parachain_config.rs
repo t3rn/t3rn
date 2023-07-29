@@ -107,8 +107,6 @@ impl pallet_authorship::Config for Runtime {
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 }
 
-impl parachain_info::Config for Runtime {}
-
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {

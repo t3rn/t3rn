@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{sp_runtime::DispatchError, traits::Get};
+use frame_support::{
+    sp_runtime::{traits::Zero, DispatchError},
+    traits::Get,
+};
 use frame_system::{ensure_root, pallet_prelude::OriginFor};
 pub use pallet::*;
 use sp_std::{boxed::Box, prelude::*};
@@ -9,6 +12,7 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 #[cfg(test)]
 mod tests;
 
+use frame_support::transactional;
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self, execution_source_to_option,
@@ -18,14 +22,11 @@ use t3rn_primitives::{
     xdns::Xdns,
     ChainId, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo,
 };
-
 pub mod weights;
 
 pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
-use frame_support::transactional;
-use sp_runtime::traits::Zero;
 use t3rn_primitives::{light_client::LightClientHeartbeat, portal::InclusionReceipt};
 
 reexport_currency_types!();

@@ -1,6 +1,6 @@
 use crate::{ExecutionSource, GatewayVendor, SpeedMode};
 use codec::{Decode, Encode};
-use num_traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;

@@ -206,7 +206,6 @@ impl pallet_clock::Config for Runtime {
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
-<<<<<<< HEAD
     type RoundDuration = ConstU32<300u32>;
 }
 
@@ -268,12 +267,12 @@ impl pallet_rewards::Config for Runtime {
     type CollatorBootstrapRewards = CollatorBootstrapRewards;
     type CollatorInflation = CollatorInflation;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
     type FindAuthor = ();
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
+    type RuntimeEvent = RuntimeEvent;
     type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = Runtime;
@@ -499,10 +498,10 @@ parameter_types! {
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type RuntimeEvent = RuntimeEvent;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
@@ -511,10 +510,10 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
 impl pallet_sepolia_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type RuntimeEvent = RuntimeEvent;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();

@@ -242,6 +242,6 @@ members = [
 #xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
-#fp-evm                      = { path = "./pallets/evm/primitives" }
+fp-evm                      = { path = "./pallets/evm/primitives" }
 pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
 t3rn-primitives             = { path = "./primitives" }

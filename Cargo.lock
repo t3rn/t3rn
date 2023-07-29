@@ -7956,6 +7956,7 @@ dependencies = [
  "frame-metadata",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
+ "hex-literal 0.4.1",
  "log",
  "pallet-balances",
  "pallet-sudo",

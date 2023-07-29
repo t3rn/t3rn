@@ -197,6 +197,9 @@ std = [
   "pallet-circuit/std",
   "pallet-grandpa/std",
   "pallet-babe/std",
+  "pallet-attesters/std",
+  "pallet-rewards/std",
+  "pallet-vacuum/std",
   "pallet-eth2-finality-verifier/std",
   "pallet-sepolia-finality-verifier/std",
 ]
@@ -238,6 +241,7 @@ runtime-benchmarks = [
   "pallet-xdns/runtime-benchmarks",
   "pallet-attesters/runtime-benchmarks",
   "pallet-rewards/runtime-benchmarks",
+  "pallet-vacuum/runtime-benchmarks",
   "polkadot-parachain/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
   "xcm-executor/runtime-benchmarks",

@@ -1,6 +1,5 @@
 use crate::common::RoundInfo;
-use frame_support::pallet_prelude::Weight;
-use sp_runtime::traits::Zero;
+use frame_support::{pallet_prelude::Weight, sp_runtime::traits::Zero};
 use sp_std::marker::PhantomData;
 
 pub trait Clock<T: frame_system::Config> {

@@ -3,8 +3,8 @@
 use crate::{to_local_block_number, Config, Pallet};
 use codec::Encode;
 
+use frame_support::sp_runtime::traits::Zero;
 use frame_system::pallet_prelude::OriginFor;
-use num_traits::Zero;
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::{marker::PhantomData, vec};
 use t3rn_abi::types::Bytes;
