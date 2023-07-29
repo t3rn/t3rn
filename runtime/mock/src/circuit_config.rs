@@ -223,7 +223,7 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
-        println!("MiniMock::force_create_asset");
+        println!("BigMock::force_create_asset");
         println!("asset_id: {asset_id:?}");
         println!("admin: {admin:?}");
         Assets::force_create(
@@ -236,10 +236,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     }
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+        println!("BigMock::freeze_asset ...");
         Assets::freeze_asset(origin.clone(), asset_id.clone())?;
+        println!("BigMock::start_destroy ...");
         Assets::start_destroy(origin.clone(), asset_id.clone())?;
+        println!("BigMock::destroy_accounts ...");
         Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
+        println!("BigMock::destroy_approvals ...");
         Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
+        println!("BigMock::finish_destroy ...");
         Assets::finish_destroy(origin.clone(), asset_id.clone())?;
 
         Ok(().into())

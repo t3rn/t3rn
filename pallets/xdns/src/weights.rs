@@ -70,8 +70,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     }
 
     fn reboot_self_gateway() -> Weight {
-        0_u64
-            .saturating_add(T::DbWeight::get().reads(1_u64))
+        Weight::from_ref_time(72_795_000_u64)
+            .saturating_add(T::DbWeight::get().reads(2_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 }
@@ -101,8 +101,8 @@ impl WeightInfo for () {
     }
 
     fn reboot_self_gateway() -> Weight {
-        0_u64
-            .saturating_add(RocksDbWeight::get().reads(1_u64))
+        Weight::from_ref_time(72_795_000_u64)
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 }
