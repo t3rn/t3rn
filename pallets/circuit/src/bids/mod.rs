@@ -1,5 +1,5 @@
 use crate::{pallet::Error, *};
-use sp_runtime::traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 
 use crate::square_up::SquareUp;
 use sp_std::marker::PhantomData;

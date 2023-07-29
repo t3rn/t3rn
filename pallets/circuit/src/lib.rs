@@ -289,13 +289,6 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// A dispatchable call.
-        type Call: Parameter
-            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
-            + GetDispatchInfo
-            + From<Call<Self>>
-            + From<frame_system::Call<Self>>;
-
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: weights::WeightInfo;
 
@@ -1434,7 +1427,7 @@ impl<T: Config> Pallet<T> {
         n: T::BlockNumber,
         _verifier: &GatewayVendor,
     ) -> Weight {
-        let mut current_weight: Weight = 0;
+        let mut current_weight: Weight = Zero::zero();
 
         // Go over all unfinished Xtx to find those that timed out
         let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
@@ -1592,7 +1585,8 @@ impl<T: Config> Pallet<T> {
                     T::DbWeight::get().reads(1)
                 }
             })
-            .sum()
+            .reduce(|a, b| a.saturating_add(b))
+            .unwrap_or_else(|| T::DbWeight::get().reads(1))
     }
 
     /// Processes a single cross-chain transaction (Xtx) revert operation.
@@ -1605,8 +1599,8 @@ impl<T: Config> Pallet<T> {
     ///
     /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
     pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> (Weight, bool) {
-        const REVERT_WRITES: Weight = 2;
-        const REVERT_READS: Weight = 1;
+        const REVERT_WRITES: u64 = 2;
+        const REVERT_READS: u64 = 1;
         let all_targets = Self::get_all_xtx_targets(xtx_id);
         if !Self::ensure_all_gateways_are_active(all_targets.clone()) {
             return Self::add_xtx_to_dlq(xtx_id, all_targets, SpeedMode::Finalized)
