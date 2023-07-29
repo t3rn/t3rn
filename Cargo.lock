@@ -1029,10 +1029,13 @@ dependencies = [
  "hex-literal 0.3.4",
  "log",
  "node-primitives",
+ "num-traits",
  "pallet-treasury",
+ "parachain-info",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "smallvec",
  "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -6518,6 +6521,7 @@ dependencies = [
  "hex",
  "hex-literal 0.2.2",
  "log",
+ "num-traits",
  "pallet-authorship",
  "pallet-babe",
  "pallet-grandpa-finality-verifier",
@@ -6948,8 +6952,6 @@ dependencies = [
  "pallet-insecure-randomness-collective-flip",
  "pallet-portal",
  "pallet-sudo",
- "pallet-utility",
- "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
  "primitive-types 0.12.1",
@@ -9570,6 +9572,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "portal-precompile"
+version = "1.5.0-rc.0"
+dependencies = [
+ "fp-evm 1.45.0-rc.0",
+ "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
+ "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
+ "pallet-evm 1.45.0-rc.0",
+ "pallet-portal",
+ "parity-scale-codec",
+ "rlp",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives 1.45.0-rc.0",
+]
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9580,6 +9598,7 @@ name = "precompile-util"
 version = "1.45.0-rc.0"
 dependencies = [
  "fp-evm 1.45.0-rc.0",
+ "pallet-evm 1.45.0-rc.0",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -9589,6 +9608,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "portal-precompile",
  "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
 ]
@@ -13784,7 +13804,6 @@ dependencies = [
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
- "pallet-maintenance-mode",
  "pallet-membership",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",

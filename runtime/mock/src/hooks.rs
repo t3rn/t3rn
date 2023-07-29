@@ -1,9 +1,11 @@
 use frame_support::weights::Weight;
 use num_traits::AsPrimitive;
 
-use crate::{MiniRuntime as Runtime, *};
-use sp_runtime::traits::{One, Zero};
-
+use crate::{Runtime, *};
+use sp_runtime::{
+    traits::{One, Zero},
+    Percent,
+};
 pub struct GlobalOnInitQueues;
 
 impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {

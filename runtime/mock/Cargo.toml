@@ -16,7 +16,10 @@ codec       = { workspace = true, default-features = true, package = "parity-sca
 hex-literal = { version = "0.3" }
 log         = { version = "0.4" }
 scale-info  = { workspace = true }
+parachain-info = { workspace = true }
+smallvec = { workspace = true }
 serde       = { version = "1.0", optional = true, features = [ "derive" ] }
+num-traits = { workspace = true }
 
 t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }

@@ -26,6 +26,7 @@ impl pallet_aura::Config for Runtime {
 }
 
 use pallet_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::ConstU64;
 
 impl pallet_grandpa::Config for Runtime {
     type HandleEquivocation = ();

@@ -128,7 +128,6 @@ polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", b
 xcm                        = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
 xcm-builder                = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
 xcm-executor               = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
-
 # Cumulus
 cumulus-pallet-aura-ext             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-pallet-dmp-queue            = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
@@ -142,6 +141,7 @@ cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cum
 pallet-collator-selection           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
+#assets-common                       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 
 # TODO: t3rn dependencies
 pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
@@ -242,6 +242,6 @@ members = [
 #xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
-fp-evm                      = { path = "./pallets/evm/primitives" }
+#fp-evm                      = { path = "./pallets/evm/primitives" }
 pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
 t3rn-primitives             = { path = "./primitives" }
