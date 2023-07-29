@@ -39,7 +39,7 @@ t3rn-primitives = { default-features = false, path = "../../primitives" }
 #t3rn-sdk-primitives = { path = "../../../../sdk/crates/primitives", default-features = false }
 
 [dev-dependencies]
-hex-literal = "*"
+hex-literal = { workspace = true }
 serde_json  = { version = "1.0.34" }
 
 # Substrate Dependencies
@@ -47,7 +47,6 @@ pallet-assets                     = { git = "https://github.com/paritytech/subst
 pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', package = "pallet-insecure-randomness-collective-flip" }
 pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
 # t3rn dependencies
 pallet-3vm                       = { path = "../3vm" }
@@ -61,8 +60,6 @@ pallet-xdns                      = { path = "../xdns" }
 # TODO: automatically build fixtures, broken as we need to patch the k256 crate
 ## Solc dependencies
 #ethers-solc = { git = "https://github.com/gakonst/ethers-rs.git" }
-
-pallet-xbi-portal = { workspace = true, default-features = true }
 
 [features]
 default = [ "std" ]

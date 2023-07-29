@@ -20,11 +20,11 @@
 mod threevm;
 
 use super::*;
-pub use crate::mock::*;
+pub use crate::mock::{RuntimeOrigin, Test, *};
 
 use frame_support::{
-	assert_ok,
-	traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons},
+    assert_ok,
+    traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons},
 };
 use std::{collections::BTreeMap, str::FromStr};
 

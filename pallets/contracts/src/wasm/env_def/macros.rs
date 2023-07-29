@@ -260,7 +260,7 @@ mod tests {
         wasm::{runtime::TrapReason, tests::MockExt, Runtime},
         Weight,
     };
-    use sp_runtime::traits::Zero;
+    use frame_support::sp_runtime::traits::Zero;
     use sp_sandbox::{ReturnValue, Value};
     use wasm_instrument::parity_wasm::elements::{FunctionType, ValueType};
 

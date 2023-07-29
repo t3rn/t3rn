@@ -20,10 +20,10 @@ use frame_support::{
     dispatch::{
         DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo,
     },
+    sp_runtime::traits::Zero,
     weights::Weight,
     DefaultNoBound,
 };
-use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 
 #[cfg(test)]

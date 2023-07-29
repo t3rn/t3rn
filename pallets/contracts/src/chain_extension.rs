@@ -84,7 +84,7 @@ pub use pallet_contracts_primitives::ReturnFlags;
 pub use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
 use sp_std::{marker::PhantomData, vec::Vec};
-pub use state::Init as InitState;
+// pub use state::Init as InitState;
 use t3rn_primitives::{
     threevm::{GetState, Precompile, PrecompileArgs},
     SpeedMode,
