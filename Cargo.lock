@@ -13688,7 +13688,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.44.1-rc.0"
+version = "1.45.1-rc.0"
 dependencies = [
  "clap 4.3.19",
  "cumulus-client-cli",

@@ -520,3 +520,15 @@ impl pallet_sepolia_finality_verifier::Config for Runtime {
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
 }
+
+impl pallet_sepolia_finality_verifier::Config for Runtime {
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type Event = Event;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type LightClientAsyncAPI = XDNS;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
+}

@@ -1530,3 +1530,43 @@ fn test_storage_migration_v143_to_v144_that_kills_old_xdns_records_entry() {
             );
         });
 }
+
+#[test]
+fn test_storage_migration_v144_to_v145_that_kills_old_xdns_records_entry() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert raw xdns records entry
+            frame_support::storage::unhashed::put_raw(
+                &[
+                    84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                    191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                    8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                    171, 135, 85,
+                ],
+                &[3, 2, 1],
+            );
+
+            pallet_xdns::StorageMigrations::<Runtime>::set(2);
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <XDNS as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight = <Runtime as frame_system::Config>::DbWeight::get().reads_writes(0, 1);
+            assert_eq!(consumed_weight, max_weight);
+
+            assert_eq!(
+                frame_support::storage::unhashed::get::<Vec<u8>>(&[
+                    84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                    191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                    8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                    171, 135, 85,
+                ],),
+                None
+            );
+        });
+}

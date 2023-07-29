@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.45.1-rc.0] - 2023-07-28
+### :bug: Bug Fixes
+- [`e4b9c82`](https://github.com/t3rn/t3rn/commit/e4b9c82a38a9ffb2fa40b9ceeb55ab6eddc0c492) - move process estimation of treasury balances to on_initialize hook *(PR [#1223](https://github.com/t3rn/t3rn/pull/1223) by [@MaciejBaj](https://github.com/MaciejBaj))*
+  - :arrow_lower_right: *fixes issue [#1162](undefined) opened by [@3h4x](https://github.com/3h4x)*
+
+
+## [v1.45.0-rc.0] - 2023-07-28
+### :sparkles: New Features
+- [`12050ac`](https://github.com/t3rn/t3rn/commit/12050ac82ea545076b1edbdf27c7c1817fd701d1) - extend GatewayVendor select with XBI and Sepolia *(PR [#1224](https://github.com/t3rn/t3rn/pull/1224) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.44.2-rc.0] - 2023-07-28
+### :bug: Bug Fixes
+- [`25073b1`](https://github.com/t3rn/t3rn/commit/25073b1f98f92ce246333de14e829e03774a7780) - remove remaining deprecated XDNS records with storage migration *(PR [#1225](https://github.com/t3rn/t3rn/pull/1225) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`6377990`](https://github.com/t3rn/t3rn/commit/6377990cdc19197fb503f7f8c9744702ade17c8e) - disable dependabot until polkadot upgrade is done *(PR [#1227](https://github.com/t3rn/t3rn/pull/1227) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.44.1-rc.0] - 2023-07-27
 ### :bug: Bug Fixes
 - [`6075c3b`](https://github.com/t3rn/t3rn/commit/6075c3b35aa29a45b96e8cb5931795e49cad5e27) - stop committee shuffle if previous transition request still awaits attestation *(PR [#1221](https://github.com/t3rn/t3rn/pull/1221) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1423,3 +1442,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.43.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.3-rc.0...v1.43.4-rc.0
 [v1.44.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.4-rc.0...v1.44.0-rc.0
 [v1.44.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.0-rc.0...v1.44.1-rc.0
+[v1.44.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.1-rc.0...v1.44.2-rc.0
+[v1.45.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.2-rc.0...v1.45.0-rc.0
+[v1.45.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.0-rc.0...v1.45.1-rc.0
