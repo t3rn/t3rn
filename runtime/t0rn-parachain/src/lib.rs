@@ -200,7 +200,7 @@ construct_runtime!(
         SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
         // Handy utilities
-        MaintenanceMode: pallet_maintenance_mode = 140,
+        // MaintenanceMode: pallet_maintenance_mode = 140,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
