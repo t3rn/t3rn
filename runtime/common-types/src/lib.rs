@@ -73,9 +73,13 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_P
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
-    /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(Weight::from_ref_time(2 * WEIGHT_REF_TIME_PER_SECOND), NORMAL_DISPATCH_RATIO);
+    /// Refer to weights and proof size updates from https://github.com/paritytech/substrate/pull/12383
+    /// We allow for 2 seconds of compute with a 12 second average block time.
+    pub BlockWeights: frame_system::limits::BlockWeights =
+        frame_system::limits::BlockWeights::with_sensible_defaults(
+            Weight::from_ref_time(2 * WEIGHT_REF_TIME_PER_SECOND).set_proof_size(u64::MAX),
+            NORMAL_DISPATCH_RATIO,
+        );
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u8 = 42;
