@@ -1030,7 +1030,8 @@ pub mod tests {
     use super::*;
     use crate::mock::{
         produce_mock_headers_range, run_test, test_header, test_header_range,
-        test_header_with_correct_parent, AccountId, Origin, TestHeader, TestNumber, TestRuntime,
+        test_header_with_correct_parent, AccountId, RuntimeOrigin as Origin, TestHeader,
+        TestNumber, TestRuntime,
     };
     use bp_runtime::ChainId;
     use bridges::{
