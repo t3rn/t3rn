@@ -1,30 +1,34 @@
 [package]
-authors     = [ "Parity Technologies <admin@parity.io>" ]
+name = "pallet-contracts-primitives"
+version = "7.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://substrate.io"
+repository = "https://github.com/paritytech/substrate/"
 description = "A crate that hosts a common definitions that are relevant for the pallet-contracts."
-edition     = { workspace = true }
-homepage    = "https://substrate.io"
-license     = { workspace = true }
-name        = "pallet-contracts-primitives"
-readme      = { workspace = true }
-repository  = "https://github.com/paritytech/substrate/"
-version     = "5.0.0"
+readme = "README.md"
 
 [package.metadata.docs.rs]
-targets = [ "x86_64-unknown-linux-gnu" ]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-bitflags   = { workspace = true }
-codec      = { workspace = true, package = "parity-scale-codec" }
-scale-info = { workspace = true }
-serde      = { workspace = true, optional = true }
-
+#bitflags =  { workspace = true }
+#scale-info = { workspace = true }
+#codec = { workspace = true }
+bitflags = "1.0"
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
 # Substrate Dependencies (This crate should not rely on frame)
-sp-core    = { workspace = true }
-sp-rpc     = { workspace = true, optional = true }
-sp-runtime = { workspace = true }
-sp-std     = { workspace = true }
+sp-std = {  workspace = true }
+sp-runtime = {  workspace = true }
 sp-weights = { workspace = true }
 
 [features]
-default = [ "std" ]
-std     = [ "codec/std", "scale-info/std", "sp-core/std", "sp-runtime/std", "sp-std/std", "sp-rpc", "serde", "sp-weights/std" ]
+default = ["std"]
+std = [
+	"codec/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"scale-info/std",
+]

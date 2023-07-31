@@ -21,7 +21,6 @@ use crate::{
     BalanceOf, CodeHash, Config, ContractInfo, ContractInfoOf, DebugBufferVec, Determinism, Error,
     Event, Nonce, Pallet as Contracts, Schedule, System,
 };
-use codec::Decode;
 use frame_support::{
     crypto::ecdsa::ECDSAExt,
     dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo, Dispatchable},
@@ -31,18 +30,12 @@ use frame_support::{
     Blake2_128Concat, BoundedVec, StorageHasher,
 };
 use frame_system::RawOrigin;
-use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
+use pallet_contracts_primitives::ExecReturnValue;
 use smallvec::{Array, SmallVec};
 use sp_core::ecdsa::Public as ECDSAPublic;
 use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::blake2_256};
 use sp_runtime::traits::{Convert, Hash};
 use sp_std::{marker::PhantomData, mem, prelude::*};
-use t3rn_primitives::{
-    account_manager::Outcome,
-    threevm::{ModuleOperations, Precompile, PrecompileArgs, Remuneration, ThreeVm},
-    SpeedMode,
-};
-use t3rn_sdk_primitives::state::SideEffects;
 
 pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
@@ -91,7 +84,7 @@ where
 pub enum ErrorOrigin {
     /// Caller error origin.
     ///
-    /// The error happened in the current execution context rather than in the one
+    /// The error happened in the current exeuction context rather than in the one
     /// of the contract that is called into.
     Caller,
     /// The error happened during execution of the called contract.
@@ -333,7 +326,7 @@ pub enum ExportedFunction {
 ///
 /// In the on-chain environment this would be represented by a wasm module. This trait exists in
 /// order to be able to mock the wasm logic for testing.
-pub trait Executable<T: Config>: Sized + ModuleOperations<T, BalanceOf<T>> {
+pub trait Executable<T: Config>: Sized {
     /// Load the executable from storage.
     ///
     /// # Note
@@ -894,10 +887,7 @@ where
                 )?;
             }
 
-            let remunerated = T::ThreeVm::try_remunerate(self.caller(), &executable)?;
-            let author_info = executable.get_author().cloned();
-
-            // Every call or instantiate also optionally transferres balance.
+            // Every non delegate call or instantiate also optionally transfers the balance.
             self.initial_transfer()?;
 
             // Call into the wasm blob.
@@ -910,9 +900,6 @@ where
 
             // Avoid useless work that would be reverted anyways.
             if output.did_revert() {
-                if let Some(ledger_id) = remunerated.remuneration_id {
-                    T::ThreeVm::try_finalize(ledger_id, Outcome::Revert)?;
-                }
                 return Ok(output)
             }
 
@@ -923,11 +910,6 @@ where
                 frame.contract_info.load(&frame.account_id);
                 let contract = frame.contract_info.as_contract();
                 frame.nested_storage.enforce_limit(contract)?;
-            }
-
-            // Additional work needs to be performed in case of an instantiation.
-            if !output.did_revert() && entry_point == ExportedFunction::Constructor {
-                T::ThreeVm::try_persist_author(&self.first_frame.account_id, author_info.as_ref())?;
             }
 
             let frame = self.top_frame();
@@ -1230,31 +1212,7 @@ where
                 value,
                 gas_limit,
             )?;
-
-            // First we check if volatile
-            if T::ThreeVm::volatile_check(executable.get_type()).is_ok() {
-                let args: Result<
-                    (SideEffects<T::AccountId, BalanceOf<T>, T::Hash>, SpeedMode),
-                    codec::Error,
-                > = Decode::decode(&mut &input_data[..]);
-
-                if let Ok((side_effects, speed_mode)) = args {
-                    T::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
-                        RawOrigin::Signed(self.caller().clone()).into(),
-                        side_effects,
-                        speed_mode,
-                    ))?;
-                    Ok(ExecReturnValue {
-                        flags: ReturnFlags::empty(),
-                        data: Vec::new(),
-                    })
-                } else {
-                    // FIXME: we just silently fail the decode here, really we shouldnt be trying to do this
-                    self.run(executable, input_data)
-                }
-            } else {
-                self.run(executable, input_data)
-            }
+            self.run(executable, input_data)
         };
 
         // We need to make sure to reset `allows_reentry` even on failure.
@@ -1637,9 +1595,6 @@ mod tests {
         func_type: ExportedFunction,
         code_hash: CodeHash<Test>,
         refcount: u64,
-        author: Option<AuthorInfo<<Test as SysConfig>::AccountId, BalanceOf<Test>>>,
-        kind: ContractType,
-        bytes: Vec<u8>,
     }
 
     #[derive(Default, Clone)]
@@ -1664,9 +1619,6 @@ mod tests {
                         func_type,
                         code_hash: hash,
                         refcount: 1,
-                        author: None,
-                        kind: ContractType::VanillaWasm,
-                        bytes: vec![],
                     },
                 );
                 hash
@@ -1696,33 +1648,6 @@ mod tests {
                     entry.remove();
                 }
             });
-        }
-    }
-
-    impl ModuleOperations<Test, BalanceOf<Test>> for MockExecutable {
-        fn get_bytecode(&self) -> &Vec<u8> {
-            &self.bytes
-        }
-
-        fn get_author(
-            &self,
-        ) -> Option<&AuthorInfo<<Test as SysConfig>::AccountId, BalanceOf<Test>>> {
-            self.author.as_ref()
-        }
-
-        fn set_author(
-            &mut self,
-            author: AuthorInfo<<Test as SysConfig>::AccountId, BalanceOf<Test>>,
-        ) {
-            self.author = Some(author)
-        }
-
-        fn get_type(&self) -> &ContractType {
-            &self.kind
-        }
-
-        fn set_type(&mut self, kind: ContractType) {
-            self.kind = kind;
         }
     }
 

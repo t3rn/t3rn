@@ -1,4 +1,3 @@
-#![feature(more_qualified_paths)]
 // This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -99,16 +98,6 @@ pub mod weights;
 #[cfg(test)]
 mod tests;
 
-#[cfg(doc)]
-pub use crate::wasm::api_doc;
-pub use crate::{
-    address::{AddressGenerator, DefaultAddressGenerator},
-    exec::{Frame, VarSizedKey as StorageKey},
-    migration::Migration,
-    pallet::*,
-    schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
-    wasm::Determinism,
-};
 use crate::{
     exec::{AccountIdOf, ExecError, Executable, Stack as ExecStack},
     gas::GasMeter,
@@ -137,7 +126,18 @@ use scale_info::TypeInfo;
 use smallvec::Array;
 use sp_runtime::traits::{Convert, Hash, Saturating, StaticLookup};
 use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
-use t3rn_primitives::threevm::{ModuleOperations, ThreeVm};
+
+pub use crate::{
+    address::{AddressGenerator, DefaultAddressGenerator},
+    exec::{Frame, VarSizedKey as StorageKey},
+    migration::Migration,
+    pallet::*,
+    schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
+    wasm::Determinism,
+};
+
+#[cfg(doc)]
+pub use crate::wasm::api_doc;
 
 type CodeHash<T> = <T as frame_system::Config>::Hash;
 type TrieId = BoundedVec<u8, ConstU32<128>>;
@@ -147,8 +147,6 @@ type CodeVec<T> = BoundedVec<u8, <T as Config>::MaxCodeLen>;
 type RelaxedCodeVec<T> = WeakBoundedVec<u8, <T as Config>::MaxCodeLen>;
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 type DebugBufferVec<T> = BoundedVec<u8, <T as Config>::MaxDebugBufferLen>;
-// t3rn_primitives::reexport_currency_types!();
-pub type CurrencyOf<T> = <T as pallet::Config>::Currency;
 
 /// Used as a sentinel value when reading and writing contract memory.
 ///
@@ -163,7 +161,6 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::threevm::ThreeVm;
 
     /// The current storage version.
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(9);
@@ -291,9 +288,6 @@ pub mod pallet {
 
         /// The address generator used to generate the addresses of contracts.
         type AddressGenerator: AddressGenerator<Self>;
-
-        /// Make this pallet 3VM enabled
-        type ThreeVm: ThreeVm<Self, BalanceOf<Self>>;
 
         /// The maximum length of a contract code in bytes. This limit applies to the instrumented
         /// version of the code. Therefore `instantiate_with_code` can fail even when supplying
@@ -910,8 +904,6 @@ pub mod pallet {
         CodeRejected,
         /// An indetermistic code was used in a context where this is not permitted.
         Indeterministic,
-        /// Failed to unwrap local state
-        NoStateReturned,
     }
 
     /// A mapping from an original code hash to the original code, untouched by instrumentation.
@@ -1224,7 +1216,7 @@ impl<T: Config> Pallet<T> {
             let schedule = T::Schedule::get();
             let (extra_deposit, executable) = match code {
                 Code::Upload(binary) => {
-                    let executable: PrefabWasmModule<T> = PrefabWasmModule::from_code(
+                    let executable = PrefabWasmModule::from_code(
                         binary,
                         &schedule,
                         origin.clone(),
@@ -1243,35 +1235,10 @@ impl<T: Config> Pallet<T> {
                     // reserved on the uploading account.
                     (executable.open_deposit(), executable)
                 },
-                Code::Existing(hash) => {
-                    if let Ok(module) =
-                        T::ThreeVm::from_registry::<PrefabWasmModule<T>, _>(&hash, |bytes| {
-                            PrefabWasmModule::from_code(
-                                bytes,
-                                &schedule,
-                                origin.clone(),
-                                Determinism::Deterministic,
-                                TryInstantiate::Instantiate,
-                            )
-                            .unwrap()
-                        })
-                    {
-                        T::ThreeVm::instantiate_check(module.get_type())?;
-                        (
-                            module
-                                .get_author()
-                                .as_ref()
-                                .and_then(|au| au.fees_per_single_use)
-                                .unwrap_or_default(),
-                            module,
-                        )
-                    } else {
-                        (
-                            Default::default(),
-                            PrefabWasmModule::from_storage(hash, &schedule, &mut gas_meter)?,
-                        )
-                    }
-                },
+                Code::Existing(hash) => (
+                    Default::default(),
+                    PrefabWasmModule::from_storage(hash, &schedule, &mut gas_meter)?,
+                ),
             };
             let mut storage_meter = StorageMeter::new(
                 &origin,
@@ -1377,32 +1344,5 @@ sp_api::decl_runtime_apis! {
             address: AccountId,
             key: Vec<u8>,
         ) -> GetStorageResult;
-    }
-}
-
-impl<T: Config> pallet_contracts_primitives::traits::Contracts<T::AccountId, BalanceOf<T>>
-    for Pallet<T>
-{
-    type Outcome = ContractExecResult<BalanceOf<T>>;
-
-    fn call(
-        origin: T::AccountId,
-        dest: T::AccountId,
-        value: BalanceOf<T>,
-        gas_limit: Weight,
-        storage_deposit_limit: Option<BalanceOf<T>>,
-        data: Vec<u8>,
-        debug: bool,
-    ) -> Self::Outcome {
-        <Pallet<T>>::bare_call(
-            origin,
-            dest,
-            value,
-            gas_limit,
-            storage_deposit_limit,
-            data,
-            debug,
-            Determinism::Deterministic,
-        )
     }
 }

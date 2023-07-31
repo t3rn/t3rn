@@ -70,36 +70,22 @@
 //! [end-to-end example](https://github.com/paritytech/ink/tree/master/examples/rand-extension)
 //! on how to use a chain extension in order to provide new features to ink! contracts.
 
-pub use crate::{exec::Ext, Config};
 use crate::{
     gas::ChargedAmount,
     wasm::{Runtime, RuntimeCosts},
-    BalanceOf, Error,
+    Error,
 };
-use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{dispatch::RawOrigin, pallet_prelude::Get, weights::Weight};
-use frame_system::pallet_prelude::OriginFor;
+use codec::{Decode, MaxEncodedLen};
+use frame_support::weights::Weight;
+use sp_runtime::DispatchError;
+use sp_std::{marker::PhantomData, vec::Vec};
+
+pub use crate::{exec::Ext, Config};
 pub use frame_system::Config as SysConfig;
 pub use pallet_contracts_primitives::ReturnFlags;
-pub use sp_core::crypto::UncheckedFrom;
-use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
-use sp_std::{marker::PhantomData, vec::Vec};
-// pub use state::Init as InitState;
-use t3rn_primitives::{
-    threevm::{GetState, Precompile, PrecompileArgs},
-    SpeedMode,
-};
-use t3rn_sdk_primitives::{
-    signal::ExecutionSignal, state::SideEffects, GET_STATE_FUNCTION_CODE,
-    POST_SIGNAL_FUNCTION_CODE, SUBMIT_FUNCTION_CODE,
-};
 
 /// Result that returns a [`DispatchError`] on error.
 pub type Result<T> = sp_std::result::Result<T, DispatchError>;
-
-const CONTRACTS_LOG_TARGET: &str = "runtime::contracts::chain_extension";
-const GET_STATE_LOG_TARGET: &str = "runtime::contracts::get_state";
-const SIGNAL_LOG_TARGET: &str = "runtime::contracts::signal";
 
 /// A trait used to extend the set of contract callable functions.
 ///
@@ -184,141 +170,6 @@ impl<C: Config> ChainExtension<C> for Tuple {
         );
         false
     }
-}
-
-pub struct ThreeVmExtension;
-
-impl<C: Config> ChainExtension<C> for ThreeVmExtension {
-    fn call<E>(&mut self, env: Environment<E, InitState>) -> Result<RetVal>
-    where
-        E: Ext<T = C>,
-    {
-        let func_id = env.func_id() as u32;
-        log::trace!(
-            target: CONTRACTS_LOG_TARGET,
-            "[ChainExtension]|call|func_id:{:}",
-            func_id
-        );
-        match func_id {
-            GET_STATE_FUNCTION_CODE => {
-                let mut env = env.buf_in_buf_out();
-
-                // For some reason the parameter is passed through as a default, not an option
-                let execution_id: C::Hash = env.read_as()?;
-                log::debug!(
-                    target: GET_STATE_LOG_TARGET,
-                    "reading state for execution_id: {:?}",
-                    execution_id
-                );
-                let default: C::Hash = Default::default();
-                let execution_id = if execution_id == default {
-                    None
-                } else {
-                    // TODO: allow a modifiable multiplier constant in the config
-                    env.charge_weight(size_to_weight(&execution_id))?;
-                    Some(execution_id)
-                };
-
-                let origin = origin_from_environment(&mut env);
-
-                let invocation = <C as Config>::ThreeVm::invoke(PrecompileArgs::GetState(
-                    origin,
-                    GetState {
-                        xtx_id: execution_id,
-                    },
-                ))?;
-                let state = invocation.get_state().ok_or(Error::<C>::NoStateReturned)?;
-
-                let xtx_id = state.xtx_id;
-                let bytes = state.encode();
-                log::debug!(
-                    target: GET_STATE_LOG_TARGET,
-                    "loaded local state id: {:?}, state: {:?}",
-                    xtx_id,
-                    bytes,
-                );
-
-                env.write(
-                    &bytes[..],
-                    false,
-                    Some(Weight::from_all(
-                        <C as Config>::DepositPerByte::get().unique_saturated_into(),
-                    )),
-                )?;
-
-                Ok(RetVal::Converging(0))
-            },
-            SUBMIT_FUNCTION_CODE => {
-                let mut env = env.buf_in_buf_out();
-
-                let arg: (SideEffects<C::AccountId, BalanceOf<C>, C::Hash>, SpeedMode) =
-                    read_from_environment(&mut env)?;
-
-                let origin = RawOrigin::Signed(env.ext().caller().clone());
-                <C as Config>::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
-                    C::RuntimeOrigin::from(origin),
-                    arg.0,
-                    arg.1,
-                ))?;
-                Ok(RetVal::Converging(0))
-            },
-            POST_SIGNAL_FUNCTION_CODE => {
-                let mut env = env.buf_in_buf_out();
-
-                let signal: ExecutionSignal<C::Hash> = read_from_environment(&mut env)?;
-                log::debug!(target: SIGNAL_LOG_TARGET, "submitting signal {:?}", signal);
-
-                let origin = RawOrigin::Signed(env.ext().caller().clone());
-                C::ThreeVm::invoke(PrecompileArgs::Signal(
-                    C::RuntimeOrigin::from(origin),
-                    signal,
-                ))?;
-                Ok(RetVal::Converging(0))
-            },
-            n => {
-                log::error!(
-                    target: CONTRACTS_LOG_TARGET,
-                    "Called an unregistered `func_id`: {:}",
-                    func_id
-                );
-                Ok(RetVal::Converging(n))
-            },
-        }
-    }
-}
-
-impl<C: Config> RegisteredChainExtension<C> for () {
-    const ID: u16 = 3330;
-}
-
-fn read_from_environment<C, T, E>(env: &mut Environment<E, BufInBufOutState>) -> Result<T>
-where
-    C: Config,
-    T: Decode + MaxEncodedLen,
-    E: Ext<T = C>,
-{
-    let bytes = env.read(<T as MaxEncodedLen>::max_encoded_len() as u32)?;
-
-    Decode::decode(&mut &bytes[..])
-        .map_err(|e| {
-            log::error!(target: CONTRACTS_LOG_TARGET, "decoding type failed {:?}", e);
-            Error::<C>::DecodingFailed.into()
-        })
-        .and_then(|t: T| env.charge_weight(size_to_weight(&t)).map(|_| t))
-}
-
-fn size_to_weight<T: Encode>(encodable: &T) -> Weight {
-    Weight::from_ref_time(encodable.encoded_size() as u64)
-}
-
-fn origin_from_environment<C, E>(
-    env: &mut Environment<E, BufInBufOutState>,
-) -> <C as frame_system::Config>::RuntimeOrigin
-where
-    C: Config,
-    E: Ext<T = C>,
-{
-    OriginFor::<C>::from(RawOrigin::Signed(env.ext().caller().clone()))
 }
 
 /// Determines the exit behaviour and return value of a chain extension.

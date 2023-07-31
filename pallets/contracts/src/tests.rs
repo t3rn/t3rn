@@ -50,11 +50,8 @@ use sp_runtime::{
     traits::{BlakeTwo256, Convert, Hash, IdentityLookup},
     AccountId32,
 };
+use std::{ops::Deref, sync::Arc};
 
-use sp_runtime::traits::Keccak256;
-use sp_std::{cell::RefCell, sync::Arc};
-
-mod threevm;
 use crate as pallet_contracts;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -66,12 +63,12 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system,
-        Balances: pallet_balances,
-        Timestamp: pallet_timestamp,
-        Randomness: pallet_insecure_randomness_collective_flip,
-        Utility: pallet_utility,
-        Contracts: pallet_contracts,
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+        Randomness: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
+        Utility: pallet_utility::{Pallet, Call, Storage, Event},
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -315,7 +312,7 @@ impl frame_system::Config for Test {
     type BlockWeights = BlockWeights;
     type DbWeight = ();
     type Hash = H256;
-    type Hashing = Keccak256;
+    type Hashing = BlakeTwo256;
     type Header = Header;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;

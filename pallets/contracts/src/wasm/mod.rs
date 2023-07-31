@@ -50,9 +50,6 @@ use frame_support::dispatch::{DispatchError, DispatchResult};
 use sp_core::Get;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
-use t3rn_primitives::{
-    contract_metadata::ContractType, contracts_registry::AuthorInfo, threevm::ModuleOperations,
-};
 use wasmi::{
     Config as WasmiConfig, Engine, Instance, Linker, Memory, MemoryType, Module, StackLimits, Store,
 };
@@ -102,33 +99,8 @@ pub struct PrefabWasmModule<T: Config> {
     // It is `Some` if and only if this struct was generated from code.
     #[codec(skip)]
     owner_info: Option<OwnerInfo<T>>,
-    /// The contract author, if any.
-    author: Option<AuthorInfo<T::AccountId, BalanceOf<T>>>,
-    // The type of the contract
-    kind: ContractType,
 }
 
-impl<T: Config> ModuleOperations<T, BalanceOf<T>> for PrefabWasmModule<T> {
-    fn get_bytecode(&self) -> &Vec<u8> {
-        &self.code
-    }
-
-    fn get_author(&self) -> Option<&AuthorInfo<T::AccountId, BalanceOf<T>>> {
-        self.author.as_ref()
-    }
-
-    fn set_author(&mut self, author: AuthorInfo<T::AccountId, BalanceOf<T>>) {
-        self.author = Some(author);
-    }
-
-    fn get_type(&self) -> &ContractType {
-        &self.kind
-    }
-
-    fn set_type(&mut self, kind: ContractType) {
-        self.kind = kind;
-    }
-}
 /// Information that belongs to a [`PrefabWasmModule`] but is stored separately.
 ///
 /// It is stored in a separate storage entry to avoid loading the code when not necessary.
