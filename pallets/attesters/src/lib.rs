@@ -3956,7 +3956,7 @@ pub mod attesters_test {
                 Attesters::estimate_finality_reward(&target, delay);
 
             const FEE_TREASURY_BALANCE: Balance = 1_000_000_000_000_000_000_000_000_000_000;
-            let bal = Balances::deposit_creating(
+            let _bal = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Fee),
                 FEE_TREASURY_BALANCE,
             );
