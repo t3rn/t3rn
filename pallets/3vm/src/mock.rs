@@ -6,7 +6,11 @@ use frame_support::{
 use frame_system as system;
 
 use circuit_runtime_types::AssetId;
-use frame_support::pallet_prelude::{DispatchResult, DispatchResultWithPostInfo};
+use frame_support::{
+    pallet_prelude::{DispatchResult, DispatchResultWithPostInfo},
+    traits::AsEnsureOriginWithArg,
+};
+use frame_system::EnsureRoot;
 use pallet_grandpa_finality_verifier::light_clients::{
     select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
     RococoInstance,
@@ -130,8 +134,8 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1; // 1 UNIT deposit to create asset
-    pub const ApprovalDeposit: Balance = 1;
+    pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset
+    pub const ApprovalDeposit: Balance = 0;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -144,19 +148,22 @@ impl pallet_assets::Config for Test {
     type ApprovalDeposit = ApprovalDeposit;
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
-    type AssetId = u32;
+    type AssetId = circuit_runtime_types::AssetId;
+    type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type Currency = Balances;
     type Extra = ();
-    type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1>;
     type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
-
 impl pallet_3vm::Config for Test {
     type AccountManager = AccountManager;
     type AssetId = u32;
@@ -203,7 +210,6 @@ impl pallet_circuit::Config for Test {
     type DeletionQueueLimit = ConstU32<1024>;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
-    type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3>;
     type SelfAccountId = CircuitAccountId;
@@ -229,7 +235,7 @@ impl PalletAssetsOverlay<Test, Balance> for Test {
     }
 
     fn force_create_asset(
-        _origin: Origin,
+        _origin: RuntimeOrigin,
         _asset_id: AssetId,
         _admin: AccountId,
         _is_sufficient: bool,
@@ -238,7 +244,7 @@ impl PalletAssetsOverlay<Test, Balance> for Test {
         Err("Mock PalletAssetsOverlay::force_create_asset - not implemented".into())
     }
 
-    fn destroy(_origin: Origin, _asset_id: &AssetId) -> DispatchResultWithPostInfo {
+    fn destroy(_origin: RuntimeOrigin, _asset_id: &AssetId) -> DispatchResultWithPostInfo {
         Err("Mock PalletAssetsOverlay::destroy - not implemented".into())
     }
 }

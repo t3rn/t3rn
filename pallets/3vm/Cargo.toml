@@ -44,6 +44,7 @@ pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../portal" }
 pallet-xdns                      = { path = "../xdns" }
 
+rlp = { workspace = true }
 # Substrate Dependencies
 pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
