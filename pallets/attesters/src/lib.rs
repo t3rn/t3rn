@@ -1276,15 +1276,18 @@ pub mod pallet {
 
             let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
 
-            // ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
+            // safe division since ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
             let epochs_delayed =
                 capped_delay_in_blocks / T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8);
             // Convert to usize for range
             let epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0);
 
             for _ in 0..epochs_delayed {
-                let reward_increase = REWARD_ADJUSTMENT.mul_ceil(finality_reward);
-                finality_reward = reward_increase.saturating_add(finality_reward);
+                // let reward_increase = REWARD_ADJUSTMENT.mul_ceil(finality_reward);
+                // finality_reward = reward_increase.saturating_add(finality_reward);
+                finality_reward = REWARD_ADJUSTMENT
+                    .mul_ceil(finality_reward)
+                    .saturating_add(finality_reward);
             }
 
             // If finality fee was received within the first epoch, decrease the reward by 25%
@@ -1687,7 +1690,9 @@ pub mod pallet {
 
         // TODO: consider removing this function, it is never used
         //
-        pub fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
+        pub fn get_current_committee_transition_for_target(
+            target: &TargetId,
+        ) -> CommitteeTransition {
             let next_committee = NextCommittee::<T>::get();
             let mut committee_transition = Vec::new();
 
@@ -2119,7 +2124,10 @@ pub mod pallet {
 
             // For each target, create new batch for next window
             for target in AttestationTargets::<T>::get() {
-                let new_next_batch = BatchMessage { created: frame_system::Pallet::<T>::block_number(), ..Default::default() };
+                let new_next_batch = BatchMessage {
+                    created: frame_system::Pallet::<T>::block_number(),
+                    ..Default::default()
+                };
                 NextBatch::<T>::insert(target, new_next_batch.clone());
             }
         }
@@ -3844,48 +3852,48 @@ pub mod attesters_test {
     //
     //     request_n_sfx_32_attestations_and_commit(messages, target, 0)
     // }
+    //
+    //     assert_eq!(attested_batches.len(), 1);
+    //     let first_batch = attested_batches[0].clone();
+    //
+    //     // Check if the attestations have been added to the batch
+    //     let first_batch_hash = first_batch.message_hash();
+    //     let first_batch_message = first_batch.message();
+    //
+    //     assert_eq!(first_batch.signatures.len(), 32);
+    //     assert_eq!(
+    //         first_batch.status,
+    //         BatchStatus::ReadyForSubmissionFullyApproved
+    //     );
+    //
+    //     let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
+    //         hash: first_batch_hash,
+    //     };
+    //
+    //     // Commit the batch
+    //     assert_ok!(Attesters::commit_batch(
+    //         Origin::signed(AccountId::from([1; 32])),
+    //         target,
+    //         mock_valid_batch_confirmation.encode(),
+    //     ));
+    //
+    //     first_batch_message
+    // }
 
-        assert_eq!(attested_batches.len(), 1);
-        let first_batch = attested_batches[0].clone();
-
-        // Check if the attestations have been added to the batch
-        let first_batch_hash = first_batch.message_hash();
-        let first_batch_message = first_batch.message();
-
-        assert_eq!(first_batch.signatures.len(), 32);
-        assert_eq!(
-            first_batch.status,
-            BatchStatus::ReadyForSubmissionFullyApproved
-        );
-
-        let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
-            hash: first_batch_hash,
-        };
-
-        // Commit the batch
-        assert_ok!(Attesters::commit_batch(
-            Origin::signed(AccountId::from([1; 32])),
-            target,
-            mock_valid_batch_confirmation.encode(),
-        ));
-
-        first_batch_message
-    }
-
-    fn full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(
-        messages: Vec<[u8; 32]>,
-        target: TargetId,
-    ) -> Vec<u8> {
-        for counter in 1..33u8 {
-            // Register an attester
-            let _attester = AccountId::from([counter; 32]);
-            register_attester_with_single_private_key([counter; 32]);
-        }
-
-        select_new_committee();
-
-        request_n_sfx_32_attestations_and_commit(messages, target, 0)
-    }
+    // fn full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(
+    //     messages: Vec<[u8; 32]>,
+    //     target: TargetId,
+    // ) -> Vec<u8> {
+    //     for counter in 1..33u8 {
+    //         // Register an attester
+    //         let _attester = AccountId::from([counter; 32]);
+    //         register_attester_with_single_private_key([counter; 32]);
+    //     }
+    //
+    //     select_new_committee();
+    //
+    //     request_n_sfx_32_attestations_and_commit(messages, target, 0)
+    // }
 
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
@@ -3948,7 +3956,7 @@ pub mod attesters_test {
                 Attesters::estimate_finality_reward(&target, delay);
 
             const FEE_TREASURY_BALANCE: Balance = 1_000_000_000_000_000_000_000_000_000_000;
-            Balances::deposit_creating(
+            let bal = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Fee),
                 FEE_TREASURY_BALANCE,
             );
@@ -3973,7 +3981,6 @@ pub mod attesters_test {
             );
         });
     }
-
 
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
