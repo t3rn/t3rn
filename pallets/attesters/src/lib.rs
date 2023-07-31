@@ -13,7 +13,7 @@ pub mod pallet {
     // Overcharge factor as a constant.
     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
     const SIX_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 6 * 32;
-    const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 32;
+    // const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 32;
     const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 32;
     const ONE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 32;
     const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
@@ -1274,8 +1274,6 @@ pub mod pallet {
             // Create a mutable copy of finality_reward to work with
             let mut finality_reward = *finality_reward;
 
-            // TODO: move to beginning, so can be accessed by everyone
-
             let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
 
             // ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
@@ -1333,146 +1331,18 @@ pub mod pallet {
                 up_to_last_10_confirmed,
             })
         }
-
-        // FIXME: not a member of the trait
-        // fn estimate_user_finality_fee(
-        //     target: &TargetId,
-        //     n_epochs_from_now: u16,
-        //     batching_factor: BatchingFactor,
-        // ) -> Result<BalanceOf<T>, DispatchError> {
-        //     let base_user_fee_for_single_user: BalanceOf<T> =
-        //         10_000_000_000_000u128.try_into().unwrap_or_default();
-        //
-        //     let mut number_of_users: u16 = match n_epochs_from_now {
-        //         0 => batching_factor.latest_confirmed,
-        //         1 => batching_factor.latest_signed,
-        //         _ => {
-        //             // Estimate future user base size
-        //             Self::estimate_future_user_base(&batching_factor, n_epochs_from_now)
-        //         },
-        //     };
-        //
-        //     if number_of_users.is_zero() {
-        //         number_of_users = 1;
-        //     }
-        //
-        //     println!("number_of_users: {number_of_users:?}");
-        //
-        //     // Retrieve the latest paid finality fee for the target
-        //     let paid_finality_fees =
-        //         PaidFinalityFees::<T>::get(target).unwrap_or(vec![base_user_fee_for_single_user]);
-        //     let total_fee = *paid_finality_fees
-        //         .last()
-        //         .unwrap_or(&base_user_fee_for_single_user);
-        //
-        //     // Calculate the base user fee
-        //     let base_user_fee = total_fee
-        //         .checked_div(&BalanceOf::<T>::from(number_of_users as u32))
-        //         .unwrap_or(base_user_fee_for_single_user);
-        //
-        //     // Define an overcharge factor as a constant (here we use 32% for example)
-        //     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
-        //
-        //     // Calculate the total user fee with the overcharge
-        //     let user_fee = OVERCHARGE_FACTOR
-        //         .mul_ceil(base_user_fee)
-        //         .saturating_add(base_user_fee);
-        //
-        //     println!("user_fee: {user_fee:?}");
-        //
-        //     Ok(user_fee)
-        // }
-
-        // FIXME: not a member of the trait
-        //
-        // fn estimate_future_finality_fee(
-        //     target: &TargetId,
-        //     n_windows_from_now: u16,
-        //     batching_factor: BatchingFactor,
-        // ) -> BalanceOf<T> {
-        //     // ToDo: Set as Config parameter
-        //     let batch_0_finality_fee_base: BalanceOf<T> =
-        //         10_000_000_000_000u128.try_into().unwrap_or_default();
-        //
-        //     const AUTO_REGRESSION_PARAM_BOOST_MULTIPLIER: u8 = 2u8;
-        //
-        //     let paid_finality_fees =
-        //         PaidFinalityFees::<T>::get(target).unwrap_or(vec![batch_0_finality_fee_base]);
-        //
-        //     println!("paid_finality_fees: {paid_finality_fees:?}");
-        //     let last_paid_finality_fee = *paid_finality_fees
-        //         .last()
-        //         .unwrap_or(&batch_0_finality_fee_base);
-        //
-        //     let mut last_batching_factor = batching_factor.latest_confirmed;
-        //     let mut next_batching_factor = batching_factor.latest_signed;
-        //
-        //     if last_batching_factor.is_zero() {
-        //         last_batching_factor = 1;
-        //     }
-        //
-        //     if next_batching_factor.is_zero() {
-        //         next_batching_factor = 1;
-        //     }
-        //
-        //     // Convert batching_factor ratio to Percent once before loop
-        //     let batching_factor_ratio =
-        //         Percent::from_rational(next_batching_factor, last_batching_factor);
-        //
-        //     // Get the autoregressive parameter from storage
-        //     let auto_regression_param: Percent =
-        //         AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(0));
-        //
-        //     println!("auto_regression_param: {auto_regression_param:?}");
-        //     let mut prediction = last_paid_finality_fee.saturating_add(
-        //         auto_regression_param.mul_ceil(
-        //             last_paid_finality_fee
-        //                 .saturating_mul(AUTO_REGRESSION_PARAM_BOOST_MULTIPLIER.into()),
-        //         ),
-        //     );
-        //     println!("prediction before: {prediction:?}");
-        //
-        //     // Define decay factor for the influence of past fees
-        //     const DECAY_FACTOR: Percent = Percent::from_percent(90);
-        //     let mut decayed_param = auto_regression_param;
-        //
-        //     // Loop n_windows_from_now times to predict future finality fee
-        //     for i in 0..n_windows_from_now {
-        //         prediction = prediction.saturating_add(
-        //             decayed_param.mul_ceil(
-        //                 paid_finality_fees
-        //                     .get(i as usize)
-        //                     .unwrap_or(&batch_0_finality_fee_base)
-        //                     .saturating_mul(AUTO_REGRESSION_PARAM_BOOST_MULTIPLIER.into()),
-        //             ),
-        //         );
-        //
-        //         // Decay the influence of past fees
-        //         decayed_param = decayed_param.saturating_mul(DECAY_FACTOR);
-        //     }
-        //
-        //     println!("batching_factor_ratio: {batching_factor_ratio:?}");
-        //
-        //     // Adjust for expected change in batching factor
-        //     prediction = batching_factor_ratio.mul_ceil(prediction);
-        //
-        //     println!("prediction: {prediction:?}");
-        //     prediction
-        // }
-
-        // FIXME: not a member of the trait
-        // fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
-        // }
     }
 
     impl<T: Config> Pallet<T> {
-        fn find_batches(target: TargetId, message: &Vec<u8>) -> Vec<BatchMessage<T::BlockNumber>> {
-            Batches::<T>::get(target)
-                .iter()
-                .find(|batches| batches.iter().any(|batch| &batch.message() == message))
-                .unwrap()
-                .clone()
-        }
+        // TODO: function never used, consider removing
+        //
+        // fn find_batches(target: TargetId, message: &Vec<u8>) -> Vec<BatchMessage<T::BlockNumber>> {
+        //     Batches::<T>::get(target)
+        //         .iter()
+        //         .find(|batches| batches.iter().any(|batch| &batch.message() == message))
+        //         .unwrap()
+        //         .clone()
+        // }
 
         fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
             // If target isn't active yet, return None
@@ -1488,8 +1358,6 @@ pub mod pallet {
                     .take(10)
                     .map(|batch| batch.read_batching_factor())
                     .collect::<Vec<u16>>();
-            // .try_into()
-            // .unwrap_or(vec![]);
 
             let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
 
@@ -1515,8 +1383,6 @@ pub mod pallet {
             T::CommitteeSize::get() as usize
         }
 
-        /// # apply_partial_stake_slash
-        ///
         /// This function applies a partial slash to the stakes of an attester and its nominators.
         /// It returns the self-nomination balance of the given attester and the updated nomination balances
         /// of the nominators with an applied grace percent.
@@ -1586,6 +1452,8 @@ pub mod pallet {
             )
         }
 
+        // TODO: Consider removing function, since it's never used
+        //
         /// Applies permanent slashes to colluding attesters.
         fn apply_permanent_attesters_slash(attester_local_addresses: Vec<T::AccountId>) {
             for account_id in attester_local_addresses {
@@ -1616,29 +1484,6 @@ pub mod pallet {
         ) -> Result<BalanceOf<T>, DispatchError> {
             todo!("reward_submitter")
         }
-
-        // pub fn reward_submitter(
-        //     submitter: &T::AccountId,
-        //     target: &TargetId,
-        //     batch: &BatchMessage<T::BlockNumber>,
-        // ) -> Result<BalanceOf<T>, DispatchError> {
-        //     let calculated_finality_fee =
-        //         Self::calculate_confirmation_reward_for_pending_confirmation(target, batch);
-        //
-        //     if calculated_finality_fee > Zero::zero() {
-        //         T::Currency::transfer(
-        //             // todo: source should be the fees treasury
-        //             &T::TreasuryAccounts::get_treasury_account(
-        //                 t3rn_primitives::TreasuryAccount::Fee,
-        //             ),
-        //             submitter,
-        //             calculated_finality_fee,
-        //             ExistenceRequirement::KeepAlive,
-        //         )?;
-        //     }
-        //
-        //     Ok(())
-        // }
 
         pub fn try_activate_new_target(target: &TargetId) -> bool {
             // Check if all members of the ActiveSet members have submitted their agreements
@@ -1840,7 +1685,9 @@ pub mod pallet {
             Ok(())
         }
 
-        fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
+        // TODO: consider removing this function, it is never used
+        //
+        pub fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
             let next_committee = NextCommittee::<T>::get();
             let mut committee_transition = Vec::new();
 
@@ -1859,7 +1706,7 @@ pub mod pallet {
             committee_transition
         }
 
-        fn get_current_committee_indices() -> CommitteeTransitionIndices {
+        pub fn get_current_committee_indices() -> CommitteeTransitionIndices {
             let current_committee = CurrentCommittee::<T>::get();
             let mut committee_indices: CommitteeTransitionIndices = [0; COMMITTEE_SIZE]; // Initialize the committee_indices array
 
@@ -2270,10 +2117,9 @@ pub mod pallet {
                 AttestationTargets::<T>::append(target);
             }
 
+            // For each target, create new batch for next window
             for target in AttestationTargets::<T>::get() {
-                let mut new_next_batch = BatchMessage::default();
-                new_next_batch.created = frame_system::Pallet::<T>::block_number();
-                // Create new batch for next window
+                let new_next_batch = BatchMessage { created: frame_system::Pallet::<T>::block_number(), ..Default::default() };
                 NextBatch::<T>::insert(target, new_next_batch.clone());
             }
         }
@@ -2286,13 +2132,11 @@ pub mod attesters_test {
         TargetId, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use std::ops::Index;
 
     use codec::Encode;
     use frame_support::{
         assert_err, assert_noop, assert_ok,
         traits::{Currency, Get, Hooks, Len},
-        StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
@@ -2430,7 +2274,7 @@ pub mod attesters_test {
         assert!(!Attesters::attestation_targets().contains(target));
         assert!(Attesters::pending_attestation_targets().contains(target));
         if AttestersStore::<MiniRuntime>::iter().count() == 0 {
-            Attesters::force_activate_target(Origin::root(), *target);
+            let _ = Attesters::force_activate_target(Origin::root(), *target);
         }
         for (attester, attester_info) in AttestersStore::<MiniRuntime>::iter() {
             // assume attester agrees to eth target: deriving eth address from ecdsa key
@@ -2454,7 +2298,7 @@ pub mod attesters_test {
                 select_new_committee();
             }
             // FIXME: this fails [] != [[1,1,1,1]]
-            assert_eq!(Attesters::pending_attestation_targets(), vec![target]);
+            assert_eq!(Attesters::pending_attestation_targets(), [target]);
             make_all_agree_to_new_target_or_force_if_no_active_set(&target);
         }
 
@@ -2510,7 +2354,7 @@ pub mod attesters_test {
     // Returns H256 message hash + signature as Vec<u8>
     fn sign_and_submit_sfx_to_latest_attestation(
         attester: AccountId,
-        _messages: Vec<[u8; 32]>,
+        messages: Vec<[u8; 32]>,
         key_type: KeyTypeId,
         target: TargetId,
         secret_key: [u8; 32],
@@ -2521,8 +2365,10 @@ pub mod attesters_test {
         if Attesters::get_latest_batch_to_sign_message(target).is_none() {
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
-            // let sfx_id_a = H256::from(messages);
-            // Attesters::request_sfx_attestation_commit(target, sfx_id_a);
+            for message in messages {
+                let sfx_id_a = H256::from(message);
+                let _ = Attesters::request_sfx_attestation_commit(target, sfx_id_a);
+            }
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
         }
@@ -2729,7 +2575,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -2818,7 +2664,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -2874,7 +2720,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -3083,7 +2929,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -3830,60 +3676,66 @@ pub mod attesters_test {
         (res, message_bytes)
     }
 
-    fn expect_latest_confirmed_batching_factor(_target: TargetId, _latest_confirmed_factor: u16) {
-        // Recover system event
-        let events = System::events();
-        let _expect_batching_factor_read_event = events.last();
-        // assert!(expect_batching_factor_read_event.clone().is_some());
-        // assert_eq!(
-        //     expect_batching_factor_read_event.unwrap().event,
-        //     Event::BatchingFactorRead(
-        //         target,
-        //         Some(BatchingFactor {
-        //             latest_confirmed: latest_confirmed_factor,
-        //             latest_signed: 0,
-        //             current_next: 0,
-        //             up_to_last_10_confirmed: vec![latest_confirmed_factor],
-        //         })
-        //     ))
-        // );
-    }
+    // TODO: Consider removing function, it is never used
+    //
+    // fn expect_latest_confirmed_batching_factor(_target: TargetId, _latest_confirmed_factor: u16) {
+    //     // Recover system event
+    //     let events = System::events();
+    //     let _expect_batching_factor_read_event = events.last();
+    //     // assert!(expect_batching_factor_read_event.clone().is_some());
+    //     // assert_eq!(
+    //     //     expect_batching_factor_read_event.unwrap().event,
+    //     //     Event::BatchingFactorRead(
+    //     //         target,
+    //     //         Some(BatchingFactor {
+    //     //             latest_confirmed: latest_confirmed_factor,
+    //     //             latest_signed: 0,
+    //     //             current_next: 0,
+    //     //             up_to_last_10_confirmed: vec![latest_confirmed_factor],
+    //     //         })
+    //     //     ))
+    //     // );
+    // }
 
-    fn expect_latest_user_finality_fees_estimated(
-        _target: TargetId,
-        _n_from_now: u16,
-        _per_user_fees: u128,
-    ) {
-        // Recover system event
-        let events = System::events();
-        let _expect_batching_factor_read_event = events.last();
-        // assert!(expect_batching_factor_read_event.clone().is_some());
-        // assert_eq!(
-        //     expect_batching_factor_read_event.unwrap().event,
-        //     Event::UserFinalityFeeEstimated(
-        //         target,
-        //         per_user_fees,
-        //         n_from_now
-        //     ))
-        // );
-    }
+    // TODO: consider removing function, it is never used
+    //
+    // fn expect_latest_user_finality_fees_estimated(
+    //     _target: TargetId,
+    //     _n_from_now: u16,
+    //     _per_user_fees: u128,
+    // ) {
+    //     // Recover system event
+    //     let events = System::events();
+    //     let _expect_batching_factor_read_event = events.last();
+    //     // assert!(expect_batching_factor_read_event.clone().is_some());
+    //     // assert_eq!(
+    //     //     expect_batching_factor_read_event.unwrap().event,
+    //     //     Event::UserFinalityFeeEstimated(
+    //     //         target,
+    //     //         per_user_fees,
+    //     //         n_from_now
+    //     //     ))
+    //     // );
+    // }
 
-    fn expect_latest_future_total_finality_fees_estimated(
-        _target: TargetId,
-        _n_from_now: u16,
-        _total_fees: u128,
-    ) {
-        // Recover system event
-        let events = System::events();
-        let _expect_batching_factor_read_event = events.last();
-        // assert!(expect_batching_factor_read_event.clone().is_some());
-        // assert_eq!(
-        //     expect_batching_factor_read_event.unwrap().event,
-        //     Event::FutureTotalFinalityFeeEstimated(
-        //         target, total_fees, n_from_now
-        //     ))
-        // );
-    }
+    // TODO: consider removing function, it is never used
+    //
+    // fn expect_latest_future_total_finality_fees_estimated(
+    //     _target: TargetId,
+    //     _n_from_now: u16,
+    //     _total_fees: u128,
+    // ) {
+    //     // Recover system event
+    //     let events = System::events();
+    //     let _expect_batching_factor_read_event = events.last();
+    //     // assert!(expect_batching_factor_read_event.clone().is_some());
+    //     // assert_eq!(
+    //     //     expect_batching_factor_read_event.unwrap().event,
+    //     //     Event::FutureTotalFinalityFeeEstimated(
+    //     //         target, total_fees, n_from_now
+    //     //     ))
+    //     // );
+    // }
 
     // fn expect_finality_fees_recalculated_event_and_regression_readjusted(
     //     _target: TargetId,
@@ -3923,27 +3775,75 @@ pub mod attesters_test {
     //     }
     // }
 
-    fn request_n_sfx_32_attestations_and_commit(
-        messages: Vec<[u8; 32]>,
-        target: TargetId,
-        _delay_before_commit: BlockNumber,
-    ) -> Vec<u8> {
-        for counter in 1..33u8 {
-            // Register an attester
-            let attester = AccountId::from([counter; 32]);
-            // Submit an attestation signed with the Ed25519 key
-            sign_and_submit_sfx_to_latest_attestation(
-                attester,
-                // vec![messages.clone()],
-                messages.clone(),
-                ECDSA_ATTESTER_KEY_TYPE_ID,
-                target,
-                [counter; 32],
-            );
-        }
+    // TODO: consider removing function, it is never used
+    //
+    // fn request_n_sfx_32_attestations_and_commit(
+    //     messages: Vec<[u8; 32]>,
+    //     target: TargetId,
+    //     _delay_before_commit: BlockNumber,
+    // ) -> Vec<u8> {
+    //     for counter in 1..33u8 {
+    //         // Register an attester
+    //         let attester = AccountId::from([counter; 32]);
+    //         // Submit an attestation signed with the Ed25519 key
+    //         sign_and_submit_sfx_to_latest_attestation(
+    //             attester,
+    //             // vec![messages.clone()],
+    //             messages.clone(),
+    //             ECDSA_ATTESTER_KEY_TYPE_ID,
+    //             target,
+    //             [counter; 32],
+    //         );
+    //     }
+    //
+    //     let attested_batches =
+    //         Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
+    //
+    //     assert_eq!(attested_batches.len(), 1);
+    //     let first_batch = attested_batches[0].clone();
+    //
+    //     // Check if the attestations have been added to the batch
+    //     let first_batch_hash = first_batch.message_hash();
+    //     let first_batch_message = first_batch.message();
+    //
+    //     assert_eq!(first_batch.signatures.len(), 32);
+    //     assert_eq!(
+    //         first_batch.status,
+    //         BatchStatus::ReadyForSubmissionFullyApproved
+    //     );
+    //
+    //     let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
+    //         signatures: first_batch.signatures,
+    //         hash: first_batch_hash,
+    //         message: first_batch_message.clone(),
+    //     };
+    //
+    //     // Commit the batch
+    //     assert_ok!(Attesters::commit_batch(
+    //         Origin::signed(AccountId::from([1; 32])),
+    //         target,
+    //         mock_valid_batch_confirmation.encode(),
+    //     ));
+    //
+    //     first_batch_message
+    // }
 
-        let attested_batches =
-            Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
+    // TODO: consider removing function, it is never used
+    //
+    // fn full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(
+    //     messages: Vec<[u8; 32]>,
+    //     target: TargetId,
+    // ) -> Vec<u8> {
+    //     for counter in 1..33u8 {
+    //         // Register an attester
+    //         let _attester = AccountId::from([counter; 32]);
+    //         register_attester_with_single_private_key([counter; 32]);
+    //     }
+    //
+    //     select_new_committee();
+    //
+    //     request_n_sfx_32_attestations_and_commit(messages, target, 0)
+    // }
 
         assert_eq!(attested_batches.len(), 1);
         let first_batch = attested_batches[0].clone();
@@ -4014,7 +3914,7 @@ pub mod attesters_test {
                 // Register an attester
                 let attester = AccountId::from([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_sfx_to_latest_attestation(
+                let (_message_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                     attester,
                     vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -4074,98 +3974,6 @@ pub mod attesters_test {
         });
     }
 
-    // #[test]
-    // #[ignore]
-    // fn estimates_finality_fee_and_user_fee_based_on_batching_factor_in_the_range_of_100() {
-    //     let target: TargetId = [1u8; 4];
-    //
-    //     let mut ext = ExtBuilder::default()
-    //         .with_polkadot_gateway_record()
-    //         .with_eth_gateway_record()
-    //         .build();
-    //
-    //     ext.execute_with(|| {
-    //         // Force activate target
-    //         Attesters::force_activate_target(Origin::root(), target);
-    //         // Create an instance of BatchingFactor
-    //         let batching_factor = BatchingFactor {
-    //             latest_confirmed: 100,
-    //             latest_signed: 90,
-    //             current_next: 80,
-    //             up_to_last_10_confirmed: vec![50, 55, 60, 65, 70, 75, 80, 85, 90, 100],
-    //         };
-    //
-    //         const TWELVE_DECIMALS: Balance = 1_000_000_000_000;
-    //         const ELEVEN_DECIMALS: Balance = 100_000_000_000;
-    //         const TEN_DECIMALS: Balance = 10_000_000_000;
-    //
-    //         // 10 * 10^12 for batching factor = 100
-    //         PaidFinalityFees::<MiniRuntime>::insert(target, vec![10 * TWELVE_DECIMALS]);
-    //
-    //         let future_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-    //                 &target,
-    //                 0,
-    //                 batching_factor.clone(),
-    //             );
-    //
-    //         assert_eq!(future_finality_fee, 9 * TWELVE_DECIMALS);
-    //
-    //         let user_chunk_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_user_finality_fee(
-    //                 &target,
-    //                 0,
-    //                 batching_factor.clone(),
-    //             );
-    //
-    //         // Assuming 32% Overcharge factor for the user
-    //         assert_eq!(user_chunk_finality_fee, Ok(132000000000));
-    //
-    //         let future_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-    //                 &target,
-    //                 1,
-    //                 batching_factor.clone(),
-    //             );
-    //
-    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-    //
-    //         let user_chunk_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_user_finality_fee(
-    //                 &target,
-    //                 1,
-    //                 batching_factor.clone(),
-    //             );
-    //
-    //         assert_eq!(user_chunk_finality_fee, Ok(146666666667));
-    //
-    //         let future_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-    //                 &target,
-    //                 2,
-    //                 batching_factor.clone(),
-    //             );
-    //
-    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-    //
-    //         let future_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-    //                 &target,
-    //                 3,
-    //                 batching_factor.clone(),
-    //             );
-    //
-    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-    //
-    //         let future_finality_fee =
-    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-    //                 &target,
-    //                 10,
-    //                 batching_factor,
-    //             );
-    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-    //     });
-    // }
 
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
@@ -4185,7 +3993,7 @@ pub mod attesters_test {
 
             for counter in 1..33u8 {
                 // Register an attester
-                let _attester = AccountId::from([counter; 32]);
+                let _ = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
             }
 
@@ -4234,11 +4042,9 @@ pub mod attesters_test {
 
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
 
-            // FIXME: permanent slashes cannot be found
             let slashed_permanently = PermanentSlashes::<MiniRuntime>::get();
 
             // Check if all of the attesters have been slashed
-            // FIXME: fails bc attesters are not slashed
             for counter in 1..33u8 {
                 let attester = AccountId::from([counter; 32]);
                 assert!(Attesters::is_permanently_slashed(&attester));
