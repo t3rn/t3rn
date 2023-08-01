@@ -51,6 +51,7 @@ use sp_runtime::{
     AccountId32,
 };
 use std::{ops::Deref, sync::Arc};
+use t3rn_primitives::threevm::NoopThreeVm;
 
 use crate as pallet_contracts;
 
@@ -426,6 +427,7 @@ impl Config for Test {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type Schedule = MySchedule;
+    type ThreeVm = NoopThreeVm;
     type Time = Timestamp;
     type UnsafeUnstableInterface = UnstableInterface;
     type WeightInfo = ();

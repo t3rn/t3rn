@@ -44,6 +44,12 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
+
+## extras from t3rn
+t3rn-primitives     = { default-features = false, path = "../../primitives" }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+
+
 [dev-dependencies]
 array-bytes = "4.1"
 assert_matches = "1"
@@ -78,6 +84,8 @@ std = [
   "log/std",
   "rand/std",
   "wasmparser/std",
+  "t3rn-primitives/std",
+  "t3rn-sdk-primitives/std",
 ]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",

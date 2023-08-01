@@ -47,9 +47,12 @@ use crate::{
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::dispatch::{DispatchError, DispatchResult};
-use sp_core::Get;
+use sp_core::{crypto::Zeroize, Get};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
+use t3rn_primitives::{
+    contract_metadata::ContractType, contracts_registry::AuthorInfo, threevm::ModuleOperations,
+};
 use wasmi::{
     Config as WasmiConfig, Engine, Instance, Linker, Memory, MemoryType, Module, StackLimits, Store,
 };
@@ -99,6 +102,54 @@ pub struct PrefabWasmModule<T: Config> {
     // It is `Some` if and only if this struct was generated from code.
     #[codec(skip)]
     owner_info: Option<OwnerInfo<T>>,
+    /// The contract author, if any: 3vm extras
+    author: Option<AuthorInfo<T::AccountId, BalanceOf<T>>>,
+    // The type of the contract: 3vm extras
+    pub kind: ContractType,
+}
+
+impl<T: Config> PrefabWasmModule<T> {
+    pub fn new_empty() -> Self {
+        Self {
+            instruction_weights_version: 0u32,
+            initial: 0u32,
+            maximum: 0u32,
+            code: sp_std::default::Default::default(),
+            determinism: Determinism::Deterministic,
+            original_code: None,
+            code_hash: T::Hash::default(),
+            owner_info: None,
+            author: None,
+            kind: ContractType::VolatileWasm,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.code.is_empty()
+    }
+}
+
+// Implement extra methods for PrefabWasmModule for 3vm to handle the author and type out of contracts registry: 3vm extras
+impl<T: Config> ModuleOperations<T, BalanceOf<T>> for PrefabWasmModule<T> {
+    fn get_bytecode(&self) -> &Vec<u8> {
+        &self.code
+    }
+
+    fn get_author(&self) -> Option<&AuthorInfo<T::AccountId, BalanceOf<T>>> {
+        self.author.as_ref()
+    }
+
+    fn set_author(&mut self, author: AuthorInfo<T::AccountId, BalanceOf<T>>) {
+        self.author = Some(author);
+    }
+
+    fn get_type(&self) -> &ContractType {
+        &self.kind
+    }
+
+    fn set_type(&mut self, kind: ContractType) {
+        self.kind = kind;
+    }
 }
 
 /// Information that belongs to a [`PrefabWasmModule`] but is stored separately.
@@ -366,6 +417,10 @@ impl<T: Config> Executable<T> for PrefabWasmModule<T> {
 
     fn is_deterministic(&self) -> bool {
         matches!(self.determinism, Determinism::Deterministic)
+    }
+
+    fn is_3vm_volatile(&self) -> bool {
+        matches!(self.kind, ContractType::VolatileWasm)
     }
 }
 

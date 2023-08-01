@@ -30,6 +30,7 @@ use crate::{
 use codec::{Encode, MaxEncodedLen};
 use sp_runtime::{traits::Hash, DispatchError};
 use sp_std::prelude::*;
+use t3rn_primitives::contract_metadata::ContractType;
 use wasm_instrument::{
     gas_metering,
     parity_wasm::elements::{self, External, Internal, MemoryType, Type, ValueType},
@@ -562,6 +563,8 @@ where
         original_code: Some(original_code),
         owner_info: None,
         determinism,
+        author: None,
+        kind: ContractType::VanillaWasm,
     };
 
     // We need to add the sizes of the `#[codec(skip)]` fields which are stored in different
@@ -658,6 +661,8 @@ pub mod benchmarking {
                 refcount: 0,
             }),
             determinism: Determinism::Deterministic,
+            author: None,
+            kind: ContractType::VanillaWasm,
         })
     }
 }

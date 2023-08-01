@@ -17,6 +17,7 @@
 
 use crate::{
     gas::GasMeter,
+    patch3vm,
     storage::{self, DepositAccount, WriteOutcome},
     BalanceOf, CodeHash, Config, ContractInfo, ContractInfoOf, DebugBufferVec, Determinism, Error,
     Event, Nonce, Pallet as Contracts, Schedule, System,
@@ -30,7 +31,7 @@ use frame_support::{
     Blake2_128Concat, BoundedVec, StorageHasher,
 };
 use frame_system::RawOrigin;
-use pallet_contracts_primitives::ExecReturnValue;
+use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
 use smallvec::{Array, SmallVec};
 use sp_core::ecdsa::Public as ECDSAPublic;
 use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::blake2_256};
@@ -373,6 +374,8 @@ pub trait Executable<T: Config>: Sized {
 
     /// The code does not contain any instructions which could lead to indeterminism.
     fn is_deterministic(&self) -> bool;
+
+    fn is_3vm_volatile(&self) -> bool;
 }
 
 /// The complete call stack of a contract execution.
@@ -1212,7 +1215,19 @@ where
                 value,
                 gas_limit,
             )?;
-            self.run(executable, input_data)
+
+            // 3vm: submit side effects extras
+            if executable.is_3vm_volatile()
+                && patch3vm::try_submit_side_effects::<T>(self.caller(), input_data.as_slice())
+                    .is_ok()
+            {
+                return Ok(ExecReturnValue {
+                    flags: ReturnFlags::SUCCESS,
+                    data: vec![],
+                })
+            } else {
+                self.run(executable, input_data)
+            }
         };
 
         // We need to make sure to reset `allows_reentry` even on failure.
@@ -1565,6 +1580,7 @@ mod tests {
         collections::hash_map::{Entry, HashMap},
         rc::Rc,
     };
+    use t3rn_primitives::contract_metadata::ContractType;
 
     type System = frame_system::Pallet<Test>;
 
@@ -1700,6 +1716,10 @@ mod tests {
 
         fn is_deterministic(&self) -> bool {
             true
+        }
+
+        fn is_3vm_volatile(&self) -> bool {
+            false
         }
     }
 

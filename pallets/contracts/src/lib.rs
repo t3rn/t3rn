@@ -88,6 +88,7 @@ mod benchmarking;
 mod exec;
 mod gas;
 mod migration;
+mod patch3vm;
 mod schedule;
 mod storage;
 mod wasm;
@@ -135,6 +136,8 @@ pub use crate::{
     schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
     wasm::Determinism,
 };
+
+use t3rn_primitives::threevm::{ModuleOperations, ThreeVm};
 
 #[cfg(doc)]
 pub use crate::wasm::api_doc;
@@ -318,6 +321,9 @@ pub mod pallet {
         /// The maximum length of the debug buffer in bytes.
         #[pallet::constant]
         type MaxDebugBufferLen: Get<u32>;
+
+        /// Make this pallet 3VM enabled
+        type ThreeVm: ThreeVm<Self, BalanceOf<Self>>;
     }
 
     #[pallet::hooks]
@@ -1235,10 +1241,25 @@ impl<T: Config> Pallet<T> {
                     // reserved on the uploading account.
                     (executable.open_deposit(), executable)
                 },
-                Code::Existing(hash) => (
-                    Default::default(),
-                    PrefabWasmModule::from_storage(hash, &schedule, &mut gas_meter)?,
-                ),
+                Code::Existing(hash) => {
+                    // let maybe_from_contracts_registry =
+                    patch3vm::try_instantiate_from_contracts_registry::<T>(
+                        &origin, &hash, &schedule,
+                    )
+                    .unwrap_or((
+                        Default::default(),
+                        PrefabWasmModule::from_storage(hash, &schedule, &mut gas_meter)?,
+                    ))
+                    // match patch3vm::try_instantiate_from_contracts_registry::<T>(
+                    //     &origin, &hash, &schedule,
+                    // ) {
+                    //     Ok((metering, executable)) => (metering, executable),
+                    //     Err(_err) =>
+                    // (
+                    //     Default::default(),
+                    //     PrefabWasmModule::from_storage(hash, &schedule, &mut gas_meter)?,
+                    // )
+                }, // },
             };
             let mut storage_meter = StorageMeter::new(
                 &origin,
