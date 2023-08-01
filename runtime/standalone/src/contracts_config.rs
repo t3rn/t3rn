@@ -1,21 +1,21 @@
 use crate::{
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Circuit, ContractsRegistry, RandomnessCollectiveFlip, Runtime, RuntimeCall,
-    RuntimeEvent, ThreeVm, Timestamp, Weight,
+    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
+    ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall, RuntimeEvent, ThreeVm,
+    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO, *,
 };
-use circuit_runtime_types::AssetId;
 use frame_support::{
-    pallet_prelude::{ConstU32, DispatchClass},
+    pallet_prelude::ConstU32,
     parameter_types,
-    traits::FindAuthor,
+    traits::{ConstBool, FindAuthor},
 };
 
+use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressTruncated, FixedGasWeightMapping, StoredHashAddressMapping,
-    SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
+    EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
+    ThreeVMCurrencyAdapter,
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
-use sp_core::{ConstBool, H160, U256};
+use sp_core::{H160, U256};
 use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
 
 #[cfg(feature = "std")]
@@ -36,19 +36,12 @@ parameter_types! {
 
     pub const MaxValueSize: u32 = 16_384;
     // The lazy deletion runs inside on_initialize.
-    // The weight needed for decoding the queue should be less or equal than a fifth
-    // of the overall weight dedicated to the lazy deletion.
-    pub DeletionWeightLimit: Weight = BlockWeights::get()
-        .per_class
-        .get(DispatchClass::Normal)
-        .max_total
-        .unwrap_or(BlockWeights::get().max_block);
+    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
+        RuntimeBlockWeights::get().max_block;
     pub Schedule: pallet_3vm_contracts::Schedule<Runtime> = Default::default();
-
-    pub const MaxCodeSize: u32 = 128 * 1024;
+    pub const MaxCodeSize: u32 = 2 * 1024;
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
-    pub const DeletionQueueDepth: u32 = 128;
 }
 
 impl pallet_3vm::Config for Runtime {
@@ -73,22 +66,14 @@ impl pallet_3vm_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = frame_support::traits::Nothing;
-    type CallStack = [pallet_3vm_contracts::Frame<Self>; 2];
+    type CallStack = [pallet_3vm_contracts::Frame<Self>; 5];
     type ChainExtension = ();
     type Currency = Balances;
-    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionQueueDepth = ConstU32<1024>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    // This node is geared towards development and testing of contracts.
-    // We decided to increase the default allowed contract size for this
-    // reason (the default is `128 * 1024`).
-    //
-    // Our reasoning is that the error code `CodeTooLarge` is thrown
-    // if a too-large contract is uploaded. We noticed that it poses
-    // less friction during development when the requirement here is
-    // just more lax.
-    type MaxCodeLen = ConstU32<{ 256 * 1024 }>;
+    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
     type Randomness = RandomnessCollectiveFlip;
@@ -119,7 +104,8 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
-        (100.into(), Weight::from_ref_time(1))
+        // Return some meaningful gas price and weight
+        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -135,9 +121,10 @@ parameter_types! {
         (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
         (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
         (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-        (10_u64, evm_precompile_util::KnownPrecompile::Portal)
+        (40_u64, evm_precompile_util::KnownPrecompile::Portal)
     ].into_iter().collect());
-    pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
+    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
+    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
@@ -148,10 +135,10 @@ impl pallet_3vm_evm::Config for Runtime {
     type CallOrigin = EnsureAddressTruncated;
     type ChainId = ChainId;
     type Currency = Balances;
-    type FeeCalculator = FixedGasPrice;
     // BaseFee pallet may be better from frontier TODO
+    type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated<Aura>;
-    type GasWeightMapping = FixedGasWeightMapping<Runtime>;
+    type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
     type OnCreate = ();
     type PrecompilesType = evm_precompile_util::Precompiles<Self>;

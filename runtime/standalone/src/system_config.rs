@@ -1,20 +1,19 @@
-use super::*;
 use crate::{
-    accounts_config::AccountManagerCurrencyAdapter,
-    impl_versioned_runtime_with_api::Version,
-    Hash as HashPrimitive,
-    // *,
+    accounts_config::AccountManagerCurrencyAdapter, impl_versioned_runtime_with_api::Version,
+    AllPalletsWithSystem, Assets, Hash as HashPrimitive, Treasury, *,
 };
 use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
+        ConstU32, ConstU8, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
+        OnRuntimeUpgrade,
     },
+    weights::IdentityFee,
 };
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::traits::*;
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, Zero};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -23,15 +22,16 @@ impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = BaseCallFilter;
+    // type BaseCallFilter = MaintenanceMode; // todo: fix MaintananceMode compilation for v39 - XCMExecuteTransact trait unimplemented error
+    type BaseCallFilter = ();
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
-    type BlockLength = BlockLength;
+    type BlockLength = circuit_runtime_types::RuntimeBlockLength;
     /// The index type for blocks.
-    type BlockNumber = BlockNumber;
+    type BlockNumber = circuit_runtime_types::BlockNumber;
     /// Block & extrinsics weights: base values and limits.
-    type BlockWeights = BlockWeights;
+    type BlockWeights = circuit_runtime_types::RuntimeBlockWeights;
     /// The weight of database operations that the runtime can invoke.
     type DbWeight = RocksDbWeight;
     /// The type for hashing blocks and tries.
@@ -114,11 +114,6 @@ impl pallet_transaction_payment::Config for Runtime {
     type WeightToFee = IdentityFee<Balance>;
 }
 
-impl pallet_authorship::Config for Runtime {
-    type EventHandler = ();
-    type FindAuthor = ();
-}
-
 /// A `HandleCredit` implementation that transfers 80% of the fees to the
 /// block author and 20% to the treasury. Will drop and burn the assets
 /// in case the transfer fails.
@@ -147,33 +142,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 }
 
-parameter_types! {
-    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
-    pub const MaxApprovals: u32 = 10;
-    pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const SpendPeriod: u32 = 60 / 12;
-    pub const ProposalBondMinimum: u128 = 1_000_000_000_000_u128;
-}
-
-impl pallet_treasury::Config for Runtime {
-    type ApproveOrigin = EnsureRoot<AccountId>;
-    type Burn = ();
-    type BurnDestination = ();
-    type Currency = Balances;
-    type MaxApprovals = MaxApprovals;
-    type OnSlash = Treasury;
-    type PalletId = TreasuryId;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMaximum = ();
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type SpendFunds = ();
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type SpendPeriod = SpendPeriod;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
-}
-
 impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
@@ -187,33 +155,43 @@ impl pallet_utility::Config for Runtime {
 }
 
 pub struct BaseCallFilter;
-impl Contains<Call> for BaseCallFilter {
-    fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseCallFilter {
+    fn contains(c: &RuntimeCall) -> bool {
         match c {
             // System support
-            Call::System(_) => true,
-            Call::Timestamp(_) => true,
-            Call::Utility(_) => true,
-            Call::Identity(_) => true,
+            RuntimeCall::System(_) => true,
+            RuntimeCall::ParachainSystem(_) => true,
+            RuntimeCall::Timestamp(_) => true,
+            RuntimeCall::Preimage(_) => true,
+            RuntimeCall::Scheduler(_) => true,
+            RuntimeCall::Utility(_) => true,
+            RuntimeCall::Identity(_) => true,
             // Monetary
-            Call::Balances(_) => true,
-            Call::Assets(_) => true,
-            Call::Treasury(_) => true,
-            Call::AccountManager(method) => matches!(
+            RuntimeCall::Balances(_) => true,
+            RuntimeCall::Assets(_) => true,
+            RuntimeCall::Treasury(_) => true,
+            RuntimeCall::AccountManager(method) => matches!(
                 method,
                 pallet_account_manager::Call::deposit { .. }
                     | pallet_account_manager::Call::finalize { .. }
             ),
             // Collator support
-            Call::Authorship(_) => true,
+            RuntimeCall::CollatorSelection(_) => true,
+            RuntimeCall::Session(_) => true,
+            // XCM helpers
+            RuntimeCall::XcmpQueue(_) => true,
+            RuntimeCall::PolkadotXcm(_) => false,
+            RuntimeCall::DmpQueue(_) => true,
+            // RuntimeCall::XBIPortal(_) => true,
+            RuntimeCall::AssetRegistry(_) => true,
             // t3rn pallets
-            Call::XDNS(method) => matches!(method, pallet_xdns::Call::purge_gateway_record { .. }),
-            Call::ContractsRegistry(method) => matches!(
+            RuntimeCall::XDNS(_) => true,
+            RuntimeCall::ContractsRegistry(method) => matches!(
                 method,
                 pallet_contracts_registry::Call::add_new_contract { .. }
                     | pallet_contracts_registry::Call::purge { .. }
             ),
-            Call::Circuit(method) => matches!(
+            RuntimeCall::Circuit(method) => matches!(
                 method,
                 pallet_circuit::Call::on_local_trigger { .. }
                     | pallet_circuit::Call::on_xcm_trigger { .. }
@@ -224,10 +202,10 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_circuit::Call::bid_sfx { .. }
                     | pallet_circuit::Call::confirm_side_effect { .. }
             ),
-            Call::Attesters(_) => true,
+            RuntimeCall::Attesters(_) => true,
             // 3VM
-            Call::ThreeVm(_) => false,
-            Call::Contracts(method) => matches!(
+            RuntimeCall::ThreeVm(_) => false,
+            RuntimeCall::Contracts(method) => matches!(
                 method,
                 pallet_3vm_contracts::Call::call { .. }
                     | pallet_3vm_contracts::Call::instantiate_with_code { .. }
@@ -235,16 +213,15 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_3vm_contracts::Call::upload_code { .. }
                     | pallet_3vm_contracts::Call::remove_code { .. }
             ),
-            Call::Evm(method) => matches!(
+            RuntimeCall::Evm(method) => matches!(
                 method,
                 pallet_3vm_evm::Call::withdraw { .. }
                     | pallet_3vm_evm::Call::call { .. }
                     | pallet_3vm_evm::Call::create { .. }
-                    | pallet_3vm_evm::Call::create2 { .. }
-                    | pallet_3vm_evm::Call::claim { .. }
+                    | pallet_3vm_evm::Call::create2 { .. } // | pallet_3vm_evm::Call::claim { .. } TODO: wheres this gone
             ),
             // Portal
-            Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
+            RuntimeCall::Portal(_) => true,
             _ => true,
         }
     }
@@ -254,42 +231,34 @@ impl Contains<Call> for BaseCallFilter {
 ///
 /// For maintenance mode, we disallow everything
 pub struct MaintenanceFilter;
-impl Contains<Call> for MaintenanceFilter {
-    fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for MaintenanceFilter {
+    fn contains(c: &RuntimeCall) -> bool {
         match c {
             // We want to make calls to the system and scheduler pallets
-            Call::System(_) => true,
-            // Call::Scheduler(_) => true,
+            RuntimeCall::System(_) => true,
+            RuntimeCall::Scheduler(_) => true,
             // Sometimes scheduler/system calls require utility calls, particularly batch
-            Call::Utility(_) => true,
+            RuntimeCall::Utility(_) => true,
             // We dont manually control these so likely we dont want to block them during maintenance mode
-            Call::Balances(_) => true,
-            Call::Assets(_) => true,
+            RuntimeCall::Balances(_) => true,
+            RuntimeCall::Assets(_) => true,
             // We wanna be able to make sudo calls in maintenance mode just incase
-            Call::Sudo(_) => true,
-            Call::Timestamp(_) => true,
-
-            Call::Identity(_) => false,
-            Call::Treasury(_) => false,
-            Call::AccountManager(_) => false,
-            Call::XDNS(_) => false,
-            Call::ContractsRegistry(_) => false,
-            Call::Circuit(_) => false,
-            Call::ThreeVm(_) => false,
-            Call::Contracts(_) => false,
-            Call::Evm(_) => false,
-            Call::Portal(_) => false,
-            Call::RococoBridge(_) => false,
-            Call::PolkadotBridge(_) => false,
-            Call::KusamaBridge(_) => false,
-            Call::Attesters(_) => false,
-            // To catch all new pallets and avoid any exploit
+            RuntimeCall::Sudo(_) => true,
+            RuntimeCall::ParachainSystem(_) => true,
+            RuntimeCall::Timestamp(_) => true,
+            RuntimeCall::Session(_) => true,
+            RuntimeCall::RococoBridge(_) => true,
+            RuntimeCall::KusamaBridge(_) => true,
+            RuntimeCall::PolkadotBridge(_) => true,
+            RuntimeCall::EthereumBridge(_) => true,
+            RuntimeCall::SepoliaBridge(_) => true,
+            #[allow(unreachable_patterns)] // We need this as an accidental catchall
             _ => false,
         }
     }
 }
 
-// Hooks to run when in Maintenance Mode
+/// Hooks to run when in Maintenance Mode
 pub struct MaintenanceHooks;
 
 impl OnInitialize<BlockNumber> for MaintenanceHooks {
@@ -310,6 +279,16 @@ impl OnRuntimeUpgrade for MaintenanceHooks {
     fn on_runtime_upgrade() -> Weight {
         AllPalletsWithSystem::on_runtime_upgrade()
     }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+        AllPalletsWithSystem::pre_upgrade()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+        AllPalletsWithSystem::post_upgrade()
+    }
 }
 
 impl OnFinalize<BlockNumber> for MaintenanceHooks {
@@ -325,12 +304,12 @@ impl OffchainWorker<BlockNumber> for MaintenanceHooks {
 }
 
 impl pallet_maintenance_mode::Config for Runtime {
-    type Event = Event;
     type MaintenanceCallFilter = MaintenanceFilter;
     type MaintenanceExecutiveHooks = AllPalletsWithSystem;
     type MaintenanceOrigin = EnsureRoot<AccountId>;
     type NormalCallFilter = BaseCallFilter;
     type NormalExecutiveHooks = AllPalletsWithSystem;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 #[cfg(test)]

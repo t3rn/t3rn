@@ -1,5 +1,4 @@
 use super::*;
-
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
@@ -17,6 +16,13 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic =
     generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
-
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
-pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+
+// impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+// where
+//     RuntimeCall: From<C>,
+// {
+//     // type Extrinsic = TestXt<Call, ()>;
+//     type Extrinsic = UncheckedExtrinsic;
+//     type OverarchingCall = RuntimeCall;
+// }

@@ -49,6 +49,7 @@ pub mod accounts_config;
 pub mod circuit_config;
 pub mod consensus_aura_config;
 pub mod contracts_config;
+pub mod hooks;
 pub mod impl_versioned_runtime_with_api;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -56,7 +57,7 @@ pub mod treasuries_config;
 
 pub use crate::{consensus_aura_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
-pub use impl_versioned_runtime_with_api::*;
+// pub use impl_versioned_runtime_with_api::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
@@ -99,7 +100,7 @@ construct_runtime!(
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
         Utility: pallet_utility,
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
+        Identity: pallet_identity = 122,
 
         // Monetary
         Balances: pallet_balances = 10,
@@ -117,12 +118,12 @@ construct_runtime!(
 
         // Circuit
         // t3rn pallets
-        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        Attesters: pallet_attesters::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
-        Rewards: pallet_rewards::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        XDNS: pallet_xdns= 100,
+        Attesters: pallet_attesters= 101,
+        Rewards: pallet_rewards= 102,
+        ContractsRegistry: pallet_contracts_registry= 106,
+        Circuit: pallet_circuit = 108,
+        Clock: pallet_clock = 110,
         Vacuum: pallet_vacuum = 111,
 
         // 3VM
@@ -132,7 +133,7 @@ construct_runtime!(
         AccountManager: pallet_account_manager = 125,
 
         // Portal
-        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
