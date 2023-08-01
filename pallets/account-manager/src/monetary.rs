@@ -120,7 +120,7 @@ mod tests {
             const FOREIGN_ASSET_A: AssetId = 1;
             const MIN_BALANCE_ASSET_A: Balance = 1;
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 FOREIGN_ASSET_A,
                 sp_runtime::MultiAddress::Id(BOB), /* owner */
                 true,                              /* is_sufficient */
@@ -150,7 +150,7 @@ mod tests {
             const FOREIGN_ASSET_A: AssetId = 1;
             const MIN_BALANCE_ASSET_A: Balance = 1;
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 FOREIGN_ASSET_A,
                 sp_runtime::MultiAddress::Id(BOB), /* owner */
                 true,                              /* is_sufficient */
