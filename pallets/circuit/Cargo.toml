@@ -18,7 +18,7 @@ log              = { workspace = true }
 pallet-timestamp = { workspace = true }
 scale-info       = { workspace = true }
 serde            = { workspace = true, optional = true, features = [ "derive" ] }
-num-traits       = { version = "0.2", default-features = false }
+num-traits       = { workspace = true }
 
 frame-benchmarking = { workspace = true, optional = true }
 frame-support      = { workspace = true }
@@ -32,26 +32,13 @@ sp-trie            = { workspace = true }
 pallet-xbi-portal   = { workspace = true }
 t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+t3rn-sdk-primitives = { workspace = true }
 t3rn-types          = { default-features = false, path = "../../types", features = [ "runtime" ] }
 
 [dev-dependencies]
-frame-election-provider-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-hex                             = "0.4.2"
-hex-literal                     = "0.2.1"
-pallet-authorship               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-pallet-babe                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-offences                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-session                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-staking                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-staking-reward-curve     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-transaction-payment      = { workspace = true }
-serde_json                      = "1.0.41"
-sp-consensus-aura               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-consensus-babe               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-consensus-vrf                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-finality-grandpa             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-staking                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+hex                             = { workspace = true }
+hex-literal                     = { workspace = true }
+serde_json                      = { workspace = true }
 
 # Needed because of testing features
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", features = [ "testing" ] }
@@ -76,6 +63,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "log/std",
+  "num-traits/std",
   "pallet-timestamp/std",
   "scale-info/std",
   "serde/std",
