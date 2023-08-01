@@ -9,6 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
+pub mod hooks;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -174,7 +175,7 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
-        XBIPortal: pallet_xbi_portal = 34,
+        // XBIPortal: pallet_xbi_portal = 34,
         AssetRegistry: pallet_asset_registry = 35,
 
         // t3rn pallets

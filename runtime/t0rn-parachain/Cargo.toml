@@ -21,6 +21,7 @@ hex-literal           = { version = "0.3.4", optional = true }
 impl-trait-for-tuples = "0.2.2"
 log                   = { workspace = true }
 scale-info            = { workspace = true }
+num-traits            = { workspace = true }
 serde                 = { workspace = true, optional = true, features = [ "derive" ] }
 smallvec              = { version = "1.6.1", default-features = false }
 
@@ -110,7 +111,6 @@ pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api"
 
 #pallet-maintenance-mode                   = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.39', default-features = false }
 
-
 pallet-asset-registry = { workspace = true }
 pallet-xbi-portal     = { workspace = true }
 
@@ -132,6 +132,7 @@ std = [
   "log/std",
   "scale-info/std",
   "serde/std",
+  "num-traits/std",
   "cumulus-pallet-aura-ext/std",
   "cumulus-pallet-dmp-queue/std",
   "cumulus-pallet-parachain-system/std",

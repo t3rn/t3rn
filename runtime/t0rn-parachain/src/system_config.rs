@@ -19,15 +19,16 @@ impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = MaintenanceMode;
+    // type BaseCallFilter = MaintenanceMode; // todo: fix MaintananceMode compilation for v39 - XCMExecuteTransact trait unimplemented error
+    type BaseCallFilter = ();
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
-    type BlockLength = circuit_runtime_types::BlockLength;
+    type BlockLength = circuit_runtime_types::RuntimeBlockLength;
     /// The index type for blocks.
     type BlockNumber = circuit_runtime_types::BlockNumber;
     /// Block & extrinsics weights: base values and limits.
-    type BlockWeights = circuit_runtime_types::BlockWeights;
+    type BlockWeights = circuit_runtime_types::RuntimeBlockWeights;
     /// The weight of database operations that the runtime can invoke.
     type DbWeight = RocksDbWeight;
     /// The type for hashing blocks and tries.
@@ -188,7 +189,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
             RuntimeCall::XcmpQueue(_) => true,
             RuntimeCall::PolkadotXcm(_) => false,
             RuntimeCall::DmpQueue(_) => true,
-            RuntimeCall::XBIPortal(_) => true,
+            // RuntimeCall::XBIPortal(_) => true,
             RuntimeCall::AssetRegistry(_) => true,
             // t3rn pallets
             RuntimeCall::XDNS(_) => true,
@@ -237,8 +238,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 ///
 /// For maintenance mode, we disallow everything
 pub struct MaintenanceFilter;
-impl Contains<Call> for MaintenanceFilter {
-    fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for MaintenanceFilter {
+    fn contains(c: &RuntimeCall) -> bool {
         match c {
             // We want to make calls to the system and scheduler pallets
             RuntimeCall::System(_) => true,

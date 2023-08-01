@@ -3,9 +3,9 @@ use crate::{
     Evm, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
     RuntimeOrigin, WeightToFee, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
-use circuit_runtime_pallets::{cumulus_primitives_core::GetChannelInfo, *};
 use cumulus_primitives_core::ParaId;
 
+use cumulus_primitives_core::GetChannelInfo;
 use frame_support::{
     match_types, parameter_types,
     traits::{ConstU32, ConstU64, EitherOfDiverse, Everything, Nothing},
@@ -17,22 +17,21 @@ use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::Zero;
 use xcm::latest::prelude::*;
 
+use frame_support::traits::NeverEnsureOrigin;
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-    IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+    ConvertedConcreteAssetId, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin,
+    FixedWeightBounds, FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser,
+    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents,
 };
 
-use crate::{
-    parachains_common::{
-        impls::NonZeroIssuance,
-        xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
-    },
-    xcm_builder::AsPrefixedGeneralIndex,
+use parachains_common::{
+    impls::NonZeroIssuance,
+    xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
