@@ -1,13 +1,15 @@
 use crate::*;
 
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-use frame_support::{pallet_prelude::DispatchClass, traits::NeverEnsureOrigin, PalletId};
+use frame_support::{
+    traits::{NeverEnsureOrigin, PrivilegeCmp},
+    PalletId,
+};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 use sp_runtime::{impl_opaque_keys, Permill};
-use sp_std::prelude::*;
+use sp_std::{cmp::Ordering, prelude::*};
 
 // TODO: remove when we import t3rn_primitives
 pub(crate) const TRN: u64 = 1_000_000_000_000;
@@ -72,38 +74,11 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 }
 
 parameter_types! {
-    pub const Version: RuntimeVersion = VERSION;
-
-    // This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.
-    //  The `RuntimeBlockLength` and `RuntimeBlockWeights` exist here because the
-    // `DeletionWeightLimit` and `DeletionQueueDepth` depend on those to parameterize
-    // the lazy contract deletion.
-    pub RuntimeBlockLength: BlockLength =
-        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-    pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-        .base_block(BlockExecutionWeight::get())
-        .for_class(DispatchClass::all(), |weights| {
-            weights.base_extrinsic = ExtrinsicBaseWeight::get();
-        })
-        .for_class(DispatchClass::Normal, |weights| {
-            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-        })
-        .for_class(DispatchClass::Operational, |weights| {
-            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-            // Operational transactions have some extra reserved space, so that they
-            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-            weights.reserved = Some(
-                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-            );
-        })
-        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-        .build_or_panic();
-    // Allows for t3 prefix in addresses
-    pub const SS58Prefix: u16 = 9935;
+    pub const UncleGenerations: u32 = 0;
 }
 
 impl pallet_authorship::Config for Runtime {
-    type EventHandler = CollatorSelection;
+    type EventHandler = (CollatorSelection,);
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 }
 
@@ -182,29 +157,29 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-    pub const PreImageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreImageByteDeposit: Balance = deposit(0, 1); // FIXME: this is 0 no?
+    pub const PreimageMaxSize: u32 = 4096 * 1024;
+    pub const PreimageBaseDeposit: Balance = deposit(2, 64);
+    pub const PreimageByteDeposit: Balance = deposit(0, 1); // FIXME: this is 0 no?
 }
 
 impl pallet_preimage::Config for Runtime {
-    type BaseDeposit = PreImageBaseDeposit;
-    type ByteDeposit = PreImageByteDeposit;
+    type BaseDeposit = PreimageBaseDeposit;
+    type ByteDeposit = PreimageByteDeposit;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
-
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
+        circuit_runtime_types::RuntimeBlockWeights::get().max_block;
     pub const MaxScheduledPerBlock: u32 = 50;
 }
 
 impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type MaximumWeight = MaximumSchedulerWeight;
-    type OriginPrivilegeCmp = EqualPrivilegeOnly;
+    type OriginPrivilegeCmp = OriginPrivilegeCmp;
     type PalletsOrigin = OriginCaller;
     type Preimages = Preimage;
     type RuntimeCall = RuntimeCall;
@@ -212,6 +187,29 @@ impl pallet_scheduler::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+}
+
+/// Used the compare the privilege of an origin inside the scheduler.
+pub struct OriginPrivilegeCmp;
+
+impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
+    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
+        if left == right {
+            return Some(Ordering::Equal)
+        }
+
+        match (left, right) {
+            // Root is greater than anything.
+            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
+            // Check which one has more yes votes.
+            // (
+            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
+            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
+            // ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
+            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
+            _ => None,
+        }
+    }
 }
 
 parameter_types! {

@@ -1,8 +1,12 @@
 use crate::{Hash as HashPrimitive, *};
 use frame_support::{parameter_types, weights::IdentityFee};
+use frame_system::limits::{BlockLength, BlockWeights};
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::BlakeTwo256;
 
+parameter_types! {
+    pub const Version: RuntimeVersion = VERSION;
+}
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
     /// The data to be stored in an account.
@@ -14,11 +18,11 @@ impl frame_system::Config for Runtime {
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
-    type BlockLength = circuit_runtime_types::BlockLength;
+    type BlockLength = circuit_runtime_types::RuntimeBlockLength;
     /// The index type for blocks.
     type BlockNumber = circuit_runtime_types::BlockNumber;
     /// Block & extrinsics weights: base values and limits.
-    type BlockWeights = circuit_runtime_types::BlockWeights;
+    type BlockWeights = circuit_runtime_types::RuntimeBlockWeights;
     /// The weight of database operations that the runtime can invoke.
     type DbWeight = RocksDbWeight;
     /// The type for hashing blocks and tries.
@@ -36,7 +40,7 @@ impl frame_system::Config for Runtime {
     type OnKilledAccount = ();
     /// What to do if a new account is created.
     type OnNewAccount = ();
-    /// The set code logic, just the default since we're not a parachain.
+    /// The set code logic..
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     /// Converts a module to the index of the module in `construct_runtime!`.
     ///
@@ -48,8 +52,8 @@ impl frame_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
     type RuntimeOrigin = RuntimeOrigin;
-    /// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-    type SS58Prefix = SS58Prefix;
+    /// This is used as an identifier of the chain. use t3 prefix
+    type SS58Prefix = circuit_runtime_types::SS58Prefix;
     /// Weight information for the extrinsics of this pallet.
     type SystemWeightInfo = ();
     /// Version of the runtime.
