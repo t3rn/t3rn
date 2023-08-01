@@ -409,18 +409,6 @@ impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
     type WeightInfo = ();
 }
 
-impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
-    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
-    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
-    type HeadersToStore = HeadersToStoreEth;
-    type LightClientAsyncAPI = XDNS;
-    type SlotsPerEpoch = SlotsPerEpoch;
-    type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
-}
-
 impl pallet_timestamp::Config for MiniRuntime {
     type MinimumPeriod = MinimumPeriod;
     /// A timestamp: milliseconds since the unix epoch.

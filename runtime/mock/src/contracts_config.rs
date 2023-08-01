@@ -1,9 +1,9 @@
 use crate::*;
 
 use crate::{
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Circuit, ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall,
-    RuntimeEvent, ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
+    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
+    ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall, RuntimeEvent, ThreeVm,
+    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 
@@ -39,7 +39,7 @@ parameter_types! {
     pub const MaxValueSize: u32 = 16_384;
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-        BlockWeights::get().max_block;
+        RuntimeBlockWeights::get().max_block;
     pub Schedule: pallet_3vm_contracts::Schedule<Runtime> = Default::default();
     pub const MaxCodeSize: u32 = 2 * 1024;
     pub const DepositPerItem: Balance = deposit(1, 0);

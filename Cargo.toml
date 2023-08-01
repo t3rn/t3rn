@@ -53,6 +53,7 @@ rand                  = { version = "0.8", default-features = false }
 rand_pcg              = { version = "0.3", default-features = false }
 rlp                   = { version = "0.5", features = [ "derive" ], default-features = false }
 serde                 = { version = "1.0", features = [ "derive" ], default-features = false }
+serde_json            = { version = "1.0.41" }
 sha3                  = { version = "0.10.1", default-features = false }
 smallvec              = { version = "1.0", default-features = false, features = [ "const_generics" ] }
 wasm-instrument       = { version = "0.4", default-features = false }
@@ -183,6 +184,8 @@ substrate-wasm-builder         = { git = "https://github.com/paritytech/substrat
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
 jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
+
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0", features = [ "js" ] }

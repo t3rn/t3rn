@@ -67,7 +67,7 @@ pub mod mock;
 pub mod bridges;
 pub mod light_clients;
 mod side_effects;
-mod types;
+pub mod types;
 /// Pallet containing weights for this pallet.
 pub mod weights;
 
