@@ -19,8 +19,8 @@
 // hooks in each of the normal and maintenance modes.
 use super::*;
 use frame_support::{
-	traits::{OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade},
-	weights::Weight,
+    traits::{OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade},
+    weights::Weight,
 };
 use sp_std::marker::PhantomData;
 #[cfg(feature = "try-runtime")]
@@ -31,95 +31,95 @@ type BlockNumberOf<T> = <T as frame_system::Config>::BlockNumber;
 
 impl<T> OnIdle<BlockNumberOf<T>> for ExecutiveHooks<T>
 where
-	T: Config,
+    T: Config,
 {
-	fn on_idle(n: BlockNumberOf<T>, remaining_weight: Weight) -> Weight {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::on_idle(n, remaining_weight)
-		} else {
-			T::NormalExecutiveHooks::on_idle(n, remaining_weight)
-		}
-	}
+    fn on_idle(n: BlockNumberOf<T>, remaining_weight: Weight) -> Weight {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::on_idle(n, remaining_weight)
+        } else {
+            T::NormalExecutiveHooks::on_idle(n, remaining_weight)
+        }
+    }
 }
 
 impl<T> OnInitialize<BlockNumberOf<T>> for ExecutiveHooks<T>
 where
-	T: Config,
+    T: Config,
 {
-	fn on_initialize(n: BlockNumberOf<T>) -> Weight {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::on_initialize(n)
-		} else {
-			T::NormalExecutiveHooks::on_initialize(n)
-		}
-	}
+    fn on_initialize(n: BlockNumberOf<T>) -> Weight {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::on_initialize(n)
+        } else {
+            T::NormalExecutiveHooks::on_initialize(n)
+        }
+    }
 }
 
 impl<T> OnFinalize<BlockNumberOf<T>> for ExecutiveHooks<T>
 where
-	T: Config,
+    T: Config,
 {
-	fn on_finalize(n: BlockNumberOf<T>) {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::on_finalize(n)
-		} else {
-			T::NormalExecutiveHooks::on_finalize(n)
-		}
-	}
+    fn on_finalize(n: BlockNumberOf<T>) {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::on_finalize(n)
+        } else {
+            T::NormalExecutiveHooks::on_finalize(n)
+        }
+    }
 }
 
 impl<T> OffchainWorker<BlockNumberOf<T>> for ExecutiveHooks<T>
 where
-	T: Config,
+    T: Config,
 {
-	fn offchain_worker(n: BlockNumberOf<T>) {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::offchain_worker(n)
-		} else {
-			T::NormalExecutiveHooks::offchain_worker(n)
-		}
-	}
+    fn offchain_worker(n: BlockNumberOf<T>) {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::offchain_worker(n)
+        } else {
+            T::NormalExecutiveHooks::offchain_worker(n)
+        }
+    }
 }
 
 impl<T> OnRuntimeUpgrade for ExecutiveHooks<T>
 where
-	T: Config,
+    T: Config,
 {
-	fn on_runtime_upgrade() -> Weight {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::on_runtime_upgrade()
-		} else {
-			T::NormalExecutiveHooks::on_runtime_upgrade()
-		}
-	}
+    fn on_runtime_upgrade() -> Weight {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::on_runtime_upgrade()
+        } else {
+            T::NormalExecutiveHooks::on_runtime_upgrade()
+        }
+    }
 
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::pre_upgrade()
-		} else {
-			T::NormalExecutiveHooks::pre_upgrade()
-		}
-	}
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::pre_upgrade()
+        } else {
+            T::NormalExecutiveHooks::pre_upgrade()
+        }
+    }
 
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-		if Pallet::<T>::maintenance_mode() {
-			T::MaintenanceExecutiveHooks::post_upgrade(state)
-		} else {
-			T::NormalExecutiveHooks::post_upgrade(state)
-		}
-	}
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+        if Pallet::<T>::maintenance_mode() {
+            T::MaintenanceExecutiveHooks::post_upgrade(state)
+        } else {
+            T::NormalExecutiveHooks::post_upgrade(state)
+        }
+    }
 }
 
 #[cfg(feature = "try-runtime")]
 impl<T: frame_system::Config> frame_support::traits::TryState<BlockNumberOf<T>>
-	for ExecutiveHooks<T>
+    for ExecutiveHooks<T>
 {
-	fn try_state(
-		_: BlockNumberOf<T>,
-		_: frame_support::traits::TryStateSelect,
-	) -> Result<(), &'static str> {
-		Ok(())
-	}
+    fn try_state(
+        _: BlockNumberOf<T>,
+        _: frame_support::traits::TryStateSelect,
+    ) -> Result<(), &'static str> {
+        Ok(())
+    }
 }

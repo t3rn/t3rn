@@ -7,31 +7,25 @@ version = "0.1.0"
 
 [dependencies]
 
-# Local
-#xcm-primitives = { workspace = true, optional = true }
-
 # Crates.io
-log = { version = "0.4", default-features = false }
+log = { workspace = true }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
-parity-scale-codec = { version = "3.2.2", package = "parity-scale-codec", features = [ "derive" ], default-features = false }
-scale-info = { version = "2.1.1", features = [ "derive" ], default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
-# Cumulus
-#cumulus-primitives-core = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false, optional = true }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', features = [ "std" ] }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', features = [ "std" ] }
+sp-core = { workspace = true, features = [ "std" ] }
+sp-io = { workspace = true, features = [ "std" ] }
 
 [features]
 default = [ "std" ]
 std = [
-#	"cumulus-primitives-core/std",
 	"frame-support/std",
 	"frame-system/std",
 	"scale-info/std",
@@ -39,5 +33,4 @@ std = [
 	"sp-std/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
-#xcm-support = [ "cumulus-primitives-core", "xcm-primitives" ]
 xcm-support = [ ]
