@@ -1542,14 +1542,14 @@ impl<T: Config> Pallet<T> {
         <DLQ<T>>::insert(
             xtx_id,
             (
-                <frame_system::Module<T>>::block_number(),
+                <frame_system::Pallet<T>>::block_number(),
                 targets,
                 speed_mode,
             ),
         );
         <XExecSignals<T>>::mutate(xtx_id, |xtx| {
             if let Some(xtx) = xtx {
-                xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
+                xtx.timeouts_at.dlq = Some(<frame_system::Pallet<T>>::block_number());
             } else {
                 log::error!(
                     "Xtx not found in XExecSignals for xtx_id when add_xtx_to_dlq: {:?}",

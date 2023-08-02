@@ -220,7 +220,7 @@ impl FindAuthor<AccountId> for FindAuthorMockRoundRobinRotate32 {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         // Get current block number
-        let current_block_number = <frame_system::Module<MiniRuntime>>::block_number();
+        let current_block_number = <frame_system::Pallet<MiniRuntime>>::block_number();
 
         let round_robin_rotate_32: u8 = (current_block_number % 32) as u8;
 
