@@ -338,7 +338,7 @@ mod tests {
         assert!(BaseCallFilter::contains(&call));
 
         let prev_call = pallet_identity::Call::add_registrar {
-            account: AccountId32::new([0; 32]),
+            account: MultiAddress::Address32([0; 32]),
         }
         .into();
         assert!(BaseCallFilter::contains(&prev_call));
@@ -396,10 +396,6 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        // Collator support
-        let call = pallet_authorship::Call::set_uncles { new_uncles: vec![] }.into();
-        assert!(BaseCallFilter::contains(&call));
-
         // 3VM
         let call = pallet_3vm_evm::Call::withdraw {
             address: Default::default(),
@@ -411,7 +407,7 @@ mod tests {
         let call = pallet_3vm_contracts::Call::call {
             dest: MultiAddress::Address32([0; 32]),
             data: vec![],
-            gas_limit: 0,
+            gas_limit: 0.into(),
             value: 0,
             storage_deposit_limit: Some(Compact(0)),
         }
@@ -489,7 +485,7 @@ mod tests {
         assert!(!MaintenanceFilter::contains(&call));
 
         let call = pallet_identity::Call::add_registrar {
-            account: AccountId32::new([0; 32]),
+            account: MultiAddress::Address32([0; 32]),
         }
         .into();
         assert!(!MaintenanceFilter::contains(&call));

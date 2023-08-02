@@ -22,7 +22,6 @@ use crate::{
     },
     Call, Error, Event, ExecutiveHooks,
 };
-use cumulus_primitives_core::DmpMessageHandler;
 use frame_support::{
     assert_noop, assert_ok,
     dispatch::Dispatchable,

@@ -35,6 +35,8 @@ sp-runtime  = { git = "https://github.com/paritytech/substrate.git", branch = 'p
 circuit-runtime-types = { path = "../runtime/common-types" }
 t3rn-sdk-primitives   = { version = "=0.1.1-rc.4" }
 
+rlp-derive = "0.1.0"
+
 [features]
 default     = [ "std" ]
 runtime     = [ "sp-runtime", "sp-std", "sp-core", "sp-io", "frame-system", "t3rn-abi" ]

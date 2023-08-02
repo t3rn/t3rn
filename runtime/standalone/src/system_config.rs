@@ -326,20 +326,20 @@ mod tests {
     #[test]
     fn base_filter_works_with_allowed_and_disallowed_calls() {
         // System support
-        let call = frame_system::RuntimeCall::remark { remark: vec![] }.into();
+        let call = frame_system::Call::remark { remark: vec![] }.into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_timestamp::RuntimeCall::set { now: 0 }.into();
+        let call = pallet_timestamp::Call::set { now: 0 }.into();
         assert!(BaseCallFilter::contains(&call));
 
-        let prev_call = pallet_identity::RuntimeCall::add_registrar {
-            account: AccountId32::new([0; 32]),
+        let prev_call = pallet_identity::Call::add_registrar {
+            account: MultiAddress::Address32([0; 32]),
         }
         .into();
         assert!(BaseCallFilter::contains(&prev_call));
 
         // Monetary
-        let call = pallet_account_manager::RuntimeCall::finalize {
+        let call = pallet_account_manager::Call::finalize {
             charge_id: Default::default(),
             outcome: Outcome::Commit,
             maybe_recipient: Default::default(),
@@ -348,35 +348,35 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_xdns::RuntimeCall::purge_gateway_record {
+        let call = pallet_xdns::Call::purge_gateway_record {
             requester: AccountId32::new([0; 32]),
             gateway_id: Default::default(),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_contracts_registry::RuntimeCall::purge {
+        let call = pallet_contracts_registry::Call::purge {
             requester: AccountId32::new([0; 32]),
             contract_id: Default::default(),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_circuit::RuntimeCall::bid_sfx {
+        let call = pallet_circuit::Call::bid_sfx {
             sfx_id: Default::default(),
             bid_amount: 0,
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_balances::RuntimeCall::transfer {
+        let call = pallet_balances::Call::transfer {
             dest: MultiAddress::Address32([0; 32]),
             value: 0,
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_assets::RuntimeCall::create {
+        let call = pallet_assets::Call::create {
             id: Default::default(),
             admin: MultiAddress::Address32([0; 32]),
             min_balance: 0,
@@ -384,29 +384,25 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_treasury::RuntimeCall::<Runtime, ()>::propose_spend {
+        let call = pallet_treasury::Call::<Runtime, ()>::propose_spend {
             value: 0,
             beneficiary: MultiAddress::Address32([0; 32]),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        // Collator support
-        let call = pallet_authorship::RuntimeCall::set_uncles { new_uncles: vec![] }.into();
-        assert!(BaseCallFilter::contains(&call));
-
         // 3VM
-        let call = pallet_3vm_evm::RuntimeCall::withdraw {
+        let call = pallet_3vm_evm::Call::withdraw {
             address: Default::default(),
             value: 0,
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_3vm_contracts::RuntimeCall::call {
+        let call = pallet_3vm_contracts::Call::call {
             dest: MultiAddress::Address32([0; 32]),
             data: vec![],
-            gas_limit: 0,
+            gas_limit: 0.into(),
             value: 0,
             storage_deposit_limit: Some(Compact(0)),
         }
@@ -414,13 +410,13 @@ mod tests {
         assert!(BaseCallFilter::contains(&call));
 
         // Admin
-        let call = pallet_sudo::RuntimeCall::sudo {
-            call: Box::new(frame_system::RuntimeCall::remark { remark: vec![] }.into()),
+        let call = pallet_sudo::Call::sudo {
+            call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_portal::RuntimeCall::register_gateway {
+        let call = pallet_portal::Call::register_gateway {
             gateway_id: Default::default(),
             token_id: Default::default(),
             verification_vendor: Default::default(),
@@ -442,24 +438,24 @@ mod tests {
     /// Test that the calls that are not allowed in maintenance mode cannot be called
     #[test]
     fn maintenance_filter_works_with_allowed_and_disallowed_calls() {
-        let call = frame_system::RuntimeCall::remark { remark: vec![] }.into();
+        let call = frame_system::Call::remark { remark: vec![] }.into();
         assert!(MaintenanceFilter::contains(&call));
 
-        let call = pallet_utility::RuntimeCall::as_derivative {
+        let call = pallet_utility::Call::as_derivative {
             index: 0,
             call: Box::new(call),
         }
         .into();
         assert!(MaintenanceFilter::contains(&call));
 
-        let call = pallet_balances::RuntimeCall::transfer {
+        let call = pallet_balances::Call::transfer {
             dest: MultiAddress::Address32([0; 32]),
             value: 0,
         }
         .into();
         assert!(MaintenanceFilter::contains(&call));
 
-        let call = pallet_assets::RuntimeCall::create {
+        let call = pallet_assets::Call::create {
             id: Default::default(),
             admin: MultiAddress::Address32([0; 32]),
             min_balance: 0,
@@ -467,33 +463,32 @@ mod tests {
         .into();
         assert!(MaintenanceFilter::contains(&call));
 
-        let call = pallet_timestamp::RuntimeCall::set { now: 0 }.into();
+        let call = pallet_timestamp::Call::set { now: 0 }.into();
         assert!(MaintenanceFilter::contains(&call));
 
-        let call = pallet_sudo::RuntimeCall::sudo {
-            call: Box::new(frame_system::RuntimeCall::remark { remark: vec![] }.into()),
+        let call = pallet_sudo::Call::sudo {
+            call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
         }
         .into();
         assert!(MaintenanceFilter::contains(&call));
 
-        let call = pallet_3vm_evm::RuntimeCall::withdraw {
+        let call = pallet_3vm_evm::Call::withdraw {
             address: Default::default(),
             value: 0,
         }
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_identity::RuntimeCall::add_registrar {
-            account: AccountId32::new([0; 32]),
+        let call = pallet_identity::Call::add_registrar {
+            account: MultiAddress::Address32([0; 32]),
         }
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call =
-            pallet_treasury::RuntimeCall::<Runtime, ()>::reject_proposal { proposal_id: 0 }.into();
+        let call = pallet_treasury::Call::<Runtime, ()>::reject_proposal { proposal_id: 0 }.into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_account_manager::RuntimeCall::deposit {
+        let call = pallet_account_manager::Call::deposit {
             charge_id: Default::default(),
             payee: AccountId32::new([0; 32]),
             charge_fee: 0,
@@ -506,21 +501,21 @@ mod tests {
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_xdns::RuntimeCall::purge_gateway_record {
+        let call = pallet_xdns::Call::purge_gateway_record {
             requester: AccountId32::new([0; 32]),
             gateway_id: Default::default(),
         }
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_contracts_registry::RuntimeCall::purge {
+        let call = pallet_contracts_registry::Call::purge {
             requester: AccountId32::new([0; 32]),
             contract_id: Default::default(),
         }
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_circuit::RuntimeCall::bid_sfx {
+        let call = pallet_circuit::Call::bid_sfx {
             sfx_id: Default::default(),
             bid_amount: 0,
         }

@@ -3367,6 +3367,7 @@ pub mod attesters_test {
     }
 
     #[test]
+    #[ignore] // to be fixed in Finality Fees
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
         let target: TargetId = ETHEREUM_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);

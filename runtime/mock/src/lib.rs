@@ -34,6 +34,7 @@ pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 pub use crate::circuit_config::GlobalOnInitQueues;
 pub use pallet_3vm_evm::Config as ConfigEvm;
 use smallvec::smallvec;
+
 frame_support::construct_runtime!(
     pub enum Runtime where
         Block = Block,
