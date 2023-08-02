@@ -1,6 +1,8 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use circuit_standalone_runtime::{self, opaque::Block, RuntimeApi};
+use circuit_standalone_runtime::{
+    self, impl_versioned_runtime_with_api::VERSION, opaque::Block, RuntimeApi,
+};
 use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 pub use sc_executor::NativeElseWasmExecutor;
@@ -27,7 +29,10 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
     }
 
     fn native_version() -> sc_executor::NativeVersion {
-        circuit_standalone_runtime::native_version()
+        sc_executor::NativeVersion {
+            runtime_version: VERSION,
+            can_author_with: Default::default(),
+        }
     }
 }
 
@@ -116,8 +121,8 @@ pub fn new_partial(
 
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
-    let import_queue =
-        sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(ImportQueueParams {
+    let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
+        ImportQueueParams {
             block_import: grandpa_block_import.clone(),
             justification_import: Some(Box::new(grandpa_block_import.clone())),
             client: client.clone(),
@@ -125,10 +130,10 @@ pub fn new_partial(
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                 let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-						*timestamp,
-						slot_duration,
-					);
+                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                        *timestamp,
+                        slot_duration,
+                    );
 
                 Ok((slot, timestamp))
             },
@@ -137,7 +142,8 @@ pub fn new_partial(
             check_for_equivocation: Default::default(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
             compatibility_mode: Default::default(),
-        })?;
+        },
+    )?;
 
     Ok(sc_service::PartialComponents {
         client,
@@ -279,10 +285,10 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                     let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							*timestamp,
-							slot_duration,
-						);
+                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration,
+                        );
 
                     Ok((slot, timestamp))
                 },

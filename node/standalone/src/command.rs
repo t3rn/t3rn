@@ -1,5 +1,4 @@
 use crate::{
-    benchmarking::{inherent_benchmark_data, RemarkBuilder, TransferKeepAliveBuilder},
     chain_spec,
     cli::{Cli, Subcommand},
     service,
@@ -131,71 +130,41 @@ pub fn run() -> sc_cli::Result<()> {
         },
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-
-            runner.sync_run(|config| {
-                // This switch needs to be in the client, since the client decides
-                // which sub-commands it wants to support.
-                match cmd {
-                    BenchmarkCmd::Pallet(cmd) => {
-                        if !cfg!(feature = "runtime-benchmarks") {
-                            return Err(
-                                "Runtime benchmarking wasn't enabled when building the node. \
-							You can enable it with `--features runtime-benchmarks`."
-                                    .into(),
-                            )
-                        }
-
-                        cmd.run::<Block, service::ExecutorDispatch>(config)
+            // Switch on the concrete benchmark sub-command-
+            match cmd {
+                BenchmarkCmd::Pallet(cmd) =>
+                    if cfg!(feature = "runtime-benchmarks") {
+                        runner
+                            .sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
+                    } else {
+                        Err("Benchmarking wasn't enabled when building the node. \
+					You can enable it with `--features runtime-benchmarks`."
+                            .into())
                     },
-                    BenchmarkCmd::Block(cmd) => {
-                        let PartialComponents { client, .. } = service::new_partial(&config)?;
-                        cmd.run(client)
-                    },
-                    #[cfg(not(feature = "runtime-benchmarks"))]
-                    BenchmarkCmd::Storage(_) => Err(
-                        "Storage benchmarking can be enabled with `--features runtime-benchmarks`."
-                            .into(),
-                    ),
-                    #[cfg(feature = "runtime-benchmarks")]
-                    BenchmarkCmd::Storage(cmd) => {
-                        let PartialComponents {
-                            client, backend, ..
-                        } = service::new_partial(&config)?;
-                        let db = backend.expose_db();
-                        let storage = backend.expose_storage();
-
-                        cmd.run(config, client, db, storage)
-                    },
-                    BenchmarkCmd::Overhead(cmd) => {
-                        let PartialComponents { client, .. } = service::new_partial(&config)?;
-                        let ext_builder = RemarkBuilder::new(client.clone());
-
-                        cmd.run(
-                            config,
-                            client,
-                            inherent_benchmark_data()?,
-                            Vec::new(),
-                            &ext_builder,
-                        )
-                    },
-                    BenchmarkCmd::Extrinsic(cmd) => {
-                        let PartialComponents { client, .. } = service::new_partial(&config)?;
-                        // Register the *Remark* and *TKA* builders.
-                        let ext_factory = ExtrinsicFactory(vec![
-                            Box::new(RemarkBuilder::new(client.clone())),
-                            Box::new(TransferKeepAliveBuilder::new(
-                                client.clone(),
-                                Sr25519Keyring::Alice.to_account_id(),
-                                EXISTENTIAL_DEPOSIT,
-                            )),
-                        ]);
-
-                        cmd.run(client, inherent_benchmark_data()?, Vec::new(), &ext_factory)
-                    },
-                    BenchmarkCmd::Machine(cmd) =>
-                        cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()),
-                }
-            })
+                BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+                    let partials = service::new_partial(&config)?;
+                    cmd.run(partials.client)
+                }),
+                #[cfg(not(feature = "runtime-benchmarks"))]
+                BenchmarkCmd::Storage(_) => Err(sc_cli::Error::Input(
+                    "Compile with --features=runtime-benchmarks \
+						to enable storage benchmarks."
+                        .into(),
+                )),
+                #[cfg(feature = "runtime-benchmarks")]
+                BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+                    let partials = service::new_partial(&config)?;
+                    let db = partials.backend.expose_db();
+                    let storage = partials.backend.expose_storage();
+                    cmd.run(config, partials.client.clone(), db, storage)
+                }),
+                BenchmarkCmd::Machine(cmd) =>
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+                // NOTE: this allows the Client to leniently implement
+                // new benchmark commands without requiring a companion MR.
+                #[allow(unreachable_patterns)]
+                _ => Err("Benchmarking sub-command unsupported".into()),
+            }
         },
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
