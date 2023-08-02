@@ -109,7 +109,7 @@ pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-ap
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-#pallet-maintenance-mode                   = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.39', default-features = false }
+pallet-maintenance-mode                   = { path = "../../pallets/maintenance-mode", default-features = false }
 
 pallet-asset-registry = { workspace = true }
 pallet-xbi-portal     = { workspace = true }
@@ -187,7 +187,7 @@ std = [
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
-#  "pallet-maintenance-mode/std",
+  "pallet-maintenance-mode/std",
   "sp-core/std",
   "sp-inherents/std",
   "sp-io/std",
@@ -283,7 +283,7 @@ try-runtime = [
   "pallet-contracts-registry/try-runtime",
   "pallet-identity/try-runtime",
   "pallet-membership/try-runtime",
-#  "pallet-maintenance-mode/try-runtime",
+  "pallet-maintenance-mode/try-runtime",
   "pallet-preimage/try-runtime",
   "pallet-randomness-collective-flip/try-runtime",
   "pallet-scheduler/try-runtime",

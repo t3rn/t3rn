@@ -168,26 +168,6 @@ pub type Barrier = (
     AssetRegistry,
 );
 
-// pub struct XcmConfig;
-// impl xcm_executor::Config for XcmConfig {
-//     type AssetClaims = PolkadotXcm;
-//     // How to withdraw and deposit an asset.
-//     type AssetTransactor = AssetTransactors;
-//     type AssetTrap = PolkadotXcm;
-//     type Barrier = Barrier;
-//     type IsReserve = NativeAsset;
-//     type IsTeleporter = TrustedTeleporters;
-//     type LocationInverter = LocationInverter<Ancestry>;
-//     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-//     type ResponseHandler = PolkadotXcm;
-//     type RuntimeCall = RuntimeCall;
-//     type SubscriptionService = PolkadotXcm;
-//     // FIXME: should be using asset_registry
-//     type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
-//     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-//     type XcmSender = XcmRouter;
-// }
-
 parameter_types! {
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);

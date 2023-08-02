@@ -310,14 +310,14 @@ impl OffchainWorker<BlockNumber> for MaintenanceHooks {
     }
 }
 
-// impl pallet_maintenance_mode::Config for Runtime {
-//     type Event = Event;
-//     type MaintenanceCallFilter = MaintenanceFilter;
-//     type MaintenanceExecutiveHooks = AllPalletsWithSystem;
-//     type MaintenanceOrigin = EnsureRoot<AccountId>;
-//     type NormalCallFilter = BaseCallFilter;
-//     type NormalExecutiveHooks = AllPalletsWithSystem;
-// }
+impl pallet_maintenance_mode::Config for Runtime {
+    type MaintenanceCallFilter = MaintenanceFilter;
+    type MaintenanceExecutiveHooks = AllPalletsWithSystem;
+    type MaintenanceOrigin = EnsureRoot<AccountId>;
+    type NormalCallFilter = BaseCallFilter;
+    type NormalExecutiveHooks = AllPalletsWithSystem;
+    type RuntimeEvent = RuntimeEvent;
+}
 
 #[cfg(test)]
 mod tests {
