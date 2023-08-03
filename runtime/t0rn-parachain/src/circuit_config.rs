@@ -499,7 +499,7 @@ parameter_types! {
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteePeriod: u32 = 256;
     pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
-    pub const CommitteeMajorityThresholdEth2: u32 = 80;
+    pub const CommitteeMajorityThresholdEth2: u32 = 67;
     pub const CommitteeMajorityThresholdSepolia: u32 = 67;
 }
 
