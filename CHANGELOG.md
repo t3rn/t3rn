@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.46.0-rc.0] - 2023-08-03
+### :sparkles: New Features
+- [`7dca20e`](https://github.com/t3rn/t3rn/commit/7dca20e525ab4b1e3648c32bc0d010fabc004b19) - implement evm call price estimation *(PR [#1229](https://github.com/t3rn/t3rn/pull/1229) by [@ahkohd](https://github.com/ahkohd))*
+
+### :bug: Bug Fixes
+- [`9811de3`](https://github.com/t3rn/t3rn/commit/9811de379f3c59a0a5563ebd4e3274e0edb9fcea) - reduce majority threshold to unbrick LC *(PR [#1230](https://github.com/t3rn/t3rn/pull/1230) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.45.1-rc.0] - 2023-07-28
 ### :bug: Bug Fixes
 - [`e4b9c82`](https://github.com/t3rn/t3rn/commit/e4b9c82a38a9ffb2fa40b9ceeb55ab6eddc0c492) - move process estimation of treasury balances to on_initialize hook *(PR [#1223](https://github.com/t3rn/t3rn/pull/1223) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1445,3 +1453,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.44.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.1-rc.0...v1.44.2-rc.0
 [v1.45.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.2-rc.0...v1.45.0-rc.0
 [v1.45.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.0-rc.0...v1.45.1-rc.0
+[v1.46.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.1-rc.0...v1.46.0-rc.0
