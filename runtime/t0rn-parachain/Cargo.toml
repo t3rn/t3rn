@@ -260,6 +260,7 @@ runtime-benchmarks = [
   "pallet-utility/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
+  "pallet-asset-tx-payment/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -299,4 +300,12 @@ try-runtime = [
   "t3rn-abi/try-runtime",
   "pallet-eth2-finality-verifier/try-runtime",
   "pallet-sepolia-finality-verifier/try-runtime",
+  "cumulus-pallet-aura-ext/try-runtime",
+  "cumulus-pallet-dmp-queue/try-runtime",
+  "cumulus-pallet-parachain-system/try-runtime",
+  "cumulus-pallet-xcm/try-runtime",
+  "cumulus-pallet-xcmp-queue/try-runtime",
+  "pallet-xcm/try-runtime",
+  "parachain-info/try-runtime",
+  "sp-runtime/try-runtime",
 ]

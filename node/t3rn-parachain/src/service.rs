@@ -339,6 +339,8 @@ fn build_import_queue(
                     slot_duration,
                 );
 
+            println!("SERVICE::: TIMESTAMP {:?} SLOT {:?}", slot.clone(), timestamp.clone());
+
             Ok((slot, timestamp))
         },
         registry: config.prometheus_registry(),

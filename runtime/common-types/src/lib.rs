@@ -59,9 +59,9 @@ pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
-/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// We assume that ~25% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
-pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(25);
 
 // Unit = the base number of indivisible units for balances
 pub const UNIT: Balance = 1_000_000_000_000;

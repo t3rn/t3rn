@@ -117,6 +117,9 @@ setup() {
     NODE_ARG=t0rn
     build_collator
 
+    NODE_ARG=t1rn
+    build_collator
+
     NODE_ARG=t3rn
     build_collator
 }

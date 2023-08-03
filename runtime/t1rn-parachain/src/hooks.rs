@@ -69,67 +69,67 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
                 total_consumed.saturating_add(Self::process_bi_weekly(n, bi_weekly_weight_limit));
         }
 
-        // let weight = Circuit::process_signal_queue(
-        //     n,
-        //     BlockNumber::one(),
-        //     Percent::from_percent(PROCESS_SIGNAL_SHARE) * on_init_weight_limit,
-        // );
-        // log::debug!("Circuit::process_signal_queue consumed: {:?}", weight);
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // let weight = Circuit::process_xtx_tick_queue(
-        //     n,
-        //     BlockNumber::one(),
-        //     Percent::from_percent(XTX_TICK_SHARE) * on_init_weight_limit,
-        // );
-        // log::debug!("Circuit::process_xtx_tick_queue consumed: {:?}", weight);
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // let weight = Circuit::process_emergency_revert_xtx_queue(
-        //     n,
-        //     10u32,
-        //     Percent::from_percent(REVERT_XTX_SHARE) * on_init_weight_limit,
-        // );
-        // log::debug!(
-        //     "Circuit::process_emergency_revert_xtx_queue consumed: {:?}",
-        //     weight
-        // );
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // let (_success, weight) = Rewards::process_author();
-        //
-        // log::debug!("Rewards::process_author consumed: {:?}", weight);
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // log::debug!(
-        //     "Total weight consumed by on init hook: {:?}",
-        //     total_consumed
-        // );
+        let weight = Circuit::process_signal_queue(
+            n,
+            BlockNumber::one(),
+            Percent::from_percent(PROCESS_SIGNAL_SHARE) * on_init_weight_limit,
+        );
+        log::debug!("Circuit::process_signal_queue consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Circuit::process_xtx_tick_queue(
+            n,
+            BlockNumber::one(),
+            Percent::from_percent(XTX_TICK_SHARE) * on_init_weight_limit,
+        );
+        log::debug!("Circuit::process_xtx_tick_queue consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Circuit::process_emergency_revert_xtx_queue(
+            n,
+            10u32,
+            Percent::from_percent(REVERT_XTX_SHARE) * on_init_weight_limit,
+        );
+        log::debug!(
+            "Circuit::process_emergency_revert_xtx_queue consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let (_success, weight) = Rewards::process_author();
+
+        log::debug!("Rewards::process_author consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        log::debug!(
+            "Total weight consumed by on init hook: {:?}",
+            total_consumed
+        );
 
         total_consumed
     }
 
     fn process_bi_weekly(_n: BlockNumber, hook_weight_limit: Weight) -> Weight {
         let mut total_consumed: Weight = Zero::zero();
-        //
-        // let weight = Rewards::distribute_inflation();
-        // log::debug!("Rewards::distribute_inflation consumed: {:?}", weight);
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // let weight = Rewards::process_authors_this_period();
-        //
-        // log::debug!(
-        //     "Rewards::process_authors_this_period consumed: {:?}",
-        //     weight
-        // );
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // if total_consumed.all_gte(hook_weight_limit) {
-        //     log::error!(
-        //         "GlobalOnInitQueues::process_bi_weekly consumed more than the limit: {:?}",
-        //         weight
-        //     );
-        // }
+
+        let weight = Rewards::distribute_inflation();
+        log::debug!("Rewards::distribute_inflation consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Rewards::process_authors_this_period();
+
+        log::debug!(
+            "Rewards::process_authors_this_period consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        if total_consumed.all_gte(hook_weight_limit) {
+            log::error!(
+                "GlobalOnInitQueues::process_bi_weekly consumed more than the limit: {:?}",
+                weight
+            );
+        }
         total_consumed
     }
 
@@ -143,36 +143,36 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
 
     fn process_hourly(n: BlockNumber, hook_weight_limit: Weight) -> Weight {
         let mut total_consumed: Weight = Zero::zero();
-        //
-        // let weight = XDNS::check_for_manual_verifier_overview_process(n);
-        // log::debug!(
-        //     "XDNS::check_for_manual_verifier_overview_process consumed: {:?}",
-        //     weight
-        // );
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // let weight = Rewards::process_accumulated_settlements();
-        // log::debug!(
-        //     "Rewards::process_accumulated_settlements consumed: {:?}",
-        //     weight
-        // );
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // let weight = Clock::check_bump_round(n);
-        // log::debug!("Clock::check_bump_round consumed: {:?}", weight);
-        // total_consumed = total_consumed.saturating_add(weight);
-        //
-        // if total_consumed.all_gte(hook_weight_limit) {
-        //     log::error!(
-        //         "GlobalOnInitQueues::process_hourly consumed more than the limit: {:?}",
-        //         weight
-        //     );
-        // }
-        //
-        // log::debug!(
-        //     "GlobalOnInitQueues::process_hourly total_consumed: {:?}",
-        //     total_consumed
-        // );
+
+        let weight = XDNS::check_for_manual_verifier_overview_process(n);
+        log::debug!(
+            "XDNS::check_for_manual_verifier_overview_process consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Rewards::process_accumulated_settlements();
+        log::debug!(
+            "Rewards::process_accumulated_settlements consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Clock::check_bump_round(n);
+        log::debug!("Clock::check_bump_round consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        if total_consumed.all_gte(hook_weight_limit) {
+            log::error!(
+                "GlobalOnInitQueues::process_hourly consumed more than the limit: {:?}",
+                weight
+            );
+        }
+
+        log::debug!(
+            "GlobalOnInitQueues::process_hourly total_consumed: {:?}",
+            total_consumed
+        );
 
         total_consumed
     }

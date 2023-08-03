@@ -1,25 +1,33 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use circuit_parachain_runtime::{opaque::Block, Hash, RuntimeApi};
+// std
+use std::{sync::Arc, time::Duration};
+
 use cumulus_client_cli::CollatorOptions;
+// Local Runtime Types
+use circuit_parachain_runtime::{opaque::Block, Hash, RuntimeApi};
+
+// Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
     ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
 };
+use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-    build_network, build_relay_chain_interface, prepare_node_config, start_collator,
-    start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
+    build_relay_chain_interface, prepare_node_config, start_collator, start_full_node,
+    StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
-use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
+
+// Substrate Imports
 use sc_consensus::ImportQueue;
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::{NetworkBlock, NetworkService};
+use sc_network::NetworkService;
+use sc_network_common::service::NetworkBlock;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_keystore::SyncCryptoStorePtr;
-use std::{sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
 /// Native executor type.
@@ -165,6 +173,9 @@ async fn start_node_impl(
         s => s.to_string().into(),
     })?;
 
+    let block_announce_validator =
+        BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+
     let force_authoring = parachain_config.force_authoring;
     let validator = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -172,16 +183,17 @@ async fn start_node_impl(
     let import_queue_service = params.import_queue.service();
 
     let (network, system_rpc_tx, tx_handler_controller, start_network) =
-        build_network(BuildNetworkParams {
-            parachain_config: &parachain_config,
+        sc_service::build_network(sc_service::BuildNetworkParams {
+            config: &parachain_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
-            para_id,
             spawn_handle: task_manager.spawn_handle(),
-            relay_chain_interface: relay_chain_interface.clone(),
             import_queue: params.import_queue,
-        })
-        .await?;
+            block_announce_validator_builder: Some(Box::new(|_| {
+                Box::new(block_announce_validator)
+            })),
+            warp_sync_params: None,
+        })?;
 
     if parachain_config.offchain_worker.enabled {
         sc_service::build_offchain_workers(
@@ -223,14 +235,6 @@ async fn start_node_impl(
 
     if let Some(hwbench) = hwbench {
         sc_sysinfo::print_hwbench(&hwbench);
-        // Here you can check whether the hardware meets your chains' requirements. Putting a link
-        // in there and swapping out the requirements for your own are probably a good idea. The
-        // requirements for a para-chain are dictated by its relay-chain.
-        if !SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench) && validator {
-            log::warn!(
-                "⚠️  The hardware does not meet the minimal requirements for role 'Authority'."
-            );
-        }
 
         if let Some(ref mut telemetry) = telemetry {
             let telemetry_handle = telemetry.handle();
@@ -247,11 +251,11 @@ async fn start_node_impl(
         Arc::new(move |hash, data| network.announce_block(hash, data))
     };
 
-    let relay_chain_slot_duration = Duration::from_secs(6);
-
     let overseer_handle = relay_chain_interface
         .overseer_handle()
         .map_err(|e| sc_service::Error::Application(Box::new(e)))?;
+
+    let relay_chain_slot_duration = Duration::from_secs(6);
 
     if validator {
         let parachain_consensus = build_consensus(
@@ -282,6 +286,7 @@ async fn start_node_impl(
             collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
             relay_chain_slot_duration,
             recovery_handle: Box::new(overseer_handle),
+            // sync_service,
         };
 
         start_collator(params).await?;
@@ -333,6 +338,8 @@ fn build_import_queue(
                     *timestamp,
                     slot_duration,
                 );
+
+            println!("SERVICE::: TIMESTAMP {:?} SLOT {:?}", slot.clone(), timestamp.clone());
 
             Ok((slot, timestamp))
         },

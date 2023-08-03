@@ -1,7 +1,7 @@
 use crate::{
     hooks::GlobalOnInitQueues, treasuries_config::EscrowTreasuryId, AccountId, AccountManager,
     AssetId, Assets, Balance, Balances, Clock, EnsureRoot, Imbalance, OnUnbalanced, Runtime,
-    RuntimeCall, RuntimeEvent, Timestamp,
+    RuntimeCall, RuntimeEvent, ThreeVm, Timestamp,
 };
 use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
 use sp_core::{crypto::AccountId32, ConstU32};
@@ -33,7 +33,7 @@ impl pallet_account_manager::Config for Runtime {
     type WeightInfo = ();
 }
 
-// pallet_account_manager::setup_currency_adapter!();
+pallet_account_manager::setup_currency_adapter!();
 
 parameter_types! {
     pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset

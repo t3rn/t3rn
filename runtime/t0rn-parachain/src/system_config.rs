@@ -12,6 +12,11 @@ use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, Zero};
 
+parameter_types! {
+    pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+    pub const SS58Prefix: u16 = 42;
+}
+
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
     /// The data to be stored in an account.
@@ -67,10 +72,6 @@ impl frame_system::Config for Runtime {
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
-
-parameter_types! {
-    pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
-}
 
 impl pallet_timestamp::Config for Runtime {
     type MinimumPeriod = MinimumPeriod;
@@ -138,15 +139,6 @@ impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
             }
         }
     }
-}
-
-impl pallet_asset_tx_payment::Config for Runtime {
-    type Fungibles = Assets;
-    type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-        pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-        CreditToBlockAuthor,
-    >;
-    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_sudo::Config for Runtime {

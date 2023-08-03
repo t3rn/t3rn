@@ -247,6 +247,7 @@ runtime-benchmarks = [
   "xcm-executor/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
+  "pallet-asset-tx-payment/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-support/try-runtime",
@@ -287,4 +288,11 @@ try-runtime = [
   "pallet-sudo/try-runtime",
   "pallet-eth2-finality-verifier/try-runtime",
   "pallet-sepolia-finality-verifier/try-runtime",
+  "cumulus-pallet-aura-ext/try-runtime",
+  "cumulus-pallet-dmp-queue/try-runtime",
+  "cumulus-pallet-parachain-system/try-runtime",
+  "cumulus-pallet-xcm/try-runtime",
+  "pallet-xcm/try-runtime",
+  "parachain-info/try-runtime",
+  "sp-runtime/try-runtime",
 ]

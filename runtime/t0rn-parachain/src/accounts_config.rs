@@ -1,14 +1,23 @@
 use crate::{
-    AccountId, AssetId, Assets, Balance, Balances, Clock, EnsureRoot, Imbalance, OnUnbalanced,
-    Runtime, RuntimeCall, RuntimeEvent, ThreeVm, Timestamp,
+    hooks::GlobalOnInitQueues, treasuries_config::EscrowTreasuryId, AccountId, AccountManager,
+    AssetId, Assets, Balance, Balances, Clock, EnsureRoot, Imbalance, OnUnbalanced, Runtime,
+    RuntimeCall, RuntimeEvent, ThreeVm, Timestamp,
 };
 use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
 use sp_core::{crypto::AccountId32, ConstU32};
-use sp_runtime::traits::ConvertInto;
+use sp_runtime::traits::{AccountIdConversion, ConvertInto};
 
 parameter_types! {
-    // TODO: update me to be better
-    pub EscrowAccount: AccountId32 = AccountId32::new([51_u8; 32]);
+    pub EscrowAccount: AccountId32 = EscrowTreasuryId::get().into_account_truncating();
+}
+
+impl pallet_clock::Config for Runtime {
+    type AccountManager = AccountManager;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
+    type OnInitializeQueues = GlobalOnInitQueues;
+    type RoundDuration = ConstU32<300u32>;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_account_manager::Config for Runtime {
@@ -35,27 +44,6 @@ parameter_types! {
     pub const MetadataDepositBase: Balance = 0;
     pub const MetadataDepositPerByte: Balance = 0;
     pub const AssetAccountDeposit: Balance = 0;
-}
-
-impl pallet_assets::Config for Runtime {
-    type ApprovalDeposit = ApprovalDeposit;
-    type AssetAccountDeposit = AssetAccountDeposit;
-    type AssetDeposit = AssetDeposit;
-    type AssetId = circuit_runtime_types::AssetId;
-    type AssetIdParameter = circuit_runtime_types::AssetId;
-    type Balance = Balance;
-    type CallbackHandle = ();
-    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
-    type Currency = Balances;
-    type Extra = ();
-    type ForceOrigin = EnsureRoot<AccountId>;
-    type Freezer = ();
-    type MetadataDepositBase = MetadataDepositBase;
-    type MetadataDepositPerByte = MetadataDepositPerByte;
-    type RemoveItemsLimit = ConstU32<1>;
-    type RuntimeEvent = RuntimeEvent;
-    type StringLimit = AssetsStringLimit;
-    type WeightInfo = ();
 }
 
 parameter_types! {

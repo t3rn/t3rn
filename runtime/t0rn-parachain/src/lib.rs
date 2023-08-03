@@ -57,6 +57,8 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 pub use sp_runtime::BuildStorage;
 use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
 
+pub const TRN: Balance = UNIT;
+
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
 use polkadot_runtime_constants::weights::RocksDbWeight;
@@ -129,6 +131,50 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_asset_tx_payment::Config for Runtime {
+    type Fungibles = Assets;
+    type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
+        pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+        CreditToBlockAuthor,
+    >;
+    type RuntimeEvent = RuntimeEvent;
+}
+
+parameter_types! {
+    pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset
+    pub const ApprovalDeposit: Balance = 0;
+    pub const AssetsStringLimit: u32 = 50;
+    /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+    // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+    pub const MetadataDepositBase: Balance = 0;
+    pub const MetadataDepositPerByte: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 0;
+}
+use crate::system_config::CreditToBlockAuthor;
+use frame_support::traits::AsEnsureOriginWithArg;
+use sp_runtime::traits::{ConstU32, ConvertInto};
+
+impl pallet_assets::Config for Runtime {
+    type ApprovalDeposit = ApprovalDeposit;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type AssetDeposit = AssetDeposit;
+    type AssetId = circuit_runtime_types::AssetId;
+    type AssetIdParameter = circuit_runtime_types::AssetId;
+    type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    type Currency = Balances;
+    type Extra = ();
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type Freezer = ();
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1>;
+    type RuntimeEvent = RuntimeEvent;
+    type StringLimit = AssetsStringLimit;
+    type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -137,22 +183,20 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         // System support stuff.
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
-        ParachainSystem: cumulus_pallet_parachain_system::{
-            Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-        } = 1,
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-        ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+        System: frame_system = 0,
+        ParachainSystem: cumulus_pallet_parachain_system = 1,
+        Timestamp: pallet_timestamp = 2,
+        ParachainInfo: parachain_info = 3,
         Preimage: pallet_preimage = 4,
         Scheduler: pallet_scheduler = 5,
         Utility: pallet_utility = 6,
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
+        Identity: pallet_identity = 122,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 200,
 
         // Monetary stuff.
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-        Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
+        Balances: pallet_balances = 10,
+        TransactionPayment: pallet_transaction_payment = 11,
+        Assets: pallet_assets = 12,
         AccountManager: pallet_account_manager = 14,
         AssetTxPayment: pallet_asset_tx_payment = 15,
 
@@ -166,25 +210,25 @@ construct_runtime!(
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship = 20,
         CollatorSelection: pallet_collator_selection = 21,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
-        Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+        Session: pallet_session = 22,
+        Aura: pallet_aura = 23,
+        AuraExt: cumulus_pallet_aura_ext = 24,
 
         // XCM helpers.
-        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-        PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
-        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
-        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+        XcmpQueue: cumulus_pallet_xcmp_queue = 30,
+        PolkadotXcm: pallet_xcm = 31,
+        CumulusXcm: cumulus_pallet_xcm = 32,
+        DmpQueue: cumulus_pallet_dmp_queue = 33,
         // XBIPortal: pallet_xbi_portal = 34,
         AssetRegistry: pallet_asset_registry = 35,
 
         // t3rn pallets
-        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        Attesters: pallet_attesters::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
-        Rewards: pallet_rewards::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        XDNS: pallet_xdns = 100,
+        Attesters: pallet_attesters = 101,
+        Rewards: pallet_rewards = 102,
+        ContractsRegistry: pallet_contracts_registry = 106,
+        Circuit: pallet_circuit = 108,
+        Clock: pallet_clock = 110,
         Vacuum: pallet_vacuum = 111,
 
         // 3VM
@@ -193,7 +237,7 @@ construct_runtime!(
         Evm: pallet_3vm_evm = 121,
 
          // Portal
-        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
@@ -201,10 +245,10 @@ construct_runtime!(
         SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
         // Handy utilities
-        MaintenanceMode: pallet_maintenance_mode = 140,
+        Maintenance: pallet_maintenance_mode = 140,
 
         // admin
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
+        Sudo: pallet_sudo = 255,
 
     }
 );

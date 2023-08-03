@@ -13021,7 +13021,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.45.1-rc.0"
+version = "1.45.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -13035,12 +13035,13 @@ dependencies = [
  "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-rpc-interface",
- "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frame-system",
  "hex-literal 0.4.1",
  "jsonrpsee",
  "log",
+ "pallet-asset-tx-payment",
  "pallet-portal-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
@@ -13055,7 +13056,9 @@ dependencies = [
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
+ "sc-consensus-aura",
  "sc-executor",
+ "sc-finality-grandpa",
  "sc-keystore",
  "sc-network",
  "sc-network-common",
@@ -13074,13 +13077,12 @@ dependencies = [
  "sp-consensus",
  "sp-consensus-aura",
  "sp-core",
+ "sp-finality-grandpa",
  "sp-inherents",
+ "sp-keyring",
  "sp-keystore",
- "sp-offchain",
  "sp-runtime",
- "sp-session",
  "sp-timestamp",
- "sp-transaction-pool",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
@@ -13088,7 +13090,6 @@ dependencies = [
  "t3rn-abi 1.5.0-rc.0",
  "t3rn-primitives 1.45.0-rc.0",
  "t3rn-types 1.45.0-rc.0",
- "try-runtime-cli",
  "xcm",
 ]
 

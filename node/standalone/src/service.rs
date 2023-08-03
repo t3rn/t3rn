@@ -121,6 +121,8 @@ pub fn new_partial(
 
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
+    println!("SLOT DURATION: {:?}", slot_duration);
+
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {
             block_import: grandpa_block_import.clone(),
@@ -289,6 +291,11 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                             *timestamp,
                             slot_duration,
                         );
+                    println!(
+                        "SERVICE::: TIMESTAMP {:?} SLOT {:?}",
+                        slot.clone(),
+                        timestamp.clone()
+                    );
 
                     Ok((slot, timestamp))
                 },

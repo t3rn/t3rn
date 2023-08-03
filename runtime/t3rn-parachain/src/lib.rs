@@ -7,14 +7,14 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod parachain_config;
-pub mod runtime_types;
+// pub mod runtime_types;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xcm_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
+pub use circuit_runtime_types::*;
 pub use frame_support::traits::EqualPrivilegeOnly;
-pub use runtime_types::*;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 

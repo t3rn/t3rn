@@ -111,15 +111,6 @@ impl pallet_rewards::Config for Runtime {
     type TreasuryInflation = TreasuryInflation;
 }
 
-impl pallet_clock::Config for Runtime {
-    type AccountManager = AccountManager;
-    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
-    type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<300u32>;
-    type RuntimeEvent = RuntimeEvent;
-}
-
 impl pallet_vacuum::Config for Runtime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
@@ -253,7 +244,6 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 }
 
 parameter_types! {
-    pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
     pub const SelfGatewayIdOptimistic: [u8; 4] = [0, 3, 3, 3];
 }
@@ -268,7 +258,7 @@ impl pallet_circuit::Config for Runtime {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
-    type SelfAccountId = CircuitAccountId;
+    type SelfAccountId = crate::accounts_config::EscrowAccount;
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;

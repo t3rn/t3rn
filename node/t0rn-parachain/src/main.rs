@@ -1,5 +1,4 @@
-//! Substrate Parachain Node Template CLI
-
+//! Substrate Node Template CLI library.
 #![warn(missing_docs)]
 
 mod chain_spec;

@@ -1,26 +1,23 @@
-use circuit_parachain_runtime::{
-    AccountId, AuraId, EvmConfig, MaintenanceModeConfig, Signature, SudoConfig, XDNSConfig,
-};
+use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, TRN};
 use cumulus_primitives_core::ParaId;
-use sc_chain_spec::ChainSpecExtension;
+use hex_literal::hex;
+use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::monetary::TRN;
 
-use t3rn_abi::sfx_abi::SFXAbi;
-use t3rn_primitives::xdns::GatewayRecord;
-use t3rn_types::sfx::Sfx4bId;
-
-const PARACHAIN_ID: u32 = 3333_u32;
-
-fn standard_sfx_abi() -> Vec<(Sfx4bId, SFXAbi)> {
-    t3rn_abi::standard::standard_sfx_abi()
-}
-
-/// t3rn-pallets chain spec config -- END
+const PARACHAIN_ID: u32 = 3333;
+const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
+const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
+const DESIRED_CANDIDATES: u32 = 32;
+const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
+const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
+pub(crate) const SS58_FORMAT: u16 = 9935;
+pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -30,8 +27,8 @@ pub type ChainSpec =
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)] // removing ChainSpecGroup since bad blocks wont implement
+                                                                                   // #[serde(deny_unknown_fields)]
 pub struct Extensions {
     /// The relay chain of the Parachain.
     pub relay_chain: String,
@@ -55,6 +52,14 @@ pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pa
     TPublic::Pair::from_string(&format!("//{seed}"), None)
         .expect("static values are valid; qed")
         .public()
+}
+
+/// Generate an Aura authority key.
+pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
+    (
+        get_public_from_seed::<AuraId>(s),
+        get_public_from_seed::<GrandpaId>(s),
+    )
 }
 
 /// Generate collator keys from seed.
@@ -99,74 +104,12 @@ pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
     circuit_parachain_runtime::SessionKeys { aura: keys }
 }
 
-pub fn development_config() -> ChainSpec {
-    // Give your base currency a unit name and decimal places
-    let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "UNIT".into());
-    properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
-
-    ChainSpec::from_genesis(
-        // Name
-        "Development",
-        // ID
-        "dev",
-        ChainType::Development,
-        move || {
-            testnet_genesis(
-                // initial collators.
-                vec![
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
-                    ),
-                ],
-                vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                ],
-                PARACHAIN_ID.into(),
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![],
-                standard_sfx_abi(),
-                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                //     .expect("initial gateways"),
-            )
-        },
-        Vec::new(),
-        None,
-        None,
-        None,
-        None,
-        Extensions {
-            relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID,              // You MUST set this correctly!
-            bad_blocks: None,
-        },
-    )
-}
-
 pub fn local_testnet_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -175,7 +118,7 @@ pub fn local_testnet_config() -> ChainSpec {
         "local_testnet",
         ChainType::Local,
         move || {
-            testnet_genesis(
+            polkadot_genesis(
                 // initial collators.
                 vec![
                     (
@@ -188,26 +131,58 @@ pub fn local_testnet_config() -> ChainSpec {
                     ),
                 ],
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Alice"),
+                        TRN * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Bob"),
+                        TRN * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                        TRN * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Dave"),
+                        TRN * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Eve"),
+                        TRN * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                        TRN * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+                        TRN * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                        TRN * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+                        TRN * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+                        TRN * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                        TRN * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+                        TRN * 100000,
+                    ),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![],
-                standard_sfx_abi(),
-                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                //     .expect("initial gateways"),
             )
         },
         // Bootnodes
@@ -229,11 +204,164 @@ pub fn local_testnet_config() -> ChainSpec {
     )
 }
 
+pub fn polkadot_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "TRN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t3rn",
+        // Id
+        "t3rn",
+        ChainType::Live,
+        move || {
+            // TODO: needs updating
+            polkadot_genesis(
+                vec![
+                    (
+                        // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .into(),
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .unchecked_into(),
+                    ),
+                    (
+                        // Collator 2: t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
+                            .into(),
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
+                            .unchecked_into(),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    // Genesis Account: SUDO (t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX = hex!("0x00a6769855d6df941f09e0743f8879f66bad2dde6534a268dfe478449a16312b").into()
+                    (get_account_id_from_adrs(SUDO), SUPPLY),
+                ],
+                PARACHAIN_ID.into(),
+                // Sudo
+                get_account_id_from_adrs(SUDO),
+            )
+        },
+        // Bootnodes
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-1.t3rn.io/tcp/33333/p2p/12D3KooWDWGoYHhsVUtLehNEdwp8JNi4DLTJVB2L53HMHarBXw66",
+            )
+                .expect("Failed to parse bootnode #1 address"),
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-2.t3rn.io/tcp/33333/p2p/12D3KooWLGtGEf92p8CbUmzwFYavEtDUaJNJCbBSp4muSqs2cVz1",
+            )
+                .expect("Failed to parse bootnode #2 address"),
+        ],
+        // Telemetry
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+                1,
+            )])
+                .expect("telemetry"),
+        ),
+        // Protocol ID
+        Some("t3rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "polkadot".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
+            bad_blocks: None,
+        },
+    )
+}
+
+fn polkadot_genesis(
+    invulnerables: Vec<(AccountId, AuraId)>,
+    endowed_accounts: Vec<(AccountId, u128)>,
+    id: ParaId,
+    root_key: AccountId,
+) -> circuit_parachain_runtime::GenesisConfig {
+    circuit_parachain_runtime::GenesisConfig {
+        system: circuit_parachain_runtime::SystemConfig {
+            code: circuit_parachain_runtime::WASM_BINARY
+                .expect("WASM binary was not build, please build it!")
+                .to_vec(),
+        },
+        balances: circuit_parachain_runtime::BalancesConfig {
+            balances: endowed_accounts
+                .iter()
+                .cloned()
+                .map(|(acc, amt)| (acc, amt))
+                .collect(),
+        },
+        clock: Default::default(),
+        account_manager: Default::default(),
+        treasury: Default::default(),
+        escrow_treasury: Default::default(),
+        fee_treasury: Default::default(),
+        parachain_treasury: Default::default(),
+        slash_treasury: Default::default(),
+        parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+        collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
+            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+            candidacy_bond: CANDIDACY_BOND,
+            desired_candidates: DESIRED_CANDIDATES,
+            ..Default::default()
+        },
+        session: circuit_parachain_runtime::SessionConfig {
+            keys: invulnerables
+                .into_iter()
+                .map(|(acc, aura)| {
+                    (
+                        acc.clone(),        // account id
+                        acc,                // validator id
+                        session_keys(aura), // session keys
+                    )
+                })
+                .collect(),
+        },
+        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
+        // of this.
+        aura: Default::default(),
+        assets: Default::default(),
+        aura_ext: Default::default(),
+        parachain_system: Default::default(),
+        polkadot_xcm: circuit_parachain_runtime::PolkadotXcmConfig {
+            safe_xcm_version: Some(SAFE_XCM_VERSION),
+        },
+        sudo: SudoConfig {
+            // Assign network admin rights.
+            key: Some(root_key),
+        },
+        transaction_payment: Default::default(),
+        contracts_registry: Default::default(),
+        attesters: Default::default(),
+        evm: Default::default(),
+        three_vm: Default::default(),
+        rewards: Default::default(),
+        maintenance: Default::default(),
+        xdns: circuit_parachain_runtime::XDNSConfig {
+            known_gateway_records: vec![],
+            standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi(),
+        },
+        // grandpa: GrandpaConfig {
+        //     authorities: vec![authority_keys_from_seed("Alice")]
+        //         .iter()
+        //         .map(|x| (x.1.clone(), 1))
+        //         .collect(),
+        // },
+    }
+}
+
 pub fn rococo_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "T0RN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T0RN.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -242,7 +370,7 @@ pub fn rococo_config() -> ChainSpec {
         "t0rn_testnet",
         ChainType::Live,
         move || {
-            testnet_genesis(
+            polkadot_genesis(
                 // Invulnerable collators
                 vec![
                     (
@@ -260,24 +388,70 @@ pub fn rococo_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
-                    get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                    get_account_id_from_adrs("5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4"),
-                    get_account_id_from_adrs("5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf"),
-                    get_account_id_from_adrs("5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC"),
-                    get_account_id_from_adrs("5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL"),
-                    get_account_id_from_adrs("5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1"),
-                    get_account_id_from_adrs("5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg"),
-                    get_account_id_from_adrs("5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs"),
-                    get_account_id_from_adrs("5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG"),
-                    get_account_id_from_adrs("5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV"),
+                    (
+                        get_account_id_from_adrs(
+                            "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV",
+                        ),
+                        1 << 60,
+                    ),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                vec![],
-                standard_sfx_abi(),
-                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                //     .expect("initial gateways"),
+                get_account_id_from_adrs(SUDO_T0RN),
             )
         },
         // Bootnodes
@@ -299,122 +473,12 @@ pub fn rococo_config() -> ChainSpec {
     )
 }
 
-// This is the simplest bytecode to revert without returning any data.
-// We will pre-deploy it under all of our precompiles to ensure they can be called from
-// within contracts.
-// (PUSH1 0x00 PUSH1 0x00 REVERT)
-const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
-
-fn testnet_genesis(
-    invulnerables: Vec<(AccountId, AuraId)>,
-    endowed_accounts: Vec<AccountId>,
-    id: ParaId,
-    root_key: AccountId,
-    _gateway_records: Vec<GatewayRecord<AccountId>>,
-    standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
-) -> circuit_parachain_runtime::GenesisConfig {
-    circuit_parachain_runtime::GenesisConfig {
-        system: circuit_parachain_runtime::SystemConfig {
-            code: circuit_parachain_runtime::WASM_BINARY
-                .expect("WASM binary was not build, please build it!")
-                .to_vec(),
-        },
-        balances: circuit_parachain_runtime::BalancesConfig {
-            balances: endowed_accounts
-                .iter()
-                .cloned()
-                .map(|k| (k, 1 << 60))
-                .collect(),
-        },
-        treasury: Default::default(),
-        escrow_treasury: Default::default(),
-        fee_treasury: Default::default(),
-        parachain_treasury: Default::default(),
-        slash_treasury: Default::default(),
-        assets: Default::default(),
-        attesters: Default::default(),
-        rewards: Default::default(),
-        parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-        collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
-            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: (TRN as u128) * 10_u128,
-            desired_candidates: 32_u32,
-            ..Default::default()
-        },
-        session: circuit_parachain_runtime::SessionConfig {
-            keys: invulnerables
-                .into_iter()
-                .map(|(acc, aura)| {
-                    (
-                        acc.clone(),        // account id
-                        acc,                // validator id
-                        session_keys(aura), // session keys
-                    )
-                })
-                .collect(),
-        },
-        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
-        // of this.
-        aura: Default::default(),
-        aura_ext: Default::default(),
-        parachain_system: Default::default(),
-        polkadot_xcm: circuit_parachain_runtime::PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
-        },
-        xdns: XDNSConfig {
-            known_gateway_records: vec![],
-            standard_sfx_abi,
-        },
-        contracts_registry: Default::default(),
-        account_manager: Default::default(),
-        clock: Default::default(),
-        three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers
-        evm: EvmConfig {
-            // We need _some_ code inserted at the precompile address so that
-            // the evm will actually call the address.
-            accounts: circuit_parachain_runtime::contracts_config::PrecompilesValue::get()
-                .used_addresses()
-                .into_iter()
-                .map(|addr| {
-                    (
-                        addr,
-                        circuit_parachain_runtime::contracts_config::EvmGenesisAccount {
-                            nonce: Default::default(),
-                            balance: Default::default(),
-                            storage: Default::default(),
-                            code: REVERT_BYTECODE.into(),
-                        },
-                    )
-                })
-                .collect(),
-        },
-        maintenance_mode: MaintenanceModeConfig {
-            start_in_maintenance_mode: false,
-        },
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn check_start_in_maintenance_mode_is_false() {
-        let gen = testnet_genesis(
-            Default::default(),
-            Default::default(),
-            Default::default(),
-            sp_runtime::AccountId32::new([0; 32]),
-            Default::default(),
-            Default::default(),
-        );
-        assert!(
-            !gen.maintenance_mode.start_in_maintenance_mode,
-            "start_in_maintenance_mode should be false"
-        );
+    fn supply_is_right() {
+        assert_eq!(SUPPLY, 100_000_000_000_000_000_000);
     }
 }
