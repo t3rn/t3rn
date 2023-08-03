@@ -104,6 +104,7 @@ sp-application-crypto                      = { git = "https://github.com/parityt
 sp-block-builder                           = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-blockchain                              = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-consensus-aura                          = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
+sp-consensus                               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-core                                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-finality-grandpa                        = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-inherents                               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
@@ -120,6 +121,7 @@ sp-transaction-pool                        = { git = "https://github.com/parityt
 sp-trie                                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-version                                 = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-weights                                 = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39", default-features = false }
+sp-timestamp                               = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39", default-features = false }
 
 # Polkadot
 pallet-xcm                 = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
@@ -202,6 +204,7 @@ exclude = [
 members = [
   "finality-verifiers/grandpa",
   "node/standalone",
+    "node/t1rn-parachain",
   "node/t0rn-parachain",
   "node/t3rn-parachain",
   "pallets/3vm",
@@ -229,6 +232,7 @@ members = [
   "runtime/standalone",
   "runtime/t0rn-parachain",
   "runtime/t3rn-parachain",
+  "runtime/t1rn-parachain",
   "types",
   "types/abi",
 ]
