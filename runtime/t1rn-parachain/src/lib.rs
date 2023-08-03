@@ -7,6 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod accounts_config;
+pub mod circuit_config;
 pub mod hooks;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
@@ -134,6 +135,27 @@ construct_runtime!(
 
         // Global clock implementing most of t3rn hooks.
         Clock: pallet_clock= 110,
+
+                // t3rn pallets
+        XDNS: pallet_xdns = 100,
+        Attesters: pallet_attesters = 101,
+        Rewards: pallet_rewards = 102,
+        ContractsRegistry: pallet_contracts_registry = 106,
+        Circuit: pallet_circuit = 108,
+        Vacuum: pallet_vacuum = 111,
+
+        // // 3VM
+        // ThreeVm: pallet_3vm = 119,
+        // Contracts: pallet_3vm_contracts = 120,
+        // Evm: pallet_3vm_evm = 121,
+
+         // Portal
+        Portal: pallet_portal = 128,
+        RococoBridge: pallet_grandpa_finality_verifier = 129,
+        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
+        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
+        SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship = 20,

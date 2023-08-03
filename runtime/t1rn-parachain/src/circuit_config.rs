@@ -52,6 +52,7 @@ parameter_types! {
 impl pallet_attesters::Config for Runtime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
+    // Will be replaced by Finality Fees
     type CommitmentRewardSource = EscrowAccount;
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
@@ -111,15 +112,6 @@ impl pallet_rewards::Config for Runtime {
     type TreasuryInflation = TreasuryInflation;
 }
 
-impl pallet_clock::Config for Runtime {
-    type AccountManager = AccountManager;
-    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
-    type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<300u32>;
-    type RuntimeEvent = RuntimeEvent;
-}
-
 impl pallet_vacuum::Config for Runtime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
@@ -169,9 +161,9 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
-        log::debug!("t0rn::force_create_asset");
-        log::debug!("t0rn::asset_id: {asset_id:?}");
-        log::debug!("t0rn::asset_admin: {admin:?}");
+        log::debug!("t1rn::force_create_asset");
+        log::debug!("t1rn::asset_id: {asset_id:?}");
+        log::debug!("t1rn::asset_admin: {admin:?}");
         Assets::force_create(
             origin,
             asset_id,
@@ -182,15 +174,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     }
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
-        log::debug!("t0rn::freeze_asset ...");
+        log::debug!("t1rn::freeze_asset ...");
         Assets::freeze_asset(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::start_destroy ...");
+        log::debug!("t1rn::start_destroy ...");
         Assets::start_destroy(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::destroy_accounts ...");
+        log::debug!("t1rn::destroy_accounts ...");
         Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::destroy_approvals ...");
+        log::debug!("t1rn::destroy_approvals ...");
         Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::finish_destroy ...");
+        log::debug!("t1rn::finish_destroy ...");
         Assets::finish_destroy(origin.clone(), asset_id.clone())?;
 
         Ok(().into())
@@ -253,7 +245,6 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 }
 
 parameter_types! {
-    pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
     pub const SelfGatewayIdOptimistic: [u8; 4] = [0, 3, 3, 3];
 }
@@ -268,7 +259,7 @@ impl pallet_circuit::Config for Runtime {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
-    type SelfAccountId = CircuitAccountId;
+    type SelfAccountId = crate::accounts_config::EscrowAccount;
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;

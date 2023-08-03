@@ -6,6 +6,7 @@ use crate::{
 use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
 use sp_core::{crypto::AccountId32, ConstU32};
 use sp_runtime::traits::{AccountIdConversion, ConvertInto};
+
 parameter_types! {
     pub EscrowAccount: AccountId32 = EscrowTreasuryId::get().into_account_truncating();
 }
