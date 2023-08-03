@@ -253,7 +253,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn sorted_nominated_attesters)]
     pub type SortedNominatedAttesters<T: Config> =
-        StorageValue<_, Vec<(T::AccountId, BalanceOf<T>)>, ValueQuery>;
+    StorageValue<_, Vec<(T::AccountId, BalanceOf<T>)>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn active_set)]
@@ -288,17 +288,17 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn next_committee_on_target)]
     pub type NextCommitteeOnTarget<T: Config> =
-        StorageMap<_, Identity, TargetId, CommitteeTransition>;
+    StorageMap<_, Identity, TargetId, CommitteeTransition>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches_to_sign)]
     pub type BatchesToSign<T: Config> =
-        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
+    StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches)]
     pub type Batches<T: Config> =
-        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
+    StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_unnominations)]
@@ -323,12 +323,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn fast_confirmation_cost)]
     pub type FastConfirmationCost<T: Config> =
-        StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
+    StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
 
     #[pallet::storage]
     #[pallet::getter(fn paid_finality_fees)]
     pub type PaidFinalityFees<T: Config> =
-        StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
+    StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -737,7 +737,7 @@ pub mod pallet {
             let submitter = ensure_signed(origin)?;
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let target_codec = T::Xdns::get_target_codec(&target)?;
+                let target_codec = T::Xdns::get_target_codec(&target)?;
 
             // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
             let _target_escrow_address = T::Xdns::get_escrow_account(&target)?;
@@ -745,32 +745,32 @@ pub mod pallet {
             let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
             )"
-            .to_vec();
+                .to_vec();
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
+                let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
                 target,
                 SpeedMode::Finalized,
                 None,
                 target_inclusion_proof_encoded,
             )?; // Todo: add escrow address
             #[cfg(feature = "test-skip-verification")]
-            let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+                let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
                 height: Zero::zero(),
                 message: target_inclusion_proof_encoded,
                 including_header: [0u8; 32].encode(),
             };
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let recoded_batch_event_bytes = FilledAbi::try_fill_abi(
+                let recoded_batch_event_bytes = FilledAbi::try_fill_abi(
                 escrow_batch_success_descriptor.try_into()?,
                 escrow_inclusion_receipt.message,
                 target_codec.clone(),
             )?
-            .recode_as(&target_codec, &Codec::Scale)?;
+                .recode_as(&target_codec, &Codec::Scale)?;
 
             #[cfg(feature = "test-skip-verification")]
-            let recoded_batch_event_bytes = escrow_inclusion_receipt.message;
+                let recoded_batch_event_bytes = escrow_inclusion_receipt.message;
 
             let on_target_batch_event =
                 TargetBatchDispatchEvent::decode(&mut &recoded_batch_event_bytes[..])
@@ -1961,7 +1961,7 @@ pub mod pallet {
                 let mut indices_to_remove = Vec::new();
 
                 for (index, (attester, amount, unlock_block)) in
-                    pending_unnominations.iter().enumerate()
+                pending_unnominations.iter().enumerate()
                 {
                     if unlock_block <= &n {
                         // Save the index to be removed later
@@ -2802,9 +2802,9 @@ pub mod attesters_test {
         match expect_pending_attestation_batches {
             Some(event) => match &event.event {
                 Event::Attesters(AttestersEvent::CurrentPendingAttestationBatches(
-                    target,
-                    pending_batches,
-                )) => (*target, pending_batches.clone()),
+                                     target,
+                                     pending_batches,
+                                 )) => (*target, pending_batches.clone()),
                 _ => panic!(
                     "expect_last_event_to_emit_pending_attestation_batches: unexpected event type"
                 ),
@@ -3287,7 +3287,7 @@ pub mod attesters_test {
                     hex_literal::hex!(
                         "3e293db1e3431e80a5180fe1be16c54bf898f879ab888e3cf89de89f91a8ca6a"
                     )
-                    .into()
+                        .into()
                 )
             );
         });
@@ -3668,7 +3668,7 @@ pub mod attesters_test {
                     ETHEREUM_TARGET,
                     BatchStatus::ReadyForSubmissionFullyApproved
                 )
-                .len(),
+                    .len(),
                 1
             );
         });
