@@ -1178,7 +1178,7 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "pallet-xdns-rpc",
- "sc-basic-authorship 0.10.0-dev",
+ "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
@@ -9202,7 +9202,7 @@ dependencies = [
  "polkadot-statement-distribution",
  "rococo-runtime",
  "sc-authority-discovery",
- "sc-basic-authorship 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
+ "sc-basic-authorship",
  "sc-block-builder",
  "sc-chain-spec",
  "sc-client-api",
@@ -10406,29 +10406,6 @@ dependencies = [
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
-]
-
-[[package]]
-name = "sc-basic-authorship"
-version = "0.10.0-dev"
-dependencies = [
- "futures",
- "futures-timer",
- "log",
- "parity-scale-codec",
- "sc-block-builder",
- "sc-client-api",
- "sc-proposer-metrics",
- "sc-telemetry",
- "sc-transaction-pool-api",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-slots",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "substrate-prometheus-endpoint",
 ]
 
 [[package]]
@@ -13051,7 +13028,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
- "sc-basic-authorship 0.10.0-dev",
+ "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
@@ -13223,7 +13200,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
- "sc-basic-authorship 0.10.0-dev",
+ "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
@@ -13500,7 +13477,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
- "sc-basic-authorship 0.10.0-dev",
+ "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",
  "sc-client-api",

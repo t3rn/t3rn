@@ -29,8 +29,7 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch 
 frame-benchmarking             = { workspace = true }
 frame-benchmarking-cli         = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
-#sc-basic-authorship            = { workspace = true }
-sc-basic-authorship            = { path = "../../vendor/substrate/client/basic-authorship" }
+sc-basic-authorship            = { workspace = true }
 sc-chain-spec                  = { workspace = true }
 sc-cli                         = { workspace = true }
 sc-client-api                  = { workspace = true }
