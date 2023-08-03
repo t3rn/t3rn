@@ -34,13 +34,13 @@ where
     T: ConfigSystem,
     Balance: Encode + Decode,
 {
-    GetState(T::Origin, GetState<T>),
+    GetState(T::RuntimeOrigin, GetState<T>),
     SubmitSideEffects(
-        T::Origin,
+        T::RuntimeOrigin,
         SideEffects<T::AccountId, Balance, T::Hash>,
         SpeedMode,
     ),
-    Signal(T::Origin, ExecutionSignal<T::Hash>),
+    Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
     Portal(PortalPrecompileArgs),
 }
 
@@ -90,7 +90,7 @@ where
     T: ConfigSystem,
 {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }
@@ -194,7 +194,7 @@ where
     T: ConfigSystem,
 {
     fn load_local_state(
-        _origin: &T::Origin,
+        _origin: &T::RuntimeOrigin,
         _xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
         Err("Local State Not implemented").map_err(|e| e.into())

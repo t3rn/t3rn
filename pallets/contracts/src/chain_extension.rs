@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2020-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,22 @@
 //! required for this endeavour are defined or re-exported in this module. There is an
 //! implementation on `()` which can be used to signal that no chain extension is available.
 //!
+//! # Using multiple chain extensions
+//!
+//! Often there is a need for having multiple chain extensions. This is often the case when
+//! some generally useful off-the-shelf extensions should be included. To have multiple chain
+//! extensions they can be put into a tuple which is then passed to [`Config::ChainExtension`] like
+//! this `type Extensions = (ExtensionA, ExtensionB)`.
+//!
+//! However, only extensions implementing [`RegisteredChainExtension`] can be put into a tuple.
+//! This is because the [`RegisteredChainExtension::ID`] is used to decide which of those extensions
+//! should be used when the contract calls a chain extensions. Extensions which are generally
+//! useful should claim their `ID` with [the registry](https://github.com/paritytech/chainextension-registry)
+//! so that no collisions with other vendors will occur.
+//!
+//! **Chain specific extensions must use the reserved `ID = 0` so that they can't be registered with
+//! the registry.**
+//!
 //! # Security
 //!
 //! The chain author alone is responsible for the security of the chain extension.
@@ -55,42 +71,33 @@
 //! on how to use a chain extension in order to provide new features to ink! contracts.
 
 use crate::{
-    chain_extension::state::BufInBufOut,
     gas::ChargedAmount,
     wasm::{Runtime, RuntimeCosts},
-    BalanceOf, Error,
+    Error,
 };
+use codec::{Decode, MaxEncodedLen};
+use frame_support::weights::Weight;
+use sp_runtime::DispatchError;
+use sp_std::{marker::PhantomData, vec::Vec};
+
 pub use crate::{exec::Ext, Config};
-use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{dispatch::RawOrigin, pallet_prelude::Get, weights::Weight};
-use frame_system::pallet_prelude::OriginFor;
 pub use frame_system::Config as SysConfig;
 pub use pallet_contracts_primitives::ReturnFlags;
-pub use sp_core::crypto::UncheckedFrom;
-use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
-use sp_std::{marker::PhantomData, vec::Vec};
-pub use state::Init as InitState;
-use t3rn_primitives::{
-    threevm::{GetState, Precompile, PrecompileArgs},
-    SpeedMode,
-};
-use t3rn_sdk_primitives::{
-    signal::ExecutionSignal, state::SideEffects, GET_STATE_FUNCTION_CODE,
-    POST_SIGNAL_FUNCTION_CODE, SUBMIT_FUNCTION_CODE,
-};
 
 /// Result that returns a [`DispatchError`] on error.
 pub type Result<T> = sp_std::result::Result<T, DispatchError>;
-
-const CONTRACTS_LOG_TARGET: &str = "runtime::contracts::chain_extension";
-const GET_STATE_LOG_TARGET: &str = "runtime::contracts::get_state";
-const SIGNAL_LOG_TARGET: &str = "runtime::contracts::signal";
 
 /// A trait used to extend the set of contract callable functions.
 ///
 /// In order to create a custom chain extension this trait must be implemented and supplied
 /// to the pallet contracts configuration trait as the associated type of the same name.
 /// Consult the [module documentation](self) for a general explanation of chain extensions.
+///
+/// # Lifetime
+///
+/// The extension will be [`Default`] initialized at the beginning of each call
+/// (**not** per call stack) and dropped afterwards. Hence any value held inside the extension
+/// can be used as a per-call scratch buffer.
 pub trait ChainExtension<C: Config> {
     /// Call the chain extension logic.
     ///
@@ -99,8 +106,6 @@ pub trait ChainExtension<C: Config> {
     /// imported wasm function.
     ///
     /// # Parameters
-    /// - `func_id`: The first argument to `seal_call_chain_extension`. Usually used to determine
-    ///   which function to realize.
     /// - `env`: Access to the remaining arguments and the execution environment.
     ///
     /// # Return
@@ -108,10 +113,7 @@ pub trait ChainExtension<C: Config> {
     /// In case of `Err` the contract execution is immediately suspended and the passed error
     /// is returned to the caller. Otherwise the value of [`RetVal`] determines the exit
     /// behaviour.
-    fn call<E>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal>
-    where
-        E: Ext<T = C>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>;
+    fn call<E: Ext<T = C>>(&mut self, env: Environment<E, InitState>) -> Result<RetVal>;
 
     /// Determines whether chain extensions are enabled for this chain.
     ///
@@ -125,126 +127,49 @@ pub trait ChainExtension<C: Config> {
     }
 }
 
-impl<C: Config> ChainExtension<C> for () {
-    fn call<E>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal>
-    where
-        E: Ext<T = C>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-    {
-        log::trace!(
-            target: CONTRACTS_LOG_TARGET,
-            "[ChainExtension]|call|func_id:{:}",
-            func_id
+/// A [`ChainExtension`] that can be composed with other extensions using a tuple.
+///
+/// An extension that implements this trait can be put in a tuple in order to have multiple
+/// extensions available. The tuple implementation routes requests based on the first two
+/// most significant bytes of the `id` passed to `call`.
+///
+/// If this extensions is to be used by multiple runtimes consider
+/// [registering it](https://github.com/paritytech/chainextension-registry) to ensure that there
+/// are no collisions with other vendors.
+///
+/// # Note
+///
+/// Currently, we support tuples of up to ten registred chain extensions. If more chain extensions
+/// are needed consider opening an issue.
+pub trait RegisteredChainExtension<C: Config>: ChainExtension<C> {
+    /// The extensions globally unique identifier.
+    const ID: u16;
+}
+
+#[impl_trait_for_tuples::impl_for_tuples(10)]
+#[tuple_types_custom_trait_bound(RegisteredChainExtension<C>)]
+impl<C: Config> ChainExtension<C> for Tuple {
+    fn call<E: Ext<T = C>>(&mut self, mut env: Environment<E, InitState>) -> Result<RetVal> {
+        for_tuples!(
+            #(
+                if (Tuple::ID == env.ext_id()) && Tuple::enabled() {
+                    return Tuple.call(env);
+                }
+            )*
         );
-        match func_id {
-            GET_STATE_FUNCTION_CODE => {
-                let mut env = env.buf_in_buf_out();
-
-                // For some reason the parameter is passed through as a default, not an option
-                let execution_id: C::Hash = env.read_as()?;
-                log::debug!(
-                    target: GET_STATE_LOG_TARGET,
-                    "reading state for execution_id: {:?}",
-                    execution_id
-                );
-                let default: C::Hash = Default::default();
-                let execution_id = if execution_id == default {
-                    None
-                } else {
-                    // TODO: allow a modifiable multiplier constant in the config
-                    env.charge_weight(execution_id.encoded_size() as Weight)?;
-                    Some(execution_id)
-                };
-
-                let origin = origin_from_environment(&mut env);
-
-                let invocation = <C as Config>::ThreeVm::invoke(PrecompileArgs::GetState(
-                    origin,
-                    GetState {
-                        xtx_id: execution_id,
-                    },
-                ))?;
-                let state = invocation.get_state().ok_or(Error::<C>::NoStateReturned)?;
-
-                let xtx_id = state.xtx_id;
-                let bytes = state.encode();
-                log::debug!(
-                    target: GET_STATE_LOG_TARGET,
-                    "loaded local state id: {:?}, state: {:?}",
-                    xtx_id,
-                    bytes,
-                );
-
-                env.write(
-                    &bytes[..],
-                    false,
-                    Some(<C as Config>::DepositPerByte::get().unique_saturated_into()),
-                )?;
-
-                Ok(RetVal::Converging(0))
-            },
-            SUBMIT_FUNCTION_CODE => {
-                let mut env = env.buf_in_buf_out();
-
-                let arg: (SideEffects<C::AccountId, BalanceOf<C>, C::Hash>, SpeedMode) =
-                    read_from_environment(&mut env)?;
-
-                let origin = RawOrigin::Signed(env.ext().caller().clone());
-                <C as Config>::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
-                    C::Origin::from(origin),
-                    arg.0,
-                    arg.1,
-                ))?;
-                Ok(RetVal::Converging(0))
-            },
-            POST_SIGNAL_FUNCTION_CODE => {
-                let mut env = env.buf_in_buf_out();
-
-                let signal: ExecutionSignal<C::Hash> = read_from_environment(&mut env)?;
-                log::debug!(target: SIGNAL_LOG_TARGET, "submitting signal {:?}", signal);
-
-                let origin = RawOrigin::Signed(env.ext().caller().clone());
-                C::ThreeVm::invoke(PrecompileArgs::Signal(C::Origin::from(origin), signal))?;
-                Ok(RetVal::Converging(0))
-            },
-            n => {
-                log::error!(
-                    target: CONTRACTS_LOG_TARGET,
-                    "Called an unregistered `func_id`: {:}",
-                    func_id
-                );
-                Ok(RetVal::Converging(n))
-            },
-        }
+        Err(Error::<E::T>::NoChainExtension.into())
     }
-}
 
-fn read_from_environment<C, T, E>(env: &mut Environment<E, BufInBufOut>) -> Result<T>
-where
-    C: Config,
-    T: Decode + MaxEncodedLen,
-    E: Ext<T = C>,
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-{
-    let bytes = env.read(<T as MaxEncodedLen>::max_encoded_len() as u32)?;
-
-    Decode::decode(&mut &bytes[..])
-        .map_err(|e| {
-            log::error!(target: CONTRACTS_LOG_TARGET, "decoding type failed {:?}", e);
-            Error::<C>::DecodingFailed.into()
-        })
-        .and_then(|t: T| env.charge_weight(t.encoded_size() as Weight).map(|_| t))
-}
-
-fn origin_from_environment<C, E>(
-    env: &mut Environment<E, BufInBufOut>,
-) -> <C as frame_system::Config>::Origin
-where
-    C: Config,
-    E: Ext<T = C>,
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-{
-    OriginFor::<C>::from(RawOrigin::Signed(env.ext().caller().clone()))
+    fn enabled() -> bool {
+        for_tuples!(
+            #(
+                if Tuple::enabled() {
+                    return true;
+                }
+            )*
+        );
+        false
+    }
 }
 
 /// Determines the exit behaviour and return value of a chain extension.
@@ -264,7 +189,7 @@ pub enum RetVal {
 ///
 /// It uses [typestate programming](https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html)
 /// to enforce the correct usage of the parameters passed to the chain extension.
-pub struct Environment<'a, 'b, E: Ext, S: state::State> {
+pub struct Environment<'a, 'b, E: Ext, S: State> {
     /// The actual data of this type.
     inner: Inner<'a, 'b, E>,
     /// `S` is only used in the type system but never as value.
@@ -272,10 +197,23 @@ pub struct Environment<'a, 'b, E: Ext, S: state::State> {
 }
 
 /// Functions that are available in every state of this type.
-impl<'a, 'b, E: Ext, S: state::State> Environment<'a, 'b, E, S>
-where
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-{
+impl<'a, 'b, E: Ext, S: State> Environment<'a, 'b, E, S> {
+    /// The function id within the `id` passed by a contract.
+    ///
+    /// It returns the two least significant bytes of the `id` passed by a contract as the other
+    /// two bytes represent the chain extension itself (the code which is calling this function).
+    pub fn func_id(&self) -> u16 {
+        (self.inner.id & 0x0000FFFF) as u16
+    }
+
+    /// The chain extension id within the `id` passed by a contract.
+    ///
+    /// It returns the two most significant bytes of the `id` passed by a contract which represent
+    /// the chain extension itself (the code which is calling this function).
+    pub fn ext_id(&self) -> u16 {
+        (self.inner.id >> 16) as u16
+    }
+
     /// Charge the passed `amount` of weight from the overall limit.
     ///
     /// It returns `Ok` when there the remaining weight budget is larger than the passed
@@ -316,13 +254,15 @@ where
 ///
 /// Those are the functions that determine how the arguments to the chain extensions
 /// should be consumed.
-impl<'a, 'b, E: Ext> Environment<'a, 'b, E, state::Init> {
+impl<'a, 'b, E: Ext> Environment<'a, 'b, E, InitState> {
     /// Creates a new environment for consumption by a chain extension.
     ///
     /// It is only available to this crate because only the wasm runtime module needs to
     /// ever create this type. Chain extensions merely consume it.
     pub(crate) fn new(
         runtime: &'a mut Runtime<'b, E>,
+        memory: &'a mut [u8],
+        id: u32,
         input_ptr: u32,
         input_len: u32,
         output_ptr: u32,
@@ -331,6 +271,8 @@ impl<'a, 'b, E: Ext> Environment<'a, 'b, E, state::Init> {
         Environment {
             inner: Inner {
                 runtime,
+                memory,
+                id,
                 input_ptr,
                 input_len,
                 output_ptr,
@@ -341,7 +283,7 @@ impl<'a, 'b, E: Ext> Environment<'a, 'b, E, state::Init> {
     }
 
     /// Use all arguments as integer values.
-    pub fn only_in(self) -> Environment<'a, 'b, E, state::OnlyIn> {
+    pub fn only_in(self) -> Environment<'a, 'b, E, OnlyInState> {
         Environment {
             inner: self.inner,
             phantom: PhantomData,
@@ -349,7 +291,7 @@ impl<'a, 'b, E: Ext> Environment<'a, 'b, E, state::Init> {
     }
 
     /// Use input arguments as integer and output arguments as pointer to a buffer.
-    pub fn prim_in_buf_out(self) -> Environment<'a, 'b, E, state::PrimInBufOut> {
+    pub fn prim_in_buf_out(self) -> Environment<'a, 'b, E, PrimInBufOutState> {
         Environment {
             inner: self.inner,
             phantom: PhantomData,
@@ -357,7 +299,7 @@ impl<'a, 'b, E: Ext> Environment<'a, 'b, E, state::Init> {
     }
 
     /// Use input and output arguments as pointers to a buffer.
-    pub fn buf_in_buf_out(self) -> Environment<'a, 'b, E, state::BufInBufOut> {
+    pub fn buf_in_buf_out(self) -> Environment<'a, 'b, E, BufInBufOutState> {
         Environment {
             inner: self.inner,
             phantom: PhantomData,
@@ -366,7 +308,7 @@ impl<'a, 'b, E: Ext> Environment<'a, 'b, E, state::Init> {
 }
 
 /// Functions to use the input arguments as integers.
-impl<'a, 'b, E: Ext, S: state::PrimIn> Environment<'a, 'b, E, S> {
+impl<'a, 'b, E: Ext, S: PrimIn> Environment<'a, 'b, E, S> {
     /// The `input_ptr` argument.
     pub fn val0(&self) -> u32 {
         self.inner.input_ptr
@@ -379,7 +321,7 @@ impl<'a, 'b, E: Ext, S: state::PrimIn> Environment<'a, 'b, E, S> {
 }
 
 /// Functions to use the output arguments as integers.
-impl<'a, 'b, E: Ext, S: state::PrimOut> Environment<'a, 'b, E, S> {
+impl<'a, 'b, E: Ext, S: PrimOut> Environment<'a, 'b, E, S> {
     /// The `output_ptr` argument.
     pub fn val2(&self) -> u32 {
         self.inner.output_ptr
@@ -392,10 +334,7 @@ impl<'a, 'b, E: Ext, S: state::PrimOut> Environment<'a, 'b, E, S> {
 }
 
 /// Functions to use the input arguments as pointer to a buffer.
-impl<'a, 'b, E: Ext, S: state::BufIn> Environment<'a, 'b, E, S>
-where
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-{
+impl<'a, 'b, E: Ext, S: BufIn> Environment<'a, 'b, E, S> {
     /// Reads `min(max_len, in_len)` from contract memory.
     ///
     /// This does **not** charge any weight. The caller must make sure that the an
@@ -405,9 +344,11 @@ where
     /// charge the overall costs either using `max_len` (worst case approximation) or using
     /// [`in_len()`](Self::in_len).
     pub fn read(&self, max_len: u32) -> Result<Vec<u8>> {
-        self.inner
-            .runtime
-            .read_sandbox_memory(self.inner.input_ptr, self.inner.input_len.min(max_len))
+        self.inner.runtime.read_sandbox_memory(
+            self.inner.memory,
+            self.inner.input_ptr,
+            self.inner.input_len.min(max_len),
+        )
     }
 
     /// Reads `min(buffer.len(), in_len) from contract memory.
@@ -421,9 +362,11 @@ where
             let buffer = core::mem::take(buffer);
             &mut buffer[..len.min(self.inner.input_len as usize)]
         };
-        self.inner
-            .runtime
-            .read_sandbox_memory_into_buf(self.inner.input_ptr, sliced)?;
+        self.inner.runtime.read_sandbox_memory_into_buf(
+            self.inner.memory,
+            self.inner.input_ptr,
+            sliced,
+        )?;
         *buffer = sliced;
         Ok(())
     }
@@ -437,16 +380,18 @@ where
     pub fn read_as<T: Decode + MaxEncodedLen>(&mut self) -> Result<T> {
         self.inner
             .runtime
-            .read_sandbox_memory_as(self.inner.input_ptr)
+            .read_sandbox_memory_as(self.inner.memory, self.inner.input_ptr)
     }
 
     /// Reads and decodes a type with a dynamic size from contract memory.
     ///
     /// Make sure to include `len` in your weight calculations.
     pub fn read_as_unbounded<T: Decode>(&mut self, len: u32) -> Result<T> {
-        self.inner
-            .runtime
-            .read_sandbox_memory_as_unbounded(self.inner.input_ptr, len)
+        self.inner.runtime.read_sandbox_memory_as_unbounded(
+            self.inner.memory,
+            self.inner.input_ptr,
+            len,
+        )
     }
 
     /// The length of the input as passed in as `input_len`.
@@ -461,10 +406,7 @@ where
 }
 
 /// Functions to use the output arguments as pointer to a buffer.
-impl<'a, 'b, E: Ext, S: state::BufOut> Environment<'a, 'b, E, S>
-where
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-{
+impl<'a, 'b, E: Ext, S: BufOut> Environment<'a, 'b, E, S> {
     /// Write the supplied buffer to contract memory.
     ///
     /// If the contract supplied buffer is smaller than the passed `buffer` an `Err` is returned.
@@ -479,6 +421,7 @@ where
         weight_per_byte: Option<Weight>,
     ) -> Result<()> {
         self.inner.runtime.write_sandbox_output(
+            self.inner.memory,
             self.inner.output_ptr,
             self.inner.output_len_ptr,
             buffer,
@@ -498,6 +441,10 @@ where
 struct Inner<'a, 'b, E: Ext> {
     /// The runtime contains all necessary functions to interact with the running contract.
     runtime: &'a mut Runtime<'b, E>,
+    /// Reference to the contracts memory.
+    memory: &'a mut [u8],
+    /// Verbatim argument passed to `seal_call_chain_extension`.
+    id: u32,
     /// Verbatim argument passed to `seal_call_chain_extension`.
     input_ptr: u32,
     /// Verbatim argument passed to `seal_call_chain_extension`.
@@ -508,31 +455,54 @@ struct Inner<'a, 'b, E: Ext> {
     output_len_ptr: u32,
 }
 
-/// Private submodule with public types to prevent other modules from naming them.
-mod state {
-    pub trait State {}
+/// Any state of an [`Environment`] implements this trait.
+/// See [typestate programming](https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html).
+pub trait State: sealed::Sealed {}
 
-    pub trait PrimIn: State {}
-    pub trait PrimOut: State {}
-    pub trait BufIn: State {}
-    pub trait BufOut: State {}
+/// A state that uses primitive inputs.
+pub trait PrimIn: State {}
 
-    /// The initial state of an [`Environment`](`super::Environment`).
-    /// See [typestate programming](https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html).
-    pub enum Init {}
-    pub enum OnlyIn {}
-    pub enum PrimInBufOut {}
-    pub enum BufInBufOut {}
+/// A state that uses primitive outputs.
+pub trait PrimOut: State {}
 
-    impl State for Init {}
-    impl State for OnlyIn {}
-    impl State for PrimInBufOut {}
-    impl State for BufInBufOut {}
+/// A state that uses a buffer as input.
+pub trait BufIn: State {}
 
-    impl PrimIn for OnlyIn {}
-    impl PrimOut for OnlyIn {}
-    impl PrimIn for PrimInBufOut {}
-    impl BufOut for PrimInBufOut {}
-    impl BufIn for BufInBufOut {}
-    impl BufOut for BufInBufOut {}
+/// A state that uses a buffer as output.
+pub trait BufOut: State {}
+
+/// The initial state of an [`Environment`].
+pub enum InitState {}
+
+/// A state that uses all arguments as primitive inputs.
+pub enum OnlyInState {}
+
+/// A state that uses two arguments as primitive inputs and the other two as buffer output.
+pub enum PrimInBufOutState {}
+
+/// Uses a buffer for input and a buffer for output.
+pub enum BufInBufOutState {}
+
+mod sealed {
+    use super::*;
+
+    /// Trait to prevent users from implementing `State` for anything else.
+    pub trait Sealed {}
+
+    impl Sealed for InitState {}
+    impl Sealed for OnlyInState {}
+    impl Sealed for PrimInBufOutState {}
+    impl Sealed for BufInBufOutState {}
+
+    impl State for InitState {}
+    impl State for OnlyInState {}
+    impl State for PrimInBufOutState {}
+    impl State for BufInBufOutState {}
+
+    impl PrimIn for OnlyInState {}
+    impl PrimOut for OnlyInState {}
+    impl PrimIn for PrimInBufOutState {}
+    impl BufOut for PrimInBufOutState {}
+    impl BufIn for BufInBufOutState {}
+    impl BufOut for BufInBufOutState {}
 }

@@ -1,4 +1,4 @@
-use circuit_mock_runtime::{ExtBuilder, *};
+use circuit_mock_runtime::{ExtBuilder, RuntimeOrigin as Origin, *};
 use circuit_runtime_pallets::{
     pallet_asset_tx_payment::ChargeAssetTxPayment, pallet_balances::Call as BalancesCall,
 };
@@ -14,8 +14,8 @@ use sp_runtime::{traits::SignedExtension, AccountId32};
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([1u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([2u8; 32]);
-pub const CALL: &<Runtime as frame_system::Config>::Call =
-    &Call::Balances(BalancesCall::transfer {
+pub const CALL: &<Runtime as frame_system::Config>::RuntimeCall =
+    &RuntimeCall::Balances(BalancesCall::transfer {
         dest: sp_runtime::MultiAddress::Id(CHARLIE),
         value: 69,
     });
@@ -70,7 +70,7 @@ fn transaction_payment_in_asset_possible() {
 
         // charge a bogus transfer call
         let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-            .pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+            .pre_dispatch(&caller, CALL, &info_from_weight(weight.into()), len)
             .expect("asset transaction payment");
 
         // assert that native balance is not used
@@ -82,7 +82,7 @@ fn transaction_payment_in_asset_possible() {
 
         assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
             Some(pre),
-            &info_from_weight(weight),
+            &info_from_weight(weight.into()),
             &PostDispatchInfo {
                 actual_weight: None,
                 pays_fee: Default::default(),
@@ -104,7 +104,7 @@ fn transaction_payment_in_asset_fails_if_insufficient_balance() {
         // try charge transaction fee in asset with no prior mint
         assert_eq!(Assets::balance(asset_id, caller.clone()), 0);
         assert!(ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-            .pre_dispatch(&caller, CALL, &info_from_weight(5_u64), 10)
+            .pre_dispatch(&caller, CALL, &info_from_weight(5_u64.into()), 10)
             .is_err());
     });
 }

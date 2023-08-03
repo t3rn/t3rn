@@ -8,7 +8,7 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 
-use sp_runtime::traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
 pub use t3rn_types::{
@@ -74,7 +74,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
@@ -118,8 +118,7 @@ pub mod pallet {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
-
-            0
+            Zero::zero()
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
@@ -201,17 +200,17 @@ pub mod pallet {
                     // Add more migration cases here, if needed in the future
                     _ => {
                         // No migration needed.
-                        Ok::<Weight, DispatchError>(0 as Weight)
+                        Ok::<Weight, DispatchError>(Default::default())
                     }
                 }
             })
-            .unwrap_or(0)
+            .unwrap_or_default()
         }
     }
 
     impl<T: Config> Pallet<T> {
         pub fn check_for_manual_verifier_overview_process(n: BlockNumberFor<T>) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight: Weight = Zero::zero();
 
             let latest_overview = <VerifierOverviewStore<T>>::get();
             total_weight = total_weight.saturating_add(T::DbWeight::get().reads(1));
@@ -256,7 +255,7 @@ pub mod pallet {
             new_epoch: BlockNumberFor<T>,
             latest_heartbeat: LightClientHeartbeat<T>,
         ) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight: Weight = Zero::zero();
 
             let (justified_height, finalized_height, updated_height, is_active) = (
                 latest_heartbeat.last_rational_height,
@@ -500,8 +499,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             token_id: AssetId,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin.clone())?;
-
+            // AssetsOverlay ensures the admin / ownership rights
             T::AssetsOverlay::destroy(origin, &token_id)?;
 
             // Remove from all destinations

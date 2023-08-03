@@ -1,114 +1,96 @@
 [package]
-authors     = [ "Parity Technologies <admin@parity.io>" ]
+authors     = [ "Parity Technologies <admin@parity.io>", "t3rn ltd. <team@t3rn.io>" ]
 description = "FRAME pallet for WASM contracts"
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-contracts"
-readme      = "README.md"
-repository  = "https://github.com/paritytech/substrate/"
-version     = "1.0.0-alpha.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
-targets = [ "x86_64-unknown-linux-gnu" ]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-bitflags         = "2.3"
-codec            = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive", "max-encoded-len" ] }
-hex              = { version = "0.4", default-features = false }
-log              = { version = "0.4", default-features = false }
-scale-info       = { version = "2.9.0", default-features = false, features = [ "derive" ] }
-serde            = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-smallvec         = { version = "1.11", default-features = false, features = [ "const_generics" ] }
-wasm-instrument  = { version = "0.1", default-features = false }
-wasmi-validation = { version = "0.4", default-features = false }
+bitflags = "1.0"
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
 
-# Enabled by benchmarks
-frame-benchmarking = { optional = true, default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-rand               = { version = "0.8", optional = true, default-features = false }
-rand_pcg           = { version = "0.3", optional = true }
+log = { version = "0.4", default-features = false }
+wasm-instrument = { version = "0.4", default-features = false }
+serde = { version = "1", optional = true, features = ["derive"] }
+smallvec = { version = "1", default-features = false, features = [
+  "const_generics",
+] }
+wasmi = { version = "0.20", default-features = false }
+wasmparser = { package = "wasmparser-nostd", version = "0.91", default-features = false }
+impl-trait-for-tuples = "0.2"
+
+# Only used in benchmarking to generate random contract code
+rand = { version = "0.8", optional = true, default-features = false }
+rand_pcg = { version = "0.3", optional = true }
 
 # Substrate Dependencies
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true  }
+frame-system = { workspace = true }
+pallet-contracts-primitives = { path = "primitives", default-features = false }
+pallet-contracts-proc-macro = { path = "proc-macro", default-features = false }
 
-pallet-contracts-primitives = { default-features = false, path = "primitives" }
-pallet-contracts-proc-macro = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-core                     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-io                       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime                  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-sandbox                  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-std                      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-api = { workspace = true}
+sp-core = { workspace = true}
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
-# t3rn dependencies
+
+## extras from t3rn
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.5", default-features = false }
-#t3rn-sdk-primitives = { path = "../../../../sdk/crates/primitives", default-features = false }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+
 
 [dev-dependencies]
-assert_matches    = "1"
-env_logger        = "0.10"
-glob              = "0.3"
-hex-literal       = "0.3"
+array-bytes = "4.1"
+assert_matches = "1"
+env_logger = "0.9"
 pretty_assertions = "1"
-serde_json        = "1.0.103"
-wat               = "1"
+wat = "1"
 
 # Substrate Dependencies
-pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-
-# t3rn dependencies
-pallet-3vm                       = { path = "../3vm" }
-pallet-account-manager           = { path = "../account-manager" }
-pallet-circuit                   = { path = "../circuit" }
-pallet-contracts-registry        = { path = "../contracts-registry" }
-pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
-pallet-portal                    = { path = "../portal" }
-pallet-xdns                      = { path = "../xdns" }
-
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true }
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false, package = "pallet-insecure-randomness-collective-flip" }
+pallet-utility = { workspace = true }
+sp-keystore = { workspace = true }
 
 [features]
-default = [ "std" ]
-runtime-benchmarks = [
-  "frame-benchmarking/runtime-benchmarks",
-  "frame-system/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
-  "sp-runtime/runtime-benchmarks",
-  "rand",
-  "rand_pcg",
-  "unstable-interface",
-]
+default = ["std"]
 std = [
-  "serde/std",
+  "serde",
   "codec/std",
   "scale-info/std",
-  "hex/std",
   "sp-core/std",
   "sp-runtime/std",
   "sp-io/std",
   "sp-std/std",
-  "sp-sandbox/std",
+  "frame-benchmarking?/std",
   "frame-support/std",
   "frame-system/std",
   "wasm-instrument/std",
-  "wasmi-validation/std",
+  "wasmi/std",
   "pallet-contracts-primitives/std",
   "pallet-contracts-proc-macro/full",
   "log/std",
   "rand/std",
+  "wasmparser/std",
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
-  "bitflags/std"
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]
-# Make contract callable functions marked as __unstable__ available. Do not enable
-# on live chains as those are subject to change.
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "rand",
+  "rand_pcg",
+]
+try-runtime = ["frame-support/try-runtime"]
 unstable-interface = [  ]

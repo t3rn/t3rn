@@ -1,4 +1,4 @@
-use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig};
+use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, TRN};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -8,11 +8,10 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::monetary::TRN;
 
 const PARACHAIN_ID: u32 = 3333;
-const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
-const CANDIDACY_BOND: u128 = (TRN as u128) * 10_000; // 10K TRN
+const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
+const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 pub(crate) const SS58_FORMAT: u16 = 9935;
@@ -123,51 +122,51 @@ pub fn local_testnet_config() -> ChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                 ],
                 PARACHAIN_ID.into(),
@@ -203,12 +202,11 @@ pub fn polkadot_config() -> ChainSpec {
         // Name
         "t3rn",
         // Id
-        "t3rn_polkadot",
+        "t3rn",
         ChainType::Live,
         move || {
             // TODO: needs updating
             polkadot_genesis(
-                // Invulnerable collators FIXME: these are NOT the right collators
                 vec![
                     (
                         // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
@@ -236,7 +234,16 @@ pub fn polkadot_config() -> ChainSpec {
             )
         },
         // Bootnodes
-        vec![],
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-1.t3rn.io/tcp/33333/p2p/12D3KooWDWGoYHhsVUtLehNEdwp8JNi4DLTJVB2L53HMHarBXw66",
+            )
+            .expect("Failed to parse bootnode #1 address"),
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-2.t3rn.io/tcp/33333/p2p/12D3KooWLGtGEf92p8CbUmzwFYavEtDUaJNJCbBSp4muSqs2cVz1",
+            )
+            .expect("Failed to parse bootnode #2 address"),
+        ],
         // Telemetry
         Some(
             TelemetryEndpoints::new(vec![(
@@ -310,6 +317,7 @@ fn polkadot_genesis(
             // Assign network admin rights.
             key: Some(root_key),
         },
+        transaction_payment: Default::default(),
     }
 }
 

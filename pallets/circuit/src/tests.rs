@@ -16,7 +16,7 @@
 // limitations under the License.
 
 //! Runtime utilities
-use circuit_mock_runtime::*;
+use circuit_mock_runtime::{RuntimeEvent as Event, RuntimeOrigin as Origin, *};
 use circuit_runtime_pallets::{pallet_circuit, pallet_circuit::state::*};
 
 use t3rn_sdk_primitives::{
@@ -29,6 +29,7 @@ use frame_support::{assert_err, assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
 
 use circuit_mock_runtime::test_utils::*;
+use frame_support::pallet_prelude::Weight;
 use hex_literal::hex;
 pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
@@ -682,7 +683,7 @@ fn circuit_handles_dropped_at_bidding() {
         })
 }
 
-const SINGLE_XTX_DEL_WEIGHT: u64 = 450000000;
+const SINGLE_XTX_DEL_WEIGHT: Weight = Weight::from_parts(450000000, 0);
 
 #[test]
 fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {

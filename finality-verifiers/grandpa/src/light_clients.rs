@@ -3,8 +3,8 @@
 use crate::{to_local_block_number, Config, Pallet};
 use codec::Encode;
 
+use frame_support::sp_runtime::traits::Zero;
 use frame_system::pallet_prelude::OriginFor;
-use num_traits::Zero;
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::{marker::PhantomData, vec};
 use t3rn_abi::types::Bytes;
@@ -453,7 +453,10 @@ pub mod grandpa_light_clients_test {
     use codec::Encode;
 
     use crate::{
-        bridges::test_utils::authorities, mock::*, types::RelaychainRegistrationData, Error,
+        bridges::test_utils::authorities,
+        mock::{RuntimeOrigin as Origin, *},
+        types::RelaychainRegistrationData,
+        Error,
     };
     use frame_support::{assert_err, assert_ok, traits::OriginTrait};
 
@@ -499,7 +502,7 @@ pub mod grandpa_light_clients_test {
             assert_eq!(heartbeat_before.is_halted, false);
 
             let initialization_result = lc_instance.initialize(
-                <T as frame_system::Config>::Origin::root(),
+                <T as frame_system::Config>::RuntimeOrigin::root(),
                 light_client_4b_id,
                 prep_init_data().encode(),
             );
@@ -711,7 +714,7 @@ pub mod grandpa_light_clients_test {
 
             assert_eq!(heartbeat.is_halted, false);
 
-            Pallet::<TestRuntime, ()>::set_operational(Origin::root(), false);
+            Pallet::<TestRuntime, ()>::set_operational(RuntimeOrigin::root(), false);
 
             let heartbeat = rococo_light_client.get_latest_heartbeat().unwrap();
 

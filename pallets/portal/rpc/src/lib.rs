@@ -1,33 +1,32 @@
-//! RPC interface for the XDNS pallet.
+//! RPC interface for the Portal pallet.
+
+use std::sync::Arc;
 
 use codec::Codec;
 use jsonrpsee::{
-    core::{async_trait, Error as JsonRpseeError, RpcResult},
+    core::{Error as JsonRpseeError, RpcResult},
     proc_macros::rpc,
-    types::error::CallError,
+    types::error::{CallError, ErrorCode, ErrorObject},
 };
 use pallet_portal_rpc_runtime_api::ChainId;
 pub use pallet_portal_rpc_runtime_api::PortalRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_core::sp_std;
 use sp_runtime::{
     generic::BlockId,
     traits::{Block as BlockT, MaybeDisplay},
 };
-use sp_std::prelude::*;
-use std::sync::Arc;
 
 const RUNTIME_ERROR: i64 = 1;
 
 #[rpc(client, server)]
 pub trait PortalApi<AccountId> {
-    /// Returns all known XDNS records
+    /// Returns latest finalized header of a gateway if available
     #[method(name = "portal_fetchHeadHeight")]
     fn fetch_head_height(&self, chain_id: ChainId) -> RpcResult<u128>;
 }
 
-/// A struct that implements the [`PortalApiServer`].
+/// A struct that implements the [`PortalApi`].
 pub struct Portal<C, P> {
     client: Arc<C>,
     _marker: std::marker::PhantomData<P>,
@@ -43,34 +42,29 @@ impl<C, P> Portal<C, P> {
     }
 }
 
-#[async_trait]
 impl<C, Block, AccountId> PortalApiServer<AccountId> for Portal<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
-    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + Send + Sync + 'static,
     C::Api: PortalRuntimeApi<Block, AccountId>,
 {
+    // ToDo ChainId decoding is not working, like in XDNS
     fn fetch_head_height(&self, chain_id: ChainId) -> RpcResult<u128> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = self.client.info().best_hash;
 
         let result: Option<u128> = api
-            .fetch_head_height(&at, chain_id)
+            .fetch_head_height(at, chain_id)
             .map_err(runtime_error_into_rpc_err)?;
 
         match result {
             Some(height) => Ok(height),
-            None => Err("ABI doesn't exist"),
+            None => Err(runtime_error_into_rpc_err("ABI doesn't exist")),
         }
-        .map_err(runtime_error_into_rpc_err)
     }
 }
 
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
-    JsonRpseeError::Call(CallError::Custom(jsonrpsee::types::ErrorObject::owned(
-        RUNTIME_ERROR as i32,
-        "Runtime Error - Portal RPC",
-        Some(format!("{err:?}")),
-    )))
+    JsonRpseeError::Custom(format!("{err:?}").into())
 }

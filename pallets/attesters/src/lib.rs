@@ -203,7 +203,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type ActiveSetSize: Get<u32>;
         type CommitteeSize: Get<u32>;
         type BatchingWindow: Get<Self::BlockNumber>;
@@ -330,10 +330,6 @@ pub mod pallet {
     pub type PaidFinalityFees<T: Config> =
         StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
 
-    // #[pallet::storage]
-    // #[pallet::getter(fn auto_regression_param)]
-    // pub type AutoRegressionParam<T: Config> = StorageMap<_, Blake2_128Concat, TargetId, Percent>;
-
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -357,6 +353,7 @@ pub mod pallet {
             Percent,      // auto regression param before
             Percent,      // auto regression param after
         ),
+        CollusionWithPermanentSlashDetected(TargetId, H256),
         FutureTotalFinalityFeeEstimated(TargetId, BalanceOf<T>, u16),
         UserFinalityFeeEstimated(TargetId, BalanceOf<T>, u16),
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
@@ -795,12 +792,17 @@ pub mod pallet {
                     // At this point we know the valid message has been recorded on target Escrow Smart Contract
                     // If we can't find the corresponding batch by the message - we have a problem - attesters are colluding.
                     log::error!(
-                        "Collusion detected on target: {target:?} for message hash {recovered_enacted_batch_hash:?}"
+                        "CollusionWithPermanentSlashDetected detected on target: {target:?} for message hash {recovered_enacted_batch_hash:?}"
                     );
                     // fixme: must synchronize remote block height and local block height and fetch committee responsible for attesting false batch.
                     Self::apply_permanent_attesters_slash(CurrentCommittee::<T>::get());
 
-                    return Err(Error::<T>::CollusionWithPermanentSlashDetected.into())
+                    Self::deposit_event(Event::CollusionWithPermanentSlashDetected(
+                        target,
+                        recovered_enacted_batch_hash,
+                    ));
+                    // must return success here to apply permanent slash
+                    return Ok(())
                 },
             };
 
@@ -869,12 +871,10 @@ pub mod pallet {
             origin: OriginFor<T>,
             target: TargetId,
             cost: BalanceOf<T>,
-            // auto_regression_param: Percent,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
             FastConfirmationCost::<T>::insert(target, cost);
-            // AutoRegressionParam::<T>::insert(target, auto_regression_param);
 
             Ok(())
         }
@@ -1336,7 +1336,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        // TODO: function never used, consider removing
         fn find_batches(target: TargetId, message: &Vec<u8>) -> Vec<BatchMessage<T::BlockNumber>> {
             Batches::<T>::get(target)
                 .iter()
@@ -1453,8 +1452,6 @@ pub mod pallet {
             )
         }
 
-        // TODO: Consider removing function, since it's never used
-        //
         /// Applies permanent slashes to colluding attesters.
         fn apply_permanent_attesters_slash(attester_local_addresses: Vec<T::AccountId>) {
             for account_id in attester_local_addresses {
@@ -1686,8 +1683,6 @@ pub mod pallet {
             Ok(())
         }
 
-        // TODO: consider removing this function, it is never used
-        //
         pub fn get_current_committee_transition_for_target(
             target: &TargetId,
         ) -> CommitteeTransition {
@@ -2047,7 +2042,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut aggregated_weight: Weight = 0;
+            let mut aggregated_weight: Weight = Zero::zero();
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() && Self::is_last_transition_attested() {
                 // Process pending unnominations
@@ -2138,13 +2133,13 @@ pub mod attesters_test {
         TargetId, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
-
-    // use t3rn_mini_mock_runtime::CommitteeTransitionOn;
+    use std::ops::Index;
 
     use codec::Encode;
     use frame_support::{
         assert_err, assert_noop, assert_ok,
         traits::{Currency, Get, Hooks, Len},
+        StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
@@ -2153,12 +2148,13 @@ pub mod attesters_test {
     use crate::{PaidFinalityFees, TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
-        Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards,
-        CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
-        PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
-        XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
+        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
+        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
+        CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee, ExtBuilder,
+        FullSideEffects, LatencyStatus, MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations,
+        PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards, RuntimeEvent as Event,
+        RuntimeOrigin, SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals,
+        ETHEREUM_TARGET, POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
@@ -2248,7 +2244,7 @@ pub mod attesters_test {
             })
             .collect::<Vec<(AccountId, Balance, Balance)>>();
 
-        assert_ok!(Attesters::deregister_attester(Origin::signed(
+        assert_ok!(Attesters::deregister_attester(RuntimeOrigin::signed(
             attester.clone()
         ),));
 
@@ -2315,7 +2311,7 @@ pub mod attesters_test {
         let _ = Balances::deposit_creating(&attester, 100u128);
 
         assert_ok!(Attesters::register_attester(
-            Origin::signed(attester.clone()),
+            RuntimeOrigin::signed(attester.clone()),
             10u128,
             ecdsa_key.clone().try_into().unwrap(),
             ed25519_key.clone().try_into().unwrap(),
@@ -2337,14 +2333,14 @@ pub mod attesters_test {
         assert!(!Attesters::attestation_targets().contains(target));
         assert!(Attesters::pending_attestation_targets().contains(target));
         if AttestersStore::<MiniRuntime>::iter().count() == 0 {
-            let _ = Attesters::force_activate_target(Origin::root(), *target);
+            let _ = Attesters::force_activate_target(RuntimeOrigin::root(), *target);
         }
         for (attester, attester_info) in AttestersStore::<MiniRuntime>::iter() {
             // assume attester agrees to eth target: deriving eth address from ecdsa key
             let derived_eth_address = ecdsa_pubkey_to_eth_address(&attester_info.key_ec);
             assert_ok!(derived_eth_address);
             assert_ok!(Attesters::agree_to_new_attestation_target(
-                Origin::signed(attester),
+                RuntimeOrigin::signed(attester),
                 *target,
                 derived_eth_address.unwrap().encode(),
             ));
@@ -2354,7 +2350,7 @@ pub mod attesters_test {
     }
 
     pub fn add_target_and_transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
-        let _ = Attesters::add_attestation_target(Origin::root(), target);
+        let _ = Attesters::add_attestation_target(RuntimeOrigin::root(), target);
         if !Attesters::attestation_targets().contains(&target) {
             // if active set is empty, select the next active set
             if !ActiveSet::<MiniRuntime>::get().is_empty() {
@@ -2448,7 +2444,7 @@ pub mod attesters_test {
         };
 
         assert_ok!(Attesters::submit_attestation(
-            Origin::signed(attester),
+            RuntimeOrigin::signed(attester),
             latest_batch_hash,
             signature.clone(),
             target,
@@ -2546,7 +2542,7 @@ pub mod attesters_test {
 
             assert_err!(
                 Attesters::submit_attestation(
-                    Origin::signed(attester),
+                    RuntimeOrigin::signed(attester),
                     message_hash,
                     same_signature_again,
                     target,
@@ -2797,167 +2793,168 @@ pub mod attesters_test {
         });
     }
 
-    // fn expect_last_event_to_emit_pending_attestation_batches() -> (TargetId, Vec<(u32, H256)>) {
-    //     // Recover system event
-    //     let events = System::events();
-    //     let expect_pending_attestation_batches = events.last();
-    //     assert!(expect_pending_attestation_batches.clone().is_some());
-    //
-    //     match expect_pending_attestation_batches {
-    //         Some(event) => match &event.event {
-    //             Event::CurrentPendingAttestationBatches(target, pending_batches) =>
-    //                 (*target, pending_batches.clone()),
-    //             _ => panic!(
-    //                 "expect_last_event_to_emit_pending_attestation_batches: unexpected event type"
-    //             ),
-    //         },
-    //         None => panic!(
-    //             "expect_last_event_to_emit_pending_attestation_batches: no last event emitted"
-    //         ),
-    //     }
-    // }
-    //
-    // #[ignore]
-    // #[test]
-    // fn test_late_attestations_stop_committee_shuffle() {
-    //     let mut ext = ExtBuilder::default()
-    //         .with_standard_sfx_abi()
-    //         .with_eth_gateway_record()
-    //         .build();
-    //     ext.execute_with(|| {
-    //         let _target: TargetId = ETHEREUM_TARGET;
-    //
-    //         for counter in 1..33u8 {
-    //             // Register an attester
-    //             let _attester = AccountId::from([counter; 32]);
-    //             register_attester_with_single_private_key([counter; 32]);
-    //         }
-    //
-    //         select_new_committee();
-    //         assert_eq!(
-    //             CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
-    //             None
-    //         );
-    //
-    //         // Submit 20 attestations - not enough to reach the threshold of Majority Approval
-    //         for counter in 1..22u8 {
-    //             let attester = AccountId::from([counter; 32]);
-    //             sign_and_submit_sfx_to_latest_attestation(
-    //                 attester,
-    //                 vec![*b"message_that_needs_attestation32"],
-    //                 ECDSA_ATTESTER_KEY_TYPE_ID,
-    //                 ETHEREUM_TARGET,
-    //                 [counter; 32],
-    //             );
-    //         }
-    //
-    //         Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
-    //         let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
-    //         assert_eq!(target, ETHEREUM_TARGET);
-    //         assert_eq!(pending_batches.len(), 1);
-    //
-    //         // Get latest batch
-    //         let latest_batch =
-    //             Attesters::get_batches(ETHEREUM_TARGET, BatchStatus::PendingAttestation)
-    //                 .last()
-    //                 .unwrap()
-    //                 .clone();
-    //
-    //         assert_eq!(latest_batch.signatures.len(), 21);
-    //
-    //         select_new_committee();
-    //
-    //         assert_eq!(
-    //             CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
-    //             Some(1_u32)
-    //         );
-    //
-    //         transition_to_next_batch(ETHEREUM_TARGET, 2);
-    //         // Get the same batch by message
-    //         let first_pending_batch =
-    //             Attesters::get_batch_by_message(ETHEREUM_TARGET, latest_batch.message()).unwrap();
-    //
-    //         // Keeps the attested signatures
-    //         assert_eq!(first_pending_batch.signatures.len(), 21);
-    //
-    //         // Submit 20 attestations - not enough to reach the threshold of Majority Approval
-    //         for counter in 1..22u8 {
-    //             let attester = AccountId::from([counter; 32]);
-    //             sign_and_submit_sfx_to_latest_attestation(
-    //                 attester,
-    //                 vec![*b"message_that_needs_attestation32"],
-    //                 ECDSA_ATTESTER_KEY_TYPE_ID,
-    //                 ETHEREUM_TARGET,
-    //                 [counter; 32],
-    //             );
-    //         }
-    //
-    //         Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
-    //         let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
-    //         assert_eq!(target, ETHEREUM_TARGET);
-    //         assert_eq!(pending_batches.len(), 1);
-    //
-    //         // Get latest batch to sign
-    //         let second_pending_batch =
-    //             Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET).unwrap();
-    //
-    //         assert_eq!(second_pending_batch.signatures.len(), 21);
-    //         assert!(second_pending_batch.index != first_pending_batch.index);
-    //
-    //         select_new_committee();
-    //
-    //         // The committee shuffle should be stopped
-    //         assert_eq!(
-    //             CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
-    //             Some(1_u32)
-    //         );
-    //
-    //         transition_to_next_batch(ETHEREUM_TARGET, 2);
-    //
-    //         // Get the same batch by message
-    //         let second_batch_again_by_message =
-    //             Attesters::get_batch_by_message(ETHEREUM_TARGET, second_pending_batch.message())
-    //                 .unwrap();
-    //
-    //         assert_eq!(second_batch_again_by_message.signatures.len(), 21);
-    //
-    //         // Sign both of the late batches now by adding 1 missing attestation to each of them
-    //         let late_attester = AccountId::from([22u8; 32]);
-    //         let late_first_signature = ecdsa::Pair::from_seed(&[22u8; 32])
-    //             .sign(first_pending_batch.message_hash().as_ref())
-    //             .encode();
-    //
-    //         assert_ok!(Attesters::submit_attestation(
-    //             Origin::signed(late_attester.clone()),
-    //             first_pending_batch.message_hash(),
-    //             late_first_signature,
-    //             ETHEREUM_TARGET,
-    //         ));
-    //
-    //         let late_second_signature = ecdsa::Pair::from_seed(&[22u8; 32])
-    //             .sign(second_pending_batch.message_hash().as_ref())
-    //             .encode();
-    //
-    //         assert_ok!(Attesters::submit_attestation(
-    //             Origin::signed(late_attester),
-    //             second_pending_batch.message_hash(),
-    //             late_second_signature,
-    //             ETHEREUM_TARGET,
-    //         ));
-    //
-    //         // this time should be successful - no pending batches
-    //         select_new_committee();
-    //         Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
-    //         let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
-    //         assert_eq!(target, ETHEREUM_TARGET);
-    //         assert_eq!(pending_batches.len(), 0);
-    //
-    //         assert_eq!(
-    //             CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
-    //             Some(2_u32)
-    //         );
-    //     });
-    // }
+    fn expect_last_event_to_emit_pending_attestation_batches() -> (TargetId, Vec<(u32, H256)>) {
+        // Recover system event
+        let events = System::events();
+        let expect_pending_attestation_batches = events.last();
+        assert!(expect_pending_attestation_batches.clone().is_some());
+
+        match expect_pending_attestation_batches {
+            Some(event) => match &event.event {
+                Event::Attesters(AttestersEvent::CurrentPendingAttestationBatches(
+                    target,
+                    pending_batches,
+                )) => (*target, pending_batches.clone()),
+                _ => panic!(
+                    "expect_last_event_to_emit_pending_attestation_batches: unexpected event type"
+                ),
+            },
+            None => panic!(
+                "expect_last_event_to_emit_pending_attestation_batches: no last event emitted"
+            ),
+        }
+    }
+
+    #[test]
+    fn test_late_attestations_stop_committee_shuffle() {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_eth_gateway_record()
+            .build();
+        ext.execute_with(|| {
+            let _target: TargetId = ETHEREUM_TARGET;
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let _attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+
+            select_new_committee();
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                None
+            );
+
+            // Submit 20 attestations - not enough to reach the threshold of Majority Approval
+            for counter in 1..22u8 {
+                let attester = AccountId::from([counter; 32]);
+                sign_and_submit_sfx_to_latest_attestation(
+                    attester,
+                    vec![*b"message_that_needs_attestation32"],
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    ETHEREUM_TARGET,
+                    [counter; 32],
+                );
+            }
+
+            Attesters::read_pending_batches(RuntimeOrigin::signed(AccountId::from([1u8; 32])));
+            let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
+            assert_eq!(target, ETHEREUM_TARGET);
+            assert_eq!(pending_batches.len(), 1);
+
+            // Get latest batch
+            let latest_batch =
+                Attesters::get_batches(ETHEREUM_TARGET, BatchStatus::PendingAttestation)
+                    .last()
+                    .unwrap()
+                    .clone();
+
+            assert_eq!(latest_batch.signatures.len(), 21);
+
+            select_new_committee();
+
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                Some(1_u32)
+            );
+
+            transition_to_next_batch(ETHEREUM_TARGET, 2);
+            // Get the same batch by message
+            let first_pending_batch =
+                Attesters::get_batch_by_message(ETHEREUM_TARGET, latest_batch.message()).unwrap();
+
+            // Keeps the attested signatures
+            assert_eq!(first_pending_batch.signatures.len(), 21);
+
+            // Submit 20 attestations - not enough to reach the threshold of Majority Approval
+            for counter in 1..22u8 {
+                let attester = AccountId::from([counter; 32]);
+                sign_and_submit_sfx_to_latest_attestation(
+                    attester,
+                    vec![*b"message_that_needs_attestation32"],
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    ETHEREUM_TARGET,
+                    [counter; 32],
+                );
+            }
+
+            Attesters::read_pending_batches(RuntimeOrigin::signed(AccountId::from([1u8; 32])));
+            let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
+            assert_eq!(target, ETHEREUM_TARGET);
+            assert_eq!(pending_batches.len(), 1);
+
+            // Get latest batch to sign
+            let second_pending_batch =
+                Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET).unwrap();
+
+            assert_eq!(second_pending_batch.signatures.len(), 21);
+            assert!(second_pending_batch.index != first_pending_batch.index);
+
+            select_new_committee();
+
+            // The committee shuffle should be stopped
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                Some(1_u32)
+            );
+
+            transition_to_next_batch(ETHEREUM_TARGET, 2);
+
+            // Get the same batch by message
+            let second_batch_again_by_message =
+                Attesters::get_batch_by_message(ETHEREUM_TARGET, second_pending_batch.message())
+                    .unwrap();
+
+            assert_eq!(second_batch_again_by_message.signatures.len(), 21);
+
+            // Sign both of the late batches now by adding 1 missing attestation to each of them
+            let late_attester = AccountId::from([22u8; 32]);
+            let late_first_signature = ecdsa::Pair::from_seed(&[22u8; 32])
+                .sign(first_pending_batch.message_hash().as_ref())
+                .encode();
+
+            assert_ok!(Attesters::submit_attestation(
+                RuntimeOrigin::signed(late_attester.clone()),
+                first_pending_batch.message_hash(),
+                late_first_signature,
+                ETHEREUM_TARGET,
+            ));
+
+            let late_second_signature = ecdsa::Pair::from_seed(&[22u8; 32])
+                .sign(second_pending_batch.message_hash().as_ref())
+                .encode();
+
+            assert_ok!(Attesters::submit_attestation(
+                RuntimeOrigin::signed(late_attester),
+                second_pending_batch.message_hash(),
+                late_second_signature,
+                ETHEREUM_TARGET,
+            ));
+
+            // this time should be successful - no pending batches
+            select_new_committee();
+            Attesters::read_pending_batches(RuntimeOrigin::signed(AccountId::from([1u8; 32])));
+            let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
+            assert_eq!(target, ETHEREUM_TARGET);
+            assert_eq!(pending_batches.len(), 0);
+
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                Some(2_u32)
+            );
+        });
+    }
 
     #[test]
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_no_batch_fsx_required(
@@ -3735,217 +3732,6 @@ pub mod attesters_test {
         (res, message_bytes)
     }
 
-    // TODO: Consider removing function, it is never used
-    //
-    // fn expect_latest_confirmed_batching_factor(_target: TargetId, _latest_confirmed_factor: u16) {
-    //     // Recover system event
-    //     let events = System::events();
-    //     let _expect_batching_factor_read_event = events.last();
-    //     // assert!(expect_batching_factor_read_event.clone().is_some());
-    //     // assert_eq!(
-    //     //     expect_batching_factor_read_event.unwrap().event,
-    //     //     Event::BatchingFactorRead(
-    //     //         target,
-    //     //         Some(BatchingFactor {
-    //     //             latest_confirmed: latest_confirmed_factor,
-    //     //             latest_signed: 0,
-    //     //             current_next: 0,
-    //     //             up_to_last_10_confirmed: vec![latest_confirmed_factor],
-    //     //         })
-    //     //     ))
-    //     // );
-    // }
-
-    // TODO: consider removing function, it is never used
-    //
-    // fn expect_latest_user_finality_fees_estimated(
-    //     _target: TargetId,
-    //     _n_from_now: u16,
-    //     _per_user_fees: u128,
-    // ) {
-    //     // Recover system event
-    //     let events = System::events();
-    //     let _expect_batching_factor_read_event = events.last();
-    //     // assert!(expect_batching_factor_read_event.clone().is_some());
-    //     // assert_eq!(
-    //     //     expect_batching_factor_read_event.unwrap().event,
-    //     //     Event::UserFinalityFeeEstimated(
-    //     //         target,
-    //     //         per_user_fees,
-    //     //         n_from_now
-    //     //     ))
-    //     // );
-    // }
-
-    // TODO: consider removing function, it is never used
-    //
-    // fn expect_latest_future_total_finality_fees_estimated(
-    //     _target: TargetId,
-    //     _n_from_now: u16,
-    //     _total_fees: u128,
-    // ) {
-    //     // Recover system event
-    //     let events = System::events();
-    //     let _expect_batching_factor_read_event = events.last();
-    //     // assert!(expect_batching_factor_read_event.clone().is_some());
-    //     // assert_eq!(
-    //     //     expect_batching_factor_read_event.unwrap().event,
-    //     //     Event::FutureTotalFinalityFeeEstimated(
-    //     //         target, total_fees, n_from_now
-    //     //     ))
-    //     // );
-    // }
-
-    // fn expect_finality_fees_recalculated_event_and_regression_readjusted(
-    //     _target: TargetId,
-    // ) -> (TargetId, u32, Balance, Percent, Percent) {
-    //     // Recover system event
-    //     let events = System::events();
-    //     let expect_batching_factor_read_event = events.last();
-    //     assert!(expect_batching_factor_read_event.clone().is_some());
-    //
-    //     match expect_batching_factor_read_event.unwrap().event {
-    //         Event::ConfirmationRewardCalculated(
-    //             target,
-    //             n_from_now,
-    //             total_fees,
-    //             user_fees,
-    //             regression,
-    //         ) => {
-    //             assert!(true);
-    //             (target, n_from_now, total_fees, user_fees, regression)
-    //         },
-    //         _ => panic!("Unexpected event - expect_finality_fees_recalculated_event_and_regression_readjusted"),
-    //     }
-    // }
-
-    // fn expect_user_finality_fees_estimated_event(_target: TargetId) -> (TargetId, Balance, u16) {
-    //     // Recover system event
-    //     let events = System::events();
-    //     let expect_batching_factor_read_event = events.last();
-    //     assert!(expect_batching_factor_read_event.clone().is_some());
-    //
-    //     match expect_batching_factor_read_event.unwrap().event {
-    //         Event::UserFinalityFeeEstimated(target, user_fee_chunk_estimated, epoch) => {
-    //             assert!(true);
-    //             (target, user_fee_chunk_estimated, epoch)
-    //         },
-    //         _ => panic!("Unexpected event - expect_user_finality_fees_estimated_event"),
-    //     }
-    // }
-
-    // TODO: consider removing function, it is never used
-    //
-    // fn request_n_sfx_32_attestations_and_commit(
-    //     messages: Vec<[u8; 32]>,
-    //     target: TargetId,
-    //     _delay_before_commit: BlockNumber,
-    // ) -> Vec<u8> {
-    //     for counter in 1..33u8 {
-    //         // Register an attester
-    //         let attester = AccountId::from([counter; 32]);
-    //         // Submit an attestation signed with the Ed25519 key
-    //         sign_and_submit_sfx_to_latest_attestation(
-    //             attester,
-    //             // vec![messages.clone()],
-    //             messages.clone(),
-    //             ECDSA_ATTESTER_KEY_TYPE_ID,
-    //             target,
-    //             [counter; 32],
-    //         );
-    //     }
-    //
-    //     let attested_batches =
-    //         Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
-    //
-    //     assert_eq!(attested_batches.len(), 1);
-    //     let first_batch = attested_batches[0].clone();
-    //
-    //     // Check if the attestations have been added to the batch
-    //     let first_batch_hash = first_batch.message_hash();
-    //     let first_batch_message = first_batch.message();
-    //
-    //     assert_eq!(first_batch.signatures.len(), 32);
-    //     assert_eq!(
-    //         first_batch.status,
-    //         BatchStatus::ReadyForSubmissionFullyApproved
-    //     );
-    //
-    //     let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
-    //         signatures: first_batch.signatures,
-    //         hash: first_batch_hash,
-    //         message: first_batch_message.clone(),
-    //     };
-    //
-    //     // Commit the batch
-    //     assert_ok!(Attesters::commit_batch(
-    //         Origin::signed(AccountId::from([1; 32])),
-    //         target,
-    //         mock_valid_batch_confirmation.encode(),
-    //     ));
-    //
-    //     first_batch_message
-    // }
-
-    // TODO: consider removing function, it is never used
-    //
-    // fn full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(
-    //     messages: Vec<[u8; 32]>,
-    //     target: TargetId,
-    // ) -> Vec<u8> {
-    //     for counter in 1..33u8 {
-    //         // Register an attester
-    //         let _attester = AccountId::from([counter; 32]);
-    //         register_attester_with_single_private_key([counter; 32]);
-    //     }
-    //
-    //     select_new_committee();
-    //
-    //     request_n_sfx_32_attestations_and_commit(messages, target, 0)
-    // }
-    //
-    //     assert_eq!(attested_batches.len(), 1);
-    //     let first_batch = attested_batches[0].clone();
-    //
-    //     // Check if the attestations have been added to the batch
-    //     let first_batch_hash = first_batch.message_hash();
-    //     let first_batch_message = first_batch.message();
-    //
-    //     assert_eq!(first_batch.signatures.len(), 32);
-    //     assert_eq!(
-    //         first_batch.status,
-    //         BatchStatus::ReadyForSubmissionFullyApproved
-    //     );
-    //
-    //     let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
-    //         hash: first_batch_hash,
-    //     };
-    //
-    //     // Commit the batch
-    //     assert_ok!(Attesters::commit_batch(
-    //         Origin::signed(AccountId::from([1; 32])),
-    //         target,
-    //         mock_valid_batch_confirmation.encode(),
-    //     ));
-    //
-    //     first_batch_message
-    // }
-
-    // fn full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(
-    //     messages: Vec<[u8; 32]>,
-    //     target: TargetId,
-    // ) -> Vec<u8> {
-    //     for counter in 1..33u8 {
-    //         // Register an attester
-    //         let _attester = AccountId::from([counter; 32]);
-    //         register_attester_with_single_private_key([counter; 32]);
-    //     }
-    //
-    //     select_new_committee();
-    //
-    //     request_n_sfx_32_attestations_and_commit(messages, target, 0)
-    // }
-
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
@@ -4016,7 +3802,7 @@ pub mod attesters_test {
 
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
-                Origin::signed(AccountId::from([1; 32])),
+                RuntimeOrigin::signed(AccountId::from([1; 32])),
                 target,
                 mock_valid_batch_confirmation.encode(),
             ));
@@ -4085,13 +3871,12 @@ pub mod attesters_test {
                 hash: colluded_message.into(),
             };
 
-            assert_err!(
+            assert_ok!(
                 Attesters::commit_batch(
-                    Origin::signed(AccountId::from([1; 32])),
+                    RuntimeOrigin::signed(AccountId::from([1; 32])),
                     target,
                     colluded_batch_confirmation.encode(),
-                ),
-                AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
+                ) // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
             );
 
             // Check if the batch status has not been updated to Committed
@@ -4131,7 +3916,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -4161,7 +3946,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -4207,7 +3992,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -4305,7 +4090,7 @@ pub mod attesters_test {
 
             for attester in &attesters {
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     1000
                 ));
@@ -4314,7 +4099,7 @@ pub mod attesters_test {
             // Unnominate one attester
             let attester_to_unnominate = attesters[1].clone();
             assert_ok!(Attesters::unnominate(
-                Origin::signed(nominator.clone()),
+                RuntimeOrigin::signed(nominator.clone()),
                 attester_to_unnominate.clone()
             ));
 
@@ -4350,7 +4135,7 @@ pub mod attesters_test {
             for (i, attester) in attesters.iter().enumerate() {
                 for _ in 0..2 {
                     assert_ok!(Attesters::nominate(
-                        Origin::signed(nominator.clone()),
+                        RuntimeOrigin::signed(nominator.clone()),
                         attester.clone(),
                         1000 + i as Balance
                     ));
@@ -4360,7 +4145,7 @@ pub mod attesters_test {
             // Unnominate one attester
             let attester_to_unnominate = attesters[1].clone();
             assert_ok!(Attesters::unnominate(
-                Origin::signed(nominator),
+                RuntimeOrigin::signed(nominator),
                 attester_to_unnominate.clone()
             ));
 

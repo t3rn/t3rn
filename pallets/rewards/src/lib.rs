@@ -63,7 +63,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type Currency: Currency<Self::AccountId>;
 
@@ -591,7 +591,7 @@ pub mod pallet {
         }
 
         pub fn process_accumulated_settlements() -> Weight {
-            let mut weight: Weight = 0;
+            let mut weight: Weight = Zero::zero();
 
             // Ensure settlements accumulation is not halted
             if IsSettlementAccumulationHalted::<T>::get() {
@@ -974,8 +974,8 @@ pub mod test {
     use sp_runtime::Percent;
     use t3rn_mini_mock_runtime::{
         AccountId, Authors, AuthorsThisPeriod, Balance, Balances, Clock, ConfigRewards,
-        DistributionHistory, ExtBuilder, MiniRuntime, Origin, PendingClaims, Rewards, RewardsError,
-        SettlementsPerRound, System,
+        DistributionHistory, ExtBuilder, MiniRuntime, PendingClaims, Rewards, RewardsError,
+        RuntimeOrigin, SettlementsPerRound, System,
     };
 
     use t3rn_primitives::{
@@ -1139,7 +1139,10 @@ pub mod test {
 
             Rewards::process_accumulated_settlements();
 
-            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+            Rewards::set_max_rewards_executors_kickback(
+                RuntimeOrigin::root(),
+                Percent::from_percent(90),
+            );
 
             let available_rewards_10x_less_of_total_settlements = 100 as Balance;
 
@@ -1313,7 +1316,10 @@ pub mod test {
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
 
-            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+            Rewards::set_max_rewards_executors_kickback(
+                RuntimeOrigin::root(),
+                Percent::from_percent(90),
+            );
 
             let rewards_res =
                 Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
@@ -1367,7 +1373,7 @@ pub mod test {
 
             // Claim the rewards
             let claim_res = Rewards::claim(
-                Origin::signed(beneficiary.clone()),
+                RuntimeOrigin::signed(beneficiary.clone()),
                 Some(CircuitRole::Executor),
             );
 
@@ -1383,7 +1389,7 @@ pub mod test {
 
             // Claim the rewards again
             let claim_res = Rewards::claim(
-                Origin::signed(beneficiary.clone()),
+                RuntimeOrigin::signed(beneficiary.clone()),
                 Some(CircuitRole::Executor),
             );
             assert_err!(claim_res, RewardsError::<MiniRuntime>::NoPendingClaims);
@@ -1535,7 +1541,10 @@ pub mod test {
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
 
-            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+            Rewards::set_max_rewards_executors_kickback(
+                RuntimeOrigin::root(),
+                Percent::from_percent(90),
+            );
 
             let rewards_res =
                 Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
@@ -1568,7 +1577,7 @@ pub mod test {
 
             // Claim the rewards
             let claim_res = Rewards::claim(
-                Origin::signed(single_executor.clone()),
+                RuntimeOrigin::signed(single_executor.clone()),
                 Some(CircuitRole::Executor),
             );
             assert_ok!(claim_res);

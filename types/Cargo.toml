@@ -1,42 +1,41 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "A crate that hosts a common definitions that are relevant for t3rn components."
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "t3rn-types"
-repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.5.0-rc.0"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytes      = { version = "1.2.1", default-features = false }
-codec      = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
-num        = { version = "0.4.1", default-features = false }
-num-traits = { version = "0.2", default-features = false }
-scale-info = { version = "2.9.0", default-features = false, features = [ "derive" ] }
-serde      = { default-features = false, version = "1.0", optional = true, features = [ "derive" ] }
-
-primitive-types = { version = "0.12.1", default-features = false, features = [ "scale-info" ] }
-sp-core         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-io           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-runtime      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-std          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-
-frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-
-t3rn-abi = { path = "../types/abi", default-features = false, features = [ "runtime" ], optional = true }
+bytes           = { workspace = true }
+codec           = { workspace = true, package = "parity-scale-codec" }
+frame-system    = { workspace = true, optional = true }
+num             = { workspace = true }
+num-traits      = { workspace = true }
+primitive-types = { workspace = true }
+scale-info      = { workspace = true }
+serde           = { workspace = true, optional = true }
+sp-core         = { workspace = true, optional = true }
+sp-io           = { workspace = true, optional = true }
+sp-runtime      = { workspace = true, optional = true }
+sp-std          = { workspace = true, optional = true }
+t3rn-abi        = { path = "../types/abi", default-features = false, features = [ "runtime" ], optional = true }
 
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = "0.4.1"
-serde_json  = "1.0.103"
-sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+serde_json  = "1.0.41"
+sp-core     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+sp-runtime  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
 
 circuit-runtime-types = { path = "../runtime/common-types" }
-t3rn-sdk-primitives   = { version = "=0.1.1-rc.5" }
+t3rn-sdk-primitives   = { version = "=0.1.1-rc.4" }
+
+rlp-derive = "0.1.0"
 
 [features]
 default     = [ "std" ]

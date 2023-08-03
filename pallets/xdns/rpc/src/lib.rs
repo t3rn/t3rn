@@ -11,10 +11,7 @@ use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::sp_std;
-use sp_runtime::{
-    generic::BlockId,
-    traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 use sp_std::prelude::*;
 use std::sync::Arc;
 use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
@@ -60,19 +57,19 @@ where
 {
     fn fetch_records(&self) -> RpcResult<Vec<GatewayRecord<AccountId>>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = self.client.info().best_hash;
 
-        let result = api.fetch_records(&at).map_err(runtime_error_into_rpc_err)?;
+        let result = api.fetch_records(at).map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
     }
 
     fn fetch_full_gateway_records(&self) -> RpcResult<Vec<FullGatewayRecord<AccountId>>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = self.client.info().best_hash;
 
         let result = api
-            .fetch_full_gateway_records(&at)
+            .fetch_full_gateway_records(at)
             .map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
@@ -80,10 +77,10 @@ where
 
     fn fetch_abi(&self, chain_id: ChainId) -> RpcResult<GatewayABIConfig> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = self.client.info().best_hash;
 
         let result: Option<GatewayABIConfig> = api
-            .fetch_abi(&at, chain_id)
+            .fetch_abi(at, chain_id)
             .map_err(runtime_error_into_rpc_err)?;
 
         match result {

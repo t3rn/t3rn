@@ -37,7 +37,7 @@ use sp_runtime::{
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 // pub use orml_traits;
 
-use num_traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;

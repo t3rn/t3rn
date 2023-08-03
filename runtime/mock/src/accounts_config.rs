@@ -1,9 +1,9 @@
 use crate::*;
-use frame_support::parameter_types;
 pub use frame_support::traits::{Imbalance, OnUnbalanced};
-use frame_system::EnsureRoot;
+use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
+use frame_system::{EnsureRoot, EnsureSigned};
 use sp_core::crypto::AccountId32;
-use sp_runtime::traits::ConvertInto;
+use sp_runtime::traits::{ConstU32, ConvertInto};
 
 parameter_types! {
     // TODO: update me to be better
@@ -17,8 +17,8 @@ impl pallet_account_manager::Config for Runtime {
     type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -41,14 +41,18 @@ impl pallet_assets::Config for Runtime {
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
     type AssetId = circuit_runtime_types::AssetId;
+    type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type Currency = Balances;
-    type Event = Event;
     type Extra = ();
-    type ForceOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
@@ -59,8 +63,8 @@ parameter_types! {
 
 impl pallet_asset_registry::Config for Runtime {
     type Assets = Assets;
-    type Call = Call;
     type Currency = Balances;
-    type Event = Event;
     type RegistrationCost = RegCost;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
 }

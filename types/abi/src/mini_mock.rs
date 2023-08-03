@@ -28,12 +28,12 @@ impl pallet_balances::Config for MiniRuntime {
     /// The type for recording an account's balance.
     type Balance = Balance;
     type DustRemoval = ();
-    /// The ubiquitous event type.
-    type Event = ();
     type ExistentialDeposit = ();
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
+    /// The ubiquitous event type.
+    type RuntimeEvent = ();
     type WeightInfo = ();
 }
 
@@ -45,9 +45,7 @@ impl frame_system::Config for MiniRuntime {
     type BlockLength = ();
     type BlockNumber = u64;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = ();
     type Hash = H256;
     type Hashing = Keccak256;
     type Header = Header;
@@ -57,8 +55,10 @@ impl frame_system::Config for MiniRuntime {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = ();
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();

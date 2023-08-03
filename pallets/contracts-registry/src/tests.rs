@@ -17,7 +17,10 @@
 
 //! Unit tests for pallet contracts-registry.
 
-use circuit_mock_runtime::{pallet_contracts_registry::pallet::Error, *};
+use circuit_mock_runtime::{
+    pallet_contracts_registry::pallet::Error, RuntimeEvent as Event, RuntimeOrigin as Origin, *,
+};
+
 use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
 use sp_runtime::DispatchError;

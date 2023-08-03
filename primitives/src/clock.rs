@@ -1,6 +1,5 @@
 use crate::common::RoundInfo;
-use frame_support::pallet_prelude::Weight;
-use sp_runtime::traits::Zero;
+use frame_support::{pallet_prelude::Weight, sp_runtime::traits::Zero};
 use sp_std::marker::PhantomData;
 
 pub trait Clock<T: frame_system::Config> {
@@ -41,22 +40,22 @@ pub struct EmptyOnHookQueues<T> {
 
 impl<T: frame_system::Config> OnHookQueues<T> for EmptyOnHookQueues<T> {
     fn process(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_weekly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_bi_weekly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_daily(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_hourly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 }

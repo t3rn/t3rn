@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 // Make the WASM binary available.
@@ -31,11 +30,14 @@ pub use frame_support::{
         StorageInfo,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{
+            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+        },
         IdentityFee, Weight,
     },
     StorageValue,
 };
+pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -46,6 +48,7 @@ pub mod accounts_config;
 pub mod circuit_config;
 pub mod consensus_aura_config;
 pub mod contracts_config;
+pub mod hooks;
 pub mod impl_versioned_runtime_with_api;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -71,13 +74,13 @@ parameter_types! {
 impl pallet_identity::Config for Runtime {
     type BasicDeposit = BasicDeposit;
     type Currency = Balances;
-    type Event = Event;
     type FieldDeposit = FieldDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
     type RegistrarOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
@@ -96,7 +99,7 @@ construct_runtime!(
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
         Utility: pallet_utility,
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
+        Identity: pallet_identity = 122,
 
         // Monetary
         Balances: pallet_balances = 10,
@@ -114,12 +117,12 @@ construct_runtime!(
 
         // Circuit
         // t3rn pallets
-        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        Attesters: pallet_attesters::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
-        Rewards: pallet_rewards::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        XDNS: pallet_xdns= 100,
+        Attesters: pallet_attesters= 101,
+        Rewards: pallet_rewards= 102,
+        ContractsRegistry: pallet_contracts_registry= 106,
+        Circuit: pallet_circuit = 108,
+        Clock: pallet_clock = 110,
         Vacuum: pallet_vacuum = 111,
 
         // 3VM
@@ -129,7 +132,7 @@ construct_runtime!(
         AccountManager: pallet_account_manager = 125,
 
         // Portal
-        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
@@ -138,6 +141,5 @@ construct_runtime!(
 
         // Handy utilities
         MaintenanceMode: pallet_maintenance_mode = 140,
-
     }
 );

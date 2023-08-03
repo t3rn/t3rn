@@ -66,7 +66,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
@@ -94,7 +94,7 @@ pub mod pallet {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
-            0
+            Default::default()
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
@@ -226,7 +226,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
     // Add public immutables and private mutables.
     #[allow(dead_code)]
-    fn placeholder(origin: T::Origin) -> DispatchResult {
+    fn placeholder(origin: T::RuntimeOrigin) -> DispatchResult {
         let _sender = ensure_signed(origin)?;
 
         Ok(())

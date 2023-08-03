@@ -6,7 +6,6 @@ pub trait Evm<Origin> {
     #[allow(clippy::too_many_arguments)] // Simply has a lot of args
     fn call(
         origin: Origin,
-        source: H160,
         target: H160,
         input: Vec<u8>,
         value: U256,
@@ -24,7 +23,6 @@ impl<Origin> Evm<Origin> for () {
 
     fn call(
         _origin: Origin,
-        _source: H160,
         _target: H160,
         _input: Vec<u8>,
         _value: U256,

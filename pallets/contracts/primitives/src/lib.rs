@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2020-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,40 +21,24 @@
 
 use bitflags::bitflags;
 use codec::{Decode, Encode};
-use sp_core::Bytes;
+use scale_info::TypeInfo;
 use sp_runtime::{
     traits::{Saturating, Zero},
     DispatchError, RuntimeDebug,
 };
 use sp_std::prelude::*;
-
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "std")]
-use sp_rpc::number::NumberOrHex;
-
-pub mod traits;
+use sp_weights::Weight;
 
 /// Result type of a `bare_call` or `bare_instantiate` call.
 ///
 /// It contains the execution result together with some auxiliary information.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "std",
-    serde(
-        rename_all = "camelCase",
-        bound(serialize = "R: Serialize, Balance: Copy + Into<NumberOrHex>"),
-        bound(deserialize = "R: Deserialize<'de>, Balance: TryFrom<NumberOrHex>")
-    )
-)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ContractResult<R, Balance> {
-    /// How much gas was consumed during execution.
-    pub gas_consumed: u64,
-    /// How much gas is required as gas limit in order to execute this call.
+    /// How much weight was consumed during execution.
+    pub gas_consumed: Weight,
+    /// How much weight is required as gas limit in order to execute this call.
     ///
-    /// This value should be used to determine the gas limit for on-chain execution.
+    /// This value should be used to determine the weight limit for on-chain execution.
     ///
     /// # Note
     ///
@@ -62,11 +46,13 @@ pub struct ContractResult<R, Balance> {
     /// is used. Currently, only `seal_call_runtime` makes use of pre charging.
     /// Additionally, any `seal_call` or `seal_instantiate` makes use of pre-charging
     /// when a non-zero `gas_limit` argument is supplied.
-    pub gas_required: u64,
-    /// How much balance was deposited and reserved during execution in order to pay for storage.
+    pub gas_required: Weight,
+    /// How much balance was paid by the origin into the contract's deposit account in order to
+    /// pay for storage.
     ///
-    /// The storage deposit is never actually charged from the caller in case of [`Self::result`]
-    /// is `Err`. This is because on error all storage changes are rolled back.
+    /// The storage deposit is never actually charged from the origin in case of [`Self::result`]
+    /// is `Err`. This is because on error all storage changes are rolled back including the
+    /// payment of the deposit.
     pub storage_deposit: StorageDeposit<Balance>,
     /// An optional debug message. This message is only filled when explicitly requested
     /// by the code that calls into the contract. Otherwise it is empty.
@@ -82,14 +68,14 @@ pub struct ContractResult<R, Balance> {
     ///
     /// The debug message is never generated during on-chain execution. It is reserved for
     /// RPC calls.
-    #[cfg_attr(feature = "std", serde(with = "as_string"))]
     pub debug_message: Vec<u8>,
     /// The execution result of the wasm code.
     pub result: R,
 }
+
 /// Result type of a `bare_call` call.
 pub type ContractExecResult<Balance> =
-    ContractResult<Result<ComposableExecReturnValue, DispatchError>, Balance>;
+    ContractResult<Result<ExecReturnValue, DispatchError>, Balance>;
 
 /// Result type of a `bare_instantiate` call.
 pub type ContractInstantiateResult<AccountId, Balance> =
@@ -103,18 +89,17 @@ pub type CodeUploadResult<CodeHash, Balance> =
 pub type GetStorageResult = Result<Option<Vec<u8>>, ContractAccessError>;
 
 /// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum ContractAccessError {
     /// The given address doesn't point to a contract.
     DoesntExist,
+    /// Storage key cannot be decoded from the provided input data.
     KeyDecodingFailed,
 }
 
 bitflags! {
     /// Flags used by a contract to customize exit behaviour.
-    #[derive(Encode, Decode)]
-    #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-    #[cfg_attr(feature = "std", serde(rename_all = "camelCase", transparent))]
+    #[derive(Encode, Decode, TypeInfo)]
     pub struct ReturnFlags: u32 {
         /// If this bit is set all changes made by the contract execution are rolled back.
         const REVERT = 0x0000_0001;
@@ -124,34 +109,12 @@ bitflags! {
 }
 
 /// Output of a contract call or instantiation which ran to completion.
-#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-pub struct ComposableExecReturnValue {
-    /// Flags passed along by `seal_return`. Empty when `seal_return` was never called.
-    pub flags: ReturnFlags,
-    /// Buffer passed along by `seal_return`. Empty when `seal_return` was never called.
-    pub data: Bytes,
-    /// Side effects returned from the call
-    pub side_effects: Vec<Vec<u8>>,
-}
-
-impl ComposableExecReturnValue {
-    /// The contract did revert all storage changes.
-    pub fn did_revert(&self) -> bool {
-        self.flags.contains(ReturnFlags::REVERT)
-    }
-}
-
-/// Output of a contract call or instantiation which ran to completion.
-#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ExecReturnValue {
     /// Flags passed along by `seal_return`. Empty when `seal_return` was never called.
     pub flags: ReturnFlags,
     /// Buffer passed along by `seal_return`. Empty when `seal_return` was never called.
-    pub data: Bytes,
+    pub data: Vec<u8>,
 }
 
 impl ExecReturnValue {
@@ -162,9 +125,7 @@ impl ExecReturnValue {
 }
 
 /// The result of a successful contract instantiation.
-#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct InstantiateReturnValue<AccountId> {
     /// The output of the called constructor.
     pub result: ExecReturnValue,
@@ -173,64 +134,41 @@ pub struct InstantiateReturnValue<AccountId> {
 }
 
 /// The result of succesfully uploading a contract.
-#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "std",
-    serde(
-        rename_all = "camelCase",
-        bound(serialize = "CodeHash: Serialize, Balance: Copy + Into<NumberOrHex>"),
-        bound(deserialize = "CodeHash: Deserialize<'de>, Balance: TryFrom<NumberOrHex>")
-    )
-)]
+#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct CodeUploadReturnValue<CodeHash, Balance> {
     /// The key under which the new code is stored.
     pub code_hash: CodeHash,
     /// The deposit that was reserved at the caller. Is zero when the code already existed.
-    #[cfg_attr(feature = "std", serde(with = "as_hex"))]
     pub deposit: Balance,
 }
 
 /// Reference to an existing code hash or a new wasm module.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum Code<Hash> {
     /// A wasm module as raw bytes.
-    Upload(Bytes),
+    Upload(Vec<u8>),
     /// The code hash of an on-chain wasm blob.
     Existing(Hash),
 }
 
 impl<T: Into<Vec<u8>>, Hash> From<T> for Code<Hash> {
     fn from(from: T) -> Self {
-        Code::Upload(Bytes(from.into()))
+        Code::Upload(from.into())
     }
 }
 
 /// The amount of balance that was either charged or refunded in order to pay for storage.
-#[derive(Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, Clone)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "std",
-    serde(
-        rename_all = "camelCase",
-        bound(serialize = "Balance: Copy + Into<NumberOrHex>"),
-        bound(deserialize = "Balance: TryFrom<NumberOrHex>")
-    )
-)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, Clone, TypeInfo)]
 pub enum StorageDeposit<Balance> {
     /// The transaction reduced storage consumption.
     ///
     /// This means that the specified amount of balance was transferred from the involved
-    /// contracts to the call origin.
-    #[cfg_attr(feature = "std", serde(with = "as_hex"))]
+    /// deposit accounts to the origin.
     Refund(Balance),
-    /// The transaction increased overall storage usage.
+    /// The transaction increased storage consumption.
     ///
-    /// This means that the specified amount of balance was transferred from the call origin
-    /// to the contracts involved.
-    #[cfg_attr(feature = "std", serde(with = "as_hex"))]
+    /// This means that the specified amount of balance was transferred from the origin
+    /// to the involved deposit accounts.
     Charge(Balance),
 }
 
@@ -315,44 +253,5 @@ where
             Charge(amount) => limit.saturating_sub(*amount),
             Refund(amount) => limit.saturating_add(*amount),
         }
-    }
-}
-
-#[cfg(feature = "std")]
-mod as_string {
-    use super::*;
-    use serde::{ser::Error, Deserializer, Serializer};
-
-    pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
-        std::str::from_utf8(bytes)
-            .map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {e}")))?
-            .serialize(serializer)
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
-        Ok(String::deserialize(deserializer)?.into_bytes())
-    }
-}
-
-#[cfg(feature = "std")]
-mod as_hex {
-    use super::*;
-    use serde::{de::Error as _, Deserializer, Serializer};
-
-    pub fn serialize<S, Balance>(balance: &Balance, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        Balance: Copy + Into<NumberOrHex>,
-    {
-        Into::<NumberOrHex>::into(*balance).serialize(serializer)
-    }
-
-    pub fn deserialize<'de, D, Balance>(deserializer: D) -> Result<Balance, D::Error>
-    where
-        D: Deserializer<'de>,
-        Balance: TryFrom<NumberOrHex>,
-    {
-        Balance::try_from(NumberOrHex::deserialize(deserializer)?)
-            .map_err(|_| D::Error::custom("Cannot decode NumberOrHex to Balance"))
     }
 }

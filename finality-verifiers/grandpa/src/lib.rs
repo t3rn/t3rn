@@ -38,25 +38,28 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-extern crate core;
+// Re-export in crate namespace for `construct_runtime!`
+pub use pallet::*;
 
 use crate::weights::WeightInfo;
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
-use sp_std::convert::TryInto;
-
+use bridges::{
+    header_chain as bp_header_chain, header_chain::ProofTriePointer, runtime as bp_runtime,
+};
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*, transactional, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
-use sp_std::vec::Vec;
 use t3rn_primitives::light_client::LightClientAsyncAPI;
 
-pub mod types;
-
+use sp_std::{convert::TryInto, vec, vec::Vec};
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
+
+// #[cfg(feature = "runtime-benchmarks")]
+// pub mod benchmarking;
 
 #[cfg(feature = "testing")]
 pub mod mock;
@@ -64,18 +67,9 @@ pub mod mock;
 pub mod bridges;
 pub mod light_clients;
 mod side_effects;
+pub mod types;
 /// Pallet containing weights for this pallet.
 pub mod weights;
-
-use bridges::{
-    header_chain as bp_header_chain, header_chain::ProofTriePointer, runtime as bp_runtime,
-};
-
-// #[cfg(feature = "runtime-benchmarks")]
-// pub mod benchmarking;
-
-// Re-export in crate namespace for `construct_runtime!`
-pub use pallet::*;
 
 /// Block number of the bridged chain.
 pub type BridgedBlockNumber<T, I> = BlockNumberOf<<T as Config<I>>::BridgedChain>;
@@ -145,12 +139,12 @@ pub mod pallet {
 
         type EpochOffset: Get<Self::BlockNumber>;
 
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
-
         type LightClientAsyncAPI: LightClientAsyncAPI<Self>;
 
         type MyVendor: Get<GatewayVendor>;
+
+        type RuntimeEvent: From<Event<Self, I>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     #[pallet::pallet]
@@ -303,7 +297,7 @@ pub mod pallet {
         /// pallet.
         ///
         /// If the new range was accepted, pays no fee.
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1))]
         pub fn submit_headers(
             origin: OriginFor<T>,
             // seq vector of headers to be added.
@@ -342,7 +336,7 @@ pub mod pallet {
             }
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(100_000)]
         pub fn reset(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             <EverInitialized<T, I>>::kill();
@@ -629,7 +623,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     pub fn initialize(
-        origin: OriginFor<T>,
+        origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -686,7 +680,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_owner(
-        origin: OriginFor<T>,
+        origin: T::RuntimeOrigin,
         _gateway_id: ChainId,
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -844,7 +838,13 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 ) -> Result<Vec<u8>, &'static str> {
     let root = get_header_roots::<T, I>(header, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref()) {
+    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(
+        &db,
+        &root,
+        key.as_ref(),
+        None,
+        None,
+    ) {
         Ok(Some(value)) => Ok(value),
         _ => Err(Error::<T, I>::InvalidStorageProof.into()),
     }
@@ -1030,7 +1030,8 @@ pub mod tests {
     use super::*;
     use crate::mock::{
         produce_mock_headers_range, run_test, test_header, test_header_range,
-        test_header_with_correct_parent, AccountId, Origin, TestHeader, TestNumber, TestRuntime,
+        test_header_with_correct_parent, AccountId, RuntimeOrigin as Origin, TestHeader,
+        TestNumber, TestRuntime,
     };
     use bp_runtime::ChainId;
     use bridges::{

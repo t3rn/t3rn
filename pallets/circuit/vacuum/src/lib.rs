@@ -38,7 +38,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
         type CircuitSubmitAPI: CircuitSubmitAPI<Self, BalanceOf<Self>>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
@@ -64,7 +64,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(100_000)]
         pub fn order(
             origin: OriginFor<T>,
             sfx_actions: Vec<
@@ -87,7 +87,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(100_000)]
         pub fn read_order_status(
             _origin: OriginFor<T>,
             xtx_id: T::Hash,
@@ -124,9 +124,9 @@ mod tests {
 
     use t3rn_mini_mock_runtime::{
         prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, BlockNumber, Circuit,
-        CircuitError, CircuitEvent, Clock, Event, GlobalOnInitQueues, Hash, MiniRuntime,
-        MockedAssetEvent, OrderStatusRead, Origin, Portal, Rewards, System, Vacuum, VacuumEvent,
-        ASSET_DOT, POLKADOT_TARGET, XDNS,
+        CircuitError, CircuitEvent, Clock, GlobalOnInitQueues, Hash, MiniRuntime, MockedAssetEvent,
+        OrderStatusRead, Portal, Rewards, RuntimeEvent as Event, RuntimeOrigin, System, Vacuum,
+        VacuumEvent, ASSET_DOT, POLKADOT_TARGET, XDNS,
     };
     use t3rn_primitives::portal::Portal as PortalT;
 
@@ -138,7 +138,7 @@ mod tests {
     };
     use t3rn_types::sfx::ConfirmedSideEffect;
 
-    use frame_support::traits::Currency;
+    use frame_support::{traits::Currency, weights::Weight};
 
     use t3rn_primitives::{
         circuit::{AdaptiveTimeout, CircuitStatus},
@@ -148,7 +148,7 @@ mod tests {
 
     fn activate_all_light_clients() {
         for &gateway in XDNS::all_gateway_ids().iter() {
-            Portal::turn_on(Origin::root(), gateway).unwrap();
+            Portal::turn_on(RuntimeOrigin::root(), gateway).unwrap();
         }
         XDNS::process_all_verifier_overviews(System::block_number());
         XDNS::process_overview(System::block_number());
@@ -166,13 +166,13 @@ mod tests {
         Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
         Balances::deposit_creating(&executor, (100_000 * TRN) as Balance); // To cover fees
         assert_ok!(Assets::mint(
-            Origin::signed(issuer_is_escrow_account.clone()),
+            RuntimeOrigin::signed(issuer_is_escrow_account.clone()),
             ASSET_DOT,
             requester.clone(),
             max_reward + (EXISTENTIAL_DEPOSIT as Balance),
         ));
         assert_ok!(Assets::mint(
-            Origin::signed(issuer_is_escrow_account),
+            RuntimeOrigin::signed(issuer_is_escrow_account),
             ASSET_DOT,
             executor.clone(),
             insurance + (EXISTENTIAL_DEPOSIT as Balance),
@@ -289,7 +289,7 @@ mod tests {
             activate_all_light_clients();
 
             assert_ok!(Vacuum::order(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 vec![sfx_order],
                 SpeedMode::Fast,
             ));
@@ -344,7 +344,7 @@ mod tests {
             activate_all_light_clients();
 
             assert_ok!(Vacuum::order(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 vec![sfx_order],
                 SpeedMode::Fast,
             ));
@@ -359,7 +359,7 @@ mod tests {
             );
 
             assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 xtx_id
             ));
 
@@ -388,7 +388,7 @@ mod tests {
             );
 
             assert_ok!(Circuit::bid_sfx(
-                Origin::signed(executor.clone()),
+                RuntimeOrigin::signed(executor.clone()),
                 expected_sfx_hash,
                 198 as Balance,
             ));
@@ -403,7 +403,7 @@ mod tests {
             System::set_block_number(System::block_number() + 3);
             Clock::on_initialize(System::block_number());
             assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 xtx_id
             ));
             assert_eq!(
@@ -432,12 +432,15 @@ mod tests {
             };
 
             assert_ok!(Circuit::confirm_side_effect(
-                Origin::signed(executor.clone()),
+                RuntimeOrigin::signed(executor.clone()),
                 expected_sfx_hash,
                 confirmation_transfer_1
             ));
 
-            assert_ok!(Vacuum::read_order_status(Origin::signed(requester), xtx_id));
+            assert_ok!(Vacuum::read_order_status(
+                RuntimeOrigin::signed(requester),
+                xtx_id
+            ));
 
             let order_status = expect_last_event_to_read_order_status();
 
@@ -465,11 +468,11 @@ mod tests {
                 EXISTENTIAL_DEPOSIT as Balance + 50 as Balance
             );
 
-            GlobalOnInitQueues::process_hourly(300, u64::MAX);
+            GlobalOnInitQueues::process_hourly(300, Weight::MAX);
 
             // Claim via Rewards
             let _claim_res = Rewards::claim(
-                Origin::signed(executor.clone()),
+                RuntimeOrigin::signed(executor.clone()),
                 Some(CircuitRole::Executor),
             );
 
@@ -513,7 +516,7 @@ mod tests {
             activate_all_light_clients();
 
             assert_ok!(Vacuum::order(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 vec![sfx_order],
                 SpeedMode::Fast,
             ));
@@ -528,7 +531,7 @@ mod tests {
             );
 
             assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 xtx_id
             ));
 
@@ -557,7 +560,7 @@ mod tests {
             );
 
             assert_ok!(Circuit::bid_sfx(
-                Origin::signed(executor.clone()),
+                RuntimeOrigin::signed(executor.clone()),
                 expected_sfx_hash,
                 198 as Balance,
             ));
@@ -566,7 +569,7 @@ mod tests {
             System::set_block_number(System::block_number() + 3);
             Clock::on_initialize(System::block_number());
             assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 xtx_id
             ));
             assert_eq!(
@@ -586,7 +589,7 @@ mod tests {
 
             assert_err!(
                 Circuit::confirm_side_effect(
-                    Origin::signed(executor.clone()),
+                    RuntimeOrigin::signed(executor.clone()),
                     expected_sfx_hash,
                     confirmation_transfer
                 ),
@@ -599,7 +602,7 @@ mod tests {
             Circuit::process_emergency_revert_xtx_queue(
                 System::block_number(),
                 System::block_number(),
-                u64::MAX,
+                Weight::MAX,
             );
             // Verify that XTX is in DLQ
             assert_eq!(
@@ -612,7 +615,7 @@ mod tests {
             );
 
             assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
+                RuntimeOrigin::signed(requester.clone()),
                 xtx_id
             ));
 
@@ -650,12 +653,15 @@ mod tests {
             );
 
             assert_ok!(Circuit::confirm_side_effect(
-                Origin::signed(executor),
+                RuntimeOrigin::signed(executor),
                 expected_sfx_hash,
                 confirmation_transfer
             ),);
 
-            assert_ok!(Vacuum::read_order_status(Origin::signed(requester), xtx_id));
+            assert_ok!(Vacuum::read_order_status(
+                RuntimeOrigin::signed(requester),
+                xtx_id
+            ));
 
             assert_eq!(Circuit::get_dlq(xtx_id), None);
         });
