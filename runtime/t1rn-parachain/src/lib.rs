@@ -8,6 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod accounts_config;
 pub mod circuit_config;
+pub mod contracts_config;
 pub mod hooks;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
@@ -145,9 +146,9 @@ construct_runtime!(
         Vacuum: pallet_vacuum = 111,
 
         // // 3VM
-        // ThreeVm: pallet_3vm = 119,
-        // Contracts: pallet_3vm_contracts = 120,
-        // Evm: pallet_3vm_evm = 121,
+        ThreeVm: pallet_3vm = 119,
+        Contracts: pallet_3vm_contracts = 120,
+        Evm: pallet_3vm_evm = 121,
 
          // Portal
         Portal: pallet_portal = 128,
