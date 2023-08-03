@@ -1,12 +1,12 @@
 [package]
-authors     = { workspace = true }
-description = "t0rn - t3rn's Test Parachain Runtime to Rococo"
-edition     = { workspace = true }
-homepage    = { workspace = true }
-license     = { workspace = true }
-name        = "t0rn-parachain-runtime"
-repository  = { workspace = true }
-version     = { workspace = true }
+authors     = [ "devs @ t3rn" ]
+description = "t3rn - parachain runtime to Polkadot"
+edition     = "2021"
+homepage    = "https://t3rn.io"
+license     = "Apache-2.0"
+name        = "t1rn-parachain-runtime"
+repository  = 'https://github.com/t3rn/t3rn'
+version     = "1.0.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -24,6 +24,9 @@ scale-info            = { workspace = true }
 num-traits            = { workspace = true }
 serde                 = { workspace = true, optional = true, features = [ "derive" ] }
 smallvec              = { version = "1.6.1", default-features = false }
+
+pallet-grandpa                             = { workspace = true }
+
 
 # Substrate
 frame-benchmarking           = { workspace = true, optional = true }
@@ -153,6 +156,7 @@ std = [
   "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
+  "pallet-grandpa/std",
   "pallet-grandpa-finality-verifier/std",
   "pallet-portal/std",
   "pallet-portal-rpc-runtime-api/std",
@@ -249,6 +253,7 @@ runtime-benchmarks = [
   "pallet-membership/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
   "pallet-scheduler/runtime-benchmarks",
+  "pallet-grandpa/runtime-benchmarks",
   "pallet-xbi-portal/runtime-benchmarks",
   "pallet-xdns/runtime-benchmarks",
   "polkadot-parachain/runtime-benchmarks",
@@ -278,6 +283,7 @@ try-runtime = [
   "pallet-authorship/try-runtime",
   "pallet-balances/try-runtime",
   "pallet-circuit/try-runtime",
+  "pallet-grandpa/try-runtime",
   "pallet-clock/try-runtime",
   "pallet-collator-selection/try-runtime",
   "pallet-3vm-contracts/try-runtime",

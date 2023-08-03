@@ -20,7 +20,6 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
@@ -49,8 +48,8 @@ where
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     // C::Api: pallet_3vm_contracts::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>, // No need to do this anymore
-    // C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
-    // C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
+    C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
+    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
     // C::Api: pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + Sync + Send + 'static,
@@ -68,8 +67,8 @@ where
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     // module.merge(Contracts::new(client.clone()).into_rpc())?;
-    // module.merge(Xdns::new(client.clone()).into_rpc())?;
-    // module.merge(Portal::new(client.clone()).into_rpc())?;
+    module.merge(Xdns::new(client.clone()).into_rpc())?;
+    module.merge(Portal::new(client.clone()).into_rpc())?;
     // module.merge(Evm::new(client).into_rpc())?;
 
     Ok(module)

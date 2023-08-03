@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use circuit_parachain_runtime::Block;
+use circuit_standalone_runtime::Block;
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -66,7 +66,7 @@ impl SubstrateCli for Cli {
     }
 
     fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        &circuit_parachain_runtime::VERSION
+        &circuit_standalone_runtime::VERSION
     }
 }
 

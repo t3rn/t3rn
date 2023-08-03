@@ -52,6 +52,8 @@ parameter_types! {
 impl pallet_attesters::Config for Runtime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
+    // Will be replaced by Finality Fees
+    type CommitmentRewardSource = EscrowAccount;
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
@@ -66,7 +68,7 @@ impl pallet_attesters::Config for Runtime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = HourlyShufflingFrequency;
-    type TreasuryAccounts = Runtime;
+    type SlashAccount = EscrowAccount;
     type Xdns = XDNS;
 }
 
@@ -159,9 +161,9 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
-        log::debug!("t0rn::force_create_asset");
-        log::debug!("t0rn::asset_id: {asset_id:?}");
-        log::debug!("t0rn::asset_admin: {admin:?}");
+        log::debug!("t1rn::force_create_asset");
+        log::debug!("t1rn::asset_id: {asset_id:?}");
+        log::debug!("t1rn::asset_admin: {admin:?}");
         Assets::force_create(
             origin,
             asset_id,
@@ -172,15 +174,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     }
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
-        log::debug!("t0rn::freeze_asset ...");
+        log::debug!("t1rn::freeze_asset ...");
         Assets::freeze_asset(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::start_destroy ...");
+        log::debug!("t1rn::start_destroy ...");
         Assets::start_destroy(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::destroy_accounts ...");
+        log::debug!("t1rn::destroy_accounts ...");
         Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::destroy_approvals ...");
+        log::debug!("t1rn::destroy_approvals ...");
         Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
-        log::debug!("t0rn::finish_destroy ...");
+        log::debug!("t1rn::finish_destroy ...");
         Assets::finish_destroy(origin.clone(), asset_id.clone())?;
 
         Ok(().into())
@@ -261,8 +263,9 @@ impl pallet_circuit::Config for Runtime {
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
-    type TreasuryAccounts = Runtime;
     type WeightInfo = ();
+    // type XBIPortal = XBIPortalRuntimeEntry;
+    // type XBIPromise = XBIPortal;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
     type XtxTimeoutDefault = ConstU32<400u32>;
@@ -329,12 +332,11 @@ parameter_types! {
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteePeriod: u32 = 256;
     pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
-    pub const CommitteeMajorityThresholdEth2: u32 = 67;
-    pub const CommitteeMajorityThresholdSepolia: u32 = 67;
+    pub const CommitteeMajorityThreshold: u32 = 80;
 }
 
 impl pallet_eth2_finality_verifier::Config for Runtime {
-    type CommitteeMajorityThreshold = CommitteeMajorityThresholdEth2;
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
@@ -346,7 +348,7 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
 }
 
 impl pallet_sepolia_finality_verifier::Config for Runtime {
-    type CommitteeMajorityThreshold = CommitteeMajorityThresholdSepolia;
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;

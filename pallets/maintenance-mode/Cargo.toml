@@ -26,11 +26,15 @@ sp-io = { workspace = true, features = [ "std" ] }
 [features]
 default = [ "std" ]
 std = [
+	"log/std",
+	"parity-scale-codec/std",
 	"frame-support/std",
 	"frame-system/std",
 	"scale-info/std",
 	"sp-runtime/std",
 	"sp-std/std",
 ]
-try-runtime = [ "frame-support/try-runtime" ]
+
+#incomplete try-runtime of frame-system incomplete try-runtime of sp-runtime incomplete std of log incomplete std of parity-scale-codec
+try-runtime = [ "frame-support/try-runtime", "sp-runtime/try-runtime", "frame-system/try-runtime" ]
 xcm-support = [ ]

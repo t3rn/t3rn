@@ -130,7 +130,14 @@ impl_runtime_apis! {
             block: Block,
             data: sp_inherents::InherentData,
         ) -> sp_inherents::CheckInherentsResult {
-            data.check_extrinsics(&block)
+            let res = data.check_extrinsics(&block);
+
+            log::info!("DUPA: check_inherents");
+            res.clone().into_errors().into_iter().for_each(|e| {
+               log::info!("DUPA: check_inherents -- into_errors {:?}", e);
+            });
+
+            res
         }
     }
 

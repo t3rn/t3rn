@@ -73,9 +73,9 @@ xcm-executor               = { git = "https://github.com/paritytech/polkadot", d
 cumulus-pallet-aura-ext             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-pallet-dmp-queue            = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-pallet-parachain-system     = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
-cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-pallet-xcm                  = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-pallet-xcmp-queue           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
+cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-primitives-core             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-primitives-timestamp        = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
@@ -186,4 +186,12 @@ try-runtime = [
   "pallet-aura/try-runtime",
   "frame-system/try-runtime",
   "frame-support/try-runtime",
+  "cumulus-pallet-aura-ext/try-runtime",
+  "cumulus-pallet-dmp-queue/try-runtime",
+  "cumulus-pallet-parachain-system/try-runtime",
+  "cumulus-pallet-xcm/try-runtime",
+  "cumulus-pallet-xcmp-queue/try-runtime",
+  "pallet-xcm/try-runtime",
+  "parachain-info/try-runtime",
+  "sp-runtime/try-runtime",
 ]

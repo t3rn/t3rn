@@ -1,16 +1,18 @@
 use crate::*;
-use frame_support::PalletId;
+
+use frame_support::{
+    traits::{NeverEnsureOrigin, PrivilegeCmp},
+    PalletId,
+};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
-use sp_runtime::impl_opaque_keys;
-use sp_std::prelude::*;
-
-use frame_support::traits::NeverEnsureOrigin;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::{impl_opaque_keys, Permill};
+use sp_std::{cmp::Ordering, prelude::*};
 
-// XCM Imports
-use xcm::latest::prelude::BodyId;
+// TODO: remove when we import t3rn_primitives
+pub(crate) const TRN: u64 = 1_000_000_000_000;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -46,9 +48,11 @@ impl WeightToFeePolynomial for WeightToFee {
 /// to even the core data structures.
 pub mod opaque {
     use super::*;
-    use sp_runtime::{generic, traits::BlakeTwo256};
 
     pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+    use sp_runtime::{generic, traits::BlakeTwo256};
+
     /// Opaque block header type.
     pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// Opaque block type.
@@ -70,10 +74,6 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 }
 
 parameter_types! {
-    pub const Version: RuntimeVersion = VERSION;
-}
-
-parameter_types! {
     pub const UncleGenerations: u32 = 0;
 }
 
@@ -81,6 +81,25 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 }
+
+parameter_types! {
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+}
+
+impl cumulus_pallet_parachain_system::Config for Runtime {
+    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+    type DmpMessageHandler = DmpQueue;
+    type OnSystemEvent = ();
+    type OutboundXcmpMessageSource = XcmpQueue;
+    type ReservedDmpWeight = ReservedDmpWeight;
+    type ReservedXcmpWeight = ReservedXcmpWeight;
+    type RuntimeEvent = RuntimeEvent;
+    type SelfParaId = parachain_info::Pallet<Runtime>;
+    type XcmpMessageHandler = XcmpQueue;
+}
+
+impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
@@ -113,11 +132,9 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub const MaxCandidates: u32 = 1000;
-    // pub const MinCandidates: u32 = 2;
-    pub const MinCandidates: u32 = 5;
-    pub const SessionLength: BlockNumber = 6 * HOURS;
+    pub const MinCandidates: u32 = 2;
+    pub const SessionLength: BlockNumber = 24 * HOURS;
     pub const MaxInvulnerables: u32 = 100;
-    pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 // We allow root only to execute privileged collator selection operations.
@@ -141,37 +158,58 @@ impl pallet_collator_selection::Config for Runtime {
 
 parameter_types! {
     pub const PreimageMaxSize: u32 = 4096 * 1024;
-    pub const PreImageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreImageByteDeposit: Balance = deposit(0, 1);
+    pub const PreimageBaseDeposit: Balance = deposit(2, 64);
+    pub const PreimageByteDeposit: Balance = deposit(0, 1); // FIXME: this is 0 no?
 }
 
 impl pallet_preimage::Config for Runtime {
-    type BaseDeposit = PreImageBaseDeposit;
-    type ByteDeposit = PreImageByteDeposit;
+    type BaseDeposit = PreimageBaseDeposit;
+    type ByteDeposit = PreimageByteDeposit;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
-
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
+        circuit_runtime_types::RuntimeBlockWeights::get().max_block;
     pub const MaxScheduledPerBlock: u32 = 50;
-    pub const NoPreimagePostponement: Option<BlockNumber> = Some(10);
 }
 
 impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type MaximumWeight = MaximumSchedulerWeight;
-    type OriginPrivilegeCmp = EqualPrivilegeOnly;
+    type OriginPrivilegeCmp = OriginPrivilegeCmp;
     type PalletsOrigin = OriginCaller;
-    type Preimages = ();
+    type Preimages = Preimage;
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+}
+
+/// Used the compare the privilege of an origin inside the scheduler.
+pub struct OriginPrivilegeCmp;
+
+impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
+    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
+        if left == right {
+            return Some(Ordering::Equal)
+        }
+
+        match (left, right) {
+            // Root is greater than anything.
+            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
+            // Check which one has more yes votes.
+            // (
+            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
+            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
+            // ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
+            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
+            _ => None,
+        }
+    }
 }
 
 struct CheckInherents;

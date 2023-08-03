@@ -5,7 +5,7 @@ description = "Circuit standalone node"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "t0rn-parachain-collator"
+name        = "t1rn-parachain-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
@@ -13,7 +13,7 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [[bin]]
-name = "t0rn-collator"
+name = "t1rn-collator"
 path = "src/main.rs"
 
 [dependencies]
@@ -70,7 +70,7 @@ frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
 # Local Dependencies
-circuit-parachain-runtime = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
+circuit-standalone-runtime = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime" }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
