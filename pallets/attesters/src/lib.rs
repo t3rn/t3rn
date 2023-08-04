@@ -1281,48 +1281,52 @@ pub mod pallet {
             // Create a mutable copy of finality_reward to work with
             let mut finality_reward = *finality_reward;
 
-            let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
+            let capped_delay_in_blocks = blocks_delay; // .min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
+            let blocks_delay = blocks_delay * T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8); // .min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
 
             // safe division since ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
             let epochs_delayed =
                 capped_delay_in_blocks / T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8);
             // Convert to usize for range
-            let epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0);
+            let _epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0);
 
-            for _ in 0..epochs_delayed {
-                finality_reward = REWARD_ADJUSTMENT
-                    .mul_ceil(finality_reward)
-                    .saturating_add(finality_reward);
-            }
+            // for _ in 0..epochs_delayed {
+            //     finality_reward = REWARD_ADJUSTMENT
+            //         .mul_ceil(finality_reward)
+            //         .saturating_add(finality_reward);
+            // }
 
             let mut adjustment = 0;
             let mut adjustment_is_substract = false;
             // If finality fee was received within...
             //
-            // ...the first epoch, decrease the reward by 10%
-            if capped_delay_in_blocks < T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8) {
+            // ...the first epoch, decrease the reward by 10% in total
+            if blocks_delay < T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8) {
                 adjustment = 1;
                 adjustment_is_substract = true;
-            // ...two epochs, decrease the reward by 20%
-            } else if capped_delay_in_blocks < T::BlockNumber::from(TWO_EPOCHS_IN_LOCAL_BLOCKS_U8) {
+            // ...two epochs, decrease the reward by 20% in total
+            } else if blocks_delay < T::BlockNumber::from(TWO_EPOCHS_IN_LOCAL_BLOCKS_U8) {
                 adjustment = 2;
                 adjustment_is_substract = true;
-            // ...three epochs, decrease the reward by 30%
-            } else if capped_delay_in_blocks < T::BlockNumber::from(THREE_EPOCHS_IN_LOCAL_BLOCKS_U8)
-            {
+            // ...three epochs, decrease the reward by 30% in total
+            } else if blocks_delay < T::BlockNumber::from(THREE_EPOCHS_IN_LOCAL_BLOCKS_U8) {
                 adjustment = 3;
                 adjustment_is_substract = true;
-            // ...more than three but less than six
-            } else if capped_delay_in_blocks > T::BlockNumber::from(THREE_EPOCHS_IN_LOCAL_BLOCKS_U8)
-                && capped_delay_in_blocks < T::BlockNumber::from(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8)
+            // ...more than three but less than six, decrease the reward by 50% in total
+            } else if blocks_delay >= T::BlockNumber::from(THREE_EPOCHS_IN_LOCAL_BLOCKS_U8)
+                && blocks_delay < T::BlockNumber::from(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8)
             {
                 adjustment = 5;
                 adjustment_is_substract = true;
-            // ...more than six but less than ten
-            } else if capped_delay_in_blocks > T::BlockNumber::from(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8)
-                && capped_delay_in_blocks < T::BlockNumber::from(TEN_EPOCHS_IN_LOCAL_BLOCKS_U16)
+            // ...more than six but less than ten, should be increasing by 10% in total
+            } else if blocks_delay >= T::BlockNumber::from(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8)
+                && blocks_delay < T::BlockNumber::from(TEN_EPOCHS_IN_LOCAL_BLOCKS_U16)
             {
-                adjustment = 2;
+                adjustment = 1;
+                adjustment_is_substract = false;
+            // ...more than ten, should be increasing by 30% in total
+            } else if blocks_delay >= T::BlockNumber::from(TEN_EPOCHS_IN_LOCAL_BLOCKS_U16) {
+                adjustment = 3;
                 adjustment_is_substract = false;
             }
 
@@ -1333,9 +1337,8 @@ pub mod pallet {
                 }
             } else {
                 for _ in 0..adjustment {
-                    finality_reward = REWARD_ADJUSTMENT
-                        .mul_ceil(finality_reward)
-                        .saturating_add(finality_reward);
+                    finality_reward = finality_reward
+                        .saturating_add(REWARD_FINE_ADJUSTMENT.mul_ceil(finality_reward));
                 }
             }
 
@@ -2196,7 +2199,7 @@ pub mod attesters_test {
     use sp_core::H256;
     use sp_runtime::{traits::Keccak256, Percent};
 
-    use crate::{PaidFinalityFees, TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
+    use crate::{TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
@@ -2219,9 +2222,6 @@ pub mod attesters_test {
     };
     use tiny_keccak::{Hasher, Keccak};
 
-    // fn compute_reward_for_test(target: TargetId, blocks_delay: BlockNumber) -> Balance { }
-
-    #[ignore]
     #[test]
     fn estimate_finality_fee_1_delay() {
         let mut ext = ExtBuilder::default().build();
@@ -2231,44 +2231,84 @@ pub mod attesters_test {
             let blocks_delay: BlockNumber = 1;
             let base_fee: Balance = 10_000_000_000_000;
 
+            // The expected result (just substracting the value) should be larger than the computed result
             let result = Attesters::estimate_finality_reward(&target_id, blocks_delay);
-            let expected_result = base_fee
-                .saturating_sub(Percent::from_percent(blocks_delay * 10).mul_ceil(base_fee));
+
+            let expected_result = base_fee.saturating_sub(
+                Percent::from_percent(blocks_delay.saturating_mul(1).try_into().unwrap())
+                    .mul_ceil(base_fee),
+            );
 
             assert!(result <= expected_result);
         });
     }
 
-    #[ignore]
+    #[test]
+    fn estimate_finality_fee_3_delay() {
+        let mut ext = ExtBuilder::default().build();
+
+        ext.execute_with(|| {
+            // Some ranges have to be all equal
+            let target_id = TargetId::default();
+            let blocks_delay: BlockNumber = 3;
+            let r1 = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+            let blocks_delay: BlockNumber = 4;
+            let r2 = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+            let blocks_delay: BlockNumber = 5;
+            let r3 = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+
+            assert_eq!(r1, r2);
+            assert_eq!(r1, r3);
+
+            // And they should be less than the base fee
+            let blocks_delay: BlockNumber = 4;
+            let base_fee: Balance = 10_000_000_000_000;
+
+            // The expected result (just substracting the value) should be larger than the computed result
+            let result = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+
+            let expected_result = base_fee.saturating_sub(
+                Percent::from_percent(blocks_delay.saturating_mul(4).try_into().unwrap())
+                    .mul_ceil(base_fee),
+            );
+
+            assert!(result <= expected_result);
+        });
+    }
+
+    #[test]
+    fn estimate_finality_fee_6_delay() {
+        let mut ext = ExtBuilder::default().build();
+
+        ext.execute_with(|| {
+            let target_id = TargetId::default();
+            let blocks_delay: BlockNumber = 6;
+            let base_fee: Balance = 10_000_000_000_000;
+
+            let result = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+
+            assert!(result >= base_fee);
+        });
+    }
+
     #[test]
     fn estimate_finality_fee_10_delay() {
-        let mut ext = ExtBuilder::default()
-            // .with_standard_sfx_abi()
-            // .with_eth_gateway_record()
-            .build();
+        let mut ext = ExtBuilder::default().build();
 
         ext.execute_with(|| {
             let target_id = TargetId::default();
             let blocks_delay: BlockNumber = 10;
-            let base_user_fee_for_single_user: Balance = 10_000_000_000_000u128.try_into().unwrap();
+            let base_fee: Balance = 10_000_000_000_000;
 
             let result = Attesters::estimate_finality_reward(&target_id, blocks_delay);
 
-            // let mut expected_finality_reward = PaidFinalityFees::get(target_id)
-            //     .as_ref()
-            //     .and_then(|fees| fees.last())
-            //     .unwrap_or(&base_user_fee_for_single_user);
-            // let mut expected_reward = *expected_finality_reward;
-            let mut expected_reward = base_user_fee_for_single_user;
+            // The returned result is larger than just +20% increase from base fee
+            let expected_result = base_fee.saturating_add(
+                Percent::from_percent(blocks_delay.saturating_mul(2).try_into().unwrap())
+                    .mul_ceil(base_fee),
+            );
 
-            for _ in 0..blocks_delay {
-                expected_reward = REWARD_ADJUSTMENT
-                    .mul_ceil(expected_reward)
-                    .saturating_add(expected_reward);
-            }
-
-            // The computed result has to be less than the just a decrease
-            assert!(result < expected_reward);
+            assert!(result >= expected_result);
         });
     }
 
