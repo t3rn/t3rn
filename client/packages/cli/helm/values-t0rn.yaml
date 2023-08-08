@@ -9,7 +9,7 @@ jobs:
         value: debug
       # SFX CONFIG
       - name: SFX_TRAN_INSURANCE
-        name: "1"
+        value: "1"
     schedule: "*/5 * * * *"
     args:
     - submit
