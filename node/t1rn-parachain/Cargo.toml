@@ -30,7 +30,7 @@ sc-client-api           = { workspace = true }
 sc-consensus            = { workspace = true }
 sc-consensus-aura       = { workspace = true }
 sc-executor             = { workspace = true }
-sc-finality-grandpa     = { workspace = true }
+sc-consensus-grandpa     = { workspace = true }
 sc-keystore             = { workspace = true }
 sp-keystore             = { workspace = true }
 sc-network              = { workspace = true }
