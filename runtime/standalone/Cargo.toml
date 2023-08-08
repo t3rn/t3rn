@@ -80,7 +80,7 @@ sp-api              = { workspace = true }
 sp-block-builder    = { workspace = true }
 sp-consensus-aura   = { workspace = true }
 sp-core             = { workspace = true }
-sp-finality-grandpa = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
 sp-inherents        = { workspace = true }
 sp-io               = { workspace = true }
 sp-offchain         = { workspace = true }
@@ -156,7 +156,7 @@ std = [
   "sp-block-builder/std",
   "sp-consensus-aura/std",
   "sp-core/std",
-  "sp-finality-grandpa/std",
+  "sp-consensus-grandpa/std",
   "polkadot-runtime-common/std",
   "sp-inherents/std",
   "sp-offchain/std",

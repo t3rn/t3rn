@@ -1,6 +1,6 @@
 use crate::{bridges::header_chain::justification::GrandpaJustification, TypeInfo};
 use codec::{Decode, Encode};
-use sp_finality_grandpa::{AuthorityId, SetId};
+use sp_consensus_grandpa::{AuthorityId, SetId};
 use sp_std::vec::Vec;
 use sp_trie::StorageProof;
 

@@ -50,8 +50,8 @@ use bridges::{
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*, transactional, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
+use sp_consensus_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_core::crypto::ByteArray;
-use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use t3rn_primitives::light_client::LightClientAsyncAPI;
 
@@ -358,7 +358,7 @@ pub mod pallet {
     /// since these types of changes are indicitive of abnormal behaviour from GRANDPA.
     pub(crate) fn try_enact_authority_change_single<T: Config<I>, I: 'static>(
         header: &BridgedHeader<T, I>,
-        current_set_id: sp_finality_grandpa::SetId,
+        current_set_id: sp_consensus_grandpa::SetId,
     ) -> Result<bool, sp_runtime::DispatchError> {
         let mut change_enacted = false;
 
@@ -662,7 +662,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                         .authorities
                         .iter()
                         .map(|id| {
-                            sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
+                            sp_consensus_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
                         }) // not sure why this is still needed
                         .map(|authority| (authority, 1))
                         .collect::<Vec<_>>(),
@@ -864,7 +864,7 @@ pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
 
 pub(crate) fn find_scheduled_change<H: HeaderT>(
     header: &H,
-) -> Option<sp_finality_grandpa::ScheduledChange<H::Number>> {
+) -> Option<sp_consensus_grandpa::ScheduledChange<H::Number>> {
     use sp_runtime::generic::OpaqueDigestItemId;
 
     let id = OpaqueDigestItemId::Consensus(&GRANDPA_ENGINE_ID);
@@ -923,7 +923,7 @@ fn executed_after_creation<T: Config<I>, I: 'static>(
 /// extracts it.
 pub(crate) fn find_forced_change<H: HeaderT>(
     header: &H,
-) -> Option<(H::Number, sp_finality_grandpa::ScheduledChange<H::Number>)> {
+) -> Option<(H::Number, sp_consensus_grandpa::ScheduledChange<H::Number>)> {
     use sp_runtime::generic::OpaqueDigestItemId;
 
     let id = OpaqueDigestItemId::Consensus(&GRANDPA_ENGINE_ID);
@@ -1043,8 +1043,8 @@ pub mod tests {
     };
     use codec::Encode;
     use frame_support::{assert_noop, assert_ok};
+    use sp_consensus_grandpa::AuthorityId;
     use sp_core::{crypto::AccountId32, H160, H256};
-    use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
     use crate::types::GrandpaHeaderData;
@@ -1134,7 +1134,7 @@ pub mod tests {
 
     fn change_log(delay: u32) -> Digest {
         let consensus_log =
-            ConsensusLog::<TestNumber>::ScheduledChange(sp_finality_grandpa::ScheduledChange {
+            ConsensusLog::<TestNumber>::ScheduledChange(sp_consensus_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
                 delay,
             });
@@ -1150,7 +1150,7 @@ pub mod tests {
     fn forced_change_log(delay: u32) -> Digest {
         let consensus_log = ConsensusLog::<TestNumber>::ForcedChange(
             delay,
-            sp_finality_grandpa::ScheduledChange {
+            sp_consensus_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
                 delay,
             },

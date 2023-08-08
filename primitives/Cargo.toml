@@ -37,7 +37,7 @@ finality-grandpa    = { version = "0.16", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 num-traits          = { workspace = true }
 sp-api              = { workspace = true }
-sp-finality-grandpa = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
 sp-state-machine    = { workspace = true }
 sp-trie             = { workspace = true }
 
@@ -78,7 +78,7 @@ std = [
   "num-traits/std",
   "sp-state-machine/std",
   "sp-trie/std",
-  "sp-finality-grandpa/std",
+  "sp-consensus-grandpa/std",
   "t3rn-sdk-primitives/std",
   "t3rn-types/std",
   "t3rn-abi/std",
