@@ -1,4 +1,4 @@
-# bash shebang
+#!/usr/bin/env bash
 
 set -e
 
@@ -114,13 +114,14 @@ setup() {
     fetch_zombienet
     build_polkadot
 
-    NODE_ARG=t0rn
+    export NODE_ARG=t0rn
+    env
     build_collator
 
-    NODE_ARG=t1rn
+    export NODE_ARG=t1rn
     build_collator
 
-    NODE_ARG=t3rn
+    export NODE_ARG=t3rn
     build_collator
 }
 
