@@ -34,7 +34,7 @@ use frame_support::{
     weights::Weight,
 };
 use sp_core::{H160, H256, U256};
-use sp_runtime::traits::UniqueSaturatedInto;
+use sp_runtime::traits::{UniqueSaturatedInto, Zero};
 use sp_std::{
     boxed::Box,
     collections::{btree_map::BTreeMap, btree_set::BTreeSet},
@@ -91,6 +91,7 @@ where
             })
         }
 
+        let weight = Weight::from_parts(weight.ref_time(), 0);
         let res = Self::execute_inner(
             source,
             value,
@@ -245,7 +246,10 @@ where
                     vm_info,
                 )
                 .map_err(|_| Error::<T>::RemunerateAuthor)
-                .map_err(|e| RunnerError { error: e, weight })?;
+                .map_err(|e| RunnerError {
+                    error: e,
+                    weight: Weight::from_parts(weight.ref_time(), weight.proof_size()),
+                })?;
             }
         }
 
@@ -342,7 +346,7 @@ where
     ) -> Result<(), RunnerError<Self::Error>> {
         let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
         let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
-        weight = weight.saturating_add(inner_weight);
+        // weight = weight.saturating_add(inner_weight);
 
         let _ = fp_evm::CheckEvmTransaction::<Self::Error>::new(
             fp_evm::CheckEvmTransactionConfig {
@@ -368,7 +372,10 @@ where
         .validate_in_block_for(&source_account)
         .and_then(|v| v.with_base_fee())
         .and_then(|v| v.with_balance_for(&source_account))
-        .map_err(|error| RunnerError { error, weight })?;
+        .map_err(|error| RunnerError {
+            error,
+            weight: Zero::zero(),
+        })?;
         Ok(())
     }
 

@@ -137,7 +137,7 @@ construct_runtime!(
         // Global clock implementing most of t3rn hooks.
         Clock: pallet_clock= 110,
 
-                // t3rn pallets
+        // t3rn pallets
         XDNS: pallet_xdns = 100,
         Attesters: pallet_attesters = 101,
         Rewards: pallet_rewards = 102,
@@ -173,7 +173,7 @@ construct_runtime!(
 
         // Grandpa -- only for standalone
         // Grandpa: pallet_grandpa,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 200,
 
         Identity: pallet_identity = 122,
 

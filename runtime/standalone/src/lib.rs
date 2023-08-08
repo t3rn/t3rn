@@ -92,46 +92,46 @@ construct_runtime!(
         NodeBlock = opaque::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system,
-        Sudo: pallet_sudo,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip,
-        Timestamp: pallet_timestamp,
-        Aura: pallet_aura,
-        Grandpa: pallet_grandpa,
-        Utility: pallet_utility,
-        Identity: pallet_identity = 122,
+        System: frame_system = 0,
+        Grandpa: pallet_grandpa = 1,
+        Timestamp: pallet_timestamp = 2,
 
-        // Monetary
+        Utility: pallet_utility = 6,
+
+        Aura: pallet_aura = 23,
+
+        // Monetary stuff.
         Balances: pallet_balances = 10,
         TransactionPayment: pallet_transaction_payment = 11,
-        Assets: pallet_assets = 12,
+
+        Assets: pallet_assets = 13,
         AssetTxPayment: pallet_asset_tx_payment = 14,
-        Authorship: pallet_authorship = 15,
+        AccountManager: pallet_account_manager = 15,
 
         // Treasuries
-        Treasury: pallet_treasury = 13, // Keep old treasury index for backwards compatibility
+        Treasury: pallet_treasury = 12, // Keep old treasury index for backwards compatibility
         EscrowTreasury: pallet_treasury::<Instance1> = 16,
         FeeTreasury: pallet_treasury::<Instance2> = 17,
         ParachainTreasury: pallet_treasury::<Instance3> = 18,
         SlashTreasury: pallet_treasury::<Instance4> = 19,
 
-        // Circuit
+        // Global clock implementing most of t3rn hooks.
+        Clock: pallet_clock= 110,
+
         // t3rn pallets
-        XDNS: pallet_xdns= 100,
-        Attesters: pallet_attesters= 101,
-        Rewards: pallet_rewards= 102,
-        ContractsRegistry: pallet_contracts_registry= 106,
+        XDNS: pallet_xdns = 100,
+        Attesters: pallet_attesters = 101,
+        Rewards: pallet_rewards = 102,
+        ContractsRegistry: pallet_contracts_registry = 106,
         Circuit: pallet_circuit = 108,
-        Clock: pallet_clock = 110,
         Vacuum: pallet_vacuum = 111,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
-        AccountManager: pallet_account_manager = 125,
 
-        // Portal
+         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
@@ -139,7 +139,12 @@ construct_runtime!(
         EthereumBridge: pallet_eth2_finality_verifier = 132,
         SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
+        Identity: pallet_identity = 122,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 200,
+
         // Handy utilities
         MaintenanceMode: pallet_maintenance_mode = 140,
+
+        Sudo: pallet_sudo = 255,
     }
 );

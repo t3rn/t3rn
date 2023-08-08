@@ -17,7 +17,7 @@
 
 pub mod stack;
 
-use crate::Config;
+use crate::{Config, Weight};
 use fp_evm::{CallInfo, CreateInfo};
 use sp_core::{H160, H256, U256};
 use sp_std::vec::Vec;
@@ -25,7 +25,7 @@ use sp_std::vec::Vec;
 #[derive(Debug)]
 pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {
     pub error: E,
-    pub weight: frame_support::weights::Weight,
+    pub weight: Weight,
 }
 
 pub trait Runner<T: Config> {

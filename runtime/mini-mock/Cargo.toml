@@ -17,17 +17,17 @@ num-traits = { version = "0.2" }
 scale-info = { version = "2.1.1", features = [ "derive" ] }
 serde      = { version = "1.0", features = [ "derive" ] }
 
-sp-core    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-io      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+sp-core    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+sp-io      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 
-frame-support     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-frame-system      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-pallet-aura       = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+frame-support     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+frame-system      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+pallet-aura       = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 
-pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 
 rlp = { version = "0.5.2", features = [ "derive" ] }
 
@@ -41,13 +41,13 @@ t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }
 
 # for mini-mock events
-pallet-assets    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-pallet-balances  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-pallet-contracts = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+pallet-assets    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+pallet-balances  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+pallet-contracts = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 
 # for mini-mock runtime
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
-pallet-treasury  = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+pallet-treasury  = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager" }
@@ -59,7 +59,7 @@ pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }
 pallet-rewards                   = { path = "../../pallets/rewards" }
 pallet-xdns                      = { path = "../../pallets/xdns" }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v0.9.39" }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v0.9.39" }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v1.0.0" }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v1.0.0" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }

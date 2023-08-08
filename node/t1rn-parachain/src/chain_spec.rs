@@ -24,15 +24,15 @@ pub type ChainSpec =
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// The extensions for the [`ChainSpec`].
-#[derive(
-    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
-)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)]
+// #[serde(deny_unknown_fields)] // no ChainSpecGroup
 pub struct Extensions {
     /// The relay chain of the Parachain.
     pub relay_chain: String,
     /// The id of the Parachain.
     pub para_id: u32,
+    /// Known bad block hashes.
+    pub bad_blocks: sc_client_api::BadBlocks<circuit_standalone_runtime::Block>,
 }
 
 impl Extensions {
@@ -196,6 +196,7 @@ pub fn local_testnet_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,              // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }
@@ -270,6 +271,7 @@ pub fn polkadot_config() -> ChainSpec {
         Extensions {
             relay_chain: "polkadot".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,          // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }

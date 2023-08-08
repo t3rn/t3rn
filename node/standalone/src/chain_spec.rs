@@ -15,8 +15,8 @@ use t3rn_types::sfx::Sfx4bId;
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
-/// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+/// Specialized `ChainSpec` for the normal parachain runtime.
+pub type ChainSpec = sc_service::GenericChainSpec<circuit_standalone_runtime::GenesisConfig>;
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {

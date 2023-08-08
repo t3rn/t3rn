@@ -35,9 +35,9 @@ t3rn-primitives        = { default-features = false, path = "../../primitives" }
 sp-core     = { workspace = true }
 sp-keystore = { workspace = true }
 
-pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 
 pallet-account-manager = { path = "../../pallets/account-manager" }
 

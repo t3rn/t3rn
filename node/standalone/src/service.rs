@@ -3,7 +3,7 @@
 use circuit_standalone_runtime::{
     self, impl_versioned_runtime_with_api::VERSION, opaque::Block, RuntimeApi,
 };
-use sc_client_api::{BlockBackend, ExecutorProvider};
+use sc_client_api::BlockBackend;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
@@ -29,10 +29,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
     }
 
     fn native_version() -> sc_executor::NativeVersion {
-        sc_executor::NativeVersion {
-            runtime_version: VERSION,
-            can_author_with: Default::default(),
-        }
+        circuit_standalone_runtime::native_version()
     }
 }
 
@@ -120,8 +117,6 @@ pub fn new_partial(
     )?;
 
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-
-    println!("SLOT DURATION: {:?}", slot_duration);
 
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {
@@ -291,11 +286,6 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                             *timestamp,
                             slot_duration,
                         );
-                    println!(
-                        "SERVICE::: TIMESTAMP {:?} SLOT {:?}",
-                        slot.clone(),
-                        timestamp.clone()
-                    );
 
                     Ok((slot, timestamp))
                 },

@@ -13,7 +13,7 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", optional = true  }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", optional = true  }
 
 [dependencies]
 codec       = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
@@ -23,7 +23,7 @@ num-traits  = { version = "0.2", default-features = false }
 scale-info  = { version = "2.9.0", default-features = false, features = [ "derive" ] }
 serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v0.9.39" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v1.0.0" }
 
 # Circuit dependencies
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
@@ -33,8 +33,8 @@ pallet-vacuum                             = { path = "../../pallets/circuit/vacu
 pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
-pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v0.9.39", default-features = false }
-pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v0.9.39", default-features = false }
+pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v1.0.0", default-features = false }
+pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v1.0.0", default-features = false }
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                             = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
@@ -64,7 +64,7 @@ node-primitives                            = { workspace = true }
 pallet-asset-tx-payment                    = { workspace = true }
 pallet-assets                              = { workspace = true }
 pallet-aura                                = { workspace = true }
-pallet-authorship                          = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+pallet-authorship                          = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
 pallet-balances                            = { workspace = true }
 pallet-grandpa                             = { workspace = true }
 pallet-identity                            = { workspace = true }
@@ -73,7 +73,7 @@ pallet-sudo                                = { workspace = true }
 pallet-timestamp                           = { workspace = true }
 pallet-transaction-payment                 = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
-pallet-treasury                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
+pallet-treasury                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 pallet-utility                             = { workspace = true }
 
 sp-api              = { workspace = true }
@@ -92,8 +92,8 @@ sp-trie             = { workspace = true }
 sp-version          = { workspace = true }
 
 # Benchmarking
-frame-benchmarking        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', optional = true }
-frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', optional = true }
+frame-benchmarking        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0', optional = true }
+frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0', optional = true }
 
 # Common
 # circuit-runtime-pallets = { path = "../common-pallets", default-features = false  }

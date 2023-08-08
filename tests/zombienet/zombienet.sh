@@ -8,7 +8,7 @@ working_dir="$(pwd)"
 
 provider=native
 zombienet_version=v1.3.43
-pdot_branch=release-v0.9.39
+pdot_branch=release-v1.0.0
 polkadot_tmp_dir=/tmp/polkadot
 
 
@@ -103,7 +103,7 @@ build_collator() {
 
 force_build_collator() {
     echo "::group::Rebuilding $NODE_ARG..."
-    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release
     echo "::endgroup::"
     
     cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
@@ -118,7 +118,7 @@ setup() {
     build_collator
 
     NODE_ARG=t1rn
-    build_collator
+    force_build_collator
 
     NODE_ARG=t3rn
     build_collator
