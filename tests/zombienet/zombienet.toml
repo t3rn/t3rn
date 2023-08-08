@@ -18,13 +18,13 @@ prometheus_prefix = "{{NODE_ARG}}"
 
 [[parachains.collators]]
 command  = "{{NODE_ARG}}-collator"
-name     = "{{NODE_ARG}}-collator01"
+name     = "collator01"
 rpc_port = 8840
 ws_port  = 9940
 
 [[parachains.collators]]
 command  = "{{NODE_ARG}}-collator"
-name     = "{{NODE_ARG}}-collator02"
+name     = "collator02"
 rpc_port = 8841
 ws_port  = 9941
 

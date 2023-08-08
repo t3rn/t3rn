@@ -21,6 +21,11 @@ fi
 
 PATH=$PATH:$bin_dir
 
+if [ -z "$NODE_ARG" ]; then
+    NODE_ARG=t0rn
+    export NODE_ARG=$NODE_ARG
+fi
+
 clean() {
     echo "Cleaning bin dir"
     rm -rf "$bin_dir"/*
@@ -86,8 +91,6 @@ build_polkadot() {
     fi
 }
 
-NODE_ARG=t3rn
-
 build_collator() {
     if [ ! -f "$bin_dir/$NODE_ARG-collator" ]; then
         echo "::group::Building $NODE_ARG..."
@@ -114,14 +117,6 @@ setup() {
     fetch_zombienet
     build_polkadot
 
-    export NODE_ARG=t0rn
-    env
-    build_collator
-
-    export NODE_ARG=t1rn
-    build_collator
-
-    export NODE_ARG=t3rn
     build_collator
 }
 
