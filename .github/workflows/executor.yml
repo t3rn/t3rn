@@ -106,7 +106,7 @@ jobs:
     needs: test-executor
     concurrency: executor
 
-    # if: github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-executor')
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
