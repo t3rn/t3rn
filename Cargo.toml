@@ -26,7 +26,9 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.45.0-rc.0"
+version    = "1.49.0-rc.0"
+
+workspace.resolver = "2"
 
 # Dependencies are split into 2 groups: wasm and client.
 # - "nostd" dependencies requires to be no_std compatible, which often requires
@@ -187,7 +189,7 @@ try-runtime-cli                = { git = "https://github.com/paritytech/substrat
 
 jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 
-t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = false }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0", features = [ "js" ] }
@@ -233,6 +235,8 @@ members = [
   "runtime/t0rn-parachain",
   "runtime/t3rn-parachain",
   "runtime/t1rn-parachain",
+  "sdk/crates/primitives",
+  "sdk/crates/sdk",
   "types",
   "types/abi",
 ]

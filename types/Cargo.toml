@@ -33,7 +33,7 @@ sp-core     = { git = "https://github.com/paritytech/substrate.git", branch = 'p
 sp-runtime  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 
 circuit-runtime-types = { path = "../runtime/common-types" }
-t3rn-sdk-primitives   = { version = "=0.1.1-rc.4" }
+t3rn-sdk-primitives   = { workspace = true }
 
 rlp-derive = "0.1.0"
 

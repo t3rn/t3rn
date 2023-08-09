@@ -1,0 +1,37 @@
+[package]
+authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+description = "The smart contracts SDK for t3rn"
+edition     = "2021"
+homepage    = "https://t3rn.io"
+license     = "Apache-2.0"
+name        = "t3rn-sdk"
+readme      = "README.md"
+registry    = "t3rn"
+repository  = "https://github.com/t3rn/3vm/"
+version     = "0.0.1-rc.8"
+
+[lib]
+crate-type = [ "dylib", "rlib" ]
+
+[dependencies]
+cfg-if = "1.0.0"
+
+codec      = { workspace = true }
+scale-info = { workspace = true }
+
+t3rn-sdk-primitives = { path = "../primitives", default-features = false }
+
+ink_env        = { optional = true, version = "=3.0.0", default-features = false, features = [ "ink-debug" ] }
+ink_prelude    = { optional = true, version = "=3.0.0", default-features = false }
+ink_primitives = { optional = true, version = "=3.0.0", default-features = false }
+
+[dev-dependencies]
+ink_lang    = { version = "=3.0.0" }
+lazy_static = "1.4.0"
+
+[features]
+default = [ "ink" ]
+ink     = [ "ink_env", "ink_prelude", "ink_primitives" ]
+ink-std = [ "ink_env/std", "ink_prelude/std", "ink_primitives/std", "t3rn-sdk-primitives/std" ]
+
+std = [ "t3rn-sdk-primitives/std" ]

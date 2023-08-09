@@ -7,7 +7,7 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_system::Config as ConfigSystem;
+use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
 use sp_runtime::{DispatchError, DispatchResult};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
@@ -160,7 +160,7 @@ where
 {
     fn peek_registry(
         id: &T::Hash,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, Balance, T::BlockNumber>, DispatchError>;
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, Balance, BlockNumberFor<T>>, DispatchError>;
 
     /// Allows creating a `Module` from a binary blob from the contracts registry
     fn from_registry<Module, ModuleGen>(
@@ -261,7 +261,7 @@ impl<T: ConfigSystem, Balance: Encode + Decode> ThreeVm<T, Balance> for NoopThre
             <T as ConfigSystem>::Hash,
             <T as ConfigSystem>::AccountId,
             Balance,
-            <T as ConfigSystem>::BlockNumber,
+            BlockNumberFor<T>,
         >,
         DispatchError,
     > {

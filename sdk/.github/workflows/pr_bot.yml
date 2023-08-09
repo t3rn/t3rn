@@ -1,0 +1,28 @@
+name: telegram PR message
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+
+jobs:
+  tg-pull-request:
+    name: Telegram Pull Request
+    runs-on: ubuntu-latest
+    steps:
+      - name: send telegram message on pull request
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            `${{ github.actor }}` ${{ github.event.action }} a pull request
+
+            Pull Request: ${{ github.event.pull_request.html_url }}
+
+            Repository: ${{ github.repository }}
+
+            Reviewers:
+              ${{ join(github.event.pull_request.requested_reviewers.*.login, ', ') }}

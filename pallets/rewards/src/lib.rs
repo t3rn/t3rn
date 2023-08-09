@@ -179,11 +179,14 @@ pub mod pallet {
     pub type RepatriationPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
-    pub type DistributionBlock<T: Config> = StorageValue<_, T::BlockNumber>;
+    pub type DistributionBlock<T: Config> = StorageValue<_, BlockNumberFor<T>>;
 
     #[pallet::storage]
-    pub type DistributionHistory<T: Config> =
-        StorageValue<_, Vec<DistributionRecord<T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
+    pub type DistributionHistory<T: Config> = StorageValue<
+        _,
+        Vec<DistributionRecord<frame_system::pallet_prelude::BlockNumberFor<T>, BalanceOf<T>>>,
+        ValueQuery,
+    >;
 
     #[pallet::storage]
     pub type IsDistributionHalted<T: Config> = StorageValue<_, bool, ValueQuery>;
@@ -193,7 +196,7 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type LastProcessedRound<T: Config> =
-        StorageValue<_, RoundInfo<T::BlockNumber>, OptionQuery>;
+        StorageValue<_, RoundInfo<BlockNumberFor<T>>, OptionQuery>;
 
     #[pallet::storage]
     pub type MaxRewardExecutorsKickback<T: Config> = StorageValue<_, Percent, ValueQuery>;
@@ -509,7 +512,7 @@ pub mod pallet {
 
             for (author, block_count) in authors_this_period {
                 let this_author_reward: BalanceOf<T> = Perbill::from_rational(
-                    T::BlockNumber::from(block_count),
+                    frame_system::pallet_prelude::BlockNumberFor::<T>::from(block_count),
                     T::InflationDistributionPeriod::get(),
                 )
                 .mul_ceil(current_distribution);
@@ -834,7 +837,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> RewardsWriteApi<T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
+    impl<T: Config> RewardsWriteApi<T::AccountId, BalanceOf<T>, BlockNumberFor<T>> for Pallet<T> {
         /// This function is called by the attesters pallet to repatriate the executor of honest SFX
         /// for attesters not signing on the attestation within the acceptable time limit.
         /// The repatriation is done on the agreed percentage value of the SlashTreasury, the current percantage is available through the `repatriation_percentage` function.
@@ -844,7 +847,11 @@ pub mod pallet {
         /// Remaining funds in the SlashTreasury after repatriation are used as a base for Finality Fee, therefore land in Fee Treasury.
         fn repatriate_for_late_attestation(
             sfx_id: &H256,
-            fsx: &FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            fsx: &FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
             status: &CircuitStatus,
             requester: Option<T::AccountId>,
         ) -> bool {
@@ -927,9 +934,9 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_finalize(_n: BlockNumberFor<T>) {}
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {}
 
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             Self::process_update_estimated_treasury_balance()
         }
     }

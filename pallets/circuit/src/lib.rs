@@ -20,7 +20,6 @@
 //! ## Overview
 //!
 //! Circuit MVP
-#![feature(box_syntax)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
@@ -340,15 +339,15 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             Weight::zero()
         }
 
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // x-t3rn#4: Go over open Xtx and cancel if necessary
         }
 
-        fn offchain_worker(_n: T::BlockNumber) {}
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {}
 
         fn on_runtime_upgrade() -> Weight {
             // Define the maximum weight of this migration.
@@ -365,7 +364,13 @@ pub mod pallet {
                         FullSideEffects::<T>::translate(
                             |_,
                              value: Vec<
-                                Vec<FullSideEffectV13<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                                Vec<
+                                    FullSideEffectV13<
+                                        T::AccountId,
+                                        frame_system::pallet_prelude::BlockNumberFor<T>,
+                                        BalanceOf<T>,
+                                    >,
+                                >,
                             >| {
                                 Some(
                                     value
@@ -394,19 +399,19 @@ pub mod pallet {
     }
 
     impl<T: Config> CircuitDLQ<T> for Pallet<T> {
-        fn process_dlq(n: T::BlockNumber) -> Weight {
+        fn process_dlq(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             Self::process_dlq(n)
         }
 
         fn process_adaptive_xtx_timeout_queue(
-            n: T::BlockNumber,
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
             verifier: &GatewayVendor,
         ) -> Weight {
             Self::process_adaptive_xtx_timeout_queue(n, verifier)
         }
     }
 
-    impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
+    impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>> for Pallet<T> {
         fn get_fsx_of_xtx(xtx_id: T::Hash) -> Result<Vec<T::Hash>, DispatchError> {
             let full_side_effects = FullSideEffects::<T>::get(xtx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
@@ -434,8 +439,14 @@ pub mod pallet {
         // Look up the FSX by its ID and return the FSX if it exists
         fn get_fsx(
             fsx_id: T::Hash,
-        ) -> Result<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>, DispatchError>
-        {
+        ) -> Result<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+            DispatchError,
+        > {
             let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 
@@ -475,8 +486,13 @@ pub mod pallet {
 
         fn get_xtx_status(
             xtx_id: T::Hash,
-        ) -> Result<(CircuitStatus, AdaptiveTimeout<T::BlockNumber, TargetId>), DispatchError>
-        {
+        ) -> Result<
+            (
+                CircuitStatus,
+                AdaptiveTimeout<frame_system::pallet_prelude::BlockNumberFor<T>, TargetId>,
+            ),
+            DispatchError,
+        > {
             XExecSignals::<T>::get(xtx_id)
                 .map(|xtx| (xtx.status, xtx.timeouts_at))
                 .ok_or(Error::<T>::XtxNotFound.into())
@@ -527,7 +543,7 @@ pub mod pallet {
                         .map(|fsx| {
                             let effect: HardenedSideEffect<
                                 T::AccountId,
-                                T::BlockNumber,
+                                frame_system::pallet_prelude::BlockNumberFor<T>,
                                 BalanceOf<T>,
                             > = fsx.clone().try_into().map_err(|e| {
                                 log::debug!(
@@ -540,12 +556,26 @@ pub mod pallet {
                             Ok(effect)
                         })
                         .collect::<Result<
-                            Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                            Vec<
+                                HardenedSideEffect<
+                                    T::AccountId,
+                                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                                    BalanceOf<T>,
+                                >,
+                            >,
                             Error<T>,
                         >>()
                 })
                 .collect::<Result<
-                    Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                    Vec<
+                        Vec<
+                            HardenedSideEffect<
+                                T::AccountId,
+                                frame_system::pallet_prelude::BlockNumberFor<T>,
+                                BalanceOf<T>,
+                            >,
+                        >,
+                    >,
                     Error<T>,
                 >>()?;
 
@@ -1000,7 +1030,7 @@ pub struct Payload<Public, BlockNumber> {
     public: Public,
 }
 
-impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
+impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, BlockNumberFor<T>> {
     fn public(&self) -> T::Public {
         self.public.clone()
     }
@@ -1033,9 +1063,17 @@ impl<T: Config> Pallet<T> {
 
     fn emit_status_update(
         xtx_id: XExecSignalId<T>,
-        maybe_xtx: Option<XExecSignal<T::AccountId, T::BlockNumber>>,
+        maybe_xtx: Option<XExecSignal<T::AccountId, BlockNumberFor<T>>>,
         maybe_full_side_effects: Option<
-            Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+            Vec<
+                Vec<
+                    FullSideEffect<
+                        T::AccountId,
+                        frame_system::pallet_prelude::BlockNumberFor<T>,
+                        BalanceOf<T>,
+                    >,
+                >,
+            >,
         >,
     ) {
         if let Some(xtx) = maybe_xtx {
@@ -1117,8 +1155,13 @@ impl<T: Config> Pallet<T> {
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
     ) -> Result<(), &'static str> {
-        let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
-            vec![];
+        let mut full_side_effects: Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        > = vec![];
 
         pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
             if gateway_type == GatewayType::ProgrammableInternal(0)
@@ -1184,10 +1227,19 @@ impl<T: Config> Pallet<T> {
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
-        let mut escrow_sfx_step: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
-            vec![];
+        let mut escrow_sfx_step: Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        > = vec![];
         let mut optimistic_sfx_step: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
         > = vec![];
 
         // Split for 2 following steps of Escrow and Optimistic and
@@ -1214,9 +1266,19 @@ impl<T: Config> Pallet<T> {
 
     fn confirm(
         xtx_id: XExecSignalId<T>,
-        step_side_effects: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        step_side_effects: &mut Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        >,
         sfx_id: &SideEffectId<T>,
-        confirmation: &ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        confirmation: &ConfirmedSideEffect<
+            T::AccountId,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+            BalanceOf<T>,
+        >,
     ) -> Result<(), DispatchError> {
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if step_side_effects.is_empty() {
@@ -1281,10 +1343,10 @@ impl<T: Config> Pallet<T> {
             })?;
 
         #[cfg(feature = "test-skip-verification")]
-        let inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+        let inclusion_receipt = InclusionReceipt::<BlockNumberFor<T>> {
             message: confirmation.inclusion_data.clone(),
             including_header: [0u8; 32].encode(),
-            height: T::BlockNumber::zero(),
+            height: frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
         }; // Empty encoded_event_params for testing purposes
 
         #[cfg(not(feature = "test-skip-verification"))]
@@ -1351,9 +1413,24 @@ impl<T: Config> Pallet<T> {
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
-        _full_side_effects: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        _full_side_effects: &mut Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        >,
         _steps_cnt: (u32, u32),
-    ) -> Result<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>, Error<T>> {
+    ) -> Result<
+        Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        >,
+        Error<T>,
+    > {
         Ok(vec![])
     }
 
@@ -1401,14 +1478,14 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn process_xtx_tick_queue(
-        n: T::BlockNumber,
-        kill_interval: T::BlockNumber,
+        n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        kill_interval: frame_system::pallet_prelude::BlockNumberFor<T>,
         max_allowed_weight: Weight,
     ) -> Weight {
         let mut current_weight = 0;
-        if kill_interval == T::BlockNumber::zero() {
+        if kill_interval == frame_system::pallet_prelude::BlockNumberFor::<T>::zero() {
             return Weight::zero()
-        } else if n % kill_interval == T::BlockNumber::zero() {
+        } else if n % kill_interval == frame_system::pallet_prelude::BlockNumberFor::<T>::zero() {
             // Go over all unfinished Xtx to find those that should be killed
             let _processed_xtx_revert_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
@@ -1424,7 +1501,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn process_adaptive_xtx_timeout_queue(
-        n: T::BlockNumber,
+        n: frame_system::pallet_prelude::BlockNumberFor<T>,
         _verifier: &GatewayVendor,
     ) -> Weight {
         let mut current_weight: Weight = Zero::zero();
@@ -1445,17 +1522,17 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn process_emergency_revert_xtx_queue(
-        n: T::BlockNumber,
-        revert_interval: T::BlockNumber,
+        n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        revert_interval: frame_system::pallet_prelude::BlockNumberFor<T>,
         max_allowed_weight: Weight,
     ) -> Weight {
         let mut current_weight: Weight = Default::default();
         // Scenario 1: all the timeout s can be handled in the block space
         // Scenario 2: all but 5 timeouts can be handled
         //     - add the 5 timeouts to an immediate queue for the next block
-        if revert_interval == T::BlockNumber::zero() {
+        if revert_interval == frame_system::pallet_prelude::BlockNumberFor::<T>::zero() {
             return current_weight
-        } else if n % revert_interval == T::BlockNumber::zero() {
+        } else if n % revert_interval == frame_system::pallet_prelude::BlockNumberFor::<T>::zero() {
             // Go over all unfinished Xtx to find those that timed out
             let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, adaptive_timeout)| adaptive_timeout.emergency_timeout_here <= n)
@@ -1473,7 +1550,7 @@ impl<T: Config> Pallet<T> {
     pub fn get_adaptive_timeout(
         xtx_id: T::Hash,
         maybe_speed_mode: Option<SpeedMode>,
-    ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+    ) -> AdaptiveTimeout<frame_system::pallet_prelude::BlockNumberFor<T>, TargetId> {
         let all_targets = Self::get_all_xtx_targets(xtx_id);
         T::Xdns::estimate_adaptive_timeout_on_slowest_target(
             all_targets,
@@ -1576,7 +1653,7 @@ impl<T: Config> Pallet<T> {
     /// # Returns
     ///
     /// The total weight of the operation.
-    pub fn process_dlq(_n: T::BlockNumber) -> Weight {
+    pub fn process_dlq(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
         <DLQ<T>>::iter()
             .map(|(xtx_id, (_block_number, targets, _speed_mode))| {
                 if Self::ensure_all_gateways_are_active(targets) {
@@ -1697,8 +1774,8 @@ impl<T: Config> Pallet<T> {
 
     // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
     pub fn process_signal_queue(
-        _n: T::BlockNumber,
-        _interval: T::BlockNumber,
+        _n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        _interval: frame_system::pallet_prelude::BlockNumberFor<T>,
         max_allowed_weight: Weight,
     ) -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);

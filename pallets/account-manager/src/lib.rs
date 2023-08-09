@@ -110,7 +110,7 @@ pub mod pallet {
     pub type SettlementsPerRound<T: Config> = StorageDoubleMap<
         _,
         Blake2_128,
-        RoundInfo<T::BlockNumber>,
+        RoundInfo<BlockNumberFor<T>>,
         Identity,
         T::Hash, // sfx_id
         Settlement<
@@ -140,7 +140,7 @@ pub mod pallet {
                 T::AccountId,
                 BalanceOf<T>,
                 T::Hash,
-                T::BlockNumber,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
                 <T::Assets as Inspect<T::AccountId>>::AssetId,
             >>::deposit(
                 charge_id,
@@ -171,7 +171,7 @@ pub mod pallet {
                 T::AccountId,
                 BalanceOf<T>,
                 T::Hash,
-                T::BlockNumber,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
                 <T::Assets as Inspect<T::AccountId>>::AssetId,
             >>::finalize(charge_id, outcome, maybe_recipient, maybe_actual_fees)
         }
@@ -181,7 +181,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // Perform necessary data/state clean up here.
         }
 
@@ -189,7 +189,7 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             // TODO: we may want to retry failed transactions here, ensuring a max weight and max retry list
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
@@ -199,7 +199,7 @@ pub mod pallet {
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.

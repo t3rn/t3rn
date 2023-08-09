@@ -68,7 +68,7 @@ where
         }
     }
 
-    fn get_finalized_height(&self) -> HeightResult<T::BlockNumber> {
+    fn get_finalized_height(&self) -> HeightResult<BlockNumberFor<T>> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height(),
@@ -77,7 +77,7 @@ where
         }
     }
 
-    fn get_rational_height(&self) -> HeightResult<T::BlockNumber> {
+    fn get_rational_height(&self) -> HeightResult<BlockNumberFor<T>> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height(),
@@ -86,7 +86,7 @@ where
         }
     }
 
-    fn get_fast_height(&self) -> HeightResult<T::BlockNumber> {
+    fn get_fast_height(&self) -> HeightResult<BlockNumberFor<T>> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height(),
@@ -113,7 +113,7 @@ where
         }
     }
 
-    fn get_finalized_height_precompile(&self) -> T::BlockNumber {
+    fn get_finalized_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
@@ -122,7 +122,7 @@ where
         }
     }
 
-    fn get_rational_height_precompile(&self) -> T::BlockNumber {
+    fn get_rational_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
@@ -131,7 +131,7 @@ where
         }
     }
 
-    fn get_fast_height_precompile(&self) -> T::BlockNumber {
+    fn get_fast_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
@@ -190,7 +190,7 @@ where
         speed_mode: SpeedMode,
         source: Option<ExecutionSource>,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
                 pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
@@ -207,7 +207,7 @@ where
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
                 pallet.verify_state_inclusion(gateway_id, speed_mode, message),
@@ -224,7 +224,7 @@ where
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
                 pallet.verify_tx_inclusion(gateway_id, speed_mode, message),
@@ -297,15 +297,15 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         }
     }
 
-    fn get_fast_height(&self) -> HeightResult<T::BlockNumber> {
+    fn get_fast_height(&self) -> HeightResult<BlockNumberFor<T>> {
         self.get_finalized_height()
     }
 
-    fn get_rational_height(&self) -> HeightResult<T::BlockNumber> {
+    fn get_rational_height(&self) -> HeightResult<BlockNumberFor<T>> {
         self.get_finalized_height()
     }
 
-    fn get_finalized_height(&self) -> HeightResult<T::BlockNumber> {
+    fn get_finalized_height(&self) -> HeightResult<BlockNumberFor<T>> {
         let header = Pallet::<T, I>::best_finalized_map();
         let local_number = match to_local_block_number::<T, I>(*header.number()) {
             Ok(number) => number,
@@ -321,24 +321,24 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         }
     }
 
-    fn get_fast_height_precompile(&self) -> T::BlockNumber {
+    fn get_fast_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         match self.get_finalized_height() {
             HeightResult::Height(height) => height,
-            HeightResult::NotActive => T::BlockNumber::zero(),
+            HeightResult::NotActive => frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
         }
     }
 
-    fn get_rational_height_precompile(&self) -> T::BlockNumber {
+    fn get_rational_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         match self.get_finalized_height() {
             HeightResult::Height(height) => height,
-            HeightResult::NotActive => T::BlockNumber::zero(),
+            HeightResult::NotActive => frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
         }
     }
 
-    fn get_finalized_height_precompile(&self) -> T::BlockNumber {
+    fn get_finalized_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         match self.get_finalized_height() {
             HeightResult::Height(height) => height,
-            HeightResult::NotActive => T::BlockNumber::zero(),
+            HeightResult::NotActive => frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
         }
     }
 
@@ -387,7 +387,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _speed_mode: SpeedMode,
         source: Option<ExecutionSource>,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         // todo: handle ExecutionSource in grandpa
         Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, source)
     }
@@ -397,7 +397,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _gateway_id: [u8; 4],
         _speed_mode: SpeedMode,
         _message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         Err("GrandpaFV::verify_state_inclusion not implemented yet".into())
     }
 
@@ -406,7 +406,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _gateway_id: [u8; 4],
         _speed_mode: SpeedMode,
         _message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         Err("GrandpaFV::verify_tx_inclusion not implemented yet".into())
     }
 
@@ -488,8 +488,10 @@ pub mod grandpa_light_clients_test {
         light_client_4b_id: [u8; 4],
     ) {
         run_test(|| {
-            let BLOCK_ZERO: T::BlockNumber = T::BlockNumber::from(0u8);
-            let BLOCK_ONE: T::BlockNumber = T::BlockNumber::from(1u8);
+            let BLOCK_ZERO: frame_system::pallet_prelude::BlockNumberFor<T> =
+                frame_system::pallet_prelude::BlockNumberFor::<T>::from(0u8);
+            let BLOCK_ONE: frame_system::pallet_prelude::BlockNumberFor<T> =
+                frame_system::pallet_prelude::BlockNumberFor::<T>::from(1u8);
 
             frame_system::Pallet::<T>::set_block_number(BLOCK_ONE);
             let lc_instance = select_grandpa_light_client_instance::<T, I>(vendor).expect(

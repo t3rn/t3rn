@@ -263,7 +263,8 @@ pub mod pallet {
     >;
     #[pallet::storage]
     #[pallet::getter(fn next_batches)]
-    pub type NextBatch<T: Config> = StorageMap<_, Identity, TargetId, BatchMessage<T::BlockNumber>>;
+    pub type NextBatch<T: Config> =
+        StorageMap<_, Identity, TargetId, BatchMessage<BlockNumberFor<T>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn next_committee_on_target)]
@@ -273,12 +274,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn batches_to_sign)]
     pub type BatchesToSign<T: Config> =
-        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<BatchMessage<BlockNumberFor<T>>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches)]
     pub type Batches<T: Config> =
-        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<BatchMessage<BlockNumberFor<T>>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_unnominations)]
@@ -286,7 +287,11 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         T::AccountId,
-        Vec<(T::AccountId, BalanceOf<T>, BlockNumberFor<T>)>,
+        Vec<(
+            T::AccountId,
+            BalanceOf<T>,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+        )>,
     >;
 
     #[pallet::storage]
@@ -309,12 +314,15 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         AttesterRegistered(T::AccountId),
-        AttesterDeregistrationScheduled(T::AccountId, T::BlockNumber),
+        AttesterDeregistrationScheduled(
+            T::AccountId,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+        ),
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
-        NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
+        NewAttestationBatch(TargetId, BatchMessage<BlockNumberFor<T>>),
         NewAttestationMessageHash(TargetId, H256, ExecutionVendor),
-        NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>, Vec<u8>, H256),
+        NewConfirmationBatch(TargetId, BatchMessage<BlockNumberFor<T>>, Vec<u8>, H256),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
         NewTargetActivated(TargetId),
         NewTargetProposed(TargetId),
@@ -434,7 +442,9 @@ pub mod pallet {
             let unlock_block = frame_system::Pallet::<T>::block_number()
                 .checked_add(
                     &T::ShufflingFrequency::get()
-                        .checked_mul(&T::BlockNumber::from(2u32))
+                        .checked_mul(&frame_system::pallet_prelude::BlockNumberFor::<T>::from(
+                            2u32,
+                        ))
                         .ok_or(Error::<T>::ArithmeticOverflow)?,
                 )
                 .ok_or(Error::<T>::ArithmeticOverflow)?;
@@ -709,7 +719,7 @@ pub mod pallet {
                 target_inclusion_proof_encoded,
             )?; // Todo: add escrow address
             #[cfg(feature = "test-skip-verification")]
-            let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+            let escrow_inclusion_receipt = InclusionReceipt::<BlockNumberFor<T>> {
                 height: Zero::zero(),
                 message: target_inclusion_proof_encoded,
                 including_header: [0u8; 32].encode(),
@@ -1158,7 +1168,7 @@ pub mod pallet {
         pub fn get_batches(
             target: TargetId,
             by_status: BatchStatus,
-        ) -> Vec<BatchMessage<T::BlockNumber>> {
+        ) -> Vec<BatchMessage<BlockNumberFor<T>>> {
             // Get the batches to sign
             match Batches::<T>::get(target) {
                 Some(batches) => batches
@@ -1173,7 +1183,7 @@ pub mod pallet {
         pub fn get_batch_by_message(
             target: TargetId,
             message: Vec<u8>,
-        ) -> Option<BatchMessage<T::BlockNumber>> {
+        ) -> Option<BatchMessage<BlockNumberFor<T>>> {
             match Batches::<T>::get(target) {
                 Some(batches) => batches.iter().find(|&b| b.message() == message).cloned(),
                 None => None,
@@ -1183,7 +1193,7 @@ pub mod pallet {
         pub fn get_batch_by_message_hash(
             target: TargetId,
             message_hash: H256,
-        ) -> Option<BatchMessage<T::BlockNumber>> {
+        ) -> Option<BatchMessage<BlockNumberFor<T>>> {
             match Batches::<T>::get(target) {
                 Some(batches) => batches
                     .iter()
@@ -1193,7 +1203,7 @@ pub mod pallet {
             }
         }
 
-        pub fn get_batches_to_commit(target: TargetId) -> Vec<BatchMessage<T::BlockNumber>> {
+        pub fn get_batches_to_commit(target: TargetId) -> Vec<BatchMessage<BlockNumberFor<T>>> {
             // Get the batches to sign
             match Batches::<T>::get(target) {
                 Some(batches) => batches
@@ -1210,20 +1220,22 @@ pub mod pallet {
 
         pub fn get_latest_batch_to_commit(
             target: TargetId,
-        ) -> Option<BatchMessage<T::BlockNumber>> {
+        ) -> Option<BatchMessage<BlockNumberFor<T>>> {
             // Get the batches to sign
             let mut batches = Self::get_batches_to_commit(target);
             batches.sort_by(|a, b| b.index.cmp(&a.index));
             batches.first().cloned()
         }
 
-        pub fn get_all_batches_to_sign(target: TargetId) -> Vec<BatchMessage<T::BlockNumber>> {
+        pub fn get_all_batches_to_sign(target: TargetId) -> Vec<BatchMessage<BlockNumberFor<T>>> {
             let mut batches = Self::get_batches(target, BatchStatus::PendingAttestation);
             batches.sort_by(|a, b| b.created.cmp(&a.created));
             batches
         }
 
-        pub fn get_latest_batch_to_sign(target: TargetId) -> Option<BatchMessage<T::BlockNumber>> {
+        pub fn get_latest_batch_to_sign(
+            target: TargetId,
+        ) -> Option<BatchMessage<BlockNumberFor<T>>> {
             Self::get_all_batches_to_sign(target).first().cloned()
         }
 
@@ -1404,7 +1416,10 @@ pub mod pallet {
             full_shuffle
         }
 
-        pub fn process_repatriations(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
+        pub fn process_repatriations(
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+            aggregated_weight: Weight,
+        ) -> Weight {
             for target in AttestationTargets::<T>::get() {
                 Batches::<T>::mutate(target, |batches| {
                     let mut repatriated = false;
@@ -1484,7 +1499,10 @@ pub mod pallet {
             aggregated_weight
         }
 
-        pub fn process_next_batch_window(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
+        pub fn process_next_batch_window(
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+            aggregated_weight: Weight,
+        ) -> Weight {
             let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
@@ -1575,7 +1593,7 @@ pub mod pallet {
         }
 
         pub fn process_pending_unnominations(
-            n: T::BlockNumber,
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
             mut aggregated_weight: Weight,
         ) -> Weight {
             aggregated_weight += T::DbWeight::get().reads(1);
@@ -1665,7 +1683,7 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: T::BlockNumber) -> Weight {
+        fn on_initialize(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             let mut aggregated_weight: Weight = Zero::zero();
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() && Self::is_last_transition_attested() {

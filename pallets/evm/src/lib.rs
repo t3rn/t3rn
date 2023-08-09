@@ -754,7 +754,7 @@ pub trait BlockHashMapping {
 pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
     fn block_hash(number: u32) -> H256 {
-        let number = T::BlockNumber::from(number);
+        let number = frame_system::pallet_prelude::BlockNumberFor::<T>::from(number);
         H256::from_slice(frame_system::Pallet::<T>::block_hash(number).as_ref())
     }
 }

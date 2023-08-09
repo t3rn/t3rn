@@ -328,12 +328,15 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_idle(_block: T::BlockNumber, remaining_weight: Weight) -> Weight {
+        fn on_idle(
+            _block: frame_system::pallet_prelude::BlockNumberFor<T>,
+            remaining_weight: Weight,
+        ) -> Weight {
             ContractInfo::<T>::process_deletion_queue_batch(remaining_weight)
                 .saturating_add(T::WeightInfo::on_process_deletion_queue_batch())
         }
 
-        fn on_initialize(_block: T::BlockNumber) -> Weight {
+        fn on_initialize(_block: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             // We want to process the deletion_queue in the on_idle hook. Only in the case
             // that the queue length has reached its maximal depth, we process it here.
             let max_len = T::DeletionQueueDepth::get() as usize;

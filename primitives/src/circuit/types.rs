@@ -5,7 +5,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchError;
-use frame_system::Config;
+use frame_system::{pallet_prelude::BlockNumberFor, Config};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -212,7 +212,7 @@ impl CircuitStatus {
     }
 
     fn determine_fsx_bidding_status<T: Config, Balance: Clone>(
-        fsx: FullSideEffect<T::AccountId, T::BlockNumber, Balance>,
+        fsx: FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>,
     ) -> CircuitStatus {
         if let Some(_bid) = fsx.best_bid {
             CircuitStatus::InBidding
@@ -226,7 +226,7 @@ impl CircuitStatus {
     /// if SFX::Optimistic check if the optional insurance and bonded_deposit fields are present
     /// if SFX::Escrow check if the optional insurance and bonded_deposit are set to None
     pub fn determine_bidding_status<T: Config, Balance: Clone>(
-        fsx_step: &[FullSideEffect<T::AccountId, T::BlockNumber, Balance>],
+        fsx_step: &[FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>],
     ) -> CircuitStatus {
         let mut lowest_bidding_status = CircuitStatus::InBidding;
         let mut highest_bidding_status = CircuitStatus::PendingBidding;
@@ -258,7 +258,7 @@ impl CircuitStatus {
     }
 
     pub fn determine_execution_status<T: Config, Balance: Clone>(
-        fsx_step: &[FullSideEffect<T::AccountId, T::BlockNumber, Balance>],
+        fsx_step: &[FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>],
     ) -> CircuitStatus {
         let mut lowest_execution_status = CircuitStatus::Finished;
         let mut highest_execution_status = CircuitStatus::Ready;
@@ -282,7 +282,7 @@ impl CircuitStatus {
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config, Balance: Clone>(
-        step: &[FullSideEffect<T::AccountId, T::BlockNumber, Balance>],
+        step: &[FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>],
     ) -> CircuitStatus {
         if step.is_empty() {
             return CircuitStatus::Finished
@@ -295,7 +295,7 @@ impl CircuitStatus {
     }
 
     pub fn determine_xtx_status<T: Config, Balance: Clone>(
-        steps: &[Vec<FullSideEffect<T::AccountId, T::BlockNumber, Balance>>],
+        steps: &[Vec<FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>>],
     ) -> CircuitStatus {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
@@ -321,8 +321,8 @@ impl CircuitStatus {
 pub struct LocalXtxCtx<T: Config, Balance: Clone> {
     pub local_state: LocalState,
     pub xtx_id: XExecSignalId<T>,
-    pub xtx: XExecSignal<T::AccountId, T::BlockNumber>,
-    pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, Balance>>>,
+    pub xtx: XExecSignal<T::AccountId, BlockNumberFor<T>>,
+    pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>>>,
 }
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
@@ -416,12 +416,15 @@ impl<
         // Requester of xtx
         requester: &T::AccountId,
         // Expiry timeout
-        timeouts_at: AdaptiveTimeout<T::BlockNumber, TargetId>,
+        timeouts_at: AdaptiveTimeout<BlockNumberFor<T>, TargetId>,
         // Speed of confirmation
         speed_mode: SpeedMode,
         // Schedule execution of steps in the future intervals
-        delay_steps_at: Option<Vec<T::BlockNumber>>,
-    ) -> (XExecSignalId<T>, XExecSignal<T::AccountId, T::BlockNumber>) {
+        delay_steps_at: Option<Vec<BlockNumberFor<T>>>,
+    ) -> (
+        XExecSignalId<T>,
+        XExecSignal<T::AccountId, BlockNumberFor<T>>,
+    ) {
         let requester_nonce = Decode::decode(
             &mut &frame_system::Pallet::<T>::account_nonce(requester).encode()[..],
         )

@@ -75,23 +75,23 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type LastClaims<T: Config> =
-        StorageMap<_, Identity, T::AccountId, RoundInfo<T::BlockNumber>>;
+        StorageMap<_, Identity, T::AccountId, RoundInfo<BlockNumberFor<T>>>;
 
     #[pallet::storage]
     pub type ClaimableArtifactsPerRound<T: Config> = StorageMap<
         _,
         Identity,
-        RoundInfo<T::BlockNumber>,
+        RoundInfo<BlockNumberFor<T>>,
         Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>,
     >;
 
     #[pallet::storage]
     #[pallet::getter(fn current_round)]
     /// Information on the current round.
-    pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
+    pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<BlockNumberFor<T>>, ValueQuery>;
 
     impl<T: Config> Pallet<T> {
-        pub fn check_bump_round(n: T::BlockNumber) -> Weight {
+        pub fn check_bump_round(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             let past_round = <CurrentRound<T>>::get();
             let term = T::RoundDuration::get();
             let new_round = RoundInfo {
@@ -122,7 +122,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(n: T::BlockNumber) {
+        fn on_finalize(n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             let max_on_finalize_weight = T::BlockWeights::get().max_block.saturating_div(FIVE);
             log::debug!(
                 "Clock::on_finalize process hooks with max_on_finalize_weight: {:?}",
@@ -135,7 +135,7 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+        fn on_initialize(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             let max_on_initialize_weight = T::BlockWeights::get().max_block.saturating_div(FIVE);
             log::debug!(
                 "Clock::on_initialize process hooks with max_on_initialize_weight: {:?} and block number: {:?}",
@@ -148,7 +148,7 @@ pub mod pallet {
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.
@@ -162,8 +162,8 @@ pub mod pallet {
     pub enum Event<T: Config> {
         NewRound {
             index: u32,
-            head: T::BlockNumber,
-            term: T::BlockNumber,
+            head: frame_system::pallet_prelude::BlockNumberFor<T>,
+            term: frame_system::pallet_prelude::BlockNumberFor<T>,
         },
     }
 
@@ -192,11 +192,11 @@ pub mod pallet {
     }
 
     impl<T: Config> Clock<T> for Pallet<T> {
-        fn current_round() -> RoundInfo<T::BlockNumber> {
+        fn current_round() -> RoundInfo<BlockNumberFor<T>> {
             Self::current_round()
         }
 
-        fn round_duration() -> T::BlockNumber {
+        fn round_duration() -> frame_system::pallet_prelude::BlockNumberFor<T> {
             T::RoundDuration::get()
         }
     }

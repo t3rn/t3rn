@@ -39,7 +39,7 @@ impl<T: Config>
         T::AccountId,
         BalanceOf<T>,
         T::Hash,
-        T::BlockNumber,
+        frame_system::pallet_prelude::BlockNumberFor<T>,
         <T::Assets as Inspect<T::AccountId>>::AssetId,
     > for Pallet<T>
 {
@@ -324,7 +324,7 @@ impl<T: Config>
                     T::AccountId,
                     BalanceOf<T>,
                     T::Hash,
-                    T::BlockNumber,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
                     <T::Assets as Inspect<T::AccountId>>::AssetId,
                 >>::deposit(
                     new_charge_id,

@@ -48,7 +48,7 @@
 //     author: AccountId32,
 //     author_fees: Option<u64>,
 //     meta: Option<ContractMetadata>,
-// ) -> RegistryContract<CodeHash<T>, AccountId32, u64, T::BlockNumber> {
+// ) -> RegistryContract<CodeHash<T>, AccountId32, u64, BlockNumberFor<T>> {
 //     RegistryContract::new(
 //         code_hash.clone().encode(),
 //         wasm,

@@ -51,7 +51,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        OrderStatusRead(OrderStatusRead<T::Hash, T::BlockNumber>),
+        OrderStatusRead(OrderStatusRead<T::Hash, BlockNumberFor<T>>),
     }
 
     #[pallet::error]

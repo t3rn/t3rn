@@ -88,9 +88,9 @@ pub enum VMSource {
 
 pub fn to_local_block_number<T: Config<I>, I: 'static>(
     block_number: BridgedBlockNumber<T, I>,
-) -> Result<T::BlockNumber, DispatchError> {
-    let local_block_number: T::BlockNumber = Decode::decode(&mut block_number.encode().as_slice())
-        .map_err(|_e| {
+) -> Result<frame_system::pallet_prelude::BlockNumberFor<T>, DispatchError> {
+    let local_block_number: frame_system::pallet_prelude::BlockNumberFor<T> =
+        Decode::decode(&mut block_number.encode().as_slice()).map_err(|_e| {
             DispatchError::Other(
                 "LightClient::Grandpa - failed to decode block number from bridged header",
             )
@@ -176,7 +176,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_submissions_counter)]
     pub(super) type SubmissionsCounter<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, T::BlockNumber, ValueQuery>;
+        StorageValue<_, frame_system::pallet_prelude::BlockNumberFor<T>, ValueQuery>;
 
     /// Current ring buffer position.
     #[pallet::storage]
@@ -328,7 +328,10 @@ pub mod pallet {
                     },
                 }
 
-                <SubmissionsCounter<T, I>>::put(counter.saturating_add(T::BlockNumber::one()));
+                <SubmissionsCounter<T, I>>::put(
+                    counter
+                        .saturating_add(frame_system::pallet_prelude::BlockNumberFor::<T>::one()),
+                );
 
                 Ok(Pays::No.into())
             } else {
@@ -772,7 +775,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
         maybe_source: Option<ExecutionSource>,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
         let (payload_proof, encoded_payload, header, header_hash) = if is_relaychain {
@@ -814,7 +817,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             Self::check_vm_source(source, message.clone())?;
         }
 
-        Ok(InclusionReceipt::<T::BlockNumber> {
+        Ok(InclusionReceipt::<BlockNumberFor<T>> {
             height: to_local_block_number::<T, I>(*header.number())?,
             including_header: header_hash.encode(),
             message,
@@ -905,7 +908,7 @@ fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> 
 
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
-    submission_target_height: T::BlockNumber,
+    submission_target_height: frame_system::pallet_prelude::BlockNumberFor<T>,
     header: &BridgedHeader<T, I>,
 ) -> Result<(), &'static str> {
     let submission_target: BridgedBlockNumber<T, I> =

@@ -6,7 +6,7 @@ homepage    = { workspace = true }
 license     = { workspace = true }
 name        = "t3rn-abi"
 repository  = { workspace = true }
-version     = "1.5.0-rc.0"
+version     = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -40,7 +40,7 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate.git", branch
 pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
-t3rn-sdk-primitives   = { version = "=0.1.1-rc.4" }
+t3rn-sdk-primitives   = { path = "../../sdk/crates/primitives"  }
 
 [features]
 default = [ "std" ]

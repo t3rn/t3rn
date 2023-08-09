@@ -115,21 +115,21 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             Zero::zero()
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // Perform necessary data/state clean up here.
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.
@@ -209,7 +209,9 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        pub fn check_for_manual_verifier_overview_process(n: BlockNumberFor<T>) -> Weight {
+        pub fn check_for_manual_verifier_overview_process(
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> Weight {
             let mut total_weight: Weight = Zero::zero();
 
             let latest_overview = <VerifierOverviewStore<T>>::get();
@@ -226,7 +228,9 @@ pub mod pallet {
                 let estimated_epoch_length = EpochHistory::<T>::get(&verifier)
                     .and_then(|epochs| epochs.last().cloned())
                     .map(|epoch| epoch.local)
-                    .unwrap_or_else(|| T::BlockNumber::from(50u8));
+                    .unwrap_or_else(|| {
+                        frame_system::pallet_prelude::BlockNumberFor::<T>::from(50u8)
+                    });
 
                 if latest_vendor_overview.reported_at + estimated_epoch_length < n {
                     let latest_heartbeat =
@@ -245,14 +249,16 @@ pub mod pallet {
             total_weight
         }
 
-        pub fn process_all_verifier_overviews(n: BlockNumberFor<T>) -> Weight {
+        pub fn process_all_verifier_overviews(
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> Weight {
             Self::check_for_manual_verifier_overview_process(n)
         }
 
         pub fn process_single_verifier_overview(
-            n: BlockNumberFor<T>,
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
             verifier: GatewayVendor,
-            new_epoch: BlockNumberFor<T>,
+            new_epoch: frame_system::pallet_prelude::BlockNumberFor<T>,
             latest_heartbeat: LightClientHeartbeat<T>,
         ) -> Weight {
             let mut total_weight: Weight = Zero::zero();
@@ -343,7 +349,7 @@ pub mod pallet {
 
         pub fn update_historic_overview(
             verifier: GatewayVendor,
-            activity: FinalityVerifierActivity<T::BlockNumber>,
+            activity: FinalityVerifierActivity<BlockNumberFor<T>>,
         ) {
             let mut historic_overview = VerifierOverviewStoreHistory::<T>::get(&verifier);
             if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
@@ -355,7 +361,7 @@ pub mod pallet {
 
         pub fn update_overview_store(
             verifier: GatewayVendor,
-            activity: FinalityVerifierActivity<T::BlockNumber>,
+            activity: FinalityVerifierActivity<BlockNumberFor<T>>,
         ) {
             VerifierOverviewStore::<T>::mutate(|all_overviews| {
                 if let Some(overview) = all_overviews.iter_mut().find(|o| o.verifier == verifier) {
@@ -366,8 +372,8 @@ pub mod pallet {
             });
         }
 
-        pub fn process_overview(n: BlockNumberFor<T>) {
-            let mut all_overviews: Vec<GatewayActivity<T::BlockNumber>> = Vec::new();
+        pub fn process_overview(n: frame_system::pallet_prelude::BlockNumberFor<T>) {
+            let mut all_overviews: Vec<GatewayActivity<BlockNumberFor<T>>> = Vec::new();
 
             for gateway in Self::fetch_full_gateway_records() {
                 let gateway_id = gateway.gateway_record.gateway_id;
@@ -640,20 +646,20 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn gateways_overview)]
     pub type GatewaysOverviewStore<T: Config> =
-        StorageValue<_, Vec<GatewayActivity<T::BlockNumber>>, ValueQuery>;
+        StorageValue<_, Vec<GatewayActivity<BlockNumberFor<T>>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn verifier_overview)]
     pub type VerifierOverviewStore<T: Config> =
-        StorageValue<_, Vec<FinalityVerifierActivity<T::BlockNumber>>, ValueQuery>;
+        StorageValue<_, Vec<FinalityVerifierActivity<BlockNumberFor<T>>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn gateways_overview_history)]
     pub type GatewaysOverviewStoreHistory<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        TargetId,                             // Gateway Id
-        Vec<GatewayActivity<T::BlockNumber>>, // Activity
+        TargetId,                                // Gateway Id
+        Vec<GatewayActivity<BlockNumberFor<T>>>, // Activity
         ValueQuery,
     >;
 
@@ -662,8 +668,8 @@ pub mod pallet {
     pub type VerifierOverviewStoreHistory<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        GatewayVendor,                                 // Gateway Id
-        Vec<FinalityVerifierActivity<T::BlockNumber>>, // Activity
+        GatewayVendor,                                    // Gateway Id
+        Vec<FinalityVerifierActivity<BlockNumberFor<T>>>, // Activity
         ValueQuery,
     >;
 
@@ -671,7 +677,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn epoch_history)]
     pub type EpochHistory<T: Config> =
-        StorageMap<_, Identity, GatewayVendor, Vec<EpochEstimate<T::BlockNumber>>>;
+        StorageMap<_, Identity, GatewayVendor, Vec<EpochEstimate<BlockNumberFor<T>>>>;
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -776,8 +782,8 @@ pub mod pallet {
 
         pub fn update_epoch_history(
             verifier: &GatewayVendor,
-            epoch_duration_in_remote_blocks: T::BlockNumber,
-            epoch_duration_in_local_blocks: T::BlockNumber,
+            epoch_duration_in_remote_blocks: frame_system::pallet_prelude::BlockNumberFor<T>,
+            epoch_duration_in_local_blocks: frame_system::pallet_prelude::BlockNumberFor<T>,
         ) {
             const N: usize = 10; // Number of epochs to consider for the moving average
 
@@ -805,7 +811,7 @@ pub mod pallet {
                 .unwrap_or(Zero::zero())
                 .into();
 
-            let epoch_duration_estimate_update = EpochEstimate::<T::BlockNumber> {
+            let epoch_duration_estimate_update = EpochEstimate::<BlockNumberFor<T>> {
                 remote: epoch_duration_in_remote_blocks,
                 local: epoch_duration_in_local_blocks,
                 moving_average_local,
@@ -821,7 +827,7 @@ pub mod pallet {
     impl<T: Config> LightClientAsyncAPI<T> for Pallet<T> {
         fn on_new_epoch(
             verifier: GatewayVendor,
-            new_epoch: T::BlockNumber,
+            new_epoch: frame_system::pallet_prelude::BlockNumberFor<T>,
             current_hearbeat: LightClientHeartbeat<T>,
         ) {
             Self::process_single_verifier_overview(
@@ -1129,13 +1135,13 @@ pub mod pallet {
                 .collect()
         }
 
-        fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>> {
+        fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<BlockNumberFor<T>>> {
             Self::read_last_activity_overview()
                 .into_iter()
                 .find(|activity| activity.gateway_id == gateway_id)
         }
 
-        fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>> {
+        fn read_last_activity_overview() -> Vec<GatewayActivity<BlockNumberFor<T>>> {
             // Self::process_overview(<frame_system::Pallet<T>>::block_number());
             // <GatewaysOverviewStore<T>>::get()
 
@@ -1157,7 +1163,7 @@ pub mod pallet {
 
         fn verify_active(
             gateway_id: &ChainId,
-            max_acceptable_heartbeat_offset: T::BlockNumber,
+            max_acceptable_heartbeat_offset: frame_system::pallet_prelude::BlockNumberFor<T>,
             security_lvl: &SecurityLvl,
         ) -> Result<LightClientHeartbeat<T>, DispatchError> {
             let heartbeat = T::Portal::get_latest_heartbeat(gateway_id)
@@ -1185,8 +1191,13 @@ pub mod pallet {
         fn get_slowest_verifier_target(
             all_targets: Vec<TargetId>,
             speed_mode: &SpeedMode,
-            emergency_offset: T::BlockNumber,
-        ) -> Option<(GatewayVendor, TargetId, T::BlockNumber, T::BlockNumber)> {
+            emergency_offset: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> Option<(
+            GatewayVendor,
+            TargetId,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+        )> {
             // map all targets to their respective vendors, and collect them into a BTreeSet to eliminate duplicates
             let all_distinct_verifiers: BTreeSet<_> = all_targets
                 .iter()
@@ -1210,8 +1221,8 @@ pub mod pallet {
         fn estimate_adaptive_timeout_on_slowest_target(
             all_targets: Vec<TargetId>,
             speed_mode: &SpeedMode,
-            emergency_offset: T::BlockNumber,
-        ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+            emergency_offset: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> AdaptiveTimeout<frame_system::pallet_prelude::BlockNumberFor<T>, TargetId> {
             let current_block = <frame_system::Pallet<T>>::block_number();
 
             let (slowest_verifier, target, submit_by_local_offset, submit_by_remote_offset) =
@@ -1246,7 +1257,15 @@ pub mod pallet {
             }
         }
 
-        fn estimate_costs(_fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>) {
+        fn estimate_costs(
+            _fsx: &Vec<
+                FullSideEffect<
+                    T::AccountId,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                    BalanceOf<T>,
+                >,
+            >,
+        ) {
             todo!("estimate costs")
         }
     }

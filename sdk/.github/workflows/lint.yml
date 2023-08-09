@@ -1,0 +1,74 @@
+name: lint project
+
+on:
+  pull_request:
+    paths:
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - .github/workflows/lint.yml
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - '**/*.rs'
+      - '**/Cargo.*'
+      - .github/workflows/lint.yml
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  format:
+    runs-on: self-hosted
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt
+          override: true
+      - name: 📜 Format code
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+  lint:
+    runs-on: self-hosted
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-11-01
+          profile: minimal
+          components: clippy
+          override: true
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+      - name: 📑 Lint code
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all -- --deny "warnings"
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}

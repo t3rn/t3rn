@@ -91,21 +91,21 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             Default::default()
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // Perform necessary data/state clean up here.
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.
@@ -121,7 +121,7 @@ pub mod pallet {
         pub fn add_new_contract(
             origin: OriginFor<T>,
             requester: T::AccountId,
-            contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>,
+            contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
@@ -241,7 +241,7 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Cur
     /// Internal function that queries the RegistryContract storage for a contract by its ID
     fn fetch_contract_by_id(
         contract_id: RegistryContractId<T>,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>, Error<T>>
     {
         //TODO[Optimisation, Cleanliness]: isn't this just contracts_registry(contract_id)?
         if !pallet::ContractsRegistry::<T>::contains_key(contract_id) {
@@ -255,8 +255,10 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Cur
     fn fetch_contracts(
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
-    ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>
-    {
+    ) -> Result<
+        Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>>,
+        Error<T>,
+    > {
         // helper function to find a number of byte slice inside a larger slice
         fn find_subsequence(haystack: Vec<u8>, needle: &[u8]) -> Option<usize> {
             haystack
@@ -265,28 +267,29 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Cur
         }
 
         // try to find contracts by author or metadata
-        let contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>> =
-            pallet::ContractsRegistry::<T>::iter_values()
-                .filter(
-                    |contract: &RegistryContract<
-                        T::Hash,
-                        T::AccountId,
-                        BalanceOf<T>,
-                        T::BlockNumber,
-                    >| {
-                        match (author.clone(), metadata.clone()) {
-                            (Some(author), Some(text)) =>
-                                contract.author.account == author
-                                    && find_subsequence(contract.meta.encode(), text.as_slice())
-                                        .is_some(),
-                            (Some(author), None) => contract.author.account == author,
-                            (None, Some(text)) =>
-                                find_subsequence(contract.meta.encode(), text.as_slice()).is_some(),
-                            (None, None) => false,
-                        }
-                    },
-                )
-                .collect();
+        let contracts: Vec<
+            RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>,
+        > = pallet::ContractsRegistry::<T>::iter_values()
+            .filter(
+                |contract: &RegistryContract<
+                    T::Hash,
+                    T::AccountId,
+                    BalanceOf<T>,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                >| {
+                    match (author.clone(), metadata.clone()) {
+                        (Some(author), Some(text)) =>
+                            contract.author.account == author
+                                && find_subsequence(contract.meta.encode(), text.as_slice())
+                                    .is_some(),
+                        (Some(author), None) => contract.author.account == author,
+                        (None, Some(text)) =>
+                            find_subsequence(contract.meta.encode(), text.as_slice()).is_some(),
+                        (None, None) => false,
+                    }
+                },
+            )
+            .collect();
 
         if contracts.is_empty() {
             return Err(pallet::Error::<T>::UnknownContract)

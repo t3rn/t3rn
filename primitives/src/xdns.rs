@@ -4,7 +4,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
-use frame_system::pallet_prelude::OriginFor;
+use frame_system::pallet_prelude::{BlockNumberFor, OriginFor};
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
@@ -229,14 +229,19 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     fn get_slowest_verifier_target(
         all_targets: Vec<TargetId>,
         speed_mode: &SpeedMode,
-        emergency_offset: T::BlockNumber,
-    ) -> Option<(GatewayVendor, TargetId, T::BlockNumber, T::BlockNumber)>;
+        emergency_offset: BlockNumberFor<T>,
+    ) -> Option<(
+        GatewayVendor,
+        TargetId,
+        BlockNumberFor<T>,
+        BlockNumberFor<T>,
+    )>;
 
     fn estimate_adaptive_timeout_on_slowest_target(
         target_ids: Vec<ChainId>,
         speed_mode: &SpeedMode,
-        emergency_offset: T::BlockNumber,
-    ) -> AdaptiveTimeout<T::BlockNumber, TargetId>;
+        emergency_offset: BlockNumberFor<T>,
+    ) -> AdaptiveTimeout<BlockNumberFor<T>, TargetId>;
 
     fn register_new_token(
         origin: &T::RuntimeOrigin,
@@ -311,15 +316,15 @@ pub trait Xdns<T: frame_system::Config, Balance> {
 
     fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>>;
 
-    fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>>;
+    fn read_last_activity_overview() -> Vec<GatewayActivity<BlockNumberFor<T>>>;
 
-    fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>>;
+    fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<BlockNumberFor<T>>>;
 
     fn verify_active(
         gateway_id: &ChainId,
-        max_acceptable_heartbeat_offset: T::BlockNumber,
+        max_acceptable_heartbeat_offset: BlockNumberFor<T>,
         security_lvl: &SecurityLvl,
     ) -> Result<LightClientHeartbeat<T>, DispatchError>;
 
-    fn estimate_costs(fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, Balance>>);
+    fn estimate_costs(fsx: &Vec<FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>>);
 }

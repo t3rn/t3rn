@@ -253,8 +253,10 @@ impl<T: Config> Remuneration<T, BalanceOf<T>> for Pallet<T> {
 impl<T: Config> ThreeVm<T, BalanceOf<T>> for Pallet<T> {
     fn peek_registry(
         id: &T::Hash,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, DispatchError>
-    {
+    ) -> Result<
+        RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>,
+        DispatchError,
+    > {
         let contract = T::ContractsRegistry::fetch_contract_by_id(*id)
             .map_err(|_| Error::<T>::ContractNotFound)?;
         Ok(contract)

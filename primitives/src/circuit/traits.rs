@@ -43,8 +43,15 @@ impl<T: ConfigSystem> LocalTrigger<T> {
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalStateExecutionView<T: ConfigSystem, BalanceOf> {
     pub local_state: LocalState,
-    pub hardened_side_effects:
-        Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf>>>,
+    pub hardened_side_effects: Vec<
+        Vec<
+            HardenedSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf,
+            >,
+        >,
+    >,
     pub steps_cnt: (u32, u32),
     pub xtx_id: <T as ConfigSystem>::Hash,
 }
@@ -53,7 +60,15 @@ impl<T: ConfigSystem, Balance> LocalStateExecutionView<T, Balance> {
     pub fn new(
         xtx_id: <T as ConfigSystem>::Hash,
         local_state: LocalState,
-        hardened_side_effects: Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, Balance>>>,
+        hardened_side_effects: Vec<
+            Vec<
+                HardenedSideEffect<
+                    T::AccountId,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                    Balance,
+                >,
+            >,
+        >,
         steps_cnt: (u32, u32),
     ) -> Self {
         LocalStateExecutionView {
@@ -81,8 +96,11 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
 }
 
 pub trait CircuitDLQ<T: ConfigSystem> {
-    fn process_dlq(n: T::BlockNumber) -> Weight;
-    fn process_adaptive_xtx_timeout_queue(n: T::BlockNumber, verifier: &GatewayVendor) -> Weight;
+    fn process_dlq(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight;
+    fn process_adaptive_xtx_timeout_queue(
+        n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        verifier: &GatewayVendor,
+    ) -> Weight;
 }
 
 pub trait OnLocalTrigger<T: ConfigSystem, Balance> {
