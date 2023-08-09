@@ -95,7 +95,7 @@ jobs:
     runs-on: self-hosted
     needs: [test-cli]
 
-    if: github.ref == 'refs/heads/development' || (github.event_name == 'pull_request' && contains(github.event.label.name, 'deploy-cli'))
+    if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-cli')
 
     steps:
       - name: ☁ Checkout git repo
