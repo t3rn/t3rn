@@ -1,9 +1,6 @@
 import { BiddingStrategy } from "src/bidding";
 import { SfxStrategy, XtxStrategy } from "src/index";
 
-const WS_CIRCUIT_ENDPOINT =
-  process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944";
-
 /**
  * The gateway configuration for the executor.
  *
@@ -171,11 +168,10 @@ export type Config = {
 export const config: Config = {
   name: "example",
   circuit: {
-    rpc: WS_CIRCUIT_ENDPOINT,
+    rpc: process.env.CIRCUIT_WS_ENDPOINT || "ws://127.0.0.1:9944",
     ticker: "TRN",
     decimals: 12,
-    signerKey:
-      "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
+    signerKey: process.env.CIRCUIT_SIGNER_KEY,
   },
   vendors: ["Rococo"],
   gateways: [

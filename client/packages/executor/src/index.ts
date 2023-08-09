@@ -84,13 +84,12 @@ class Instance {
     await cryptoWaitReady();
 
     if (!this.config.circuit.signerKey) {
-      throw Error("Instance::setup: missing circuit signer key");
+      logger.error("Missing circuit signer key");
+      throw Error;
     }
 
-    this.signer = new Keyring({ type: "sr25519" }).addFromSeed(
-      Uint8Array.from(
-        Buffer.from(this.config.circuit.signerKey.slice(2), "hex"),
-      ),
+    this.signer = new Keyring({ type: "sr25519" }).addFromMnemonic(
+      this.config.circuit.signerKey,
     );
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
     this.circuitClient = await this.sdk.init();
