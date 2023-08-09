@@ -7,9 +7,9 @@ use frame_support::{
 };
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
-    NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
-    SortedNominatedAttesters,
+    CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee, Error as AttestersError,
+    Event as AttestersEvent, LatencyStatus, NextBatch, NextCommitteeOnTarget, Nominations,
+    PendingUnnominations, PermanentSlashes, PreviousCommittee, SortedNominatedAttesters,
 };
 use std::marker::PhantomData;
 
@@ -95,6 +95,7 @@ frame_support::construct_runtime!(
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
         EthereumBridge: pallet_eth2_finality_verifier = 132,
+        SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
     }
 );
@@ -350,6 +351,9 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
             GatewayVendor::Ethereum => Ok(Box::new(pallet_eth2_finality_verifier::Pallet::<
                 MiniRuntime,
             >(PhantomData))),
+            GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_finality_verifier::Pallet::<
+                MiniRuntime,
+            >(PhantomData))),
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }
     }
@@ -371,6 +375,18 @@ parameter_types! {
 }
 
 impl pallet_eth2_finality_verifier::Config for MiniRuntime {
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type Event = Event;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type LightClientAsyncAPI = XDNS;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
+}
+
+impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
     type Event = Event;

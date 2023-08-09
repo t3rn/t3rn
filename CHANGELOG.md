@@ -4,6 +4,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.46.1-rc.0] - 2023-08-03
+### :bug: Bug Fixes
+- [`e410842`](https://github.com/t3rn/t3rn/commit/e41084273564fffc586d532810701036dbb5d340) - temporarily set 67% committee majority threshold to Sepolia light client  *(PR [#1232](https://github.com/t3rn/t3rn/pull/1232) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.46.0-rc.0] - 2023-08-03
+### :sparkles: New Features
+- [`7dca20e`](https://github.com/t3rn/t3rn/commit/7dca20e525ab4b1e3648c32bc0d010fabc004b19) - implement evm call price estimation *(PR [#1229](https://github.com/t3rn/t3rn/pull/1229) by [@ahkohd](https://github.com/ahkohd))*
+
+### :bug: Bug Fixes
+- [`9811de3`](https://github.com/t3rn/t3rn/commit/9811de379f3c59a0a5563ebd4e3274e0edb9fcea) - reduce majority threshold to unbrick LC *(PR [#1230](https://github.com/t3rn/t3rn/pull/1230) by [@petscheit](https://github.com/petscheit))*
+
+
+## [v1.45.1-rc.0] - 2023-07-28
+### :bug: Bug Fixes
+- [`e4b9c82`](https://github.com/t3rn/t3rn/commit/e4b9c82a38a9ffb2fa40b9ceeb55ab6eddc0c492) - move process estimation of treasury balances to on_initialize hook *(PR [#1223](https://github.com/t3rn/t3rn/pull/1223) by [@MaciejBaj](https://github.com/MaciejBaj))*
+  - :arrow_lower_right: *fixes issue [#1162](undefined) opened by [@3h4x](https://github.com/3h4x)*
+
+
+## [v1.45.0-rc.0] - 2023-07-28
+### :sparkles: New Features
+- [`12050ac`](https://github.com/t3rn/t3rn/commit/12050ac82ea545076b1edbdf27c7c1817fd701d1) - extend GatewayVendor select with XBI and Sepolia *(PR [#1224](https://github.com/t3rn/t3rn/pull/1224) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.44.2-rc.0] - 2023-07-28
+### :bug: Bug Fixes
+- [`25073b1`](https://github.com/t3rn/t3rn/commit/25073b1f98f92ce246333de14e829e03774a7780) - remove remaining deprecated XDNS records with storage migration *(PR [#1225](https://github.com/t3rn/t3rn/pull/1225) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`6377990`](https://github.com/t3rn/t3rn/commit/6377990cdc19197fb503f7f8c9744702ade17c8e) - disable dependabot until polkadot upgrade is done *(PR [#1227](https://github.com/t3rn/t3rn/pull/1227) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.44.1-rc.0] - 2023-07-27
+### :bug: Bug Fixes
+- [`6075c3b`](https://github.com/t3rn/t3rn/commit/6075c3b35aa29a45b96e8cb5931795e49cad5e27) - stop committee shuffle if previous transition request still awaits attestation *(PR [#1221](https://github.com/t3rn/t3rn/pull/1221) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.44.0-rc.0] - 2023-07-27
+### :sparkles: New Features
+- [`3713380`](https://github.com/t3rn/t3rn/commit/3713380f6097e36a93742360478a1aeb2cfb4029) - implement bridge contract to receive remote orders *(PR [#1174](https://github.com/t3rn/t3rn/pull/1174) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :white_check_mark: Tests
+- [`8daf064`](https://github.com/t3rn/t3rn/commit/8daf0647764b68d0ad117842cc841cab6f8a5218) - cover xtx id calculations for nonces 0,1 and 2 *(PR [#1205](https://github.com/t3rn/t3rn/pull/1205) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.43.4-rc.0] - 2023-07-27
+### :bug: Bug Fixes
+- [`38fefaa`](https://github.com/t3rn/t3rn/commit/38fefaa0af383bd8220280d8cf09851f13e8d5f7) - add storage migration to raw key of XDNSRegistry *(PR [#1222](https://github.com/t3rn/t3rn/pull/1222) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.43.3-rc.0] - 2023-07-27
+### :bug: Bug Fixes
+- [`3827ef9`](https://github.com/t3rn/t3rn/commit/3827ef92b284f949aebd88040d9a02213958e84b) - ensure XDNS override stores single Gateway ID *(PR [#1218](https://github.com/t3rn/t3rn/pull/1218) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.43.1-rc.0] - 2023-07-25
 ### :bug: Bug Fixes
 - [`0fadd75`](https://github.com/t3rn/t3rn/commit/0fadd750e4937e3ab1f9266bdd5560cac05193ac) - executor sending Confirmed Batches *(PR [#1207](https://github.com/t3rn/t3rn/pull/1207) by [@3h4x](https://github.com/3h4x))*
@@ -1396,3 +1451,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.42.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.41.1-rc.0...v1.42.0-rc.0
 [v1.43.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.42.1-rc.0...v1.43.0-rc.0
 [v1.43.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.0-rc.0...v1.43.1-rc.0
+[v1.43.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.2-rc.0...v1.43.3-rc.0
+[v1.43.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.3-rc.0...v1.43.4-rc.0
+[v1.44.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.4-rc.0...v1.44.0-rc.0
+[v1.44.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.0-rc.0...v1.44.1-rc.0
+[v1.44.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.1-rc.0...v1.44.2-rc.0
+[v1.45.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.2-rc.0...v1.45.0-rc.0
+[v1.45.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.0-rc.0...v1.45.1-rc.0
+[v1.46.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.1-rc.0...v1.46.0-rc.0
+[v1.46.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.0-rc.0...v1.46.1-rc.0

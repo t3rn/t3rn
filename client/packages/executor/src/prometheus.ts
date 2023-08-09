@@ -119,6 +119,7 @@ export class Prometheus {
       name: "attestations_batches_failed_total",
       help: "Number of attestations batches failed",
       registers: [this.register],
+      labelNames: ["error"],
     });
 
     this.startServer();

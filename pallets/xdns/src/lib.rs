@@ -142,7 +142,7 @@ pub mod pallet {
             // Define the maximum weight of this migration.
             let max_weight = T::DbWeight::get().reads_writes(10, 10);
             // Define the current storage migration version.
-            const CURRENT_STORAGE_VERSION: u32 = 1;
+            const CURRENT_STORAGE_VERSION: u32 = 2;
             // Migrate the storage entries.
             StorageMigrations::<T>::try_mutate(|current_version| {
                 match *current_version {
@@ -170,6 +170,33 @@ pub mod pallet {
 
                         // Return the weight consumed by the migration.
                         Ok::<Weight, DispatchError>(max_weight)
+                    }
+                    // Storage Migration: Raw XDNS storage entry kill
+                    // Storage Migration Details: 27-07-2023; v1.4.43-rc -> v1.4.44-rc
+                    //     Many Collators on t0rn hit: frame_support::storage: (key, value) failed to decode at [225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13, 175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249, 114, 111, 99, 111]
+                    1 => {
+                        // Manually kill the old XDNS storage entry (XDNSRegistry is now replaced by Gateways)
+                        frame_support::storage::unhashed::kill(&[225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13, 175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249, 114, 111, 99, 111]);
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
+                    }
+                    // Storage Migration: Another Raw XDNS storage entry kill
+                    // Storage Migration Details: 27-07-2023; v1.4.44-rc -> v1.4.45-rc
+                    //     Many Collators on t0rn hit: frame_support::storage: (key, value) failed to decode at [84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    //      18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250, 191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204, 8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101, 171, 135, 85,]
+                    2 => {
+                        // Manually kill the old XDNS storage entry (XDNSRegistry is now replaced by Gateways)
+                        frame_support::storage::unhashed::kill(&[84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                            18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                            191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                            8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                            171, 135, 85,]);
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
                     }
                     // Add more migration cases here, if needed in the future
                     _ => {
@@ -345,11 +372,6 @@ pub mod pallet {
 
             for gateway in Self::fetch_full_gateway_records() {
                 let gateway_id = gateway.gateway_record.gateway_id;
-                // ToDo: Uncomment when eth2::turn_on implemented
-                if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
-                    continue
-                }
-
                 let last_finality_verifier_update = VerifierOverviewStoreHistory::<T>::get(
                     &gateway.gateway_record.verification_vendor,
                 )
@@ -968,8 +990,12 @@ pub mod pallet {
                     allowed_side_effects,
                 },
             );
-            <AllGatewayIds<T>>::mutate(|ids| ids.push(gateway_id));
-
+            <AllGatewayIds<T>>::mutate(|ids| {
+                ids.iter()
+                    .position(|&id| id == gateway_id)
+                    .map(|i| ids.remove(i));
+                ids.push(gateway_id);
+            });
             Self::deposit_event(Event::<T>::GatewayRecordStored(gateway_id));
 
             Ok(())

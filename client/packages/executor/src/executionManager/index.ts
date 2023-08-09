@@ -19,7 +19,7 @@ import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/side-effects/types";
 import { Config, Gateway } from "../../config/config";
 import { Logger } from "pino";
-import BN from "bn.js";
+// import BN from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
 
@@ -562,18 +562,19 @@ export class ExecutionManager {
     sfx.on("Notification", (notification: Notification) => {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
-          this.circuitRelayer
-            .bidSfx(
-              notification.payload.sfxId,
-              notification.payload.bidAmount as BN,
-            )
-            .then(() => {
-              sfx.bidAccepted(notification.payload.bidAmount as number);
-            })
-            .catch((e) => {
-              logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
-              sfx.bidRejected(e);
-            });
+          // TODO: uncomment submitting bids when we are ready
+          // this.circuitRelayer
+          //   .bidSfx(
+          //     notification.payload.sfxId,
+          //     notification.payload.bidAmount as BN,
+          //   )
+          //   .then(() => {
+          //     sfx.bidAccepted(notification.payload.bidAmount as number);
+          //   })
+          //   .catch((e) => {
+          //     logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
+          //     sfx.bidRejected(e);
+          //   });
         }
       }
     });

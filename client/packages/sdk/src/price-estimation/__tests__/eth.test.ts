@@ -7,6 +7,10 @@ import {
   getGasAmount,
   Actions,
   ETH_TRANSFER_GAS_AMOUNT,
+  Targets,
+  SpeedMode,
+  estimateActionGasFee,
+  EstimateEvmCallGasParams,
 } from "../eth";
 
 jest.mock("node-fetch", () => jest.fn());
@@ -100,5 +104,21 @@ describe("eth", () => {
         ETH_TRANSFER_GAS_AMOUNT
       );
     });
+  });
+
+
+  describe("estimateActionGasFee", () => {
+    it("should return a gas fee estimate for a ETH transfer action", async () => {
+      mockGetGasPriceSuccesfulResponse();
+      expect(await estimateActionGasFee<SpeedMode>(Targets.Eth, Actions.Transfer, SpeedModes.Standard)).toEqual(0.000293360630052)
+    })
+
+    it("should return an estimate for a call EVM action", async () => {
+      expect(await estimateActionGasFee<EstimateEvmCallGasParams>(Targets.Sepolia, Actions.CallEvm, {
+        fromAddress: "0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321",
+        toAddress: "0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12",
+        data: "0x000000",
+      })).toEqual(0.000293528264697744)
+    })
   });
 });

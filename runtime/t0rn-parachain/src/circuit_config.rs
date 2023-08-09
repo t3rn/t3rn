@@ -383,6 +383,10 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
             GatewayVendor::Ethereum => Ok(Box::new(
                 pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
             )),
+            GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_finality_verifier::Pallet::<
+                Runtime,
+            >(PhantomData))),
+            _ => Err(PortalError::<Runtime>::LightClientNotFoundByVendor),
         }
     }
 }
@@ -495,11 +499,24 @@ parameter_types! {
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteePeriod: u32 = 256;
     pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
-    pub const CommitteeMajorityThreshold: u32 = 80;
+    pub const CommitteeMajorityThresholdEth2: u32 = 67;
+    pub const CommitteeMajorityThresholdSepolia: u32 = 67;
 }
 
 impl pallet_eth2_finality_verifier::Config for Runtime {
-    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+    type CommitteeMajorityThreshold = CommitteeMajorityThresholdEth2;
+    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type Event = Event;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type LightClientAsyncAPI = XDNS;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
+}
+
+impl pallet_sepolia_finality_verifier::Config for Runtime {
+    type CommitteeMajorityThreshold = CommitteeMajorityThresholdSepolia;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
     type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;

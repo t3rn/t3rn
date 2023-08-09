@@ -111,8 +111,7 @@ pub mod pallet {
         pub fn register_gateway(
             origin: OriginFor<T>,
             gateway_id: [u8; 4],
-            // ToDo: Revisit with client update and change to u32
-            token_id: [u8; 4],
+            token_id: u32,
             verification_vendor: GatewayVendor,
             execution_vendor: ExecutionVendor,
             codec: t3rn_abi::Codec,
@@ -132,13 +131,8 @@ pub mod pallet {
                 escrow_account,
                 allowed_side_effects,
             )?;
-
-            // ToDo: Revisit with client update and change to u32
-            let token_id = u32::from_le_bytes(token_id);
-
             <T as Config>::Xdns::register_new_token(&origin, token_id, token_props.clone())?;
             <T as Config>::Xdns::link_token_to_gateway(token_id, gateway_id, token_props)?;
-
             <Pallet<T> as Portal<T>>::initialize(origin, gateway_id, encoded_registration_data)
         }
     }
@@ -151,6 +145,8 @@ pub fn match_vendor_with_codec(vendor: GatewayVendor) -> Codec {
         GatewayVendor::Kusama => Codec::Scale,
         GatewayVendor::Polkadot => Codec::Scale,
         GatewayVendor::Ethereum => Codec::Rlp,
+        GatewayVendor::Sepolia => Codec::Rlp,
+        GatewayVendor::XBI => Codec::Scale,
     }
 }
 

@@ -38,7 +38,10 @@ use t3rn_primitives::{
 };
 
 use t3rn_abi::Codec::{Rlp, Scale};
-use t3rn_primitives::xdns::EpochEstimate;
+use t3rn_primitives::{
+    xdns::EpochEstimate,
+    GatewayVendor::{Sepolia, XBI},
+};
 
 use t3rn_types::fsx::SecurityLvl;
 
@@ -56,6 +59,38 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
                 circuit_mock_runtime::Origin::root(),
                 GatewayVendor::Rococo
             ));
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::get([3, 3, 3, 3])
+                    .unwrap()
+                    .allowed_side_effects
+                    .len(),
+                7
+            );
+        });
+}
+
+#[test]
+fn reboot_self_gateway_populates_entry_all_gateway_ids_entry_only_once() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .build()
+        .execute_with(|| {
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
+            assert_ok!(XDNS::reboot_self_gateway(
+                circuit_mock_runtime::Origin::root(),
+                GatewayVendor::Rococo
+            ));
+            assert_ok!(XDNS::reboot_self_gateway(
+                circuit_mock_runtime::Origin::root(),
+                GatewayVendor::Rococo
+            ));
+            assert_ok!(XDNS::reboot_self_gateway(
+                circuit_mock_runtime::Origin::root(),
+                GatewayVendor::Rococo
+            ));
+
+            assert_eq!(XDNS::all_gateway_ids(), vec![[3, 3, 3, 3]]);
             assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::get([3, 3, 3, 3])
@@ -700,6 +735,16 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         is_active: true
                     },
                     GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
+                        reported_at: 10,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
                         reported_at: 10,
                         justified_height: 24,
@@ -805,6 +850,16 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         is_active: true
                     },
                     GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
                         reported_at: 17,
                         justified_height: 24,
@@ -884,6 +939,24 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                     epoch: 26,
                     is_active: false,
                 },
+                FinalityVerifierActivity {
+                    verifier: Sepolia,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: XBI,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
             ];
 
             let expected_verifier_overview_all_on = vec![
@@ -916,6 +989,24 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                 },
                 FinalityVerifierActivity {
                     verifier: Ethereum,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Sepolia,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: XBI,
                     reported_at: 17,
                     justified_height: 24,
                     finalized_height: 24,
@@ -1167,7 +1258,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                 )
                 .unwrap();
             }
-            assert_eq!(XDNS::process_all_verifier_overviews(100), 1225000000u64);
+            assert_eq!(XDNS::process_all_verifier_overviews(100), 1825000000u64);
             assert_eq!(XDNS::process_overview(100), ());
 
             let overview = XDNS::gateways_overview();
@@ -1207,6 +1298,16 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
                         reported_at: 100,
                         justified_height: 24,
                         finalized_height: 24,
@@ -1397,5 +1498,81 @@ fn test_storage_migration_v140_to_v150_for_standard_side_effects_to_standard_sfx
                     SFXAbi::get_standard_interface(sfx4b_id)
                 );
             }
+        });
+}
+
+#[test]
+fn test_storage_migration_v143_to_v144_that_kills_old_xdns_records_entry() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert raw xdns records entry
+            frame_support::storage::unhashed::put_raw(
+                &[
+                    225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13,
+                    175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249,
+                    114, 111, 99, 111,
+                ],
+                &[1, 2, 3],
+            );
+
+            pallet_xdns::StorageMigrations::<Runtime>::set(1);
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <XDNS as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight = <Runtime as frame_system::Config>::DbWeight::get().reads_writes(0, 1);
+            assert_eq!(consumed_weight, max_weight);
+
+            assert_eq!(
+                frame_support::storage::unhashed::get::<Vec<u8>>(&[
+                    225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13,
+                    175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249,
+                    114, 111, 99, 111,
+                ],),
+                None
+            );
+        });
+}
+
+#[test]
+fn test_storage_migration_v144_to_v145_that_kills_old_xdns_records_entry() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert raw xdns records entry
+            frame_support::storage::unhashed::put_raw(
+                &[
+                    84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                    191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                    8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                    171, 135, 85,
+                ],
+                &[3, 2, 1],
+            );
+
+            pallet_xdns::StorageMigrations::<Runtime>::set(2);
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <XDNS as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight = <Runtime as frame_system::Config>::DbWeight::get().reads_writes(0, 1);
+            assert_eq!(consumed_weight, max_weight);
+
+            assert_eq!(
+                frame_support::storage::unhashed::get::<Vec<u8>>(&[
+                    84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                    191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                    8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                    171, 135, 85,
+                ],),
+                None
+            );
         });
 }

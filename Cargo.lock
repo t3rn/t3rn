@@ -1008,6 +1008,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -1148,6 +1149,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
  "pallet-rewards",
+ "pallet-sepolia-finality-verifier",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -5696,9 +5698,9 @@ dependencies = [
 
 [[package]]
 name = "num-traits"
-version = "0.2.15"
+version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
+checksum = "f30b0abd723be7e2ffca1272140fac1a2f084c77ec3e123c192b66af1ee9e6c2"
 dependencies = [
  "autocfg",
  "libm",
@@ -7189,6 +7191,42 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+]
+
+[[package]]
+name = "pallet-sepolia-finality-verifier"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=sepolia#24ca611b648086ce0b1d02603533456bcc6a4173"
+dependencies = [
+ "eth_trie",
+ "ethereum-types 0.14.1",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "keccak-hash 0.10.0",
+ "log",
+ "milagro_bls",
+ "num-traits",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-trie",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "t3rn-primitives",
+ "typenum",
 ]
 
 [[package]]
@@ -12492,7 +12530,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.43.1-rc.0"
+version = "1.46.1-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12568,7 +12606,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.43.1-rc.0"
+version = "1.46.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12622,6 +12660,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -12720,6 +12759,7 @@ dependencies = [
  "pallet-portal",
  "pallet-randomness-collective-flip",
  "pallet-rewards",
+ "pallet-sepolia-finality-verifier",
  "pallet-timestamp",
  "pallet-treasury",
  "pallet-xdns",
