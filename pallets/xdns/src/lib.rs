@@ -104,7 +104,6 @@ pub mod pallet {
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
     // method.
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -700,7 +699,7 @@ pub mod pallet {
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
                 let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())

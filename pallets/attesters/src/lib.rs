@@ -1750,7 +1750,7 @@ pub mod pallet {
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             // Extend the list of attestation targets
             for target in self.attestation_targets.iter() {

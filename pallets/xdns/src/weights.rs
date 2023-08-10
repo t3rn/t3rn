@@ -66,7 +66,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     }
 
     fn best_available() -> Weight {
-        Weight::from_parts(25_265_000_u64).saturating_add(T::DbWeight::get().reads(1_u64), 0u64)
+        Weight::from_parts(25_265_000_u64, 0u64).saturating_add(T::DbWeight::get().reads(1_u64))
     }
 
     fn reboot_self_gateway() -> Weight {
@@ -97,7 +97,7 @@ impl WeightInfo for () {
     }
 
     fn best_available() -> Weight {
-        Weight::from_parts(25_265_000_u64).saturating_add(RocksDbWeight::get().reads(1_u64), 0u64)
+        Weight::from_parts(25_265_000_u64, 0u64).saturating_add(RocksDbWeight::get().reads(1_u64))
     }
 
     fn reboot_self_gateway() -> Weight {

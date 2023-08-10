@@ -137,7 +137,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -959,7 +958,7 @@ pub mod pallet {
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             IsClaimingHalted::<T>::put(false);
             IsDistributionHalted::<T>::put(false);
