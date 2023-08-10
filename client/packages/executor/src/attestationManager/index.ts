@@ -213,7 +213,19 @@ export class AttestationManager {
       const messageHash = this.getMessageHash(batch);
       logger.debug({ batch, messageHash }, `Batch data`);
 
-      await this.receiveAttestationBatchCall(batch, messageHash);
+      try {
+        await this.receiveAttestationBatchCall(batch, messageHash);
+      } catch (error) {
+        const errorName = error.innerError.message.match(
+          /^execution reverted: (.*)/,
+        )[1]; // Parse stack trace to get exact error which is not present in error object
+        logger.warn(
+          { error, errorMessage: errorName },
+          `Error processing batch`,
+        );
+        this.prometheus.attestatonBatchesFailed.inc({ error: errorName });
+        continue;
+      }
     }
   }
 
@@ -253,20 +265,14 @@ export class AttestationManager {
       transactionObject,
     );
 
-    try {
-      const transactionReceipt = await this.web3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction,
-      );
-      logger.info(
-        { receipt: transactionReceipt },
-        `Batch ${batch.index} procesed!`,
-      );
-      this.prometheus.attestationBatchesProcessed.inc();
-    } catch (error) {
-      logger.warn({ error: error }, "Error sending transaction: ");
-      this.prometheus.attestatonBatchesFailed.inc();
-      // throw new Error("Error sending transaction: " + error);
-    }
+    const transactionReceipt = await this.web3.eth.sendSignedTransaction(
+      signedTransaction.rawTransaction,
+    );
+    logger.info(
+      { receipt: transactionReceipt },
+      `Batch ${batch.index} procesed!`,
+    );
+    this.prometheus.attestationBatchesProcessed.inc();
   }
 
   private async fetchAttesterContractData() {
