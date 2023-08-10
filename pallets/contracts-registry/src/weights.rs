@@ -58,7 +58,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     }
 
     fn fetch_contracts() -> Weight {
-        Weight::from_parts(53_000_000_u64).saturating_add(T::DbWeight::get().reads(4_u64), 0u64)
+        Weight::from_parts(53_000_000_u64, 0u64).saturating_add(T::DbWeight::get().reads(4_u64))
     }
 }
 
@@ -77,6 +77,6 @@ impl WeightInfo for () {
     }
 
     fn fetch_contracts() -> Weight {
-        Weight::from_parts(53_000_000_u64).saturating_add(RocksDbWeight::get().reads(4_u64), 0u64)
+        Weight::from_parts(53_000_000_u64, 0u64).saturating_add(RocksDbWeight::get().reads(4_u64))
     }
 }

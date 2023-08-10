@@ -28,7 +28,7 @@ sp-std     = { workspace = true }
 
 pallet-timestamp = { workspace = true }
 
-t3rn-primitives = { default-features = false, path = "../../primitives" }
+t3rn-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }

@@ -25,12 +25,15 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 use frame_support::dispatch::DispatchResult;
-use frame_system::ensure_signed;
+use frame_system::{ensure_signed, pallet_prelude::BlockNumberFor};
 use sp_std::{convert::TryInto, prelude::*};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
-use t3rn_primitives::{contracts_registry::RegistryContractId, reexport_currency_types};
+use t3rn_primitives::{
+    contracts_registry::{ContractsRegistry, RegistryContractId},
+    reexport_currency_types,
+};
 
 #[cfg(test)]
 mod tests;
@@ -61,6 +64,8 @@ pub mod pallet {
             Currency,
         },
     };
+    use frame_system::pallet_prelude::BlockNumberFor;
+
     use frame_system::pallet_prelude::*;
 
     #[pallet::config]
@@ -80,7 +85,6 @@ pub mod pallet {
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
     // method.
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -91,21 +95,21 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
+        fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             Default::default()
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
+        fn on_finalize(_n: BlockNumberFor<T>) {
             // Perform necessary data/state clean up here.
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
+        fn offchain_worker(_n: BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.
@@ -218,7 +222,7 @@ pub mod pallet {
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {}
     }
 }
@@ -233,9 +237,7 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Currency>
-    for Pallet<T>
-{
+impl<T: Config> ContractsRegistry<T, T::Currency> for Pallet<T> {
     type Error = Error<T>;
 
     /// Internal function that queries the RegistryContract storage for a contract by its ID
@@ -253,7 +255,7 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Cur
 
     //#[pallet::weight(<T as Config>::WeightInfo::fetch_contracts())]
     fn fetch_contracts(
-        author: Option<T::AccountId>,
+        maybe_author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
     ) -> Result<
         Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>>,
@@ -269,15 +271,15 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Cur
         // try to find contracts by author or metadata
         let contracts: Vec<
             RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>,
-        > = pallet::ContractsRegistry::<T>::iter_values()
+        > = <pallet::ContractsRegistry<T>>::iter_values()
             .filter(
                 |contract: &RegistryContract<
                     T::Hash,
                     T::AccountId,
                     BalanceOf<T>,
-                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                    BlockNumberFor<T>,
                 >| {
-                    match (author.clone(), metadata.clone()) {
+                    match (maybe_author.clone(), metadata.clone()) {
                         (Some(author), Some(text)) =>
                             contract.author.account == author
                                 && find_subsequence(contract.meta.encode(), text.as_slice())
