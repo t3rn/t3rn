@@ -17,8 +17,6 @@ pub use t3rn_primitives::{
     GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 
-use pallet_account_manager::BalanceOf;
-
 #[cfg(test)]
 mod tests;
 
@@ -31,6 +29,7 @@ mod weights;
 // `construct_runtime`.
 #[frame_support::pallet]
 pub mod pallet {
+
     // Import various types used to declare pallet in scope.
     use super::*;
     use frame_support::pallet_prelude::*;
@@ -41,23 +40,12 @@ pub mod pallet {
     const FIVE: u64 = 5;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_account_manager::Config {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         #[pallet::constant]
         type RoundDuration: Get<BlockNumberFor<Self>>;
-
-        type Executors: Executors<Self, BalanceOf<Self>>;
-
-        /// A type that provides access to AccountManager
-        type AccountManager: AccountManager<
-            Self::AccountId,
-            BalanceOf<Self>,
-            Self::Hash,
-            BlockNumberFor<Self>,
-            u32,
-        >;
 
         /// Description of on_initialize queues and their max. consumption of % of total on_init weight.
         /// The first element of the tuple is the queue name, the second is the max. % of total on_init weight.}
@@ -69,21 +57,8 @@ pub mod pallet {
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
     // method.
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
-
-    #[pallet::storage]
-    pub type LastClaims<T: Config> =
-        StorageMap<_, Identity, T::AccountId, RoundInfo<BlockNumberFor<T>>>;
-
-    #[pallet::storage]
-    pub type ClaimableArtifactsPerRound<T: Config> = StorageMap<
-        _,
-        Identity,
-        RoundInfo<BlockNumberFor<T>>,
-        Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>,
-    >;
 
     #[pallet::storage]
     #[pallet::getter(fn current_round)]
@@ -187,7 +162,7 @@ pub mod pallet {
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {}
     }
 

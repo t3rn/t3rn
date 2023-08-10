@@ -23,23 +23,14 @@ frame-metadata     = { workspace = true }
 frame-support      = { workspace = true }
 frame-system       = { workspace = true }
 
-sp-io      = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std     = { workspace = true }
-sp-version = { workspace = true }
 
-pallet-account-manager = { path = "../account-manager", default-features = false }
 t3rn-primitives        = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
 sp-core     = { workspace = true }
 sp-keystore = { workspace = true }
-
-pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-
-pallet-account-manager = { path = "../../pallets/account-manager" }
 
 [features]
 default = [ "std" ]
@@ -52,11 +43,8 @@ std = [
   "log/std",
   "scale-info/std",
   "serde/std",
-  "sp-io/std",
-  "sp-version/std",
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
-  "pallet-account-manager/std",
 ]
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "sp-runtime/try-runtime" ]
