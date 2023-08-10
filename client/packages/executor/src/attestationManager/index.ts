@@ -7,6 +7,9 @@ import { Batch, ConfirmationBatch } from "./batch";
 import { ethers } from "ethers";
 import { Prometheus } from "../prometheus";
 
+// TODO: Move to config
+const RETRY_DELAY_MS = 30000;
+
 interface IBatch {
   nextCommittee: string[];
   bannedCommittee: string[];
@@ -213,18 +216,23 @@ export class AttestationManager {
       const messageHash = this.getMessageHash(batch);
       logger.debug({ batch, messageHash }, `Batch data`);
 
-      try {
-        await this.receiveAttestationBatchCall(batch, messageHash);
-      } catch (error) {
-        const errorName = error.innerError.message.match(
-          /^execution reverted: (.*)/,
-        )[1]; // Parse stack trace to get exact error which is not present in error object
-        logger.warn(
-          { error, errorMessage: errorName },
-          `Error processing batch`,
-        );
-        this.prometheus.attestatonBatchesFailed.inc({ error: errorName });
-        continue;
+      let attestationSubmitSuccess = false;
+
+      while (!attestationSubmitSuccess) {
+        try {
+          await this.receiveAttestationBatchCall(batch, messageHash);
+          attestationSubmitSuccess = true;
+        } catch (error) {
+          const errorName = error.innerError.message.match(
+            /^execution reverted: (.*)/,
+          )[1]; // Parse stack trace to get exact error which is not present in error object
+          logger.warn(
+            { error, errorMessage: errorName },
+            `Error processing batch`,
+          );
+          this.prometheus.attestatonBatchesFailed.inc({ error: errorName });
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        }
       }
     }
   }
