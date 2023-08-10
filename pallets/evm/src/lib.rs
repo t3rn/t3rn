@@ -185,6 +185,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Precompiles associated with this EVM engine.
         type PrecompilesType: PrecompileSet;
+
         type PrecompilesValue: Get<Self::PrecompilesType>;
         /// Chain ID of EVM.
         type ChainId: Get<u64>;
@@ -530,14 +531,17 @@ pub mod pallet {
         }
     }
 
+    // #[cfg_attr(feature = "std", derive(Default))]
     #[pallet::genesis_config]
-    #[cfg_attr(feature = "std", derive(Default))]
-    pub struct GenesisConfig {
+    #[derive(frame_support::DefaultNoBound)]
+    pub struct GenesisConfig<T> {
         pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
+        #[serde(skip)]
+        pub _config: sp_std::marker::PhantomData<T>,
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
     where
         U256: UniqueSaturatedInto<BalanceOf<T>>,
     {
