@@ -304,7 +304,6 @@ export class SideEffect extends EventEmitter {
       logger.info(
         {
           xtx: this.xtxId,
-          bid: result?.bidAmount?.toString(),
           bidAmount: bnToFloat(result.bidAmount as BN, 12),
         },
         `Bidding TRN 🎰`,

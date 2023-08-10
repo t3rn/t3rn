@@ -56,7 +56,8 @@ export class AttestationManager {
       throw new Error("Ethereum wallet address is not defined");
     }
 
-    logger.info("Wallet address: " + this.wallet.address);
+    logger.info("Ethereum Wallet address: " + this.wallet.address);
+    // TODO: add balance here
 
     const receiveAttestationBatchAbi = JSON.parse(
       fs.readFileSync(
