@@ -66,7 +66,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     }
 
     fn submit_headers() -> Weight {
-        Weight::from_parts(25_265_000_u64).saturating_add(T::DbWeight::get().reads(1_u64), 0u64)
+        Weight::from_parts(25_265_000_u64, 0u64).saturating_add(T::DbWeight::get().reads(1_u64))
     }
 }
 
@@ -91,6 +91,6 @@ impl WeightInfo for () {
     }
 
     fn submit_headers() -> Weight {
-        Weight::from_parts(25_265_000_u64).saturating_add(RocksDbWeight::get().reads(1_u64), 0u64)
+        Weight::from_parts(25_265_000_u64, 0u64).saturating_add(RocksDbWeight::get().reads(1_u64))
     }
 }
