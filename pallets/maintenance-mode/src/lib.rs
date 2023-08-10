@@ -223,8 +223,8 @@ pub mod pallet {
         }
     }
 
-    #[derive(Default)]
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     /// Genesis config for maintenance mode pallet
     pub struct GenesisConfig<T> {
         /// Whether to launch in maintenance mode
