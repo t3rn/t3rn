@@ -7,7 +7,9 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
+use frame_support::dispatch::Weight;
 use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
+use sp_core::{H160, H256, U256};
 use sp_runtime::{DispatchError, DispatchResult};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
@@ -66,6 +68,35 @@ impl<T: ConfigSystem, Balance> PrecompileInvocation<T, Balance> {
             _ => None,
         }
     }
+}
+
+pub trait Contracts<AccountId, Balance, EventRecord> {
+    type Outcome;
+    fn call(
+        origin: AccountId,
+        dest: AccountId,
+        value: Balance,
+        gas_limit: Weight,
+        storage_deposit_limit: Option<Balance>,
+        data: Vec<u8>,
+        debug: bool,
+    ) -> Self::Outcome;
+}
+
+pub trait Evm<Origin> {
+    type Outcome;
+    #[allow(clippy::too_many_arguments)] // Simply has a lot of args
+    fn call(
+        origin: Origin,
+        target: H160,
+        input: Vec<u8>,
+        value: U256,
+        gas_limit: u64,
+        max_fee_per_gas: U256,
+        max_priority_fee_per_gas: Option<U256>,
+        nonce: Option<U256>,
+        access_list: Vec<(H160, Vec<H256>)>,
+    ) -> Self::Outcome;
 }
 
 pub trait Precompile<T, Balance>
