@@ -11,7 +11,10 @@ jobs:
       - name: SFX_TRAN_TO
         value: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
       - name: SFX_TRAN_INSURANCE
-        value: "1"
+        value: "0.5"
+      - name: SFX_TRAN_AMOUNT
+        value: "0.1"
+      
     schedule: "*/5 * * * *"
     args:
     - submit
