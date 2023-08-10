@@ -18,16 +18,15 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
 
 log = { version = "0.4", default-features = false }
-wasm-instrument = { version = "0.4", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
 smallvec = { version = "1", default-features = false, features = [
   "const_generics",
 ] }
-wasmi = { version = "0.20", default-features = false }
-wasmparser = { package = "wasmparser-nostd", version = "0.91", default-features = false }
+wasmi = { version = "0.30", default-features = false }
 impl-trait-for-tuples = "0.2"
 
-# Only used in benchmarking to generate random contract code
+# Only used in benchmarking to generate contract code
+wasm-instrument = { version = "0.4", optional = true, default-features = false }
 rand = { version = "0.8", optional = true, default-features = false }
 rand_pcg = { version = "0.3", optional = true }
 
@@ -43,15 +42,14 @@ sp-core = { workspace = true}
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-
+environmental = { version = "1.1.4", default-features = false }
 
 ## extras from t3rn
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
-
+t3rn-sdk-primitives = { workspace = true }
 
 [dev-dependencies]
-array-bytes = "4.1"
+array-bytes = "6.1"
 assert_matches = "1"
 env_logger = "0.9"
 pretty_assertions = "1"
@@ -62,6 +60,7 @@ pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false, package = "pallet-insecure-randomness-collective-flip" }
 pallet-utility = { workspace = true }
+pallet-proxy = { workspace = true, features = ["std"] }
 sp-keystore = { workspace = true }
 
 [features]
@@ -84,15 +83,16 @@ std = [
   "pallet-contracts-proc-macro/full",
   "log/std",
   "rand/std",
-  "wasmparser/std",
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
+  "environmental/std",
 ]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
+  "wasm-instrument",
   "rand",
   "rand_pcg",
 ]

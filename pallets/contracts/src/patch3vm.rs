@@ -1,4 +1,4 @@
-use crate::{Config, Determinism, Schedule};
+use crate::{Config, Determinism, EventRecordOf, Origin, Schedule};
 use codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::{
@@ -51,7 +51,7 @@ impl ComposableExecReturnValue {
     }
 }
 
-pub trait Contracts<AccountId, Balance> {
+pub trait Contracts<AccountId, Balance, EventRecord> {
     type Outcome;
     fn call(
         origin: AccountId,
@@ -64,8 +64,11 @@ pub trait Contracts<AccountId, Balance> {
     ) -> Self::Outcome;
 }
 
-impl<AccountId, Balance: Default> Contracts<AccountId, Balance> for () {
-    type Outcome = ContractExecResult<Balance>;
+// /// Result type of a `bare_call` call as well as `ContractsApi::call`.
+// pub type ContractExecResult<Balance, EventRecord> =
+// ContractResult<Result<ExecReturnValue, DispatchError>, Balance, EventRecord>;
+impl<AccountId, Balance: Default, EventRecord> Contracts<AccountId, Balance, EventRecord> for () {
+    type Outcome = ContractExecResult<Balance, EventRecord>;
 
     fn call(
         _origin: AccountId,
@@ -76,7 +79,7 @@ impl<AccountId, Balance: Default> Contracts<AccountId, Balance> for () {
         _data: Vec<u8>,
         _debug: bool,
     ) -> Self::Outcome {
-        ContractExecResult {
+        ContractExecResult::<Balance, EventRecord> {
             gas_consumed: Weight::zero(),
             gas_required: Weight::zero(),
             debug_message: Vec::new(),
@@ -85,6 +88,7 @@ impl<AccountId, Balance: Default> Contracts<AccountId, Balance> for () {
                 flags: ReturnFlags::empty(),
                 data: Vec::default(),
             }),
+            events: None,
         }
     }
 }
@@ -99,7 +103,7 @@ use crate::{
         RetVal, SysConfig,
     },
     exec::Executable,
-    wasm::{PrefabWasmModule, TryInstantiate},
+    wasm::WasmBlob,
 };
 
 impl<C: Config> ChainExtension<C> for ThreeVmExtension {
@@ -133,10 +137,13 @@ impl<C: Config> ChainExtension<C> for ThreeVmExtension {
                     Some(execution_id)
                 };
 
-                let origin = origin_from_environment(&mut env);
+                let raw_origin: RawOrigin<C::AccountId> = match env.ext().caller() {
+                    Origin::Signed(acc) => RawOrigin::Signed(acc.clone()),
+                    Origin::Root => RawOrigin::Root,
+                };
 
                 let invocation = <C as Config>::ThreeVm::invoke(PrecompileArgs::GetState(
-                    origin,
+                    C::RuntimeOrigin::from(raw_origin),
                     GetState {
                         xtx_id: execution_id,
                     },
@@ -162,9 +169,13 @@ impl<C: Config> ChainExtension<C> for ThreeVmExtension {
                 let arg: (SideEffects<C::AccountId, BalanceOf<C>, C::Hash>, SpeedMode) =
                     read_from_environment(&mut env)?;
 
-                let origin = RawOrigin::Signed(env.ext().caller().clone());
+                let raw_origin: RawOrigin<C::AccountId> = match env.ext().caller() {
+                    Origin::Signed(acc) => RawOrigin::Signed(acc.clone()),
+                    Origin::Root => RawOrigin::Root,
+                };
+
                 <C as Config>::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
-                    C::RuntimeOrigin::from(origin),
+                    C::RuntimeOrigin::from(raw_origin),
                     arg.0,
                     arg.1,
                 ))?;
@@ -176,9 +187,12 @@ impl<C: Config> ChainExtension<C> for ThreeVmExtension {
                 let signal: ExecutionSignal<C::Hash> = read_from_environment(&mut env)?;
                 log::debug!(target: SIGNAL_LOG_TARGET, "submitting signal {:?}", signal);
 
-                let origin = RawOrigin::Signed(env.ext().caller().clone());
+                let raw_origin: RawOrigin<C::AccountId> = match env.ext().caller() {
+                    Origin::Signed(acc) => RawOrigin::Signed(acc.clone()),
+                    Origin::Root => RawOrigin::Root,
+                };
                 C::ThreeVm::invoke(PrecompileArgs::Signal(
-                    C::RuntimeOrigin::from(origin),
+                    C::RuntimeOrigin::from(raw_origin),
                     signal,
                 ))?;
                 Ok(RetVal::Converging(0))
@@ -194,15 +208,6 @@ impl<C: Config> ChainExtension<C> for ThreeVmExtension {
         }
     }
 }
-
-// impl<C: Config> ChainExtension<C> for () {
-//     fn call<E: Ext<T = C>>(
-//         &mut self,
-//         env: Environment<E, InitState>,
-//     ) -> crate::chain_extension::Result<RetVal> {
-//         todo!()
-//     }
-// }
 
 impl<C: Config> RegisteredChainExtension<C> for () {
     const ID: u16 = 3330;
@@ -227,17 +232,7 @@ where
 }
 
 fn size_to_weight<T: Encode>(encodable: &T) -> Weight {
-    Weight::from_ref_time(encodable.encoded_size() as u64)
-}
-
-fn origin_from_environment<C, E>(
-    env: &mut Environment<E, BufInBufOutState>,
-) -> <C as frame_system::Config>::RuntimeOrigin
-where
-    C: Config,
-    E: Ext<T = C>,
-{
-    OriginFor::<C>::from(RawOrigin::Signed(env.ext().caller().clone()))
+    Weight::from_parts(encodable.encoded_size() as u64, Zero::zero())
 }
 
 // Used in src/lib.rs
@@ -245,18 +240,12 @@ pub fn try_instantiate_from_contracts_registry<T: Config>(
     origin: &T::AccountId,
     hash: &T::Hash,
     schedule: &Schedule<T>,
-) -> Result<(BalanceOf<T>, PrefabWasmModule<T>), DispatchError> {
+) -> Result<(BalanceOf<T>, WasmBlob<T>), DispatchError> {
     // Use ThreeVm to try to retrieve a module from the registry.
-    // If found, attempt to construct a PrefabWasmModule from it.
-    let module = T::ThreeVm::from_registry::<PrefabWasmModule<T>, _>(&hash, |bytes| {
-        PrefabWasmModule::from_code(
-            bytes,
-            &schedule,
-            origin.clone(),
-            Determinism::Deterministic,
-            TryInstantiate::Instantiate,
-        )
-        .unwrap_or(PrefabWasmModule::<T>::new_empty())
+    // If found, attempt to construct a WasmBlob from it.
+    let module = T::ThreeVm::from_registry::<WasmBlob<T>, _>(&hash, |bytes| {
+        WasmBlob::from_code(bytes, &schedule, origin.clone(), Determinism::Relaxed)
+            .unwrap_or(WasmBlob::<T>::new_empty())
     })?;
 
     if module.is_empty() {
