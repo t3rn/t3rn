@@ -69,9 +69,9 @@ pub struct GatewayWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
     fn submit_finality_proof(v: u32, p: u32) -> Weight {
         Weight::from_parts(0, 0u64)
-            .saturating_add(Weight::from_parts(160_060_000), 0u64)
+            .saturating_add(Weight::from_parts(160_060_000, 0u64))
             .saturating_mul(v as u64)
-            .saturating_add(Weight::from_parts(640_223_000), 0u64)
+            .saturating_add(Weight::from_parts(640_223_000, 0u64))
             .saturating_mul(p as u64)
             .saturating_add(T::DbWeight::get().reads(5))
             .saturating_add(T::DbWeight::get().writes(3))
@@ -79,7 +79,7 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
 
     fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
         Weight::from_parts(189_597_000, 0u64)
-            .saturating_add(Weight::from_parts(11_680_000), 0u64)
+            .saturating_add(Weight::from_parts(11_680_000, 0u64))
             .saturating_mul(v as u64)
             .saturating_add(T::DbWeight::get().reads(5))
             .saturating_add(T::DbWeight::get().writes(3))
@@ -87,7 +87,7 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
 
     fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
         Weight::from_parts(0, 0u64)
-            .saturating_add(Weight::from_parts(130_061_000), 0u64)
+            .saturating_add(Weight::from_parts(130_061_000, 0u64))
             .saturating_mul(p as u64)
             .saturating_add(T::DbWeight::get().reads(5))
             .saturating_add(T::DbWeight::get().writes(3))
@@ -95,13 +95,13 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
 
     fn find_scheduled_change(n: u32) -> Weight {
         Weight::from_parts(502_000, 0u64)
-            .saturating_add(Weight::from_parts(8_000), 0u64)
+            .saturating_add(Weight::from_parts(8_000, 0u64))
             .saturating_mul(n as u64)
     }
 
     fn read_write_authority_sets(n: u32) -> Weight {
         Weight::from_parts(7_677_000, 0u64)
-            .saturating_add(Weight::from_parts(230_000), 0u64)
+            .saturating_add(Weight::from_parts(230_000, 0u64))
             .saturating_mul(n as u64)
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(1))
@@ -112,9 +112,9 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
 impl WeightInfo for () {
     fn submit_finality_proof(v: u32, p: u32) -> Weight {
         Weight::from_parts(0, 0u64)
-            .saturating_add(Weight::from_parts(160_060), 0u64)
+            .saturating_add(Weight::from_parts(160_060, 0u64))
             .saturating_mul(v as u64)
-            .saturating_add(Weight::from_parts(640_223), 0u64)
+            .saturating_add(Weight::from_parts(640_223, 0u64))
             .saturating_mul(p as u64)
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(3))
@@ -122,7 +122,7 @@ impl WeightInfo for () {
 
     fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
         Weight::from_parts(189_597_000, 0u64)
-            .saturating_add(Weight::from_parts(11_680_000), 0u64)
+            .saturating_add(Weight::from_parts(11_680_000, 0u64))
             .saturating_mul(v as u64)
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(3))
@@ -130,7 +130,7 @@ impl WeightInfo for () {
 
     fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
         Weight::from_parts(0, 0u64)
-            .saturating_add(Weight::from_parts(130_061_000), 0u64)
+            .saturating_add(Weight::from_parts(130_061_000, 0u64))
             .saturating_mul(p as u64)
             .saturating_add(RocksDbWeight::get().reads(5))
             .saturating_add(RocksDbWeight::get().writes(3))
@@ -138,13 +138,13 @@ impl WeightInfo for () {
 
     fn find_scheduled_change(n: u32) -> Weight {
         Weight::from_parts(502_000, 0u64)
-            .saturating_add(Weight::from_parts(8_000), 0u64)
+            .saturating_add(Weight::from_parts(8_000, 0u64))
             .saturating_mul(n as u64)
     }
 
     fn read_write_authority_sets(n: u32) -> Weight {
         Weight::from_parts(7_677_000, 0u64)
-            .saturating_add(Weight::from_parts(230_000), 0u64)
+            .saturating_add(Weight::from_parts(230_000, 0u64))
             .saturating_mul(n as u64)
             .saturating_add(RocksDbWeight::get().reads(1))
             .saturating_add(RocksDbWeight::get().writes(1))

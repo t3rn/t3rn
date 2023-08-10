@@ -4,7 +4,7 @@ use crate::{to_local_block_number, Config, Pallet};
 use codec::Encode;
 
 use frame_support::sp_runtime::traits::Zero;
-use frame_system::pallet_prelude::OriginFor;
+use frame_system::pallet_prelude::{BlockNumberFor, OriginFor};
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::{marker::PhantomData, vec};
 use t3rn_abi::types::Bytes;
@@ -113,7 +113,7 @@ where
         }
     }
 
-    fn get_finalized_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
+    fn get_finalized_height_precompile(&self) -> BlockNumberFor<T> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
@@ -122,7 +122,7 @@ where
         }
     }
 
-    fn get_rational_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
+    fn get_rational_height_precompile(&self) -> BlockNumberFor<T> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
@@ -131,7 +131,7 @@ where
         }
     }
 
-    fn get_fast_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
+    fn get_fast_height_precompile(&self) -> BlockNumberFor<T> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
@@ -321,21 +321,21 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         }
     }
 
-    fn get_fast_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
+    fn get_fast_height_precompile(&self) -> BlockNumberFor<T> {
         match self.get_finalized_height() {
             HeightResult::Height(height) => height,
             HeightResult::NotActive => frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
         }
     }
 
-    fn get_rational_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
+    fn get_rational_height_precompile(&self) -> BlockNumberFor<T> {
         match self.get_finalized_height() {
             HeightResult::Height(height) => height,
             HeightResult::NotActive => frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
         }
     }
 
-    fn get_finalized_height_precompile(&self) -> frame_system::pallet_prelude::BlockNumberFor<T> {
+    fn get_finalized_height_precompile(&self) -> BlockNumberFor<T> {
         match self.get_finalized_height() {
             HeightResult::Height(height) => height,
             HeightResult::NotActive => frame_system::pallet_prelude::BlockNumberFor::<T>::zero(),
@@ -488,9 +488,9 @@ pub mod grandpa_light_clients_test {
         light_client_4b_id: [u8; 4],
     ) {
         run_test(|| {
-            let BLOCK_ZERO: frame_system::pallet_prelude::BlockNumberFor<T> =
+            let BLOCK_ZERO: BlockNumberFor<T> =
                 frame_system::pallet_prelude::BlockNumberFor::<T>::from(0u8);
-            let BLOCK_ONE: frame_system::pallet_prelude::BlockNumberFor<T> =
+            let BLOCK_ONE: BlockNumberFor<T> =
                 frame_system::pallet_prelude::BlockNumberFor::<T>::from(1u8);
 
             frame_system::Pallet::<T>::set_block_number(BLOCK_ONE);
