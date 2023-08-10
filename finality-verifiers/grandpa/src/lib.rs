@@ -297,7 +297,7 @@ pub mod pallet {
         /// pallet.
         ///
         /// If the new range was accepted, pays no fee.
-        #[pallet::weight(Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1))]
+        #[pallet::weight(Weight::from_parts(10_000) + T::DbWeight::get().writes(1), 0u64)]
         pub fn submit_headers(
             origin: OriginFor<T>,
             // seq vector of headers to be added.

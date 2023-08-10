@@ -22,18 +22,19 @@ use frame_support::{
     traits::{OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade},
     weights::Weight,
 };
+use frame_system::pallet_prelude::BlockNumberFor;
+
 use sp_std::marker::PhantomData;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
 pub struct ExecutiveHooks<T>(PhantomData<T>);
-type BlockNumberOf<T> = <T as frame_system::Config>::BlockNumber;
 
-impl<T> OnIdle<BlockNumberOf<T>> for ExecutiveHooks<T>
+impl<T> OnIdle<BlockNumberFor<T>> for ExecutiveHooks<T>
 where
     T: Config,
 {
-    fn on_idle(n: BlockNumberOf<T>, remaining_weight: Weight) -> Weight {
+    fn on_idle(n: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
         if Pallet::<T>::maintenance_mode() {
             T::MaintenanceExecutiveHooks::on_idle(n, remaining_weight)
         } else {
@@ -42,11 +43,11 @@ where
     }
 }
 
-impl<T> OnInitialize<BlockNumberOf<T>> for ExecutiveHooks<T>
+impl<T> OnInitialize<BlockNumberFor<T>> for ExecutiveHooks<T>
 where
     T: Config,
 {
-    fn on_initialize(n: BlockNumberOf<T>) -> Weight {
+    fn on_initialize(n: BlockNumberFor<T>) -> Weight {
         if Pallet::<T>::maintenance_mode() {
             T::MaintenanceExecutiveHooks::on_initialize(n)
         } else {
@@ -55,11 +56,11 @@ where
     }
 }
 
-impl<T> OnFinalize<BlockNumberOf<T>> for ExecutiveHooks<T>
+impl<T> OnFinalize<BlockNumberFor<T>> for ExecutiveHooks<T>
 where
     T: Config,
 {
-    fn on_finalize(n: BlockNumberOf<T>) {
+    fn on_finalize(n: BlockNumberFor<T>) {
         if Pallet::<T>::maintenance_mode() {
             T::MaintenanceExecutiveHooks::on_finalize(n)
         } else {
@@ -68,11 +69,11 @@ where
     }
 }
 
-impl<T> OffchainWorker<BlockNumberOf<T>> for ExecutiveHooks<T>
+impl<T> OffchainWorker<BlockNumberFor<T>> for ExecutiveHooks<T>
 where
     T: Config,
 {
-    fn offchain_worker(n: BlockNumberOf<T>) {
+    fn offchain_worker(n: BlockNumberFor<T>) {
         if Pallet::<T>::maintenance_mode() {
             T::MaintenanceExecutiveHooks::offchain_worker(n)
         } else {
@@ -113,11 +114,11 @@ where
 }
 
 #[cfg(feature = "try-runtime")]
-impl<T: frame_system::Config> frame_support::traits::TryState<BlockNumberOf<T>>
+impl<T: frame_system::Config> frame_support::traits::TryState<BlockNumberFor<T>>
     for ExecutiveHooks<T>
 {
     fn try_state(
-        _: BlockNumberOf<T>,
+        _: BlockNumberFor<T>,
         _: frame_support::traits::TryStateSelect,
     ) -> Result<(), &'static str> {
         Ok(())

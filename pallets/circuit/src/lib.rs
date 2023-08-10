@@ -37,7 +37,7 @@ use frame_support::{
 use frame_system::{
     ensure_signed,
     offchain::{SignedPayload, SigningTypes},
-    pallet_prelude::OriginFor,
+    pallet_prelude::{BlockNumberFor, OriginFor},
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -157,7 +157,7 @@ pub mod pallet {
         XExecSignalId<T>,
         // Collection of timeout blocks (on the slowest remote target (there) and here (on t3rn/t0rn)), where the emergency height is a set constant via config (400blocks),
         //  but the primary timeout to look at is AdaptiveTimeout here and there calculated based on advancing epochs of each target.
-        AdaptiveTimeout<<T as frame_system::Config>::BlockNumber, [u8; 4]>,
+        AdaptiveTimeout<BlockNumberFor<T>, [u8; 4]>,
         OptionQuery,
     >;
 
@@ -165,13 +165,8 @@ pub mod pallet {
     ///     where for each FSX::best_bid bidders are assigned for SFX::enforce_executor or Xtx is dropped.
     #[pallet::storage]
     #[pallet::getter(fn get_pending_xtx_bids_timeouts)]
-    pub type PendingXtxBidsTimeoutsMap<T> = StorageMap<
-        _,
-        Identity,
-        XExecSignalId<T>,
-        <T as frame_system::Config>::BlockNumber,
-        OptionQuery,
-    >;
+    pub type PendingXtxBidsTimeoutsMap<T> =
+        StorageMap<_, Identity, XExecSignalId<T>, BlockNumberFor<T>, OptionQuery>;
 
     /// Current Circuit's context of all accepted for execution cross-chain transactions.
     ///
@@ -184,10 +179,7 @@ pub mod pallet {
         _,
         Identity,
         XExecSignalId<T>,
-        XExecSignal<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-        >,
+        XExecSignal<<T as frame_system::Config>::AccountId, BlockNumberFor<T>>,
         OptionQuery,
     >;
 
@@ -220,7 +212,7 @@ pub mod pallet {
             Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
+                    BlockNumberFor<T>,
                     BalanceOf<T>,
                 >,
             >,
@@ -234,11 +226,7 @@ pub mod pallet {
         _,
         Identity,
         XExecSignalId<T>,
-        (
-            <T as frame_system::Config>::BlockNumber,
-            Vec<TargetId>,
-            SpeedMode,
-        ),
+        (BlockNumberFor<T>, Vec<TargetId>, SpeedMode),
         OptionQuery,
     >;
 
@@ -270,15 +258,15 @@ pub mod pallet {
 
         /// The Circuit's Default Xtx timeout
         #[pallet::constant]
-        type XtxTimeoutDefault: Get<Self::BlockNumber>;
+        type XtxTimeoutDefault: Get<BlockNumberFor<Self>>;
 
         /// The Circuit's Xtx timeout check interval
         #[pallet::constant]
-        type XtxTimeoutCheckInterval: Get<Self::BlockNumber>;
+        type XtxTimeoutCheckInterval: Get<BlockNumberFor<Self>>;
 
         /// The Circuit's SFX Bidding Period
         #[pallet::constant]
-        type SFXBiddingPeriod: Get<Self::BlockNumber>;
+        type SFXBiddingPeriod: Get<BlockNumberFor<Self>>;
 
         /// The Circuit's deletion queue limit - preventing potential
         ///     delay when queue is too long in on_initialize
@@ -308,7 +296,7 @@ pub mod pallet {
             Self::AccountId,
             BalanceOf<Self>,
             Self::Hash,
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             u32,
         >;
 
@@ -797,7 +785,7 @@ pub mod pallet {
             sfx_id: SideEffectId<T>,
             confirmation: ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
+                BlockNumberFor<T>,
                 BalanceOf<T>,
             >,
         ) -> DispatchResultWithPostInfo {
@@ -921,7 +909,7 @@ pub mod pallet {
                 Vec<
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
+                        BlockNumberFor<T>,
                         BalanceOf<T>,
                     >,
                 >,
@@ -1351,6 +1339,11 @@ impl<T: Config> Pallet<T> {
 
         #[cfg(not(feature = "test-skip-verification"))]
         if inclusion_receipt.height > fsx.submission_target_height {
+            log::error!(
+                "Inclusion height is higher than target {:?} > {:?}",
+                inclusion_receipt.height,
+                fsx.submission_target_height
+            );
             return Err(DispatchError::Other(
                 "SideEffect confirmation of inclusion failed - inclusion height is higher than target",
             ))
@@ -1497,7 +1490,7 @@ impl<T: Config> Pallet<T> {
                 })
                 .count();
         }
-        Weight::from_ref_time(current_weight)
+        Weight::from_parts(current_weight, 0u64)
     }
 
     pub fn process_adaptive_xtx_timeout_queue(
@@ -1832,7 +1825,7 @@ impl<T: Config> Pallet<T> {
 
         <SignalQueue<T>>::put(queue);
 
-        Weight::from_ref_time(processed_weight)
+        Weight::from_parts(processed_weight, 0u64)
     }
 
     pub fn recover_local_ctx_by_sfx_id(

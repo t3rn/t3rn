@@ -46,7 +46,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         #[pallet::constant]
-        type RoundDuration: Get<Self::BlockNumber>;
+        type RoundDuration: Get<BlockNumberFor<Self>>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
 
@@ -55,7 +55,7 @@ pub mod pallet {
             Self::AccountId,
             BalanceOf<Self>,
             Self::Hash,
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             u32,
         >;
 
@@ -187,7 +187,7 @@ pub mod pallet {
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
         fn build(&self) {}
     }
 

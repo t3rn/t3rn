@@ -53,8 +53,6 @@ pallet-sudo                       = { git = "https://github.com/paritytech/subst
 pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 
-pallet-xbi-portal = { workspace = true, default-features = true }
-
 [features]
 default = [ "std" ]
 std = [

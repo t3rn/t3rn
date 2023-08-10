@@ -88,7 +88,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = Weight::from_ref_time(1_000_000_000);
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 0u64);
     pub const MaxInstructions: u32 = 100;
 }
 

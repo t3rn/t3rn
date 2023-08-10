@@ -16,7 +16,7 @@ crate-type = [ "dylib", "rlib" ]
 [dependencies]
 cfg-if = "1.0.0"
 
-codec      = { workspace = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
 scale-info = { workspace = true }
 
 t3rn-sdk-primitives = { path = "../primitives", default-features = false }
@@ -34,4 +34,4 @@ default = [ "ink" ]
 ink     = [ "ink_env", "ink_prelude", "ink_primitives" ]
 ink-std = [ "ink_env/std", "ink_prelude/std", "ink_primitives/std", "t3rn-sdk-primitives/std" ]
 
-std = [ "t3rn-sdk-primitives/std" ]
+std = [ "t3rn-sdk-primitives/std", "codec/std", "scale-info/std" ]

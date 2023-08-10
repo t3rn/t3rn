@@ -41,7 +41,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
         type CircuitSubmitAPI: CircuitSubmitAPI<Self, BalanceOf<Self>>;
-        type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
+        type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
     }
 
     #[pallet::pallet]

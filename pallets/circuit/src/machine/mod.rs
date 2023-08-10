@@ -13,9 +13,9 @@ pub mod test_extra;
 #[cfg(test)]
 pub mod test_extra_stress;
 
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_std::marker::PhantomData;
 use t3rn_primitives::SpeedMode;
-
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
 }
@@ -23,11 +23,7 @@ pub struct Machine<T: Config> {
 pub enum PrecompileResult<T: Config> {
     TryUpdateFSX(
         Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
+            FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
         >,
     ),
     TryBid(
@@ -41,7 +37,7 @@ pub enum PrecompileResult<T: Config> {
         SideEffectId<T>,
         ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
+            BlockNumberFor<T>,
             BalanceOf<T>,
         >,
     ),
@@ -160,7 +156,7 @@ impl<T: Config> Machine<T> {
             &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
+                    BlockNumberFor<T>,
                     BalanceOf<T>,
                 >,
             >,
@@ -182,7 +178,7 @@ impl<T: Config> Machine<T> {
                 fsx: &mut Vec<
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
+                        BlockNumberFor<T>,
                         BalanceOf<T>,
                     >,
                 >,
@@ -210,7 +206,7 @@ impl<T: Config> Machine<T> {
             &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
+                    BlockNumberFor<T>,
                     BalanceOf<T>,
                 >,
             >,
@@ -318,11 +314,7 @@ impl<T: Config> Machine<T> {
     fn update_current_step_fsx(
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         updated_fsx: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
+            FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
         >,
     ) {
         let (current_step, _) = local_ctx.xtx.steps_cnt;
@@ -343,13 +335,8 @@ impl<T: Config> Machine<T> {
 
     pub fn read_current_step_fsx(
         local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
-    ) -> &Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-    > {
+    ) -> &Vec<FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>>
+    {
         let (current_step, _) = local_ctx.xtx.steps_cnt;
         local_ctx
             .full_side_effects

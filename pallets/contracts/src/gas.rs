@@ -290,19 +290,19 @@ mod tests {
     struct SimpleToken(u64);
     impl Token<Test> for SimpleToken {
         fn weight(&self) -> Weight {
-            Weight::from_ref_time(self.0)
+            Weight::from_parts(self.0, 0u64)
         }
     }
 
     #[test]
     fn it_works() {
-        let gas_meter = GasMeter::<Test>::new(Weight::from_ref_time(50000));
-        assert_eq!(gas_meter.gas_left(), Weight::from_ref_time(50000));
+        let gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000), 0u64);
+        assert_eq!(gas_meter.gas_left(), Weight::from_parts(50000), 0u64);
     }
 
     #[test]
     fn tracing() {
-        let mut gas_meter = GasMeter::<Test>::new(Weight::from_ref_time(50000));
+        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000), 0u64);
         assert!(!gas_meter.charge(SimpleToken(1)).is_err());
 
         let mut tokens = gas_meter.tokens().iter();
@@ -319,7 +319,7 @@ mod tests {
     // Make sure that the gas meter does not charge in case of overcharger
     #[test]
     fn overcharge_does_not_charge() {
-        let mut gas_meter = GasMeter::<Test>::new(Weight::from_ref_time(200));
+        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(200), 0u64);
 
         // The first charge is should lead to OOG.
         assert!(gas_meter.charge(SimpleToken(300)).is_err());
@@ -332,7 +332,7 @@ mod tests {
     // possible.
     #[test]
     fn charge_exact_amount() {
-        let mut gas_meter = GasMeter::<Test>::new(Weight::from_ref_time(25));
+        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(25), 0u64);
         assert!(!gas_meter.charge(SimpleToken(25)).is_err());
     }
 }

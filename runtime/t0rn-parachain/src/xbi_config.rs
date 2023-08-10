@@ -42,7 +42,7 @@ parameter_types! {
 
 parameter_types! {
     pub ReserveBalanceCustodian: AccountId = PolkadotXcm::check_account();
-    pub NotificationWeight: Weight = Weight::from_ref_time(1);
+    pub NotificationWeight: Weight = Weight::from_parts(1, 0u64);
 }
 
 // impl pallet_xbi_portal::Config for Runtime {

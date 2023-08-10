@@ -105,13 +105,13 @@ pub mod pallet {
         ///
         /// Default: 2_628_000 (assuming 12s block time)
         #[pallet::constant]
-        type OneYear: Get<Self::BlockNumber>;
+        type OneYear: Get<BlockNumberFor<Self>>;
 
         /// The number of blocks between inflation distribution.
         ///
         /// Default: 100_800 (assuming one distribution per two weeks)
         #[pallet::constant]
-        type InflationDistributionPeriod: Get<Self::BlockNumber>;
+        type InflationDistributionPeriod: Get<BlockNumberFor<Self>>;
 
         type AvailableBootstrapSpenditure: Get<BalanceOf<Self>>;
 
@@ -129,7 +129,7 @@ pub mod pallet {
             Self::AccountId,
             BalanceOf<Self>,
             Self::Hash,
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             u32,
         >;
 
@@ -959,7 +959,7 @@ pub mod pallet {
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
         fn build(&self) {
             IsClaimingHalted::<T>::put(false);
             IsDistributionHalted::<T>::put(false);

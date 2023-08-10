@@ -79,7 +79,7 @@ pub mod pallet {
             Self::AccountId,
             BalanceOf<Self>,
             Self::Hash,
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             Self::AssetId,
         >;
 
@@ -122,7 +122,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
         fn build(&self) {
             for (hash, ptr) in &self.precompiles {
                 <PrecompileIndex<T>>::insert(hash, ptr);

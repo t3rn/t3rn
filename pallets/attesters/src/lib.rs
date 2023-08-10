@@ -185,21 +185,21 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type ActiveSetSize: Get<u32>;
         type CommitteeSize: Get<u32>;
-        type BatchingWindow: Get<Self::BlockNumber>;
-        type RepatriationPeriod: Get<Self::BlockNumber>;
-        type ShufflingFrequency: Get<Self::BlockNumber>;
+        type BatchingWindow: Get<BlockNumberFor<Self>>;
+        type RepatriationPeriod: Get<BlockNumberFor<Self>>;
+        type ShufflingFrequency: Get<BlockNumberFor<Self>>;
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
         type CommitmentRewardSource: Get<Self::AccountId>;
         type SlashAccount: Get<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
-        type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+        type RandomnessSource: Randomness<Self::Hash, BlockNumberFor<Self>>;
         type DefaultCommission: Get<Percent>;
         type MinNominatorBond: Get<BalanceOf<Self>>;
         type MinAttesterBond: Get<BalanceOf<Self>>;
         type Portal: Portal<Self>;
-        type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
-        type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
+        type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
+        type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
         type Xdns: Xdns<Self, BalanceOf<Self>>;
     }
 
@@ -1750,7 +1750,7 @@ pub mod pallet {
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
         fn build(&self) {
             // Extend the list of attestation targets
             for target in self.attestation_targets.iter() {

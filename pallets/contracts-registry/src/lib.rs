@@ -190,7 +190,7 @@ pub mod pallet {
             <T as frame_system::Config>::Hash,
             <T as frame_system::Config>::AccountId,
             BalanceOf<T>,
-            <T as frame_system::Config>::BlockNumber,
+            BlockNumberFor<T>,
         >,
         OptionQuery,
     >;
@@ -218,7 +218,7 @@ pub mod pallet {
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
         fn build(&self) {}
     }
 }

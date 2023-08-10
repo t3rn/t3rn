@@ -98,8 +98,7 @@ mod v4 {
 mod v5 {
     use super::*;
 
-    type AliveContractInfo<T> =
-        RawAliveContractInfo<CodeHash<T>, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
+    type AliveContractInfo<T> = RawAliveContractInfo<CodeHash<T>, BalanceOf<T>, BlockNumberFor<T>>;
     type TombstoneContractInfo<T> = RawTombstoneContractInfo<
         <T as frame_system::Config>::Hash,
         <T as frame_system::Config>::Hashing,
