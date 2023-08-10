@@ -420,11 +420,11 @@ export class SideEffect extends EventEmitter {
    *
    * @param error Error message used for logging
    */
-  bidRejected(error: Error) {
+  bidRejected() {
     // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
     this.txStatus = TxStatus.Ready; // open mutex lock
     this.isBidder = false;
-    logger.info({ err: error.toString() }, "Bid rejected");
+
     this.triggerBid();
   }
 

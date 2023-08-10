@@ -570,10 +570,12 @@ export class ExecutionManager {
               logger.warn(
                 {
                   xtxId: sfx.xtxId,
+                  error: e.message,
                 },
-                `Bid rejected for SFX ❌`,
+                `Bid rejected ❌`,
               );
-              sfx.bidRejected(e);
+              this.prometheus.executorBidRejected.inc({ error: e.message });
+              sfx.bidRejected();
             });
         }
       }

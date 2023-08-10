@@ -18,6 +18,7 @@ export class Prometheus {
   executorNoBidAndNoCompetition: Counter;
   executorNoBidButCompetition: Counter;
   executorBeenOutBid: Counter;
+  executorBidRejected: Counter;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -75,6 +76,13 @@ export class Prometheus {
     this.executorBeenOutBid = new Counter({
       name: "executor_been_out_bid",
       help: "Number of times been out bid",
+      registers: [this.register],
+    });
+
+    this.executorBidRejected = new Counter({
+      name: "executor_bid_rejected",
+      help: "Number of times bid rejected",
+      labelNames: ["error"],
       registers: [this.register],
     });
 
