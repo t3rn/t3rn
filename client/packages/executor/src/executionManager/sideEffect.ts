@@ -234,6 +234,7 @@ export class SideEffect extends EventEmitter {
         nativeAssetPrice: nativeAssetPrice.getValue(),
         txOutputAssetPrice: txOutputAssetPrice.getValue(),
         rewardAssetPrice: rewardAssetPrice.getValue(),
+        xtxId: this.xtxId,
       },
       "Set risk parameters and subscriptions",
     );
@@ -302,15 +303,11 @@ export class SideEffect extends EventEmitter {
     if (result?.trigger) {
       logger.info(
         {
+          xtx: this.xtxId,
           bid: result?.bidAmount?.toString(),
+          bidAmount: bnToFloat(result.bidAmount as BN, 12),
         },
-        "Bid generated",
-      );
-      logger.info(
-        `Bidding on SFX ${this.humanId}: ${bnToFloat(
-          result.bidAmount as BN,
-          12,
-        )} TRN 🎰`,
+        `Bidding TRN 🎰`,
       );
 
       this.emit("Notification", {
@@ -406,16 +403,15 @@ export class SideEffect extends EventEmitter {
     if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
       this.isBidder = true;
       this.reward.next(this.gateway.toFloat(bidAmount)); // not sure if we want to do this tbh. Reacting to other bids should be sufficient
-      logger.info(`Bid accepted for SFX ${this.humanId} ✅`);
-      logger.info({ bidAmount: bidAmount.toString() }, "Bid accepted");
+      logger.info(
+        { xtxId: this.xtxId, bidAmount: bidAmount.toString() },
+        `Bid accepted ✅`,
+      );
     } else {
       this.triggerBid(); // trigger another bid, as we have been outbid. The risk parameters are updated automatically by events.
-      logger.info(`Bid undercut in block for SFX ${this.humanId} ❌`);
       logger.info(
-        {
-          bidAmount: bidAmount.toString(),
-        },
-        "Bid accepted, but undercut in same block",
+        { xtxId: this.xtxId, bidAmount: bidAmount.toString() },
+        `Bid undercut in block ❌`,
       );
     }
   }

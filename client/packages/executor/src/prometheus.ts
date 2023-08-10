@@ -127,7 +127,7 @@ export class Prometheus {
   }
 
   startServer() {
-    const port = process.env.PROMETHEUS_PORT || 8080;
+    const port = process.env.PROMETHEUS_PORT || 9333;
     this.server = http.createServer(async (req, res) => {
       try {
         if (req.url === "/metrics") {

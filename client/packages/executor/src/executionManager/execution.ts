@@ -139,13 +139,25 @@ export class Execution extends EventEmitter {
       sfx.readyToExecute();
     }
 
-    logger.info(`Ready XTX: ${this.humanId}`);
+    logger.info(
+      {
+        xtxId: this.id,
+        escrowSfxIds: this.phases[0],
+        optimisticSfxIds: this.phases[1],
+      },
+      `Ready XTX`,
+    );
   }
 
   /** Update XTX status to complete */
   completed() {
     this.status = XtxStatus.FinishedAllSteps;
-    logger.info(`Completed XTX: ✨${this.humanId}✨`);
+    logger.info(
+      {
+        xtxId: this.id,
+      },
+      `Completed XTX ✨`,
+    );
   }
 
   /** Update XTX and all its SFX status to ready. */
