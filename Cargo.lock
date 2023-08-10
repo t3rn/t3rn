@@ -7486,7 +7486,7 @@ dependencies = [
  "finality-grandpa",
  "frame-support",
  "frame-system",
- "hash-db 0.15.2",
+ "hash-db 0.16.0",
  "hex-literal 0.4.1",
  "log",
  "num-traits",
