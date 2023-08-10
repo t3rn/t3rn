@@ -15,14 +15,14 @@ sp-core                   = { workspace = true }
 sp-std                    = { workspace = true }
 
 pallet-evm-precompile-3vm-dispatch = { path = "../3vm-dispatch", default-features = false }
-pallet-evm-precompile-blake2       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-bn128        = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-curve25519   = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-dispatch     = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-ed25519      = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-modexp       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-sha3fips     = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
-pallet-evm-precompile-simple       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v1.0.0", default-features = false }
+pallet-evm-precompile-blake2       = { path = "../blake2", default-features = false }
+pallet-evm-precompile-bn128        = { path = "../bn128", default-features = false }
+pallet-evm-precompile-curve25519   = { path = "../curve25519", default-features = false }
+pallet-evm-precompile-dispatch     = { path = "../dispatch", default-features = false }
+pallet-evm-precompile-ed25519      = { path = "../ed25519", default-features = false }
+pallet-evm-precompile-modexp       = { path = "../modexp", default-features = false }
+pallet-evm-precompile-sha3fips     = { path = "../sha3fips", default-features = false }
+pallet-evm-precompile-simple       = { path = "../simple", default-features = false }
 
 [features]
 default = [ "std" ]

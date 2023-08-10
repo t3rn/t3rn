@@ -9,6 +9,7 @@ use crate::{
 use codec::{Decode, Encode};
 use frame_support::dispatch::Weight;
 use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
+use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{DispatchError, DispatchResult};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
@@ -344,4 +345,34 @@ pub trait ModuleOperations<T: ConfigSystem, Balance> {
     fn set_author(&mut self, author: AuthorInfo<T::AccountId, Balance>);
     fn get_type(&self) -> &ContractType;
     fn set_type(&mut self, kind: ContractType);
+}
+
+#[derive(Clone, Encode, Decode, TypeInfo, Default)]
+#[scale_info(skip_type_params(T))]
+pub struct ThreeVmInfo<T: ConfigSystem, Balance> {
+    author: AuthorInfo<T::AccountId, Balance>,
+    kind: ContractType,
+    bytecode: Vec<u8>,
+}
+
+impl<T: ConfigSystem, Balance> ModuleOperations<T, Balance> for ThreeVmInfo<T, Balance> {
+    fn get_bytecode(&self) -> &Vec<u8> {
+        &self.bytecode
+    }
+
+    fn get_author(&self) -> Option<&AuthorInfo<T::AccountId, Balance>> {
+        Some(&self.author)
+    }
+
+    fn set_author(&mut self, author: AuthorInfo<T::AccountId, Balance>) {
+        self.author = author;
+    }
+
+    fn get_type(&self) -> &ContractType {
+        &self.kind
+    }
+
+    fn set_type(&mut self, kind: ContractType) {
+        self.kind = kind;
+    }
 }
