@@ -7,6 +7,7 @@ pub use pallet::*;
 use frame_support::{
     dispatch::DispatchResult, ensure, sp_runtime::DispatchError, traits::Currency,
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::StaticLookup;
 use sp_std::vec::Vec;
 use t3rn_primitives::{
@@ -45,10 +46,12 @@ pub mod pallet {
 
     use crate::BalanceOf;
     use frame_support::{pallet_prelude::*, traits::Currency};
+    use frame_system::pallet_prelude::BlockNumberFor;
     use t3rn_primitives::{
         account_manager::AccountManager, circuit::OnLocalTrigger, contract_metadata::ContractType,
         contracts_registry::ContractsRegistry, portal::Portal, ChainId,
     };
+
     use t3rn_sdk_primitives::signal::SignalKind;
 
     #[pallet::config]
@@ -122,7 +125,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             for (hash, ptr) in &self.precompiles {
                 <PrecompileIndex<T>>::insert(hash, ptr);
