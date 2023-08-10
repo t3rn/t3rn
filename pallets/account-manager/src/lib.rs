@@ -259,7 +259,7 @@ pub mod pallet {
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {}
     }
 }
