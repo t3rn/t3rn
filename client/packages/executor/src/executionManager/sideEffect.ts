@@ -356,7 +356,7 @@ export class SideEffect extends EventEmitter {
 
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
-    this.prometheus.executorBids.inc({ scenario: "Generated bid" });
+    this.prometheus.executorBid.inc({ scenario: "Generated bid" });
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }
