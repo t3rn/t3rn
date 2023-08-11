@@ -146,17 +146,10 @@ pub mod pallet {
     pub enum Error<T> {}
 
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                phantom: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     /// The build of genesis for the pallet.

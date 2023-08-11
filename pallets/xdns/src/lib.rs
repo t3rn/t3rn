@@ -680,34 +680,46 @@ pub mod pallet {
 
     // The genesis config type.
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
-        pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+        pub known_gateway_records: Vec<u8>,
+        // Fixme: GatewayRecord is not serializable with DefaultNoBound with current serde settings. Debug what changed after v1.0.0 update.
+        // pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
+        // pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+        pub standard_sfx_abi: Vec<u8>,
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
-
-    /// The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                known_gateway_records: Default::default(),
-                standard_sfx_abi: Default::default(),
-            }
-        }
-    }
+    //
+    // /// The default value for the genesis config type.
+    // #[cfg(feature = "std")]
+    // impl<T: Config> Default for GenesisConfig<T> {
+    //     fn default() -> Self {
+    //         Self {
+    //             known_gateway_records: Default::default(),
+    //             standard_sfx_abi: Default::default(),
+    //         }
+    //     }
+    // }
 
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
+            let mut known_gateway_records: Vec<GatewayRecord<T::AccountId>> =
+                Decode::decode(&mut &self.known_gateway_records[..]).unwrap_or_default();
+
+            let mut standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)> =
+                Decode::decode(&mut &self.standard_sfx_abi[..]).unwrap_or_default();
+
+            for (sfx_4b_id, sfx_abi) in standard_sfx_abi {
                 let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
                     .unwrap_or("invalid utf8 4b sfx id format");
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
 
-            for gateway_record in self.known_gateway_records.clone() {
+            for gateway_record in known_gateway_records {
                 Pallet::<T>::override_gateway(
                     gateway_record.gateway_id,
                     gateway_record.verification_vendor,

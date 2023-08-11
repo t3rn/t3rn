@@ -519,7 +519,9 @@ pub mod pallet {
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T> {
-        pub accounts: BTreeMap<H160, GenesisAccount>,
+        // Fixme: GenesisAccount is not serializable with DefaultNoBound with current serde settings. Debug what changed after v1.0.0 update.
+        pub accounts: Vec<u8>,
+        // pub accounts: BTreeMap<H160, GenesisAccount>,
         #[serde(skip)]
         pub _marker: PhantomData<T>,
     }
@@ -532,7 +534,10 @@ pub mod pallet {
         fn build(&self) {
             const MAX_ACCOUNT_NONCE: usize = 100;
 
-            for (address, account) in &self.accounts {
+            let mut accounts: BTreeMap<H160, GenesisAccount> =
+                Decode::decode(&mut &self.accounts[..]).unwrap_or_default();
+
+            for (address, account) in &accounts {
                 let account_id = T::AddressMapping::into_account_id(*address);
 
                 // ASSUME: in one single EVM transaction, the nonce will not increase more than

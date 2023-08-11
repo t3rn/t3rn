@@ -942,18 +942,10 @@ pub mod pallet {
 
     // The genesis config type.
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        pub phantom: PhantomData<T>,
-    }
-
-    // The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                phantom: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     // The build of genesis for the pallet.

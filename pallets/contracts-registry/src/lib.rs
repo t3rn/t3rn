@@ -201,23 +201,14 @@ pub mod pallet {
 
     // The genesis config type.
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         // pub known_contracts: Vec<(
         //     T::AccountId,
         //     <T::Balances as Inspect<T::AccountId>>::Balance,
         // )>, TODO: this genesis isnt used atm
-        phantom: PhantomData<T>,
-    }
-
-    // The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                // known_contracts: Default::default(),
-                phantom: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     // The build of genesis for the pallet.

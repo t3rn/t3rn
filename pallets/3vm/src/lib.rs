@@ -47,6 +47,7 @@ pub mod pallet {
     use crate::BalanceOf;
     use frame_support::{pallet_prelude::*, traits::Currency};
     use frame_system::pallet_prelude::BlockNumberFor;
+    use sp_std::vec::Vec;
     use t3rn_primitives::{
         account_manager::AccountManager, circuit::OnLocalTrigger, contract_metadata::ContractType,
         contracts_registry::ContractsRegistry, portal::Portal, ChainId,
@@ -111,17 +112,11 @@ pub mod pallet {
     pub(crate) type AuthorOf<T: Config> = StorageMap<_, Identity, T::AccountId, T::AccountId>;
 
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         pub precompiles: Vec<(T::Hash, u8)>,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                precompiles: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     #[pallet::genesis_build]

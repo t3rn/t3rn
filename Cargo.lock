@@ -6533,6 +6533,7 @@ name = "pallet-asset-registry"
 version = "0.3.7"
 source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -13752,6 +13753,7 @@ dependencies = [
  "num-traits",
  "pallet-3vm",
  "pallet-account-manager",
+ "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
  "pallet-attesters",
@@ -13794,7 +13796,6 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",
- "precompile-util",
  "scale-info",
  "serde",
  "smallvec",
@@ -13922,6 +13923,7 @@ dependencies = [
  "num-traits",
  "pallet-3vm",
  "pallet-account-manager",
+ "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
  "pallet-attesters",
@@ -13965,7 +13967,6 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",
- "precompile-util",
  "scale-info",
  "serde",
  "smallvec",
