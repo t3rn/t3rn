@@ -1,9 +1,11 @@
 use crate::*;
 
 use frame_support::{
-    traits::{NeverEnsureOrigin, PrivilegeCmp},
+    pallet_prelude::ConstU32,
+    traits::{ConstBool, NeverEnsureOrigin, PrivilegeCmp},
     PalletId,
 };
+
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
 #[cfg(any(feature = "std", test))]
@@ -124,6 +126,7 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_aura::Config for Runtime {
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
@@ -146,7 +149,7 @@ impl pallet_collator_selection::Config for Runtime {
     type KickThreshold = Period;
     type MaxCandidates = MaxCandidates;
     type MaxInvulnerables = MaxInvulnerables;
-    type MinCandidates = MinCandidates;
+    type MinEligibleCollators = MinCandidates;
     type PotId = PotId;
     type RuntimeEvent = RuntimeEvent;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;

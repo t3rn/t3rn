@@ -1,9 +1,8 @@
 use crate::{Hash as HashPrimitive, *};
-use frame_support::{parameter_types, weights::IdentityFee};
+use frame_support::{pallet_prelude::ConstU32, parameter_types, weights::IdentityFee};
 use frame_system::limits::{BlockLength, BlockWeights};
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::BlakeTwo256;
-
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
 }
@@ -15,12 +14,12 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = frame_support::traits::Everything;
+    /// The header type.
+    type Block = Block;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
     type BlockLength = circuit_runtime_types::RuntimeBlockLength;
-    /// The index type for blocks.
-    type BlockNumber = circuit_runtime_types::BlockNumber;
     /// Block & extrinsics weights: base values and limits.
     type BlockWeights = circuit_runtime_types::RuntimeBlockWeights;
     /// The weight of database operations that the runtime can invoke.
@@ -29,13 +28,11 @@ impl frame_system::Config for Runtime {
     type Hash = HashPrimitive;
     /// The hashing algorithm used.
     type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = AccountIdLookup<AccountId, ()>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    /// The index type for storing how many extrinsics an account has signed.
+    type Nonce = u32;
     /// What to do if an account is fully reaped from the system.
     type OnKilledAccount = ();
     /// What to do if a new account is created.
@@ -86,11 +83,15 @@ impl pallet_balances::Config for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = MaxLocks;
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
@@ -112,6 +113,7 @@ impl pallet_transaction_payment::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 impl pallet_utility::Config for Runtime {
