@@ -134,6 +134,7 @@ use scale_info::TypeInfo;
 use smallvec::Array;
 use sp_runtime::traits::{Convert, Hash, Saturating, StaticLookup, Zero};
 use sp_std::{fmt::Debug, prelude::*};
+use t3rn_primitives::threevm::ThreeVm;
 pub use weights::WeightInfo;
 
 pub use crate::{
@@ -144,7 +145,6 @@ pub use crate::{
     schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
     wasm::Determinism,
 };
-use t3rn_primitives::threevm::{ModuleOperations, ThreeVm};
 
 #[cfg(doc)]
 pub use crate::wasm::api_doc;

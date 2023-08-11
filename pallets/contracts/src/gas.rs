@@ -23,6 +23,7 @@ use frame_support::{
     weights::Weight,
     DefaultNoBound,
 };
+use sp_core::Get;
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 
@@ -80,6 +81,8 @@ pub struct GasMeter<T: Config> {
     gas_left: Weight,
     /// Due to `adjust_gas` and `nested` the `gas_left` can temporarily dip below its final value.
     gas_left_lowest: Weight,
+    /// Amount of fuel consumed by the engine from the last host function call.
+    engine_consumed: u64,
     _phantom: PhantomData<T>,
     #[cfg(test)]
     tokens: Vec<ErasedToken>,
@@ -91,6 +94,7 @@ impl<T: Config> GasMeter<T> {
             gas_limit,
             gas_left: gas_limit,
             gas_left_lowest: gas_limit,
+            engine_consumed: Default::default(),
             _phantom: PhantomData,
             #[cfg(test)]
             tokens: Vec::new(),
@@ -158,7 +162,7 @@ impl<T: Config> GasMeter<T> {
     /// Amount is calculated by the given `token`.
     ///
     /// Returns `OutOfGas` if there is not enough gas or addition of the specified
-    /// amount of gas has lead to overflow. On success returns `Proceed`.
+    /// amount of gas has lead to overflow.
     ///
     /// NOTE that amount isn't consumed if there is not enough gas. This is considered
     /// safe because we always charge gas before performing any resource-spending action.
@@ -193,17 +197,45 @@ impl<T: Config> GasMeter<T> {
         self.gas_left = self.gas_left.saturating_add(adjustment).min(self.gas_limit);
     }
 
+    /// This method is used for gas syncs with the engine.
+    ///
+    /// Updates internal `engine_comsumed` tracker of engine fuel consumption.
+    ///
+    /// Charges self with the `ref_time` Weight corresponding to wasmi fuel consumed on the engine
+    /// side since last sync. Passed value is scaled by multiplying it by the weight of a basic
+    /// operation, as such an operation in wasmi engine costs 1.
+    ///
+    /// Returns the updated `gas_left` `Weight` value from the meter.
+    /// Normally this would never fail, as engine should fail first when out of gas.
+    pub fn charge_fuel(&mut self, wasmi_fuel_total: u64) -> Result<Weight, DispatchError> {
+        // Take the part consumed since the last update.
+        let wasmi_fuel = wasmi_fuel_total.saturating_sub(self.engine_consumed);
+        if !wasmi_fuel.is_zero() {
+            self.engine_consumed = wasmi_fuel_total;
+            let reftime_consumed =
+                wasmi_fuel.saturating_mul(T::Schedule::get().instruction_weights.base as u64);
+            let ref_time_left = self
+                .gas_left
+                .ref_time()
+                .checked_sub(reftime_consumed)
+                .ok_or_else(|| Error::<T>::OutOfGas)?;
+
+            *(self.gas_left.ref_time_mut()) = ref_time_left;
+        }
+        Ok(self.gas_left)
+    }
+
     /// Returns the amount of gas that is required to run the same call.
     ///
     /// This can be different from `gas_spent` because due to `adjust_gas` the amount of
     /// spent gas can temporarily drop and be refunded later.
     pub fn gas_required(&self) -> Weight {
-        self.gas_limit - self.gas_left_lowest()
+        self.gas_limit.saturating_sub(self.gas_left_lowest())
     }
 
     /// Returns how much gas was spent
     pub fn gas_consumed(&self) -> Weight {
-        self.gas_limit - self.gas_left
+        self.gas_limit.saturating_sub(self.gas_left)
     }
 
     /// Returns how much gas left from the initial budget.
@@ -290,19 +322,19 @@ mod tests {
     struct SimpleToken(u64);
     impl Token<Test> for SimpleToken {
         fn weight(&self) -> Weight {
-            Weight::from_parts(self.0, 0u64)
+            Weight::from_parts(self.0, 0)
         }
     }
 
     #[test]
     fn it_works() {
-        let gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000), 0u64);
-        assert_eq!(gas_meter.gas_left(), Weight::from_parts(50000), 0u64);
+        let gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000, 0));
+        assert_eq!(gas_meter.gas_left(), Weight::from_parts(50000, 0));
     }
 
     #[test]
     fn tracing() {
-        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000), 0u64);
+        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000, 0));
         assert!(!gas_meter.charge(SimpleToken(1)).is_err());
 
         let mut tokens = gas_meter.tokens().iter();
@@ -319,7 +351,7 @@ mod tests {
     // Make sure that the gas meter does not charge in case of overcharger
     #[test]
     fn overcharge_does_not_charge() {
-        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(200), 0u64);
+        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(200, 0));
 
         // The first charge is should lead to OOG.
         assert!(gas_meter.charge(SimpleToken(300)).is_err());
@@ -332,7 +364,7 @@ mod tests {
     // possible.
     #[test]
     fn charge_exact_amount() {
-        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(25), 0u64);
+        let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(25, 0));
         assert!(!gas_meter.charge(SimpleToken(25)).is_err());
     }
 }
