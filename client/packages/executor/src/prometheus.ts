@@ -15,9 +15,8 @@ export class Prometheus {
   circuitDisconnects: Counter;
   executorBids: Counter;
   executorXtxStrategyRejects: Counter;
-  executorNoBidAndNoCompetition: Counter;
-  executorNoBidButCompetition: Counter;
-  executorBeenOutBid: Counter;
+  executorBid: Counter;
+  executorBidRejected: Counter;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -60,21 +59,17 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.executorNoBidAndNoCompetition = new Counter({
-      name: "executor_no_bid_and_no_competition",
-      help: "Number of times no bid and no competition",
+    this.executorBid = new Counter({
+      name: "executor_bid_total",
+      help: "Number of times bid happened",
+      labelNames: ["scenario"],
       registers: [this.register],
     });
 
-    this.executorNoBidButCompetition = new Counter({
-      name: "executor_no_bid_but_competition",
-      help: "Number of times no bid but competition",
-      registers: [this.register],
-    });
-
-    this.executorBeenOutBid = new Counter({
-      name: "executor_been_out_bid",
-      help: "Number of times been out bid",
+    this.executorBidRejected = new Counter({
+      name: "executor_bid_rejected",
+      help: "Number of times bid rejected",
+      labelNames: ["error"],
       registers: [this.register],
     });
 
@@ -127,7 +122,7 @@ export class Prometheus {
   }
 
   startServer() {
-    const port = process.env.PROMETHEUS_PORT || 8080;
+    const port = process.env.PROMETHEUS_PORT || 9333;
     this.server = http.createServer(async (req, res) => {
       try {
         if (req.url === "/metrics") {

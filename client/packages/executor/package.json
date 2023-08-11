@@ -6,7 +6,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "start": "yarn build && EXECUTOR=example node dist/main.js",
-    "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts",
+    "dev": "ts-node src/main.ts",
     "build": "tsup",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
