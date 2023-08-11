@@ -9,7 +9,7 @@ use frame_support::{
     traits::{ConstBool, FindAuthor},
 };
 
-use pallet_3vm_contracts::weights::WeightInfo;
+use pallet_3vm_contracts::{weights::WeightInfo, NoopMigration};
 use pallet_3vm_evm::{
     EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
     ThreeVMCurrencyAdapter,
@@ -42,6 +42,7 @@ parameter_types! {
     pub const MaxCodeSize: u32 = 2 * 1024;
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
+    pub static DefaultDepositLimit: Balance = 10_000_000;
 }
 
 impl pallet_3vm::Config for Runtime {
@@ -69,13 +70,13 @@ impl pallet_3vm_contracts::Config for Runtime {
     type CallStack = [pallet_3vm_contracts::Frame<Self>; 5];
     type ChainExtension = ();
     type Currency = Balances;
-    type DeletionQueueDepth = ConstU32<1024>;
-    type DeletionWeightLimit = DeletionWeightLimit;
+    type DefaultDepositLimit = DefaultDepositLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
+    type Migrations = (NoopMigration<1>, NoopMigration<2>);
     type Randomness = RandomnessCollectiveFlip;
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
@@ -109,9 +110,12 @@ impl FeeCalculator for FixedGasPrice {
     }
 }
 
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 parameter_types! {
+    pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+    pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 42;
-    pub BlockGasLimit: U256 = U256::from(u32::max_value());
     pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
         (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
         (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
@@ -138,6 +142,7 @@ impl pallet_3vm_evm::Config for Runtime {
     // BaseFee pallet may be better from frontier TODO
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated<Aura>;
+    type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
     type OnCreate = ();

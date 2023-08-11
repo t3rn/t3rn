@@ -1,11 +1,11 @@
 use crate::*;
-use frame_support::PalletId;
+use frame_support::{pallet_prelude::ConstU32, PalletId};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
 use sp_runtime::impl_opaque_keys;
 use sp_std::prelude::*;
 
-use frame_support::traits::NeverEnsureOrigin;
+use frame_support::traits::{ConstBool, NeverEnsureOrigin};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
@@ -105,6 +105,7 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_aura::Config for Runtime {
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
@@ -129,7 +130,7 @@ impl pallet_collator_selection::Config for Runtime {
     type KickThreshold = Period;
     type MaxCandidates = MaxCandidates;
     type MaxInvulnerables = MaxInvulnerables;
-    type MinCandidates = MinCandidates;
+    type MinEligibleCollators = MinCandidates;
     type PotId = PotId;
     type RuntimeEvent = RuntimeEvent;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;

@@ -1,5 +1,5 @@
 use super::*;
-use frame_support::traits::ConstU32;
+use frame_support::traits::{ConstBool, ConstU32};
 use sp_core::ConstU64;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -27,6 +27,7 @@ pub mod opaque {
 }
 
 impl pallet_aura::Config for Runtime {
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<32>;
