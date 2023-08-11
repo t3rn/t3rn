@@ -227,10 +227,7 @@ export class AttestationManager {
           const errorName = error.innerError.message.match(
             /^execution reverted: (.*)/,
           )[1]; // Parse stack trace to get exact error which is not present in error object
-          logger.warn(
-            { error, errorMessage: errorName },
-            `Error processing batch`,
-          );
+          logger.warn({ errorMessage: errorName }, `Error processing batch`);
           this.prometheus.attestatonBatchesFailed.inc({ error: errorName });
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         }

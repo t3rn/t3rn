@@ -15,9 +15,7 @@ export class Prometheus {
   circuitDisconnects: Counter;
   executorBids: Counter;
   executorXtxStrategyRejects: Counter;
-  executorNoBidAndNoCompetition: Counter;
-  executorNoBidButCompetition: Counter;
-  executorBeenOutBid: Counter;
+  executorBid: Counter;
   executorBidRejected: Counter;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
@@ -61,21 +59,10 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.executorNoBidAndNoCompetition = new Counter({
-      name: "executor_no_bid_and_no_competition",
-      help: "Number of times no bid and no competition",
-      registers: [this.register],
-    });
-
-    this.executorNoBidButCompetition = new Counter({
-      name: "executor_no_bid_but_competition",
-      help: "Number of times no bid but competition",
-      registers: [this.register],
-    });
-
-    this.executorBeenOutBid = new Counter({
-      name: "executor_been_out_bid",
-      help: "Number of times been out bid",
+    this.executorBid = new Counter({
+      name: "executor_bid_total",
+      help: "Number of times bid happened",
+      labelNames: ["scenario"],
       registers: [this.register],
     });
 

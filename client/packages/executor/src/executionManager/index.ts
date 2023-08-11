@@ -412,7 +412,8 @@ export class ExecutionManager {
       // Get the SFX that the executor has won the bid on and can execute now
       const ready = this.xtx[xtxId].getReadyToExecute();
       if (ready.length > 0) {
-        logger.info({ xtxId: xtxId }, `Won bids for XTX 🏆`);
+        this.prometheus.executorBid.inc({ scenario: "Won" });
+        logger.info({ xtxId: xtxId }, `Won bid 🏆`);
       }
       for (const sfx of ready) {
         // move on the queue
