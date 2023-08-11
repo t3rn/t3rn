@@ -18,6 +18,7 @@
 #![allow(clippy::from_over_into)]
 
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
+use frame_system::mocking::MockUncheckedExtrinsic;
 use sp_runtime::{
     generic,
     testing::H256,
@@ -34,7 +35,8 @@ pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
 pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
 
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
+// type Block = frame_system::mocking::MockBlock<TestRuntime>;
+pub type Block = sp_runtime::generic::Block<Header, MockUncheckedExtrinsic<TestRuntime>>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 use crate::{
@@ -71,17 +73,18 @@ impl frame_system::Config for TestRuntime {
     type AccountData = pallet_balances::AccountData<u64>;
     type AccountId = AccountId;
     type BaseCallFilter = Everything;
+    /// The block type.
+    type Block = Block;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u32;
     type BlockWeights = ();
     type DbWeight = ();
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    /// The index type for storing how many extrinsics an account has signed.
+    type Nonce = u32;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
@@ -109,6 +112,7 @@ impl pallet_timestamp::Config for TestRuntime {
 impl pallet_sudo::Config for TestRuntime {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -128,14 +132,20 @@ parameter_types! {
 
 impl pallet_balances::Config for TestRuntime {
     type AccountStore = System;
+    /// The type for recording an account's balance.
     type Balance = u64;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type MaxLocks = ();
-    type MaxReserves = MaxReserves;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
+    type MaxLocks = ConstU32<50>;
+    type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
+    /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<TestRuntime>;
 }
 
 impl Config<RococoInstance> for TestRuntime {
@@ -181,10 +191,10 @@ impl Config<PolkadotInstance> for TestRuntime {
 pub struct TestCircuitLikeChain;
 
 impl Chain for TestCircuitLikeChain {
-    type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
+    type BlockNumber = u32;
     type Hash = <TestRuntime as frame_system::Config>::Hash;
     type Hasher = <TestRuntime as frame_system::Config>::Hashing;
-    type Header = <TestRuntime as frame_system::Config>::Header;
+    type Header = Header;
 }
 
 pub fn run_test<T>(test: impl FnOnce() -> T) -> T {

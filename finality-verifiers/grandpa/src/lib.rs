@@ -1129,9 +1129,7 @@ pub mod tests {
 
         let current_number = frame_system::Pallet::<TestRuntime>::block_number();
         frame_system::Pallet::<TestRuntime>::set_block_number(current_number + 1);
-        let _ = <Pallet<TestRuntime> as OnInitialize<
-            <TestRuntime as frame_system::Config>::BlockNumber,
-        >>::on_initialize(current_number);
+        let _ = <Pallet<TestRuntime> as OnInitialize<u32>>::on_initialize(current_number);
     }
 
     fn change_log(delay: u32) -> Digest {
