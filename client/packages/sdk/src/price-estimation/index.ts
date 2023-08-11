@@ -1,7 +1,7 @@
 import { getPriceForSymbol } from "./cg";
 import { estimateActionGasFee as estimateEthActionGasFee, EstimateEthActionParams, mapSfxActionToEthAction } from "./eth";
 import { estimateSfxGasFee, EstimateSubmittableExtrinsicParams } from "./substrate";
-import { getTargetNativeAsset } from "./config"
+import { NativeAssetMap } from "./utils"
 
 /**
  * An execution target
@@ -118,7 +118,7 @@ export async function estimateGasFee<T extends EstimateParams>({ target, action,
 
 export async function estimateBidAmount<T extends EstimateParams>(input: Estimate<T>, profitMargin: (gasFee: number) => number) {
   const gasFee = await estimateGasFee(input);
-  return { value: gasFee + profitMargin(gasFee), symbol: getTargetNativeAsset(input.target) } as Asset;
+  return { value: gasFee + profitMargin(gasFee), symbol: NativeAssetMap.getFor(input.target) } as Asset;
 }
 
 /**
@@ -144,7 +144,7 @@ export async function estimateBidAmount<T extends EstimateParams>(input: Estimat
 export async function estimateMaxReward<T extends EstimateParams>({
   action, baseAsset, target, targetAmount, targetAsset, overSpendPercent = 0.5, args
 }: EstimateMaxReward<T>): Promise<MaxRewardEstimation> {
-  const targetNativeAsset = getTargetNativeAsset(target);
+  const targetNativeAsset = NativeAssetMap.getFor(target);
   const targetAmountInBaseAsset = await getPriceForSymbol(targetAsset, baseAsset) * targetAmount;
   const gasFeeInTargetNativeAsset = await estimateGasFee({
     target, action, args
