@@ -32,7 +32,7 @@ pallet-circuit                            = { path = "../../pallets/circuit", de
 pallet-vacuum                             = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
+#pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v1.0.0", default-features = false }
 pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v1.0.0", default-features = false }
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
@@ -46,7 +46,7 @@ t3rn-primitives                           = { default-features = false, path = "
 t3rn-types                                = { path = "../../types", default-features = false }
 
 # Smart contracts VMs
-evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
+#evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
 pallet-3vm                           = { default-features = false, path = "../../pallets/3vm" }
 pallet-3vm-contracts                 = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
 pallet-3vm-contracts-primitives      = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
@@ -123,7 +123,7 @@ std = [
   "num-traits/std",
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
-  "pallet-contracts-registry-rpc-runtime-api/std",
+#  "pallet-contracts-registry-rpc-runtime-api/std",
   "pallet-circuit/std",
   "pallet-vacuum/std",
   "pallet-portal/std",
@@ -139,7 +139,7 @@ std = [
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
 #  "pallet-evm-rpc-runtime-api/std",
-  "evm-precompile-util/std",
+#  "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-contracts-registry/std",
   "pallet-balances/std",

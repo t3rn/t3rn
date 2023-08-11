@@ -5,7 +5,7 @@ use crate::{
 use frame_support::{
     parameter_types,
     traits::{
-        fungibles::{Balanced, CreditOf},
+        fungibles::{Balanced, Credit},
         ConstU32, ConstU8, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
         OnRuntimeUpgrade,
     },
@@ -121,7 +121,7 @@ impl pallet_transaction_payment::Config for Runtime {
 /// in case the transfer fails.
 pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
-    fn handle_credit(credit: CreditOf<AccountId, Assets>) {
+    fn handle_credit(credit: Credit<AccountId, Assets>) {
         if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
             let author_credit = credit
                 .peek()

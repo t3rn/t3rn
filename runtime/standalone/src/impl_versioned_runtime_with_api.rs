@@ -1,24 +1,5 @@
 use crate::{Aura, Contracts, Grandpa, Runtime, System, TransactionPayment, *};
 
-use pallet_3vm_contracts::Determinism;
-use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
-};
-use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
-use sp_api::impl_runtime_apis;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-    traits::{Block as BlockT, NumberFor},
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
-};
-use t3rn_primitives::{
-    light_client::HeightResult,
-    xdns::{FullGatewayRecord, GatewayRecord},
-    TreasuryAccountProvider,
-};
-
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -33,11 +14,30 @@ pub use frame_support::{
     },
     StorageValue,
 };
+use frame_system::EventRecord;
+use pallet_3vm_contracts::Determinism;
 pub use pallet_balances::Call as BalancesCall;
+use pallet_grandpa::{
+    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+};
 pub use pallet_timestamp::Call as TimestampCall;
+use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
+use sp_api::impl_runtime_apis;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::{
+    traits::{Block as BlockT, NumberFor},
+    transaction_validity::{TransactionSource, TransactionValidity},
+    ApplyExtrinsicResult,
+};
 pub use sp_runtime::{Perbill, Permill};
+use t3rn_primitives::{
+    light_client::HeightResult,
+    xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
+};
 
 pub use crate::consensus_aura_config::*;
 
@@ -165,6 +165,62 @@ impl_runtime_apis! {
         }
     }
 
+     impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord<RuntimeEvent, H256>>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            input_data: Vec<u8>,
+        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance, EventRecord<RuntimeEvent, H256>> {
+          let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_call(
+                origin,
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                input_data,
+                pallet_3vm_contracts::DebugInfo::UnsafeDebug,
+                pallet_3vm_contracts::CollectEvents::UnsafeCollect,
+                pallet_3vm_contracts::Determinism::Enforced,
+            )
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            code: pallet_3vm_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance, EventRecord<RuntimeEvent, H256>>
+        {
+            Contracts::bare_instantiate(origin, value, gas_limit.unwrap_or_default(), storage_deposit_limit, code, data, salt, pallet_3vm_contracts::DebugInfo::UnsafeDebug, pallet_3vm_contracts::CollectEvents::UnsafeCollect,)
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+            determinism: pallet_3vm_contracts::Determinism,
+        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: Vec<u8>,
+        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+    }
+
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
             sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
@@ -264,51 +320,6 @@ impl_runtime_apis! {
         }
         fn query_length_to_fee(length: u32) -> Balance {
             TransactionPayment::length_to_fee(length)
-        }
-    }
-
-    impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-        for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit.unwrap_or_default(), storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT, Determinism::AllowIndeterminism)
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_3vm_contracts_primitives::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
-        {
-            Contracts::bare_instantiate(origin, value, gas_limit.unwrap_or_default(), storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-            determinism: Determinism,
-        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
-            Contracts::get_storage(address, key)
         }
     }
 
