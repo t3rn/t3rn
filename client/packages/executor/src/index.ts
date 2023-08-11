@@ -118,28 +118,13 @@ class Instance {
       this.config,
       this.prometheus,
     );
-    // this.injectState();
     await this.executionManager.setup(
       this.config.gateways,
       this.config.vendors,
     );
-    // TODO: on nodejs it just freeze execution
-    // this.registerExitListener();
-    // this.registerStateListener();
     logger.info("Executor setup complete");
     return this;
   }
-
-  /** Loads persisted execution state. */
-  // async injectState(): Promise<Instance> {
-  //   if (existsSync(this.stateFile)) {
-  //     const state: PersistedState = await readFile(this.stateFile, "utf8").then(
-  //       JSON.parse,
-  //     );
-  //     this.executionManager.inject(state);
-  //   }
-  //   return this;
-  // }
 
   /** Configures the instance's pino logger. */
   async configureLogging(): Promise<Instance> {
@@ -151,48 +136,6 @@ class Instance {
     }
     return this;
   }
-
-  /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
-  // private registerExitListener(): Instance {
-  //   const self = this;
-  //   readline.emitKeypressEvents(process.stdin);
-  //   process.stdin.on("keypress", async (_, { ctrl, name }) => {
-  //     if (ctrl && name === "c") {
-  //       this.logger.info("shutting down...");
-  //       await this.executionManager.shutdown();
-  //       process.exit(0);
-  //     }
-  //   });
-  //   process.stdin.setRawMode(true);
-  //   process.stdin.resume();
-  //   return self;
-  // }
-
-  /** Registers a state listener that persists to disk. */
-  // private registerStateListener(): Instance {
-  //   const set =
-  //     (instance: Instance) =>
-  //     (target: Queue, prop: string | symbol, receiver: never) => {
-  //       // wait until reflected, then persist state
-  //       setTimeout((instance) => instance.persistState(), 100, instance);
-  //       return Reflect.set(target, prop, receiver);
-  //     };
-
-  //   new Proxy(this.executionManager.queue, {
-  //     set: set(this),
-  //   });
-
-  //   return this;
-  // }
-
-  // private async persistState() {
-  //   const serializedState = JSON.stringify({
-  //     queue: this.executionManager.queue,
-  //     xtx: this.executionManager.xtx,
-  //     sfxToXtx: this.executionManager.sfxToXtx,
-  //   });
-  //   await writeFile(this.stateFile, serializedState);
-  // }
 }
 
 export {

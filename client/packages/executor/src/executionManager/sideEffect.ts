@@ -331,21 +331,21 @@ export class SideEffect extends EventEmitter {
   // ToDo fix return type
   private generateBid() {
     if (this.isBidder) {
-      this.prometheus.executorBid.inc({ scenario: "already a bidder" });
+      this.prometheus.executorBid.inc({ scenario: "Already a bidder" });
       return { trigger: false, reason: "Already a bidder" };
     }
     if (this.txStatus !== TxStatus.Ready) {
-      this.prometheus.executorBid.inc({ scenario: "tx not ready" });
+      this.prometheus.executorBid.inc({ scenario: "TX not ready" });
       return { trigger: false, reason: "Tx not ready" };
     }
     if (this.status !== SfxStatus.InBidding) {
-      this.prometheus.executorBid.inc({ scenario: "not in bidding phase" });
+      this.prometheus.executorBid.inc({ scenario: "Not in bidding phase" });
       return { trigger: false, reason: "Not in bidding phase" };
     }
     try {
       this.strategyEngine.evaluateSfx(this);
     } catch (e) {
-      this.prometheus.executorBid.inc({ scenario: "not bidding" });
+      this.prometheus.executorBid.inc({ scenario: "Not bidding" });
       logger.info({ sfxId: this.id }, `SFX Not bidding `);
       return { trigger: false, reason: e.toString() };
     }
@@ -356,7 +356,7 @@ export class SideEffect extends EventEmitter {
 
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
-    this.prometheus.executorBids.inc();
+    this.prometheus.executorBids.inc({ scenario: "Generated bid" });
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }
@@ -406,14 +406,14 @@ export class SideEffect extends EventEmitter {
     if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
       this.isBidder = true;
       this.reward.next(this.gateway.toFloat(bidAmount)); // not sure if we want to do this tbh. Reacting to other bids should be sufficient
-      this.prometheus.executorBid.inc({ scenario: "accepted" });
+      this.prometheus.executorBid.inc({ scenario: "Accepted" });
       logger.info(
         { xtxId: this.xtxId, bidAmount: bidAmount.toString() },
         `Bid accepted ✅`,
       );
     } else {
       this.triggerBid(); // trigger another bid, as we have been outbid. The risk parameters are updated automatically by events.
-      this.prometheus.executorBid.inc({ scenario: "outbid" });
+      this.prometheus.executorBid.inc({ scenario: "Outbid" });
       logger.info(
         { xtxId: this.xtxId, bidAmount: bidAmount.toString() },
         `Bid undercut in block ❌`,
@@ -458,12 +458,12 @@ export class SideEffect extends EventEmitter {
         },
         `SFX Competing bid 🎰`,
       );
-      this.prometheus.executorBid.inc({ scenario: "competing" });
+      this.prometheus.executorBid.inc({ scenario: "Competing" });
       logger.info({ signer, bidAmount }, "Competing bid received");
       this.isBidder = false;
       this.reward.next(this.gateway.toFloat(bidAmount)); // this will trigger the re-eval of submitting a new bid
     } else {
-      this.prometheus.executorBid.inc({ scenario: "ownBid" });
+      this.prometheus.executorBid.inc({ scenario: "Own bid detected" });
       logger.warn({ signer, bidAmount }, "Own bid detected");
     }
   }

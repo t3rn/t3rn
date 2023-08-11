@@ -54,15 +54,19 @@ export class BiddingEngine {
     switch (scenario) {
       case Scenario.noBidAndNoCompetition:
         bid = this.computeNoBidAndNoCompetition(sfx);
-        this.prometheus.executorBid.inc({ scenario: "noBidAndNoCompetition" });
+        this.prometheus.executorBid.inc({
+          scenario: "No bid and no competition",
+        });
         break;
       case Scenario.noBidButCompetition:
         bid = this.computeNoBidButCompetition(sfx);
-        this.prometheus.executorBid.inc({ scenario: "noBidButCompetition" });
+        this.prometheus.executorBid.inc({
+          scenario: "No bid with competition",
+        });
         break;
       case Scenario.beenOutbid:
         bid = this.computeBeenOutbid(sfx);
-        this.prometheus.executorBid.inc({ scenario: "beenOutbid" });
+        this.prometheus.executorBid.inc({ scenario: "Been outbid" });
         break;
     }
     return bid;
