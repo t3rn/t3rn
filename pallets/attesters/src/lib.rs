@@ -1790,11 +1790,11 @@ pub mod attesters_test {
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
         AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
-        CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee, ExtBuilder,
-        FullSideEffects, LatencyStatus, MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations,
-        PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards, RuntimeEvent as Event,
-        RuntimeOrigin, SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals,
-        ETHEREUM_TARGET, POLKADOT_TARGET,
+        CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee,
+        ExistentialDeposit, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
+        NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes,
+        PreviousCommittee, Rewards, RuntimeEvent as Event, RuntimeOrigin, SFX2XTXLinksMap,
+        SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
@@ -3484,7 +3484,7 @@ pub mod attesters_test {
                 let nominator = AccountId::from([(counter + 1) as u8; 32]);
                 let attester = attesters[(counter - 1) as usize].clone();
                 let amount = 1000u128 + counter;
-                let _ = Balances::deposit_creating(&nominator, amount);
+                let _ = Balances::deposit_creating(&nominator, amount + ExistentialDeposit::get());
                 assert_ok!(Attesters::nominate(
                     RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
@@ -3514,7 +3514,7 @@ pub mod attesters_test {
                 let nominator = AccountId::from([(counter + 1) as u8; 32]);
                 let attester = attesters[(counter - 1) as usize].clone();
                 let amount = 1000u128 + counter;
-                let _ = Balances::deposit_creating(&nominator, amount);
+                let _ = Balances::deposit_creating(&nominator, amount + ExistentialDeposit::get());
                 assert_ok!(Attesters::nominate(
                     RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
@@ -3560,7 +3560,7 @@ pub mod attesters_test {
                 let nominator = AccountId::from([(64 + counter + 1) as u8; 32]);
                 let attester = attesters[(counter - 1) as usize].clone();
                 let amount = 1000u128 + counter;
-                let _ = Balances::deposit_creating(&nominator, amount);
+                let _ = Balances::deposit_creating(&nominator, amount + ExistentialDeposit::get());
                 assert_ok!(Attesters::nominate(
                     RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
@@ -3656,7 +3656,7 @@ pub mod attesters_test {
 
             // Nominate the attesters
             let nominator = AccountId::from([250; 32]);
-            let _ = Balances::deposit_creating(&nominator, 3000);
+            let _ = Balances::deposit_creating(&nominator, 3000 + ExistentialDeposit::get());
 
             for attester in &attesters {
                 assert_ok!(Attesters::nominate(
