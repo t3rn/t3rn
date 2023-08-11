@@ -3,7 +3,7 @@ use circuit_runtime_pallets::pallet_asset_tx_payment::HandleCredit;
 use frame_support::{
     parameter_types,
     traits::{
-        fungibles::{Balanced, CreditOf},
+        fungibles::{Balanced, Credit},
         ConstU32, ConstU8,
     },
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
@@ -22,12 +22,12 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = frame_support::traits::Everything;
+    /// The index type for blocks.
+    type Block = Block;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
     type BlockLength = RuntimeBlockLength;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
     /// Block & extrinsics weights: base values and limits.
     type BlockWeights = RuntimeBlockWeights;
     /// The weight of database operations that the runtime can invoke.
@@ -36,13 +36,11 @@ impl frame_system::Config for Runtime {
     type Hash = HashPrimitive;
     /// The hashing algorithm used.
     type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = AccountIdLookup<AccountId, ()>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    /// The index type for storing how many extrinsics an account has signed.
+    type Nonce = u32;
     /// What to do if an account is fully reaped from the system.
     type OnKilledAccount = ();
     /// What to do if a new account is created.
@@ -91,11 +89,15 @@ impl pallet_balances::Config for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
@@ -122,7 +124,7 @@ impl pallet_authorship::Config for Runtime {
 /// in case the transfer fails.
 pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
-    fn handle_credit(credit: CreditOf<AccountId, Assets>) {
+    fn handle_credit(credit: Credit<AccountId, Assets>) {
         if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
             let author_credit = credit
                 .peek()
@@ -148,6 +150,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 impl pallet_utility::Config for Runtime {

@@ -1046,6 +1046,7 @@ dependencies = [
  "log",
  "pallet-3vm",
  "pallet-account-manager",
+ "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
  "pallet-attesters",
@@ -1079,6 +1080,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
+ "pallet-xbi-portal",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -6524,6 +6526,26 @@ dependencies = [
  "sp-version",
  "substrate-abi",
  "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-asset-registry"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "t3rn-primitives",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xp-channel",
+ "xp-xcm",
 ]
 
 [[package]]

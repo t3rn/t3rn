@@ -27,13 +27,6 @@ use xcm_builder::{
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 
-use crate::{
-    parachains_common::{
-        impls::NonZeroIssuance,
-        xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
-    },
-    xcm_builder::AsPrefixedGeneralIndex,
-};
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
@@ -151,7 +144,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     CheckingAccount,
 >;
 
-pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
+pub type AssetTransactors = LocalAssetTransactor;
 
 match_types! {
     pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
@@ -168,26 +161,6 @@ pub type Barrier = (
     // ^^^ Parent and its exec plurality get free execution
     AssetRegistry,
 );
-
-// pub struct XcmConfig;
-// impl xcm_executor::Config for XcmConfig {
-//     type AssetClaims = PolkadotXcm;
-//     // How to withdraw and deposit an asset.
-//     type AssetTransactor = AssetTransactors;
-//     type AssetTrap = PolkadotXcm;
-//     type Barrier = Barrier;
-//     type IsReserve = NativeAsset;
-//     type IsTeleporter = TrustedTeleporters;
-//     type LocationInverter = LocationInverter<Ancestry>;
-//     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-//     type ResponseHandler = PolkadotXcm;
-//     type RuntimeCall = RuntimeCall;
-//     type SubscriptionService = PolkadotXcm;
-//     // FIXME: should be using asset_registry
-//     type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
-//     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-//     type XcmSender = XcmRouter;
-// }
 
 parameter_types! {
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
@@ -288,6 +261,7 @@ match_types! {
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
+    type Aliasers = Nothing;
     // type Aliasers = Nothing;
     type AssetClaims = PolkadotXcm;
     type AssetExchanger = ();
@@ -339,6 +313,7 @@ parameter_types! {
 }
 
 impl pallet_xcm::Config for Runtime {
+    type AdminOrigin = EnsureRoot<AccountId>;
     // type AdminOrigin = EnsureRoot<AccountId>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
     type Currency = Balances;
@@ -346,9 +321,10 @@ impl pallet_xcm::Config for Runtime {
     // We support local origins dispatching XCM executions in principle...
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type MaxLockers = ConstU32<8>;
-    // type MaxRemoteLockConsumers = ConstU32<0>;
+    type MaxRemoteLockConsumers = ConstU32<0>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type RemoteLockConsumerIdentifier = ();
     // type RemoteLockConsumerIdentifier = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;

@@ -4,7 +4,7 @@
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
 
 use frame_support::{
-    pallet_prelude::{GenesisBuild, Weight},
+    pallet_prelude::Weight,
     traits::KeyOwnerProofSystem,
     weights::{constants::ExtrinsicBaseWeight, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
@@ -32,9 +32,11 @@ pub type RococoLightClient = ();
 pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
 pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 pub use crate::circuit_config::GlobalOnInitQueues;
+use frame_support::traits::GenesisBuild;
 pub use pallet_3vm_evm::Config as ConfigEvm;
-use smallvec::smallvec;
 
+use smallvec::smallvec;
+use sp_runtime::BuildStorage;
 frame_support::construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -310,8 +312,8 @@ impl ExtBuilder {
     }
 
     pub fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         let sudo_genesis_config = SudoGenesisConfig::<Runtime> {

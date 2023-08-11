@@ -2,19 +2,18 @@ use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     log,
-    traits::{fungibles::Destroy, FindAuthor},
+    traits::{fungibles::Destroy, AsEnsureOriginWithArg, FindAuthor},
     Blake2_128Concat, RuntimeDebug, StorageHasher,
 };
+use frame_system::EnsureSigned;
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
     CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee, Error as AttestersError,
     Event as AttestersEvent, LatencyStatus, NextBatch, NextCommitteeOnTarget, Nominations,
     PendingUnnominations, PermanentSlashes, PreviousCommittee, SortedNominatedAttesters,
 };
+use sp_runtime::BuildStorage;
 use std::marker::PhantomData;
-
-use frame_support::traits::AsEnsureOriginWithArg;
-use frame_system::EnsureSigned;
 
 pub use pallet_circuit::{
     Config as ConfigCircuit, Error as CircuitError, Event as CircuitEvent, FullSideEffects,
@@ -50,6 +49,7 @@ pub use pallet_rewards::{
 };
 
 use frame_support::parameter_types;
+use frame_system::mocking::MockUncheckedExtrinsic;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -60,7 +60,10 @@ use sp_runtime::{
 use t3rn_primitives::{EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo};
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MiniRuntime>;
-pub type Block = frame_system::mocking::MockBlock<MiniRuntime>;
+pub type Block = sp_runtime::generic::Block<
+    generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
+    MockUncheckedExtrinsic<MiniRuntime>,
+>;
 pub type BlockNumber = u32;
 pub type Balance = u128;
 pub type Hash = sp_core::H256;
@@ -199,8 +202,6 @@ impl pallet_account_manager::Config for MiniRuntime {
 }
 
 impl pallet_clock::Config for MiniRuntime {
-    type AccountManager = AccountManager;
-    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<300>;
@@ -303,11 +304,15 @@ impl pallet_balances::Config for MiniRuntime {
     type Balance = Balance;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = RuntimeHoldReason;
     type WeightInfo = ();
 }
 
@@ -315,17 +320,16 @@ impl frame_system::Config for MiniRuntime {
     type AccountData = pallet_balances::AccountData<u128>;
     type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
+    type Block = Block;
     type BlockHashCount = ();
     type BlockLength = ();
-    type BlockNumber = BlockNumber;
     type BlockWeights = ();
     type DbWeight = ();
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type Nonce = u32;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
@@ -998,8 +1002,8 @@ impl ExtBuilder {
     }
 
     pub fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<MiniRuntime>()
+        let mut t = frame_system::GenesisConfig::<MiniRuntime>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         const TRN: Balance = 1_000_000_000_000;

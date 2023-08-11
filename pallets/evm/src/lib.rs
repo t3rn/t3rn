@@ -697,6 +697,129 @@ pub trait AddressMapping<A> {
     fn into_account_id(address: H160) -> A;
 }
 
+// /// 3VM Patch
+// ///
+// pub struct ThreeVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+//
+// type EvmAccountImbalanceLiquidityInfo<T, C> = (
+//     Option<<T as frame_system::Config>::AccountId>,
+//     Option<NegativeImbalanceOf<C, T>>,
+// );
+//
+// impl<T, C, OU> OnChargeEVMTransaction<T> for ThreeVMCurrencyAdapter<C, OU>
+// where
+//     T: pallet::Config,
+//     C: Currency<<T as frame_system::Config>::AccountId>,
+//     C::PositiveImbalance: Imbalance<
+//         <C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+//         Opposite = C::NegativeImbalance,
+//     >,
+//     C::NegativeImbalance: Imbalance<
+//         <C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+//         Opposite = C::PositiveImbalance,
+//     >,
+//     OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
+//     U256: UniqueSaturatedInto<<C as Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+// {
+//     // Kept type as Option to satisfy bound of Default
+//     type LiquidityInfo = EvmAccountImbalanceLiquidityInfo<T, C>;
+//
+//     fn withdraw_fee(
+//         who: &H160,
+//         fee: U256,
+//         // author: Option<&T::AccountId>,
+//     ) -> Result<Self::LiquidityInfo, Error<T>> {
+//         if fee.is_zero() {
+//             return Ok((None, None))
+//         }
+//         log::info!("withdraw_fee: {:?} {:?}", who, fee);
+//         let account_id = T::AddressMapping::get_or_into_account_id(who);
+//         log::info!("withdraw_fee: {:?} {:?}", account_id, fee);
+//         let imbalance = C::withdraw(
+//             &account_id,
+//             fee.low_u128().unique_saturated_into(),
+//             WithdrawReasons::FEE,
+//             ExistenceRequirement::AllowDeath,
+//         )
+//         .map_err(|_| Error::<T>::BalanceLow)?;
+//
+//         if let Some(author) = author {
+//             Ok((Some(author.clone()), Some(imbalance)))
+//         } else {
+//             Ok((None, Some(imbalance)))
+//         }
+//     }
+//
+//     fn correct_and_deposit_fee(
+//         who: &H160,
+//         corrected_fee: U256,
+//         base_fee: U256,
+//         already_withdrawn: Self::LiquidityInfo,
+//     ) -> Self::LiquidityInfo {
+//         if let (beneficiary, Some(paid)) = already_withdrawn {
+//             let account_id = T::AddressMapping::get_or_into_account_id(who);
+//
+//             // Calculate how much refund we should return
+//             let refund_amount = paid
+//                 .peek()
+//                 .saturating_sub(corrected_fee.low_u128().unique_saturated_into());
+//             // refund to the account that paid the fees. If this fails, the
+//             // account might have dropped below the existential balance. In
+//             // that case we don't refund anything.
+//             let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
+//                 .unwrap_or_else(|_| C::PositiveImbalance::zero());
+//
+//             // Make sure this works with 0 ExistentialDeposit
+//             // https://github.com/paritytech/substrate/issues/10117
+//             // If we tried to refund something, the account still empty and the ED is set to 0,
+//             // we call `make_free_balance_be` with the refunded amount.
+//             let refund_imbalance = if C::minimum_balance().is_zero()
+//                 && refund_amount > C::Balance::zero()
+//                 && C::total_balance(&account_id).is_zero()
+//             {
+//                 // Known bug: Substrate tried to refund to a zeroed AccountData, but
+//                 // interpreted the account to not exist.
+//                 match C::make_free_balance_be(&account_id, refund_amount) {
+//                     SignedImbalance::Positive(p) => p,
+//                     _ => C::PositiveImbalance::zero(),
+//                 }
+//             } else {
+//                 refund_imbalance
+//             };
+//
+//             // merge the imbalance caused by paying the fees and refunding parts of it again.
+//             let adjusted_paid = paid
+//                 .offset(refund_imbalance)
+//                 .same()
+//                 .unwrap_or_else(|_| C::NegativeImbalance::zero());
+//
+//             let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+//
+//             // Since there is a beneficiary, account-manager handles it
+//             if let Some(beneficiary) = &beneficiary {
+//                 <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::resolve_creating(beneficiary, base_fee);
+//             } else {
+//                 OU::on_unbalanced(base_fee);
+//             }
+//             (beneficiary.clone(), Some(tip))
+//         } else {
+//             (None, None)
+//         }
+//     }
+//
+//     fn pay_priority_fee(tip: Self::LiquidityInfo) {
+//         // Contract author is removed here since tips should go to the block author
+//         if let (_contract_author, Some(tip)) = tip {
+//             let block_author = <Pallet<T>>::find_author();
+//             let account_id = T::AddressMapping::get_or_into_account_id(&block_author);
+//
+//             if let Err(e) = C::deposit_into_existing(&account_id, tip.peek()) {
+//                 log::error!("Failed to pay priority fee: {:?}", e);
+//             }
+//         }
+//     }
+// }
+
 /// Identity address mapping.
 pub struct IdentityAddressMapping;
 

@@ -94,14 +94,14 @@ t3rn-types      = { default-features = false, path = "../../types", features = [
 # t3rn pallets
 pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
-#pallet-asset-registry            = { workspace = true }
+pallet-asset-registry            = { workspace = true }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
-#pallet-xbi-portal                = { workspace = true }
+pallet-xbi-portal                = { workspace = true }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
@@ -139,7 +139,7 @@ std = [
   "frame-system/std",
   "pallet-aura/std",
   "pallet-assets/std",
-#  "pallet-asset-registry/std",
+  "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
   "pallet-balances/std",
@@ -163,7 +163,7 @@ std = [
   "pallet-sudo/std",
   "pallet-membership/std",
   "pallet-clock/std",
-#  "pallet-xbi-portal/std",
+  "pallet-xbi-portal/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
@@ -257,7 +257,7 @@ try-runtime = [
   "pallet-assets/try-runtime",
   "pallet-transaction-payment/try-runtime",
   "pallet-asset-tx-payment/try-runtime",
-#  "pallet-asset-registry/try-runtime",
+  "pallet-asset-registry/try-runtime",
   "pallet-randomness-collective-flip/try-runtime",
   "pallet-timestamp/try-runtime",
   "pallet-aura/try-runtime",

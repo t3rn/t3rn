@@ -7,21 +7,21 @@ use crate::{
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 
+use crate::pallet_3vm_contracts::NoopMigration;
 use circuit_runtime_pallets::{
     evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
-    pallet_3vm_evm_primitives,
+    pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
 };
+use frame_support::traits::ConstBool;
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
-    ThreeVMCurrencyAdapter,
+    EnsureAddressTruncated, GasWeightMapping, IdentityAddressMapping, SubstrateBlockHashMapping,
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
-use sp_core::{H160, U256};
-use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
-
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
+use sp_core::{H160, U256};
+use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -61,6 +61,7 @@ impl pallet_3vm::Config for Runtime {
 
 parameter_types! {
     pub static UnstableInterface: bool = true;
+    pub static DefaultDepositLimit: Balance = 10_000_000;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {
@@ -75,13 +76,13 @@ impl pallet_3vm_contracts::Config for Runtime {
     type CallStack = [pallet_3vm_contracts::Frame<Self>; 5];
     type ChainExtension = ();
     type Currency = Balances;
-    type DeletionQueueDepth = ConstU32<1024>;
-    type DeletionWeightLimit = DeletionWeightLimit;
+    type DefaultDepositLimit = DefaultDepositLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
+    type Migrations = (NoopMigration<1>, NoopMigration<2>);
     type Randomness = RandomnessCollectiveFlip;
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
@@ -91,31 +92,6 @@ impl pallet_3vm_contracts::Config for Runtime {
     type UnsafeUnstableInterface = UnstableInterface;
     type WeightInfo = pallet_3vm_contracts::weights::SubstrateWeight<Self>;
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
-    //  type AddressGenerator = DefaultAddressGenerator;
-    //     type CallFilter = TestFilter;
-    //     type CallStack = [Frame<Self>; 5];
-    //     type ChainExtension = (
-    //         TestExtension,
-    //         DisabledExtension,
-    //         RevertingExtension,
-    //         TempStorageExtension,
-    //     );
-    //     type Currency = Balances;
-    //     type DeletionQueueDepth = ConstU32<1024>;
-    //     type DeletionWeightLimit = DeletionWeightLimit;
-    //     type DepositPerByte = DepositPerByte;
-    //     type DepositPerItem = DepositPerItem;
-    //     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
-    //     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-    //     type MaxStorageKeyLen = ConstU32<128>;
-    //     type Randomness = Randomness;
-    //     type RuntimeCall = RuntimeCall;
-    //     type RuntimeEvent = RuntimeEvent;
-    //     type Schedule = MySchedule;
-    //     type Time = Timestamp;
-    //     type UnsafeUnstableInterface = UnstableInterface;
-    //     type WeightInfo = ();
-    //     type WeightPrice = Self;
 }
 
 pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
@@ -140,9 +116,13 @@ impl FeeCalculator for FixedGasPrice {
     }
 }
 
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
 parameter_types! {
+    pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+    pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 42;
-    pub BlockGasLimit: U256 = U256::from(u32::max_value());
     pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
         (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
         (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
@@ -160,7 +140,7 @@ parameter_types! {
 
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
-    type AddressMapping = StoredHashAddressMapping<Self>;
+    type AddressMapping = HashedAddressMapping<Keccak256>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
@@ -169,8 +149,9 @@ impl pallet_3vm_evm::Config for Runtime {
     // BaseFee pallet may be better from frontier TODO
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated<Aura>;
+    type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
-    type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = ();
     type OnCreate = ();
     type PrecompilesType = evm_precompile_util::Precompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -182,3 +163,25 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
 }
+
+//     type AddressMapping = IdentityAddressMapping;
+//     type BlockGasLimit = BlockGasLimit;
+//     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
+//     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+//     type ChainId = ();
+//     type Currency = Balances;
+//     type FeeCalculator = FixedGasPrice;
+//     type FindAuthor = FindAuthorTruncated;
+//     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+//     type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
+//     type OnChargeTransaction = ();
+//     type OnCreate = ();
+//     type PrecompilesType = MockPrecompileSet;
+//     type PrecompilesValue = MockPrecompiles;
+//     type Runner = crate::runner::stack::Runner<Self>;
+//     type RuntimeEvent = RuntimeEvent;
+//     type ThreeVm = t3rn_primitives::threevm::NoopThreeVm;
+//     type Timestamp = Timestamp;
+//     type WeightInfo = ();
+//     type WeightPerGas = WeightPerGas;
+//     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
