@@ -107,7 +107,7 @@ pub type Barrier = (
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
-    // type Aliasers = Nothing;
+    type Aliasers = Nothing;
     type AssetClaims = PolkadotXcm;
     type AssetExchanger = ();
     type AssetLocker = ();
@@ -150,6 +150,7 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
+    type AdminOrigin = EnsureRoot<crate::AccountId>;
     // type AdminOrigin = EnsureRoot<AccountId>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
     type Currency = Balances;
@@ -157,9 +158,11 @@ impl pallet_xcm::Config for Runtime {
     // We support local origins dispatching XCM executions in principle...
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type MaxLockers = ConstU32<8>;
+    type MaxRemoteLockConsumers = frame_support::traits::ConstU32<0>;
     // type MaxRemoteLockConsumers = ConstU32<0>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type RemoteLockConsumerIdentifier = ();
     // type RemoteLockConsumerIdentifier = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;

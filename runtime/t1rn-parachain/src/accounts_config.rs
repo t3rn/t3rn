@@ -12,11 +12,9 @@ parameter_types! {
 }
 
 impl pallet_clock::Config for Runtime {
-    type AccountManager = AccountManager;
-    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<300u32>;
+    type RoundDuration = ConstU32<300>;
     type RuntimeEvent = RuntimeEvent;
 }
 

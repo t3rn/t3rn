@@ -36,7 +36,7 @@ pub use sp_runtime::BuildStorage;
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        fungibles::{Balanced, CreditOf},
+        fungibles::{Balanced, Credit},
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ConstU8, Imbalance,
         KeyOwnerProofSystem, OnUnbalanced, Randomness, StorageInfo,
     },
@@ -188,7 +188,7 @@ const MT3RN: Balance = MILLIT3RN as Balance;
 
 pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
-    fn handle_credit(credit: CreditOf<AccountId, Assets>) {
+    fn handle_credit(credit: Credit<AccountId, Assets>) {
         if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
             let author_credit = credit
                 .peek()
@@ -453,7 +453,9 @@ mod benches {
     );
 }
 
+use frame_system::EventRecord;
 use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
+use sp_core::H256;
 use t3rn_primitives::{
     light_client::HeightResult,
     xdns::{FullGatewayRecord, GatewayRecord},
@@ -488,6 +490,14 @@ impl_runtime_apis! {
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
+        }
+
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+            Runtime::metadata_at_version(version)
+        }
+
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
         }
     }
 
@@ -577,7 +587,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord<RuntimeEvent, H256>>
         for Runtime
     {
         fn call(
@@ -587,8 +597,19 @@ impl_runtime_apis! {
             gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit.unwrap_or_default(), storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT, pallet_3vm_contracts::Determinism::AllowIndeterminism)
+        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance, EventRecord<RuntimeEvent, H256>> {
+          let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_call(
+                origin,
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                input_data,
+                pallet_3vm_contracts::DebugInfo::UnsafeDebug,
+                pallet_3vm_contracts::CollectEvents::UnsafeCollect,
+                pallet_3vm_contracts::Determinism::Enforced,
+            )
         }
 
         fn instantiate(
@@ -599,9 +620,9 @@ impl_runtime_apis! {
             code: pallet_3vm_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance, EventRecord<RuntimeEvent, H256>>
         {
-            Contracts::bare_instantiate(origin, value, gas_limit.unwrap_or_default(), storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+            Contracts::bare_instantiate(origin, value, gas_limit.unwrap_or_default(), storage_deposit_limit, code, data, salt, pallet_3vm_contracts::DebugInfo::UnsafeDebug, pallet_3vm_contracts::CollectEvents::UnsafeCollect,)
         }
 
         fn upload_code(
