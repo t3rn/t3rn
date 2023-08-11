@@ -14,7 +14,7 @@ use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Substrate Node".into()
+        "t3nr Standalone Node".into()
     }
 
     fn impl_version() -> String {
@@ -30,7 +30,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "support.anonymous.an".into()
+        "t3rn.io".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -45,10 +45,6 @@ impl SubstrateCli for Cli {
                 std::path::PathBuf::from(path),
             )?),
         })
-    }
-
-    fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        &circuit_standalone_runtime::VERSION
     }
 }
 
@@ -128,44 +124,7 @@ pub fn run() -> sc_cli::Result<()> {
                 Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
             })
         },
-        Some(Subcommand::Benchmark(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            // Switch on the concrete benchmark sub-command-
-            match cmd {
-                BenchmarkCmd::Pallet(cmd) =>
-                    if cfg!(feature = "runtime-benchmarks") {
-                        runner
-                            .sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
-                    } else {
-                        Err("Benchmarking wasn't enabled when building the node. \
-					You can enable it with `--features runtime-benchmarks`."
-                            .into())
-                    },
-                BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-                    let partials = service::new_partial(&config)?;
-                    cmd.run(partials.client)
-                }),
-                #[cfg(not(feature = "runtime-benchmarks"))]
-                BenchmarkCmd::Storage(_) => Err(sc_cli::Error::Input(
-                    "Compile with --features=runtime-benchmarks \
-						to enable storage benchmarks."
-                        .into(),
-                )),
-                #[cfg(feature = "runtime-benchmarks")]
-                BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-                    let partials = service::new_partial(&config)?;
-                    let db = partials.backend.expose_db();
-                    let storage = partials.backend.expose_storage();
-                    cmd.run(config, partials.client.clone(), db, storage)
-                }),
-                BenchmarkCmd::Machine(cmd) =>
-                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
-                // NOTE: this allows the Client to leniently implement
-                // new benchmark commands without requiring a companion MR.
-                #[allow(unreachable_patterns)]
-                _ => Err("Benchmarking sub-command unsupported".into()),
-            }
-        },
+        Some(Subcommand::Benchmark(cmd)) => Err("Benchmarking sub-command unsupported".into()),
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
             use crate::service::ExecutorDispatch;

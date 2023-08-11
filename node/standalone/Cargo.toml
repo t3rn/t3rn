@@ -37,11 +37,13 @@ sc-transaction-pool-api = { workspace = true }
 sp-consensus            = { workspace = true }
 sp-consensus-aura       = { workspace = true }
 sp-core                 = { workspace = true }
-sp-consensus-grandpa     = { workspace = true }
+sp-consensus-grandpa    = { workspace = true }
 sp-inherents            = { workspace = true }
 sp-keyring              = { workspace = true }
 sp-runtime              = { workspace = true }
 sp-timestamp            = { workspace = true }
+sc-offchain             = { workspace = true }
+sc-network              = { workspace = true }
 
 # These dependencies are used for the node template's RPCs
 

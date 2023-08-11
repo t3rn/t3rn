@@ -166,6 +166,7 @@ fn testnet_genesis(
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
+            _config: Default::default(),
         },
         balances: BalancesConfig {
             // Configure endowed accounts with initial balance of 1 << 60.
@@ -189,6 +190,7 @@ fn testnet_genesis(
                 .iter()
                 .map(|x| (x.1.clone(), 1))
                 .collect(),
+            _config: Default::default(),
         },
         sudo: SudoConfig {
             // Assign network admin rights.
@@ -196,34 +198,13 @@ fn testnet_genesis(
         },
         transaction_payment: Default::default(),
         assets: Default::default(),
-        xdns: XDNSConfig {
-            known_gateway_records: gateway_records,
-            standard_sfx_abi,
-        },
+        xdns: Default::default(),
         contracts_registry: Default::default(),
         account_manager: Default::default(),
         attesters: Default::default(),
         clock: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
-        evm: EvmConfig {
-            // We need _some_ code inserted at the precompile address so that
-            // the evm will actually call the address.
-            accounts: circuit_standalone_runtime::contracts_config::PrecompilesValue::get()
-                .used_addresses()
-                .into_iter()
-                .map(|addr| {
-                    (
-                        addr,
-                        circuit_standalone_runtime::contracts_config::EvmGenesisAccount {
-                            nonce: Default::default(),
-                            balance: Default::default(),
-                            storage: Default::default(),
-                            code: REVERT_BYTECODE.into(),
-                        },
-                    )
-                })
-                .collect(),
-        },
+        evm: Default::default(),
         maintenance_mode: Default::default(),
     }
 }
