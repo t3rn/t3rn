@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.46.2-rc.0] - 2023-08-09
+### :bug: Bug Fixes
+- [`e32892e`](https://github.com/t3rn/t3rn/commit/e32892e9f9e1ff3fb2072e2c434f3d6e6f1b43ba) - **executor**: new contract for rotated committee *(PR [#1228](https://github.com/t3rn/t3rn/pull/1228) by [@3h4x](https://github.com/3h4x))*
+- [`d1178a6`](https://github.com/t3rn/t3rn/commit/d1178a6f3d507e9636e196b976e7ef4e40f3cd58) - reduce majority threshold to unbrick LC *(PR [#1235](https://github.com/t3rn/t3rn/pull/1235) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.46.1-rc.0] - 2023-08-03
 ### :bug: Bug Fixes
 - [`e410842`](https://github.com/t3rn/t3rn/commit/e41084273564fffc586d532810701036dbb5d340) - temporarily set 67% committee majority threshold to Sepolia light client  *(PR [#1232](https://github.com/t3rn/t3rn/pull/1232) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1460,3 +1466,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.45.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.0-rc.0...v1.45.1-rc.0
 [v1.46.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.1-rc.0...v1.46.0-rc.0
 [v1.46.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.0-rc.0...v1.46.1-rc.0
+[v1.46.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.1-rc.0...v1.46.2-rc.0
