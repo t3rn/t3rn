@@ -1,15 +1,19 @@
 import { getPriceForSymbol } from "./cg";
-import { estimateActionGasFee, EstimateEthActionParams, mapSfxActionToEthAction, SpeedMode } from "./eth";
+import { estimateActionGasFee as estimateEthActionGasFee, EstimateEthActionParams, mapSfxActionToEthAction } from "./eth";
+import { estimateSfxGasFee, EstimateSubmittableExtrinsicParams } from "./substrate";
+import { NativeAssetMap } from "./utils"
 
 /**
  * An execution target
 */
 
-export type Target = "eth" | "sepl" | "roco";
+export type Target = "dot" | "eth" | "sepl" | "roco" | "t0rn";
 export const Targets = {
-  EthereumMainnet: "eth",
+  Polkadot: "dot",
+  Ethereum: "eth",
   Sepolia: "sepl",
-  Rococo: "roco"
+  Rococo: "roco",
+  T0rn: "t0rn"
 } as const;
 
 /**
@@ -29,11 +33,11 @@ export const Actions = {
 interface Estimate<T> {
   target: Target,
   action: Action,
-  asset: string,
   args: T
 }
 
 export interface EstimateMaxReward<T> extends Estimate<T> {
+  baseAsset: string,
   targetAsset: string,
   targetAmount: number,
   overSpendPercent: number
@@ -63,21 +67,7 @@ export interface MaxRewardEstimation {
   estimatedValue: Asset
 }
 
-/*
- * Get the native asset of a target
- *
- * @returns The native asset for a given execution target
- */
-
-export const mapTargetToNativeAsset = (target: string) => {
-  switch (target) {
-    case "eth":
-    case "sepl":
-      return "eth"
-    default:
-      throw new Error("Target not yet supported: " + target)
-  }
-}
+type EstimateParams = EstimateEthActionParams | EstimateSubmittableExtrinsicParams;
 
 /** 
  * Estimate the gas fee required for an execution
@@ -95,13 +85,13 @@ export const mapTargetToNativeAsset = (target: string) => {
  * @returns The gas fee in the target's native asset
 */
 
-export async function estimateGasFee<T extends EstimateEthActionParams | SpeedMode>({ target, action, args }: Estimate<T>) {
+export async function estimateGasFee<T extends EstimateParams>({ target, action, args }: Estimate<T>) {
   switch (target) {
     case "eth":
     case "sepl":
-      return estimateActionGasFee(target, mapSfxActionToEthAction(action), args as T);
+      return estimateEthActionGasFee(target, mapSfxActionToEthAction(action), args as EstimateEthActionParams);
     default:
-      throw new Error("Gas fee estimation for this target is not yet implemented!");
+      return estimateSfxGasFee(args as EstimateSubmittableExtrinsicParams)
   }
 }
 
@@ -126,10 +116,9 @@ export async function estimateGasFee<T extends EstimateEthActionParams | SpeedMo
  * @returns The bid amount in the target's native asset
 */
 
-export async function estimateBidAmount<T extends EstimateEthActionParams | SpeedMode>(input: Estimate<T>, profitMargin: (gasFee: number) => number) {
-  const targetNativeAsset = mapTargetToNativeAsset(input.target);
-  const gasFees = await estimateGasFee(input);
-  return { value: gasFees + profitMargin(gasFees), symbol: targetNativeAsset } as Asset;
+export async function estimateBidAmount<T extends EstimateParams>(input: Estimate<T>, profitMargin: (gasFee: number) => number) {
+  const gasFee = await estimateGasFee(input);
+  return { value: gasFee + profitMargin(gasFee), symbol: NativeAssetMap.getFor(input.target) } as Asset;
 }
 
 /**
@@ -152,13 +141,13 @@ export async function estimateBidAmount<T extends EstimateEthActionParams | Spee
  * @returns The maximum reward estimate
 */
 
-export async function estimateMaxReward<T extends EstimateEthActionParams | SpeedMode>({
-  action, asset: baseAsset, target, targetAmount, targetAsset, overSpendPercent = 0.5, args
+export async function estimateMaxReward<T extends EstimateParams>({
+  action, baseAsset, target, targetAmount, targetAsset, overSpendPercent = 0.5, args
 }: EstimateMaxReward<T>): Promise<MaxRewardEstimation> {
-  const targetNativeAsset = mapTargetToNativeAsset(target);
+  const targetNativeAsset = NativeAssetMap.getFor(target);
   const targetAmountInBaseAsset = await getPriceForSymbol(targetAsset, baseAsset) * targetAmount;
   const gasFeeInTargetNativeAsset = await estimateGasFee({
-    target, action, asset: targetAsset, args
+    target, action, args
   });
   const gasFeeInBaseAsset = await getPriceForSymbol(targetNativeAsset, baseAsset) * gasFeeInTargetNativeAsset;
   const executorFeeEstimateInBaseAsset = targetAmountInBaseAsset * overSpendPercent / 100;
