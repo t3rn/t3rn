@@ -67,7 +67,7 @@ export interface MaxRewardEstimation {
   estimatedValue: Asset
 }
 
-type EstimateParams = EstimateEthActionParams | EstimateSubmittableExtrinsicParams;
+export type EstimateParams = EstimateEthActionParams | EstimateSubmittableExtrinsicParams;
 
 /** 
  * Estimate the gas fee required for an execution

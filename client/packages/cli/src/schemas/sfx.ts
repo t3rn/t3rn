@@ -46,6 +46,8 @@ export const SideEffectActionSchema = z.enum([
   "cgen",
 ])
 
+export const SideEffectTargetSchema = z.enum(["eth", "roco", "sepl"])
+
 export const SideEffectSchema = z.object({
   target: z
     .string({

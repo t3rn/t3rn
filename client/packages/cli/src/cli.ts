@@ -1,5 +1,5 @@
 #!/bin/env node
-import fs from 'fs'
+import fs from "fs"
 import { Command } from "commander"
 import { handleInitCmd, initConfigFile } from "./commands/init.ts"
 import { CONFIG_FILE } from "@/consts.ts"
@@ -8,10 +8,10 @@ import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
-import { handleEstimateMaxReward } from "./commands/estimate.ts"
+import { handleEstimateGasFee } from "./commands/estimate/gas.ts"
 
 if (!fs.existsSync(CONFIG_FILE)) {
-    initConfigFile(CONFIG_FILE)
+  initConfigFile(CONFIG_FILE)
 }
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -78,17 +78,19 @@ withExportMode(
     .action(wrapCryptoWaitReady(handleDgfCmd)),
 )
 
-program
-  .command("estimate")
-  .requiredOption("--action <action>", "The execution action")
-  .requiredOption("--base-asset <symbol>", "The base asset")
-  .requiredOption("--target <name>", "The target name")
-  .requiredOption("--target-asset <symbol>", "The target asset")
-  .requiredOption("--target-amount <amount>", "The amount of the target asset")
-  .requiredOption(
-    "--over-spend <percent>",
-    "The percentage of the target amount to be used as a profit margin",
-  )
-  .description("Estimate the max reward for an execution")
-  .action(handleEstimateMaxReward),
-  program.parse(process.argv)
+withExportMode(
+  program
+    .command("estimate")
+    .command("gas-fee")
+    .description("Estimate the gas fee required for an execution")
+    .requiredOption("-t, --target <name>", "The target name")
+    .requiredOption("-a, --action <action>", "The execution action")
+    .option(
+      "-o, --args <action>",
+      "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",
+    )
+    .option("-s, --sfx <action>", "The SFX file path")
+    .action(wrapCryptoWaitReady(handleEstimateGasFee)),
+)
+
+program.parse(process.argv)
