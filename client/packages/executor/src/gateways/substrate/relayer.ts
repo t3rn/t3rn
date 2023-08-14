@@ -77,7 +77,8 @@ export class SubstrateRelayer extends EventEmitter {
    */
   async executeTx(sfx: SideEffect) {
     logger.info(
-      `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`,
+      { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
+      `SFX Execution started 🔮`,
     );
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
     const nonce = this.nonce;
@@ -92,7 +93,14 @@ export class SubstrateRelayer extends EventEmitter {
             const err = this.client.registry.findMetaError(
               dispatchError.asModule,
             );
-            logger.info(`Execution failed SFX: ${sfx.humanId}`);
+            logger.info(
+              {
+                sfxId: sfx.id,
+                sfx: sfx,
+                error: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+              },
+              `SFX Execution failed 🚨`,
+            );
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutionError,
               data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
@@ -124,7 +132,8 @@ export class SubstrateRelayer extends EventEmitter {
               events,
             );
             logger.info(
-              `Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`,
+              { sfxId: sfx.id, target: sfx.target, blockNumber },
+              `SFX Execution completed 🏁`,
             );
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,

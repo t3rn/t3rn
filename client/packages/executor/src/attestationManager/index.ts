@@ -7,6 +7,9 @@ import { Batch, ConfirmationBatch } from "./batch";
 import { ethers } from "ethers";
 import { Prometheus } from "../prometheus";
 
+// TODO: Move to config
+const RETRY_DELAY_MS = 30000;
+
 interface IBatch {
   nextCommittee: string[];
   bannedCommittee: string[];
@@ -53,7 +56,8 @@ export class AttestationManager {
       throw new Error("Ethereum wallet address is not defined");
     }
 
-    logger.info("Wallet address: " + this.wallet.address);
+    logger.info("Ethereum Wallet address: " + this.wallet.address);
+    // TODO: add balance here
 
     const receiveAttestationBatchAbi = JSON.parse(
       fs.readFileSync(
@@ -213,7 +217,21 @@ export class AttestationManager {
       const messageHash = this.getMessageHash(batch);
       logger.debug({ batch, messageHash }, `Batch data`);
 
-      await this.receiveAttestationBatchCall(batch, messageHash);
+      let attestationSubmitSuccess = false;
+
+      while (!attestationSubmitSuccess) {
+        try {
+          await this.receiveAttestationBatchCall(batch, messageHash);
+          attestationSubmitSuccess = true;
+        } catch (error) {
+          const errorName = error.innerError.message.match(
+            /^execution reverted: (.*)/,
+          )[1]; // Parse stack trace to get exact error which is not present in error object
+          logger.warn({ errorMessage: errorName }, `Error processing batch`);
+          this.prometheus.attestatonBatchesFailed.inc({ error: errorName });
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        }
+      }
     }
   }
 
@@ -253,20 +271,14 @@ export class AttestationManager {
       transactionObject,
     );
 
-    try {
-      const transactionReceipt = await this.web3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction,
-      );
-      logger.info(
-        { receipt: transactionReceipt },
-        `Batch ${batch.index} procesed!`,
-      );
-      this.prometheus.attestationBatchesProcessed.inc();
-    } catch (error) {
-      logger.warn({ error: error }, "Error sending transaction: ");
-      this.prometheus.attestatonBatchesFailed.inc();
-      // throw new Error("Error sending transaction: " + error);
-    }
+    const transactionReceipt = await this.web3.eth.sendSignedTransaction(
+      signedTransaction.rawTransaction,
+    );
+    logger.info(
+      { receipt: transactionReceipt },
+      `Batch ${batch.index} procesed!`,
+    );
+    this.prometheus.attestationBatchesProcessed.inc();
   }
 
   private async fetchAttesterContractData() {
