@@ -234,7 +234,7 @@ pub fn try_instantiate_from_contracts_registry<T: Config>(
     origin: &T::AccountId,
     hash: &T::Hash,
     schedule: &Schedule<T>,
-) -> Result<(BalanceOf<T>, WasmBlob<T>), DispatchError> {
+) -> Result<(WasmBlob<T>, BalanceOf<T>), DispatchError> {
     // Use ThreeVm to try to retrieve a module from the registry.
     // If found, attempt to construct a WasmBlob from it.
     let module = T::ThreeVm::from_registry::<WasmBlob<T>, _>(hash, |bytes| {
@@ -256,7 +256,7 @@ pub fn try_instantiate_from_contracts_registry<T: Config>(
         .unwrap_or_default();
 
     // Return the fee and the module itself
-    Ok((fee, module))
+    Ok((module, fee))
 }
 
 pub fn try_submit_side_effects<T: Config>(

@@ -1492,7 +1492,15 @@ impl<T: Config> Pallet<T> {
                 storage_deposit_limit = storage_deposit_limit.map(|l| l.saturating_sub(deposit));
                 (WasmCode::Wasm(module), deposit)
             },
-            Code::Existing(hash) => (WasmCode::CodeHash(hash), Default::default()),
+            Code::Existing(hash) => {
+                let schedule = T::Schedule::get();
+                match patch3vm::try_instantiate_from_contracts_registry::<T>(
+                    &origin, &hash, &schedule,
+                ) {
+                    Ok((module, deposit)) => (WasmCode::Wasm(module), deposit),
+                    Err(_) => (WasmCode::CodeHash(hash), Default::default()),
+                }
+            },
         };
 
         let common = CommonInput {
