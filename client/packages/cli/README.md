@@ -110,14 +110,14 @@ Options:
 - **-x, --export**: Export extrinsic data to a file
 
 
-### estimate
+### estimate-max-reward
 
-The `estimate` command is used to estimate the max reward with a given target amount.
+The `estimate-max-reward` command is used to estimate the max reward with a given target amount.
 
 Usage:
 
 ```bash
-yarn cli estimate [options]
+yarn cli estimate-max-reward [options]
 ```
 
 Options:
@@ -127,6 +127,8 @@ Options:
 - **--target \<name\>**: The target on which is execution will be executed. i.e 'eth', 'roco'
 - **--target-asset \<symbol\>**: The target asset symbol. i.e usdt, dot 
 - **--target-amount \<amount\>**: The target amount
+- -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
+- -s, **--sfx \<file-path\>**: The SFX file path
 
 A sample estimate will look like this:
 | Index               | 0                                       | 1                                        | Value                  | Symbol |

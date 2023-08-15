@@ -12,12 +12,7 @@ export const MaxRewardEstimateSchema = z.object({
     invalid_type_error: "Base asset amount must be a string",
     required_error: "Base asset is required",
   }),
-  target: z
-    .string({
-      required_error: "Target is required",
-      invalid_type_error: "Target must be a string",
-    })
-    .max(4),
+  target: SideEffectTargetSchema,
   targetAmount: z.number({
     invalid_type_error: "Target amount must be a number",
     required_error: "Target amount is required",
@@ -49,7 +44,7 @@ export const EstimateEvmCallGasParamsSchema = z.object({
   speedMode: EthSpeedModeSchema,
 })
 
-export const GasFeeEstimateSchema = z.object({
+export const EstimateSchema = z.object({
   action: SideEffectActionSchema,
   target: SideEffectTargetSchema,
   args: z.string().refine(

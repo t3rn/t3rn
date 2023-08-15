@@ -9,6 +9,8 @@ import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
 import { handleEstimateGasFee } from "./commands/estimate/gas.ts"
+import { handleEstimateMaxReward } from "./commands/estimate/reward.ts"
+import { handleEstimateBidAmount } from "./commands/estimate/bid.ts"
 
 if (!fs.existsSync(CONFIG_FILE)) {
   initConfigFile(CONFIG_FILE)
@@ -80,8 +82,7 @@ withExportMode(
 
 withExportMode(
   program
-    .command("estimate")
-    .command("gas-fee")
+    .command("estimate-gas-fee")
     .description("Estimate the gas fee required for an execution")
     .requiredOption("-t, --target <name>", "The target name")
     .requiredOption("-a, --action <action>", "The execution action")
@@ -91,6 +92,47 @@ withExportMode(
     )
     .option("-s, --sfx <action>", "The SFX file path")
     .action(wrapCryptoWaitReady(handleEstimateGasFee)),
+)
+
+withExportMode(
+  program
+    .command("estimate-max-reward")
+    .description("Estimate the max reward for an execution")
+    .requiredOption("-a, --action <action>", "The execution action")
+    .requiredOption("-b, --base-asset <symbol>", "The base asset")
+    .requiredOption("-t, --target <name>", "The target name")
+    .requiredOption("--target-asset <symbol>", "The target asset")
+    .requiredOption(
+      "--target-amount <amount>",
+      "The amount of the target asset",
+    )
+    .requiredOption(
+      "--over-spend <percent>",
+      "The percentage of the target amount to be used as a profit margin",
+    )
+    .option(
+      "-o, --args <action>",
+      "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",
+    )
+    .option("-s, --sfx <action>", "The SFX file path")
+    .action(wrapCryptoWaitReady(handleEstimateMaxReward)),
+)
+
+withExportMode(
+  program
+    .command("estimate-bid-amount")
+    .description(
+      "Estimate the bid amount with a specified profit margin for an execution",
+    )
+    .requiredOption("-t, --target <name>", "The target name")
+    .requiredOption("-a, --action <action>", "The execution action")
+    .requiredOption("-p, --profit-margin <profit-margin>", "The profit margin")
+    .option(
+      "-o, --args <action>",
+      "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",
+    )
+    .option("-s, --sfx <action>", "The SFX file path")
+    .action(wrapCryptoWaitReady(handleEstimateBidAmount)),
 )
 
 program.parse(process.argv)
