@@ -17,8 +17,8 @@ export class Prometheus {
   executorXtxStrategyRejects: Counter;
   executorBid: Counter;
   executorBidRejected: Counter;
-  executorRelayerBalance: Gauge;
-  executorCircuitBalance: Gauge;
+  executorBalance: Gauge;
+  executorClientBalance: Gauge;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -75,18 +75,18 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.executorRelayerBalance = new Gauge({
-      name: "executor_relayer_balance",
-      help: "Relayer balance",
+    this.executorBalance = new Gauge({
+      name: "executor_balance",
+      help: "Executor balance",
       registers: [this.register],
-      labelNames: ["target", "signer"],
+      labelNames: ["signer", "target"],
     });
 
-    this.executorCircuitBalance = new Gauge({
-      name: "executor_circuit_balance",
-      help: "Circuit balance",
+    this.executorClientBalance = new Gauge({
+      name: "executor_client_balance",
+      help: "Executor client balance",
       registers: [this.register],
-      labelNames: ["signer"],
+      labelNames: ["signer", "target"],
     });
 
     this.attestationsBatchesPending = new Gauge({

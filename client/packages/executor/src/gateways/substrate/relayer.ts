@@ -8,7 +8,7 @@ import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
 import Estimator from "./estimator";
 import { CostEstimator, Estimate } from "./estimator/cost";
 import { Sdk, Utils } from "@t3rn/sdk";
-import { Gateway } from "../../../config/config";
+import { Gateway, config } from "../../../config/config";
 import { logger } from "../../logging";
 import { Prometheus } from "../../prometheus";
 import { AccountInfo } from "@polkadot/types/interfaces";
@@ -64,7 +64,7 @@ export class SubstrateRelayer extends EventEmitter {
       },
       "Relayer setup completed 🏁",
     );
-    this.prometheus.executorRelayerBalance.set(
+    this.prometheus.executorBalance.set(
       { signer: this.signer.address, target: this.name },
       balance,
     );
@@ -95,10 +95,24 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
+    let address;
     logger.info(
       { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
       `SFX Execution started 🔮`,
     );
+    config.gateways.forEach((gateway) => {
+      if (gateway.name === sfx.target) {
+        address = hexToAccountId(sfx.arguments[0], gateway.accountPrefix);
+      }
+    });
+    this.prometheus.executorClientBalance.set(
+      {
+        signer: address,
+        target: sfx.target,
+      },
+      await getBalance(this.client, address),
+    );
+
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
     const nonce = this.nonce;
     this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
@@ -153,6 +167,14 @@ export class SubstrateRelayer extends EventEmitter {
             logger.info(
               { sfxId: sfx.id, target: sfx.target, blockNumber },
               `SFX Execution completed 🏁`,
+            );
+
+            this.prometheus.executorClientBalance.set(
+              {
+                signer: address,
+                target: sfx.target,
+              },
+              await getBalance(this.client, sfx),
             );
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,
@@ -343,6 +365,19 @@ export class SubstrateRelayer extends EventEmitter {
       return parseInt(nextIndex.toHuman());
     });
   }
+}
+
+async function getBalance(client: ApiPromise, address) {
+  return (
+    (await client.query.system.account(address)) as AccountInfo
+  ).data.free.toNumber();
+}
+
+function hexToAccountId(hexValue, prefix) {
+  const keyring = new Keyring({ type: "sr25519", ss58Format: prefix });
+  const account = keyring.encodeAddress(hexValue);
+
+  return account;
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };

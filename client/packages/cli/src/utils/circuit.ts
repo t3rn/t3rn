@@ -16,7 +16,7 @@ export const createCircuitContext = async (
   const signer =
     process.env.CIRCUIT_KEY === undefined
       ? keyring.addFromUri("//Alice")
-      : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+      : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
   console.log(config.circuit.ws, signer.address)
   const sdk = new Sdk(
     config.circuit.ws,

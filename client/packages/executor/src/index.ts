@@ -4,8 +4,8 @@ import { Sdk } from "@t3rn/sdk";
 import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { PathLike, existsSync } from "fs";
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { PathLike } from "fs";
+import { mkdir } from "fs/promises";
 import { join } from "path";
 import "@t3rn/types";
 import {
@@ -110,9 +110,10 @@ class Instance {
       },
       `Circuit Signer Address`,
     );
-    this.prometheus.executorCircuitBalance.set(
+    this.prometheus.executorBalance.set(
       {
         signer: this.signer.address,
+        target: this.config.circuit.name,
       },
       balance,
     );
