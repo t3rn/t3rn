@@ -31,6 +31,7 @@ t3rn-primitives        = { default-features = false, path = "../../primitives" }
 [dev-dependencies]
 sp-core     = { workspace = true }
 sp-keystore = { workspace = true }
+t3rn-mini-mock-runtime = { path = "../../runtime/mini-mock" }
 
 [features]
 default = [ "std" ]
