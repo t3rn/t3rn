@@ -101,6 +101,7 @@ export class SubstrateRelayer extends EventEmitter {
       `SFX Execution started 🔮`,
     );
 
+    logger.error([sfx.gateway])
     if (sfx.gateway.gatewayType === "Substrate") {
       this.prometheus.executorClientBalance.set(
         {
