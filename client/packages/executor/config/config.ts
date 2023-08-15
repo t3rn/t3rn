@@ -180,7 +180,7 @@ export const config: Config = {
       id: "roco",
       rpc: "wss://rococo-rpc.polkadot.io",
       type: "Substrate",
-      signerKey: process.env.CIRCUIT_SIGNER_KEY,
+      signerKey: process.env.RELAYCHAIN_SIGNER_KEY,
     },
     {
       name: "Basilisk",
