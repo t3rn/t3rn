@@ -18,7 +18,9 @@
 //! Unit tests for pallet contracts-registry.
 
 use circuit_mock_runtime::{
-    pallet_contracts_registry::pallet::Error, RuntimeEvent as Event, RuntimeOrigin as Origin, *,
+    pallet_contracts_registry, pallet_contracts_registry::pallet::Error, ContractsRegistry,
+    ContractsRegistryStorage, ExtBuilder, Runtime, RuntimeEvent as Event, RuntimeOrigin as Origin,
+    ALICE, BOB,
 };
 
 use frame_support::{assert_err, assert_ok};
@@ -46,7 +48,7 @@ fn fetch_contract_by_id_should_return_single_contract() {
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            ContractsRegistryStorage::<Runtime>::insert(
                 test_contract.generate_id::<Runtime>(),
                 test_contract.clone(),
             );
@@ -127,15 +129,15 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_name.generate_id::<Runtime>(),
             test_contract_name.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_desc.generate_id::<Runtime>(),
             test_contract_desc.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_wrong.generate_id::<Runtime>(),
             test_contract_wrong.clone(),
         );
@@ -211,15 +213,15 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author1.generate_id::<Runtime>(),
             test_contract_author1.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author2.generate_id::<Runtime>(),
             test_contract_author2.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author3.generate_id::<Runtime>(),
             test_contract_author3.clone(),
         );
@@ -294,15 +296,15 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author1.generate_id::<Runtime>(),
             test_contract_author1.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author2.generate_id::<Runtime>(),
             test_contract_author2.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author3.generate_id::<Runtime>(),
             test_contract_author3.clone(),
         );
@@ -377,15 +379,15 @@ fn fetch_contracts_with_no_parameters_should_error() {
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author1.generate_id::<Runtime>(),
             test_contract_author1.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author2.generate_id::<Runtime>(),
             test_contract_author2.clone(),
         );
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract_author3.generate_id::<Runtime>(),
             test_contract_author3.clone(),
         );
@@ -496,7 +498,7 @@ fn add_new_contract_fails_if_contract_already_exists() {
     let requester = ALICE;
 
     ExtBuilder::default().build().execute_with(|| {
-        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+        ContractsRegistryStorage::<Runtime>::insert(
             test_contract.generate_id::<Runtime>(),
             test_contract.clone(),
         );
@@ -539,15 +541,12 @@ fn purge_succeeds_for_default_contract() {
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            ContractsRegistryStorage::<Runtime>::insert(
                 test_contract.generate_id::<Runtime>(),
                 test_contract.clone(),
             );
             assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
-            assert_eq!(
-                pallet_contracts_registry::ContractsRegistry::<Runtime>::get(contract_id),
-                None
-            );
+            assert_eq!(ContractsRegistryStorage::<Runtime>::get(contract_id), None);
         });
 }
 
@@ -622,7 +621,7 @@ fn purge_fails_if_origin_not_root() {
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            ContractsRegistryStorage::<Runtime>::insert(
                 test_contract.generate_id::<Runtime>(),
                 test_contract.clone(),
             );

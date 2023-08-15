@@ -31,7 +31,7 @@ use sp_std::{convert::TryInto, prelude::*};
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
 use t3rn_primitives::{
-    contracts_registry::{ContractsRegistry, RegistryContractId},
+    contracts_registry::{ContractsRegistry as ContractsRegistryT, RegistryContractId},
     reexport_currency_types,
 };
 
@@ -228,7 +228,7 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-impl<T: Config> ContractsRegistry<T, T::Currency> for Pallet<T> {
+impl<T: Config> ContractsRegistryT<T, T::Currency> for Pallet<T> {
     type Error = Error<T>;
 
     /// Internal function that queries the RegistryContract storage for a contract by its ID
