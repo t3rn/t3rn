@@ -16,10 +16,7 @@
 
 //! Unit testing
 use crate::{
-    mock::{
-        events, mock_events, ExtBuilder, MaintenanceMode, RuntimeCall as OuterCall, RuntimeOrigin,
-        Test,
-    },
+    mock::{events, mock_events, ExtBuilder, RuntimeCall as OuterCall, RuntimeOrigin, Test},
     Call, Error, Event, ExecutiveHooks,
 };
 use frame_support::{

@@ -100,11 +100,7 @@ pub use fp_evm::{
     PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
     Vicinity,
 };
-use t3rn_primitives::{
-    contract_metadata::ContractType,
-    contracts_registry::AuthorInfo,
-    threevm::{ModuleOperations, ThreeVm},
-};
+use t3rn_primitives::threevm::ThreeVm;
 
 pub use self::{
     pallet::*,
@@ -534,7 +530,7 @@ pub mod pallet {
         fn build(&self) {
             const MAX_ACCOUNT_NONCE: usize = 100;
 
-            let mut accounts: BTreeMap<H160, GenesisAccount> =
+            let accounts: BTreeMap<H160, GenesisAccount> =
                 Decode::decode(&mut &self.accounts[..]).unwrap_or_default();
 
             for (address, account) in &accounts {

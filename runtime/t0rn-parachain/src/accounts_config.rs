@@ -1,9 +1,9 @@
 use crate::{
-    hooks::GlobalOnInitQueues, treasuries_config::EscrowTreasuryId, AccountId, AccountManager,
-    AssetId, Assets, Balance, Balances, Clock, EnsureRoot, Imbalance, OnUnbalanced, Runtime,
-    RuntimeCall, RuntimeEvent, ThreeVm, Timestamp,
+    hooks::GlobalOnInitQueues, treasuries_config::EscrowTreasuryId, AssetId, Assets, Balance,
+    Balances, Clock, Imbalance, OnUnbalanced, Runtime, RuntimeCall, RuntimeEvent, ThreeVm,
+    Timestamp,
 };
-use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
+use frame_support::parameter_types;
 use sp_core::{crypto::AccountId32, ConstU32};
 use sp_runtime::traits::{AccountIdConversion, ConvertInto};
 

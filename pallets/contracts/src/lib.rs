@@ -650,7 +650,7 @@ pub mod pallet {
                 origin: Origin::from_runtime_origin(origin)?,
                 value,
                 data,
-                gas_limit: gas_limit.into(),
+                gas_limit,
                 storage_deposit_limit: storage_deposit_limit.map(Into::into),
                 debug_message: None,
             };
@@ -1180,7 +1180,7 @@ trait Invokable<T: Config>: Sized {
                 gas_meter: GasMeter::new(gas_limit),
                 storage_deposit: Default::default(),
                 result: Err(ExecError {
-                    error: e.into(),
+                    error: e,
                     origin: ErrorOrigin::Caller,
                 }),
             }
@@ -1489,8 +1489,7 @@ impl<T: Config> Pallet<T> {
                         },
                 };
 
-                storage_deposit_limit =
-                    storage_deposit_limit.map(|l| l.saturating_sub(deposit.into()));
+                storage_deposit_limit = storage_deposit_limit.map(|l| l.saturating_sub(deposit));
                 (WasmCode::Wasm(module), deposit)
             },
             Code::Existing(hash) => (WasmCode::CodeHash(hash), Default::default()),
@@ -1574,9 +1573,7 @@ impl<T: Config> Pallet<T> {
             ContractInfoOf::<T>::get(&address).ok_or(ContractAccessError::DoesntExist)?;
 
         let maybe_value = contract_info.read(
-            &Key::<T>::try_from_var(key)
-                .map_err(|_| ContractAccessError::KeyDecodingFailed)?
-                .into(),
+            &Key::<T>::try_from_var(key).map_err(|_| ContractAccessError::KeyDecodingFailed)?,
         );
         Ok(maybe_value)
     }

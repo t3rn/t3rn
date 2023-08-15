@@ -483,7 +483,7 @@ impl<'a, E: Ext + 'a> Runtime<'a, E> {
             ext,
             input_data: Some(input_data),
             memory: None,
-            chain_extension: Some(Box::new(Default::default())),
+            chain_extension: Some(Box::default()),
         }
     }
 
@@ -606,7 +606,7 @@ impl<'a, E: Ext + 'a> Runtime<'a, E> {
         let ptr = ptr as usize;
         let bound_checked = memory
             .get(ptr..ptr + buf.len())
-            .ok_or_else(|| Error::<E::T>::OutOfBounds)?;
+            .ok_or(Error::<E::T>::OutOfBounds)?;
         buf.copy_from_slice(bound_checked);
         Ok(())
     }
@@ -624,8 +624,8 @@ impl<'a, E: Ext + 'a> Runtime<'a, E> {
     ) -> Result<D, DispatchError> {
         let ptr = ptr as usize;
         let mut bound_checked = memory
-            .get(ptr..ptr + D::max_encoded_len() as usize)
-            .ok_or_else(|| Error::<E::T>::OutOfBounds)?;
+            .get(ptr..ptr + D::max_encoded_len())
+            .ok_or(Error::<E::T>::OutOfBounds)?;
         let decoded = D::decode_all_with_depth_limit(MAX_DECODE_NESTING, &mut bound_checked)
             .map_err(|_| DispatchError::from(Error::<E::T>::DecodingFailed))?;
         Ok(decoded)
@@ -651,7 +651,7 @@ impl<'a, E: Ext + 'a> Runtime<'a, E> {
         let ptr = ptr as usize;
         let mut bound_checked = memory
             .get(ptr..ptr + len as usize)
-            .ok_or_else(|| Error::<E::T>::OutOfBounds)?;
+            .ok_or(Error::<E::T>::OutOfBounds)?;
         let decoded = D::decode_all_with_depth_limit(MAX_DECODE_NESTING, &mut bound_checked)
             .map_err(|_| DispatchError::from(Error::<E::T>::DecodingFailed))?;
         Ok(decoded)
@@ -718,7 +718,7 @@ impl<'a, E: Ext + 'a> Runtime<'a, E> {
         let ptr = ptr as usize;
         let bound_checked = memory
             .get_mut(ptr..ptr + buf.len())
-            .ok_or_else(|| Error::<E::T>::OutOfBounds)?;
+            .ok_or(Error::<E::T>::OutOfBounds)?;
         bound_checked.copy_from_slice(buf);
         Ok(())
     }
@@ -2618,7 +2618,7 @@ pub mod env {
         ctx.charge_gas(RuntimeCosts::DebugMessage(str_len))?;
         if ctx.ext.append_debug_buffer("") {
             let data = ctx.read_sandbox_memory(memory, str_ptr, str_len)?;
-            if let Some(msg) = core::str::from_utf8(&data).ok() {
+            if let Ok(msg) = core::str::from_utf8(&data) {
                 ctx.ext.append_debug_buffer(msg);
             }
         }

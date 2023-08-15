@@ -1,7 +1,7 @@
 use crate as pallet_3vm;
 use frame_support::{
     parameter_types,
-    traits::{ConstU16, ConstU32, ConstU64},
+    traits::{ConstU16, ConstU32},
 };
 use frame_system as system;
 

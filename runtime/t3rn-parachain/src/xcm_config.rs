@@ -2,9 +2,9 @@ use super::{
     AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
     Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
-use core::marker::PhantomData;
+
 use frame_support::{
-    log, match_types,
+    match_types,
     pallet_prelude::Weight,
     parameter_types,
     traits::{Everything, Nothing},
@@ -15,17 +15,14 @@ use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use sp_runtime::traits::ConstU32;
-use xcm::latest::{prelude::*, Weight as XCMWeight};
+use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-    ConvertedConcreteAssetId, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin,
-    FixedWeightBounds, FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser,
-    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
+    FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::{traits::ShouldExecute, XcmExecutor};
+use xcm_executor::XcmExecutor;
 
 parameter_types! {
     pub MaxAssetsIntoHolding: u32 = 64;

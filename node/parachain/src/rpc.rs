@@ -13,16 +13,12 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-// #[cfg(feature = "t0rn")]
-// use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
-
 #[cfg(feature = "t1rn")]
 use t1rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
 #[cfg(feature = "t3rn")]
 use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
-// #[cfg(not(any(feature = "t0rn", feature = "t1rn", feature = "t3rn")))]
 #[cfg(not(any(feature = "t1rn", feature = "t3rn")))]
 use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
 

@@ -9,10 +9,7 @@ use frame_support::{
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
 };
 
-use sp_runtime::{
-    generic,
-    traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
-};
+use sp_runtime::traits::{AccountIdLookup, BlakeTwo256, ConvertInto};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {

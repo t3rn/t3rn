@@ -148,6 +148,7 @@ impl pallet_evm::Config for Test {
     type PrecompilesValue = ();
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
+    type ThreeVm = t3rn_primitives::threevm::NoopThreeVm;
     type Timestamp = Timestamp;
     type WeightInfo = ();
     type WeightPerGas = WeightPerGas;

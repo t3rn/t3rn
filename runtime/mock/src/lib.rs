@@ -2,16 +2,15 @@
 //! Runtime utilities
 
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
-use codec::{Decode, Encode};
+use codec::Encode;
 
 use frame_support::{
     pallet_prelude::Weight,
-    traits::KeyOwnerProofSystem,
     weights::{constants::ExtrinsicBaseWeight, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use hex_literal::hex;
 use pallet_sudo::GenesisConfig as SudoGenesisConfig;
-use sp_core::{crypto::KeyTypeId, H256};
+use sp_core::H256;
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
 pub mod signed_extrinsics_config;
@@ -35,6 +34,7 @@ pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 pub use crate::circuit_config::GlobalOnInitQueues;
 use frame_support::traits::GenesisBuild;
 pub use pallet_3vm_evm::Config as ConfigEvm;
+pub use pallet_contracts_registry::ContractsRegistry as ContractsRegistryStorage;
 
 use smallvec::smallvec;
 use sp_runtime::BuildStorage;

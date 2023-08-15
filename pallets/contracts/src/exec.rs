@@ -525,7 +525,7 @@ impl<T: Config> CachedContract<T> {
     fn deposit_account(&self) -> Option<&DepositAccount<T>> {
         match self {
             CachedContract::Cached(contract) => Some(contract.deposit_account()),
-            CachedContract::Terminated(deposit_account) => Some(&deposit_account),
+            CachedContract::Terminated(deposit_account) => Some(deposit_account),
             CachedContract::Invalidated => None,
         }
     }
@@ -591,7 +591,7 @@ impl<T: Config> CachedContract<T> {
     /// Load the `contract_info` from storage if necessary.
     fn load(&mut self, account_id: &T::AccountId) {
         if let CachedContract::Invalidated = self {
-            let contract = <ContractInfoOf<T>>::get(&account_id);
+            let contract = <ContractInfoOf<T>>::get(account_id);
             if let Some(contract) = contract {
                 *self = CachedContract::Cached(contract);
             }
@@ -789,7 +789,7 @@ where
                 } => {
                     let account_id = Contracts::<T>::contract_address(
                         &sender,
-                        &executable.code_hash(),
+                        executable.code_hash(),
                         input_data,
                         salt,
                     );
@@ -1360,7 +1360,7 @@ where
     }
 
     fn get_storage_size(&mut self, key: &Key<T>) -> Option<u32> {
-        self.top_frame_mut().contract_info().size(key.into())
+        self.top_frame_mut().contract_info().size(key)
     }
 
     fn set_storage(
@@ -1371,7 +1371,7 @@ where
     ) -> Result<WriteOutcome, DispatchError> {
         let frame = self.top_frame_mut();
         frame.contract_info.get(&frame.account_id).write(
-            key.into(),
+            key,
             value,
             Some(&mut frame.nested_storage),
             take_old,
@@ -1394,11 +1394,11 @@ where
     }
 
     fn is_contract(&self, address: &T::AccountId) -> bool {
-        ContractInfoOf::<T>::contains_key(&address)
+        ContractInfoOf::<T>::contains_key(address)
     }
 
     fn code_hash(&self, address: &T::AccountId) -> Option<CodeHash<Self::T>> {
-        <ContractInfoOf<T>>::get(&address).map(|contract| contract.code_hash)
+        <ContractInfoOf<T>>::get(address).map(|contract| contract.code_hash)
     }
 
     fn own_code_hash(&mut self) -> &CodeHash<Self::T> {

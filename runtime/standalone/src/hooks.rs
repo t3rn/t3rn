@@ -1,5 +1,4 @@
 use frame_support::weights::Weight;
-use num_traits::AsPrimitive;
 
 use crate::{Circuit, Runtime, XDNS, *};
 use sp_runtime::{

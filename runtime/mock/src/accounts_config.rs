@@ -1,7 +1,7 @@
 use crate::*;
 pub use frame_support::traits::{Imbalance, OnUnbalanced};
 use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureSigned;
 use sp_core::crypto::AccountId32;
 use sp_runtime::traits::{ConstU32, ConvertInto};
 

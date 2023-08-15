@@ -27,7 +27,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     codec, pallet_prelude::*, storage_alias, traits::ReservableCurrency, DefaultNoBound, Identity,
 };
-use scale_info::prelude::format;
+
 use sp_core::hexdisplay::HexDisplay;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
@@ -136,7 +136,7 @@ impl<T: Config> MigrationStep for Migration<T> {
             log::debug!(target: LOG_TARGET, "Migrating OwnerInfo for code_hash {:?}", hash);
 
             let module = old::CodeStorage::<T>::take(hash)
-                .expect(format!("No PrefabWasmModule found for code_hash: {:?}", hash).as_str());
+                .unwrap_or_else(|| panic!("No PrefabWasmModule found for code_hash: {:?}", hash));
 
             let code_len = module.code.len();
             // We print this to measure the impact of the migration.

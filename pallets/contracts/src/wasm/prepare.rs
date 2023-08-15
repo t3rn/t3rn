@@ -53,7 +53,7 @@ impl LoadedModule {
     ///
     /// The inner Wasm module is checked not to have restricted WebAssembly proposals.
     /// Returns `Err` if the `code` cannot be deserialized or if it contains an invalid module.
-    pub fn new<T>(
+    pub fn new(
         code: &[u8],
         determinism: Determinism,
         stack_limits: Option<StackLimits>,
@@ -79,8 +79,7 @@ impl LoadedModule {
         }
 
         let engine = Engine::new(&config);
-        let module =
-            Module::new(&engine, code.clone()).map_err(|_| "Can't load the module into wasmi!")?;
+        let module = Module::new(&engine, code).map_err(|_| "Can't load the module into wasmi!")?;
 
         // Return a `LoadedModule` instance with
         // __valid__ module.
@@ -233,10 +232,10 @@ where
     (|| {
         // We check that the module is generally valid,
         // and does not have restricted WebAssembly features, here.
-        let contract_module = LoadedModule::new::<T>(code, determinism, None)?;
+        let contract_module = LoadedModule::new(code, determinism, None)?;
         // The we check that module satisfies constraints the pallet puts on contracts.
         contract_module.scan_exports()?;
-        contract_module.scan_imports::<T>(schedule)?;
+        contract_module.scan_imports(schedule)?;
         Ok(())
     })()
     .map_err(|msg: &str| {
@@ -253,7 +252,7 @@ where
     // reduces the amount of memory that needs to be zeroed.
     let stack_limits = StackLimits::new(1, 1, 0).expect("initial <= max; qed");
     WasmBlob::<T>::instantiate::<E, _>(
-        &code,
+        code,
         (),
         schedule,
         determinism,
@@ -336,7 +335,7 @@ pub mod benchmarking {
         owner: AccountIdOf<T>,
     ) -> Result<WasmBlob<T>, DispatchError> {
         let determinism = Determinism::Enforced;
-        let contract_module = LoadedModule::new::<T>(&code, determinism, None)?;
+        let contract_module = LoadedModule::new(&code, determinism, None)?;
         let _ = contract_module.scan_imports::<T>(schedule)?;
         let code: CodeVec<T> = code.try_into().map_err(|_| <Error<T>>::CodeTooLarge)?;
         let code_info = CodeInfo {

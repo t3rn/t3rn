@@ -7,11 +7,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use t3rn_primitives::monetary::MILLIT3RN;
 
-use pallet_grandpa::AuthorityId as GrandpaId;
-
 use frame_system::EnsureRoot;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::crypto::KeyTypeId;
+
 use sp_runtime::{
     generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256},

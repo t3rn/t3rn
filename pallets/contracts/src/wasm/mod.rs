@@ -236,7 +236,7 @@ impl<T: Config> WasmBlob<T> {
     where
         E: Environment<H>,
     {
-        let contract = LoadedModule::new::<T>(&code, determinism, Some(stack_limits))?;
+        let contract = LoadedModule::new(code, determinism, Some(stack_limits))?;
         let mut store = Store::new(&contract.engine, host_state);
         let mut linker = Linker::new(&contract.engine);
         E::define(
@@ -304,13 +304,13 @@ impl<T: Config> WasmBlob<T> {
 
     /// Try to remove code together with all associated information.
     fn try_remove_code(origin: &T::AccountId, code_hash: CodeHash<T>) -> DispatchResult {
-        <CodeInfoOf<T>>::try_mutate_exists(&code_hash, |existing| {
+        <CodeInfoOf<T>>::try_mutate_exists(code_hash, |existing| {
             if let Some(code_info) = existing {
                 ensure!(code_info.refcount == 0, <Error<T>>::CodeInUse);
                 ensure!(&code_info.owner == origin, BadOrigin);
                 T::Currency::unreserve(&code_info.owner, code_info.deposit);
                 *existing = None;
-                <PristineCode<T>>::remove(&code_hash);
+                <PristineCode<T>>::remove(code_hash);
                 <Pallet<T>>::deposit_event(vec![code_hash], Event::CodeRemoved { code_hash });
                 Ok(())
             } else {
@@ -743,7 +743,7 @@ mod tests {
 
         fn get_weight_price(&self, weight: Weight) -> BalanceOf<Self::T> {
             BalanceOf::<Self::T>::from(1312_u32)
-                .saturating_mul(weight.ref_time().into())
+                .saturating_mul(weight.ref_time())
                 .saturating_add(
                     BalanceOf::<Self::T>::from(103_u32).saturating_mul(weight.proof_size()),
                 )
@@ -1467,7 +1467,7 @@ mod tests {
     #[test]
     fn contract_call_limited_gas() {
         let mut mock_ext = MockExt::default();
-        assert_ok!(execute(&CODE_TRANSFER_LIMITED_GAS, vec![], &mut mock_ext));
+        assert_ok!(execute(CODE_TRANSFER_LIMITED_GAS, vec![], &mut mock_ext));
 
         assert_eq!(
             &mock_ext.calls,
@@ -1519,7 +1519,7 @@ mod tests {
     #[test]
     fn contract_ecdsa_recover() {
         let mut mock_ext = MockExt::default();
-        assert_ok!(execute(&CODE_ECDSA_RECOVER, vec![], &mut mock_ext));
+        assert_ok!(execute(CODE_ECDSA_RECOVER, vec![], &mut mock_ext));
         assert_eq!(mock_ext.ecdsa_recover.into_inner(), [([1; 65], [1; 32])]);
     }
 
@@ -1600,7 +1600,7 @@ mod tests {
 )
 "#;
         let mut mock_ext = MockExt::default();
-        assert_ok!(execute(&CODE_SR25519, vec![], &mut mock_ext));
+        assert_ok!(execute(CODE_SR25519, vec![], &mut mock_ext));
         assert_eq!(
             mock_ext.sr25519_verify.into_inner(),
             [([1; 64], [1; 16].to_vec(), [1; 32])]

@@ -1,4 +1,4 @@
-use crate::{Aura, Contracts, Grandpa, Runtime, System, TransactionPayment, *};
+use crate::{Aura, Grandpa, Runtime, System, TransactionPayment, *};
 
 pub use frame_support::{
     construct_runtime, parameter_types,
@@ -14,17 +14,14 @@ pub use frame_support::{
     },
     StorageValue,
 };
-use frame_system::EventRecord;
-use pallet_3vm_contracts::Determinism;
+
 pub use pallet_balances::Call as BalancesCall;
-use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
-};
+use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
+
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
@@ -33,11 +30,6 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 pub use sp_runtime::{Perbill, Permill};
-use t3rn_primitives::{
-    light_client::HeightResult,
-    xdns::{FullGatewayRecord, GatewayRecord},
-    TreasuryAccountProvider,
-};
 
 pub use crate::consensus_aura_config::*;
 

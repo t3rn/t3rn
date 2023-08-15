@@ -1,24 +1,19 @@
-use crate::{Config, Determinism, EventRecordOf, Origin, Schedule};
+use crate::{Config, Determinism, Origin, Schedule};
 use codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::{
-    dispatch::RawOrigin,
-    ensure,
-    pallet_prelude::{Get, Weight},
-    traits::Currency,
-};
-use frame_system::pallet_prelude::OriginFor;
+use frame_support::{dispatch::RawOrigin, pallet_prelude::Weight};
+
 use pallet_contracts_primitives::{
     ContractExecResult, ExecReturnValue, ReturnFlags, StorageDeposit,
 };
 use scale_info::TypeInfo;
-use sp_core::crypto::UncheckedFrom;
+
 use sp_runtime::{
-    traits::{Saturating, UniqueSaturatedInto, Zero},
+    traits::{Saturating, Zero},
     DispatchError, RuntimeDebug,
 };
 
-use sp_std::{marker::PhantomData, vec::Vec};
+use sp_std::vec::Vec;
 use t3rn_primitives::{
     threevm::{
         GetState, ModuleOperations, Precompile, PrecompileArgs, PrecompileInvocation, ThreeVm,
@@ -100,9 +95,8 @@ pub struct ThreeVmExtension;
 use crate::{
     chain_extension::{
         BufInBufOutState, ChainExtension, Environment, Ext, InitState, RegisteredChainExtension,
-        RetVal, SysConfig,
+        RetVal,
     },
-    exec::Executable,
     wasm::WasmBlob,
 };
 
@@ -243,8 +237,8 @@ pub fn try_instantiate_from_contracts_registry<T: Config>(
 ) -> Result<(BalanceOf<T>, WasmBlob<T>), DispatchError> {
     // Use ThreeVm to try to retrieve a module from the registry.
     // If found, attempt to construct a WasmBlob from it.
-    let module = T::ThreeVm::from_registry::<WasmBlob<T>, _>(&hash, |bytes| {
-        WasmBlob::from_code(bytes, &schedule, origin.clone(), Determinism::Relaxed)
+    let module = T::ThreeVm::from_registry::<WasmBlob<T>, _>(hash, |bytes| {
+        WasmBlob::from_code(bytes, schedule, origin.clone(), Determinism::Relaxed)
             .unwrap_or(WasmBlob::<T>::new_empty())
     })?;
 
@@ -267,10 +261,10 @@ pub fn try_instantiate_from_contracts_registry<T: Config>(
 
 pub fn try_submit_side_effects<T: Config>(
     caller: &T::AccountId,
-    input_data: &[u8],
+    mut input_data: &[u8],
 ) -> Result<PrecompileInvocation<T, BalanceOf<T>>, DispatchError> {
     // Try to decode the input data into the expected arguments
-    let decoded_args = Decode::decode(&mut input_data.as_ref());
+    let decoded_args = Decode::decode(&mut input_data);
 
     // Use match to deal with the Result, which is more idiomatic in Rust than if let
     match decoded_args {

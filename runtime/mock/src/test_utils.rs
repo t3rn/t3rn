@@ -33,7 +33,7 @@ pub fn recursive_produce_test_args_for_abi(abi: Abi, args_variant: ArgVariant) -
             ArgVariant::A | ArgVariant::B | ArgVariant::C =>
                 recursive_produce_test_args_for_abi(*abi1, args_variant.clone())
                     .into_iter()
-                    .chain(recursive_produce_test_args_for_abi(*abi2, args_variant).into_iter())
+                    .chain(recursive_produce_test_args_for_abi(*abi2, args_variant))
                     .collect(),
         },
         Abi::Vec(_, _abi_vec) => {

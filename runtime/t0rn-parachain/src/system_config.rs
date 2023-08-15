@@ -10,7 +10,7 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, Zero};
+use sp_runtime::traits::{BlakeTwo256, Zero};
 parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
     pub const SS58Prefix: u16 = 42;

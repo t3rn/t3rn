@@ -281,27 +281,27 @@ impl HostFn {
 				- Result<u32, TrapReason>"#;
         let ret_ty = match item.clone().sig.output {
             syn::ReturnType::Type(_, ty) => Ok(ty.clone()),
-            _ => Err(err(span, &msg)),
+            _ => Err(err(span, msg)),
         }?;
         match *ret_ty {
             syn::Type::Path(tp) => {
-                let result = &tp.path.segments.last().ok_or(err(span, &msg))?;
+                let result = &tp.path.segments.last().ok_or(err(span, msg))?;
                 let (id, span) = (result.ident.to_string(), result.ident.span());
                 id.eq(&"Result".to_string())
                     .then_some(())
-                    .ok_or(err(span, &msg))?;
+                    .ok_or(err(span, msg))?;
 
                 match &result.arguments {
                     syn::PathArguments::AngleBracketed(group) => {
                         if group.args.len() != 2 {
-                            return Err(err(span, &msg))
+                            return Err(err(span, msg))
                         };
 
-                        let arg2 = group.args.last().ok_or(err(span, &msg))?;
+                        let arg2 = group.args.last().ok_or(err(span, msg))?;
 
                         let err_ty = match arg2 {
                             syn::GenericArgument::Type(ty) => Ok(ty.clone()),
-                            _ => Err(err(arg2.span(), &msg)),
+                            _ => Err(err(arg2.span(), msg)),
                         }?;
 
                         match err_ty {
@@ -309,42 +309,42 @@ impl HostFn {
                                 .path
                                 .segments
                                 .first()
-                                .ok_or(err(arg2.span(), &msg))?
+                                .ok_or(err(arg2.span(), msg))?
                                 .ident
                                 .to_string()),
-                            _ => Err(err(tp.span(), &msg)),
+                            _ => Err(err(tp.span(), msg)),
                         }?
                         .eq("TrapReason")
                         .then_some(())
-                        .ok_or(err(span, &msg))?;
+                        .ok_or(err(span, msg))?;
 
-                        let arg1 = group.args.first().ok_or(err(span, &msg))?;
+                        let arg1 = group.args.first().ok_or(err(span, msg))?;
                         let ok_ty = match arg1 {
                             syn::GenericArgument::Type(ty) => Ok(ty.clone()),
-                            _ => Err(err(arg1.span(), &msg)),
+                            _ => Err(err(arg1.span(), msg)),
                         }?;
                         let ok_ty_str = match ok_ty {
                             syn::Type::Path(tp) => Ok(tp
                                 .path
                                 .segments
                                 .first()
-                                .ok_or(err(arg1.span(), &msg))?
+                                .ok_or(err(arg1.span(), msg))?
                                 .ident
                                 .to_string()),
                             syn::Type::Tuple(tt) => {
                                 if !tt.elems.is_empty() {
-                                    return Err(err(arg1.span(), &msg))
+                                    return Err(err(arg1.span(), msg))
                                 };
                                 Ok("()".to_string())
                             },
-                            _ => Err(err(ok_ty.span(), &msg)),
+                            _ => Err(err(ok_ty.span(), msg)),
                         }?;
                         let returns = match ok_ty_str.as_str() {
                             "()" => Ok(HostFnReturn::Unit),
                             "u32" => Ok(HostFnReturn::U32),
                             "u64" => Ok(HostFnReturn::U64),
                             "ReturnCode" => Ok(HostFnReturn::ReturnCode),
-                            _ => Err(err(arg1.span(), &msg)),
+                            _ => Err(err(arg1.span(), msg)),
                         }?;
 
                         Ok(Self {
@@ -357,10 +357,10 @@ impl HostFn {
                             not_deprecated,
                         })
                     },
-                    _ => Err(err(span, &msg)),
+                    _ => Err(err(span, msg)),
                 }
             },
-            _ => Err(err(span, &msg)),
+            _ => Err(err(span, msg)),
         }
     }
 
@@ -392,7 +392,7 @@ impl EnvDef {
             .iter()
             .filter_map(extract_fn)
             .filter(|i| i.attrs.iter().any(selector))
-            .map(|i| HostFn::try_from(i));
+            .map(HostFn::try_from);
 
         let host_funcs = items
             .iter()
@@ -401,7 +401,7 @@ impl EnvDef {
                 i.attrs.retain(|i| !selector(i));
                 i
             })
-            .map(|i| HostFn::try_from(i))
+            .map(HostFn::try_from)
             .chain(aliases)
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -435,7 +435,7 @@ fn expand_func_doc(func: &HostFn) -> TokenStream2 {
             .inputs
             .iter()
             .skip(2)
-            .map(|p| p.clone())
+            .cloned()
             .collect::<Punctuated<FnArg, Comma>>();
         sig.to_token_stream()
     };
@@ -509,7 +509,7 @@ fn expand_docs(def: &EnvDef) -> TokenStream2 {
         if current_docs.contains_key(&func.name) {
             continue
         }
-        current_docs.insert(func.name.clone(), expand_func_doc(&func));
+        current_docs.insert(func.name.clone(), expand_func_doc(func));
     }
     let current_docs = current_docs.values();
 
@@ -520,7 +520,7 @@ fn expand_docs(def: &EnvDef) -> TokenStream2 {
         legacy_doc
             .entry(func.version)
             .or_default()
-            .push(expand_func_doc(&func));
+            .push(expand_func_doc(func));
     }
     let legacy_doc = legacy_doc.into_iter().map(|(version, funcs)| {
         let doc = format!("All functions available in the **seal{}** module", version);
@@ -558,9 +558,7 @@ fn expand_docs(def: &EnvDef) -> TokenStream2 {
 ///    `expand_impls()`).
 fn expand_env(def: &EnvDef, docs: bool) -> TokenStream2 {
     let impls = expand_impls(def);
-    let docs = docs
-        .then_some(expand_docs(def))
-        .unwrap_or(TokenStream2::new());
+    let docs = docs.then_some(expand_docs(def)).unwrap_or_default();
 
     quote! {
         pub struct Env;
@@ -872,7 +870,7 @@ fn expand_functions(def: &EnvDef, expand_blocks: bool, host_state: TokenStream2)
 /// ```
 #[proc_macro_attribute]
 pub fn define_env(attr: TokenStream, item: TokenStream) -> TokenStream {
-    if !attr.is_empty() && !(attr.to_string() == "doc".to_string()) {
+    if !attr.is_empty() && attr.to_string() != *"doc" {
         let msg = r#"Invalid `define_env` attribute macro: expected either no attributes or a single `doc` attribute:
 					 - `#[define_env]`
 					 - `#[define_env(doc)]`"#;

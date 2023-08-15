@@ -263,17 +263,11 @@ impl Config for Test {
 }
 
 /// Externality builder for pallet maintenance mode's mock runtime
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
     maintenance_mode: bool,
 }
 
-impl Default for ExtBuilder {
-    fn default() -> ExtBuilder {
-        ExtBuilder {
-            maintenance_mode: false,
-        }
-    }
-}
 use sp_runtime::BuildStorage;
 impl ExtBuilder {
     pub(crate) fn with_maintenance_mode(mut self, m: bool) -> Self {

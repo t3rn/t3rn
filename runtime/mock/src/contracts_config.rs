@@ -12,11 +12,8 @@ use circuit_runtime_pallets::{
     evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
     pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
 };
-use frame_support::traits::ConstBool;
-use pallet_3vm_contracts::weights::WeightInfo;
-use pallet_3vm_evm::{
-    EnsureAddressTruncated, GasWeightMapping, IdentityAddressMapping, SubstrateBlockHashMapping,
-};
+
+use pallet_3vm_evm::{EnsureAddressTruncated, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;

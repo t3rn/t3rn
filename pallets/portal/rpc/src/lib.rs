@@ -6,16 +6,12 @@ use codec::Codec;
 use jsonrpsee::{
     core::{Error as JsonRpseeError, RpcResult},
     proc_macros::rpc,
-    types::error::{CallError, ErrorCode, ErrorObject},
 };
 use pallet_portal_rpc_runtime_api::ChainId;
 pub use pallet_portal_rpc_runtime_api::PortalRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-    generic::BlockId,
-    traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
 const RUNTIME_ERROR: i64 = 1;
 
@@ -66,5 +62,5 @@ where
 }
 
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
-    JsonRpseeError::Custom(format!("{err:?}").into())
+    JsonRpseeError::Custom(format!("{err:?}"))
 }

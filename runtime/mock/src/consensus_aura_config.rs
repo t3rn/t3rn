@@ -26,7 +26,6 @@ impl pallet_aura::Config for Runtime {
     type MaxAuthorities = ConstU32<32>;
 }
 
-use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::ConstU64;
 
 impl pallet_grandpa::Config for Runtime {

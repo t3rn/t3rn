@@ -1,7 +1,6 @@
 use crate::*;
 
 use frame_support::{
-    pallet_prelude::ConstU32,
     traits::{ConstBool, NeverEnsureOrigin, PrivilegeCmp},
     PalletId,
 };

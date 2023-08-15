@@ -301,8 +301,8 @@ mod tests {
     fn invoke_raw_bad_pointer_rlp() {
         new_test_ext().execute_with(|| {
             let account = H160::from_low_u64_be(4);
-            let args = &mut &vec![vec![T3rnCodec::Rlp.into()], rlp::encode(&account).to_vec()]
-                .concat()[..];
+            let args =
+                &mut &[vec![T3rnCodec::Rlp.into()], rlp::encode(&account).to_vec()].concat()[..];
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, args, &mut out);
@@ -316,7 +316,7 @@ mod tests {
     #[test]
     fn invoke_raw_bad_pointer_scale() {
         new_test_ext().execute_with(|| {
-            let args = &mut &vec![vec![T3rnCodec::Scale.into()], ALICE.encode()].concat()[..];
+            let args = &mut &[vec![T3rnCodec::Scale.into()], ALICE.encode()].concat()[..];
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, args, &mut out);
@@ -331,7 +331,7 @@ mod tests {
     fn invoke_bad_origin() {
         new_test_ext().execute_with(|| {
             // RLP codec, scale encoded origin
-            let args = vec![vec![1], ALICE.encode()].concat();
+            let args = [vec![1], ALICE.encode()].concat();
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, &mut &args[..], &mut out);

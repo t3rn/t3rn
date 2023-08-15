@@ -1,30 +1,30 @@
 use crate::{
-    AccountId, AllPalletsWithSystem, AssetId, AssetRegistry, Assets, Balance, Balances, Contracts,
-    DmpQueue, Evm, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
-    RuntimeOrigin, WeightToFee, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    AccountId, AllPalletsWithSystem, AssetRegistry, Assets, Balance, Balances, DmpQueue,
+    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+    WeightToFee, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use circuit_runtime_pallets::{cumulus_primitives_core::GetChannelInfo, *};
 use cumulus_primitives_core::ParaId;
 
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, ConstU64, EitherOfDiverse, Everything, Nothing},
-    weights::{IdentityFee, Weight},
+    traits::{ConstU32, Everything, Nothing},
+    weights::Weight,
 };
 use frame_system::EnsureRoot;
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
+use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::traits::Zero;
+
 use xcm::latest::prelude::*;
 
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-    IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+    ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+    FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents,
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};

@@ -44,12 +44,11 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{Imbalance, OnUnbalanced},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        constants::ExtrinsicBaseWeight, ConstantMultiplier, Weight, WeightToFeeCoefficient,
+        WeightToFeeCoefficients, WeightToFeePolynomial,
     },
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 

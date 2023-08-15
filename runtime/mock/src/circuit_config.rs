@@ -6,7 +6,6 @@ use sp_runtime::Percent;
 use std::marker::PhantomData;
 
 use circuit_runtime_pallets::{
-    pallet_eth2_finality_verifier::types::Root,
     pallet_grandpa_finality_verifier::light_clients::select_grandpa_light_client_instance,
     pallet_portal::Error as PortalError,
 };
@@ -14,7 +13,6 @@ use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     parameter_types,
     traits::{fungibles::Destroy, ConstU32},
-    weights::Weight,
     Blake2_128Concat, StorageHasher,
 };
 use pallet_grandpa_finality_verifier::{
@@ -23,7 +21,7 @@ use pallet_grandpa_finality_verifier::{
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Convert, Get, One, Zero},
+    traits::{BlakeTwo256, Convert, Get},
     Perbill,
 };
 
@@ -236,15 +234,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
         println!("BigMock::freeze_asset ...");
-        Assets::freeze_asset(origin.clone(), asset_id.clone())?;
+        Assets::freeze_asset(origin.clone(), *asset_id)?;
         println!("BigMock::start_destroy ...");
-        Assets::start_destroy(origin.clone(), asset_id.clone())?;
+        Assets::start_destroy(origin.clone(), *asset_id)?;
         println!("BigMock::destroy_accounts ...");
-        Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
+        Assets::destroy_accounts(origin.clone(), *asset_id)?;
         println!("BigMock::destroy_approvals ...");
-        Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
+        Assets::destroy_approvals(origin.clone(), *asset_id)?;
         println!("BigMock::finish_destroy ...");
-        Assets::finish_destroy(origin.clone(), asset_id.clone())?;
+        Assets::finish_destroy(origin.clone(), *asset_id)?;
 
         Ok(().into())
     }

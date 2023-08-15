@@ -34,7 +34,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use sp_std::prelude::*;
+
     use t3rn_primitives::clock::OnHookQueues;
 
     const FIVE: u64 = 5;

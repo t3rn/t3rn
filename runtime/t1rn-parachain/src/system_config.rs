@@ -1,6 +1,6 @@
 use crate::{Hash as HashPrimitive, *};
 use frame_support::{pallet_prelude::ConstU32, parameter_types, weights::IdentityFee};
-use frame_system::limits::{BlockLength, BlockWeights};
+
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::BlakeTwo256;
 parameter_types! {

@@ -9,7 +9,7 @@ use pallet_grandpa_finality_verifier::{
 };
 use pallet_portal::Error as PortalError;
 use sp_runtime::{DispatchResult, Percent};
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_std::marker::PhantomData;
 
 use sp_std::boxed::Box;
 
@@ -17,13 +17,12 @@ use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     parameter_types,
     traits::{fungibles::Destroy, ConstU32},
-    weights::Weight,
     Blake2_128Concat, PalletId, StorageHasher,
 };
 
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Convert, One, Saturating, Zero},
+    traits::{BlakeTwo256, Convert},
     Perbill,
 };
 use t3rn_primitives::GatewayVendor;
@@ -181,15 +180,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
         log::debug!("t3rn-standalone::freeze_asset ...");
-        Assets::freeze_asset(origin.clone(), asset_id.clone())?;
+        Assets::freeze_asset(origin.clone(), *asset_id)?;
         log::debug!("t3rn-standalone::start_destroy ...");
-        Assets::start_destroy(origin.clone(), asset_id.clone())?;
+        Assets::start_destroy(origin.clone(), *asset_id)?;
         log::debug!("t3rn-standalone::destroy_accounts ...");
-        Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
+        Assets::destroy_accounts(origin.clone(), *asset_id)?;
         log::debug!("t3rn-standalone::destroy_approvals ...");
-        Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
+        Assets::destroy_approvals(origin.clone(), *asset_id)?;
         log::debug!("t3rn-standalone::finish_destroy ...");
-        Assets::finish_destroy(origin.clone(), asset_id.clone())?;
+        Assets::finish_destroy(origin.clone(), *asset_id)?;
 
         Ok(().into())
     }

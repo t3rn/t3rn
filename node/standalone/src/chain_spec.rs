@@ -1,4 +1,3 @@
-use circuit_standalone_runtime::opaque::SessionKeys;
 use circuit_standalone_runtime::{
     AccountId,
     AuraConfig,
@@ -178,8 +177,8 @@ fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-    gateway_records: Vec<GatewayRecord<AccountId>>,
-    standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+    _gateway_records: Vec<GatewayRecord<AccountId>>,
+    _standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {

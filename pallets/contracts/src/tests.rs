@@ -107,7 +107,7 @@ pub mod test_utils {
             *counter
         });
         set_balance(address, <Test as Config>::Currency::minimum_balance() * 10);
-        let contract = <ContractInfo<Test>>::new(&address, nonce, code_hash).unwrap();
+        let contract = <ContractInfo<Test>>::new(address, nonce, code_hash).unwrap();
         <ContractInfoOf<Test>>::insert(address, contract);
     }
     pub fn set_balance(who: &AccountIdOf<Test>, amount: u64) {
@@ -136,9 +136,9 @@ pub mod test_utils {
     }
     pub fn ensure_stored(code_hash: CodeHash<Test>) -> usize {
         // Assert that code_info is stored
-        assert!(CodeInfoOf::<Test>::contains_key(&code_hash));
+        assert!(CodeInfoOf::<Test>::contains_key(code_hash));
         // Assert that contract code is stored, and get its size.
-        PristineCode::<Test>::try_get(&code_hash).unwrap().len()
+        PristineCode::<Test>::try_get(code_hash).unwrap().len()
     }
 }
 
@@ -403,8 +403,8 @@ impl pallet_dummy::Config for Test {}
 
 parameter_types! {
     pub MySchedule: Schedule<Test> = {
-        let schedule = <Schedule<Test>>::default();
-        schedule
+
+        <Schedule<Test>>::default()
     };
     pub static DepositPerByte: BalanceOf<Test> = 1;
     pub const DepositPerItem: BalanceOf<Test> = 2;
@@ -2609,7 +2609,7 @@ fn lazy_removal_partial_remove_works() {
     let weight_limit = Weight::from_parts(5_000_000_000, 0);
     let (_, max_keys) = ContractInfo::<Test>::deletion_budget(weight_limit);
     let vals: Vec<_> = (0..max_keys + extra_keys)
-        .map(|i| (blake2_256(&i.encode()), (i as u32), (i as u32).encode()))
+        .map(|i| (blake2_256(&i.encode()), i, i.encode()))
         .collect();
 
     let mut ext = ExtBuilder::default().existential_deposit(50).build();
@@ -2796,7 +2796,7 @@ fn lazy_removal_does_not_use_all_weight() {
 
         // We create a contract with one less storage item than we can remove within the limit
         let vals: Vec<_> = (0..max_keys - 1)
-            .map(|i| (blake2_256(&i.encode()), (i as u32), (i as u32).encode()))
+            .map(|i| (blake2_256(&i.encode()), i, i.encode()))
             .collect();
 
         // Put value into the contracts child trie
@@ -3013,7 +3013,7 @@ fn refcounter() {
             assert_refcount!(code_hash, 0);
 
             // refcount is `0` but code should still exists because it needs to be removed manually
-            assert!(crate::PristineCode::<Test>::contains_key(&code_hash));
+            assert!(crate::PristineCode::<Test>::contains_key(code_hash));
         });
 }
 
@@ -3671,11 +3671,11 @@ fn sr25519_verify() {
             };
 
             // verification should succeed for "hello world"
-            assert_return_code!(call_with(&b"hello world"), RuntimeReturnCode::Success);
+            assert_return_code!(call_with(b"hello world"), RuntimeReturnCode::Success);
 
             // verification should fail for other messages
             assert_return_code!(
-                call_with(&b"hello worlD"),
+                call_with(b"hello worlD"),
                 RuntimeReturnCode::Sr25519VerifyFailed
             );
         });
@@ -3789,7 +3789,7 @@ fn upload_code_works() {
             // Drop previous events
             initialize_block(2);
 
-            assert!(!PristineCode::<Test>::contains_key(&code_hash));
+            assert!(!PristineCode::<Test>::contains_key(code_hash));
 
             assert_ok!(Contracts::upload_code(
                 RuntimeOrigin::signed(ALICE),
@@ -4481,7 +4481,7 @@ fn storage_deposit_callee_works() {
             ));
 
             let callee = get_contract(&addr_callee);
-            let deposit = ED + DepositPerByte::get() * 100 + DepositPerItem::get() * 1;
+            let deposit = ED + DepositPerByte::get() * 100 + DepositPerItem::get();
 
             assert_eq!(test_utils::get_balance(callee.deposit_account()), deposit);
             assert_eq!(callee.total_deposit(), deposit);
@@ -4969,7 +4969,7 @@ fn storage_deposit_limit_is_enforced() {
                     ALICE,
                     0,
                     GAS_LIMIT,
-                    Some((2 * ed + 3 - 1).into()), // expected deposit is 2 * ed + 3 for the call
+                    Some(2 * ed + 3 - 1), // expected deposit is 2 * ed + 3 for the call
                     Code::Upload(wasm.clone()),
                     vec![],
                     vec![],
@@ -5241,7 +5241,7 @@ fn deposit_limit_in_nested_instantiate() {
             .unwrap()
             .account_id;
 
-            let callee_info_len = ContractInfoOf::<Test>::get(&addr).unwrap().encoded_size() as u64;
+            let callee_info_len = ContractInfoOf::<Test>::get(addr).unwrap().encoded_size() as u64;
 
             // We don't set a special deposit limit for the nested instantiation.
             //
@@ -5342,7 +5342,7 @@ fn deposit_limit_in_nested_instantiate() {
             // 10_000 should be sent to callee from the caller contract, plus ED to be sent from the
             // origin.
             assert_eq!(
-                <Test as Config>::Currency::free_balance(&addr_callee),
+                <Test as Config>::Currency::free_balance(addr_callee),
                 10_000 + ED
             );
             // The origin should be charged with:

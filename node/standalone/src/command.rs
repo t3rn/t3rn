@@ -3,11 +3,10 @@ use crate::{
     cli::{Cli, Subcommand},
     service,
 };
-use circuit_standalone_runtime::{Block, EXISTENTIAL_DEPOSIT};
-use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+use circuit_standalone_runtime::Block;
+
+use sc_cli::{ChainSpec, SubstrateCli};
 use sc_service::PartialComponents;
-use sp_keyring::Sr25519Keyring;
 
 #[cfg(feature = "try-runtime")]
 use try_runtime_cli::block_building_info::timestamp_with_aura_info;
@@ -124,7 +123,7 @@ pub fn run() -> sc_cli::Result<()> {
                 Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
             })
         },
-        Some(Subcommand::Benchmark(cmd)) => Err("Benchmarking sub-command unsupported".into()),
+        Some(Subcommand::Benchmark(_cmd)) => Err("Benchmarking sub-command unsupported".into()),
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
             use crate::service::ExecutorDispatch;

@@ -174,11 +174,11 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
     }
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
-        Assets::freeze_asset(origin.clone(), asset_id.clone())?;
-        Assets::start_destroy(origin.clone(), asset_id.clone())?;
-        Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
-        Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
-        Assets::finish_destroy(origin.clone(), asset_id.clone())?;
+        Assets::freeze_asset(origin.clone(), *asset_id)?;
+        Assets::start_destroy(origin.clone(), *asset_id)?;
+        Assets::destroy_accounts(origin.clone(), *asset_id)?;
+        Assets::destroy_approvals(origin.clone(), *asset_id)?;
+        Assets::finish_destroy(origin.clone(), *asset_id)?;
 
         Ok(().into())
     }

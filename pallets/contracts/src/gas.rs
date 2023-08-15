@@ -124,7 +124,7 @@ impl<T: Config> GasMeter<T> {
         self.gas_left = self
             .gas_left
             .checked_sub(&amount)
-            .ok_or_else(|| <Error<T>>::OutOfGas)?;
+            .ok_or(<Error<T>>::OutOfGas)?;
         Ok(GasMeter::new(amount))
     }
 
@@ -183,7 +183,7 @@ impl<T: Config> GasMeter<T> {
         self.gas_left = self
             .gas_left
             .checked_sub(&amount)
-            .ok_or_else(|| Error::<T>::OutOfGas)?;
+            .ok_or(Error::<T>::OutOfGas)?;
         Ok(ChargedAmount(amount))
     }
 
@@ -218,7 +218,7 @@ impl<T: Config> GasMeter<T> {
                 .gas_left
                 .ref_time()
                 .checked_sub(reftime_consumed)
-                .ok_or_else(|| Error::<T>::OutOfGas)?;
+                .ok_or(Error::<T>::OutOfGas)?;
 
             *(self.gas_left.ref_time_mut()) = ref_time_left;
         }
@@ -335,7 +335,7 @@ mod tests {
     #[test]
     fn tracing() {
         let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(50000, 0));
-        assert!(!gas_meter.charge(SimpleToken(1)).is_err());
+        assert!(gas_meter.charge(SimpleToken(1)).is_ok());
 
         let mut tokens = gas_meter.tokens().iter();
         match_tokens!(tokens, SimpleToken(1),);
@@ -365,6 +365,6 @@ mod tests {
     #[test]
     fn charge_exact_amount() {
         let mut gas_meter = GasMeter::<Test>::new(Weight::from_parts(25, 0));
-        assert!(!gas_meter.charge(SimpleToken(25)).is_err());
+        assert!(gas_meter.charge(SimpleToken(25)).is_ok());
     }
 }

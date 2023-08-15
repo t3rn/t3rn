@@ -370,7 +370,7 @@ where
         min_leftover: BalanceOf<T>,
     ) -> Result<Self, DispatchError> {
         // Check the limit only if the origin is not root.
-        return match origin {
+        match origin {
             Origin::Root => Ok(Self {
                 limit: limit.unwrap_or(T::DefaultDepositLimit::get()),
                 ..Default::default()
@@ -582,7 +582,7 @@ impl<T: Config> Ext<T> for ReservingExt {
             ),
             Deposit::Refund(amount) => {
                 if terminated {
-                    System::<T>::dec_consumers(&deposit_account);
+                    System::<T>::dec_consumers(deposit_account);
                 }
                 T::Currency::transfer(
                     deposit_account,

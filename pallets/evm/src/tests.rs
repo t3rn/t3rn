@@ -328,7 +328,7 @@ mod proof_size_test {
             let result = <Test as Config>::Runner::call(
                 H160::default(),
                 call_contract_address,
-                hex::decode(&call_data).unwrap(),
+                hex::decode(call_data).unwrap(),
                 U256::zero(),
                 gas_limit,
                 Some(FixedGasPrice::min_gas_price().0),
@@ -377,7 +377,7 @@ mod proof_size_test {
             let result = <Test as Config>::Runner::call(
                 H160::default(),
                 call_contract_address,
-                hex::decode(&call_data).unwrap(),
+                hex::decode(call_data).unwrap(),
                 U256::zero(),
                 gas_limit,
                 Some(FixedGasPrice::min_gas_price().0),
@@ -430,7 +430,7 @@ mod proof_size_test {
             let result = <Test as Config>::Runner::call(
                 H160::default(),
                 call_contract_address,
-                hex::decode(&call_data).unwrap(),
+                hex::decode(call_data).unwrap(),
                 U256::zero(),
                 gas_limit,
                 Some(FixedGasPrice::min_gas_price().0),
@@ -680,7 +680,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     .expect("Pallet balances storage can be assimilated");
 
     crate::GenesisConfig::<Test> {
-        accounts,
+        accounts: accounts.encode(),
         ..Default::default()
     }
     .assimilate_storage(&mut t)
@@ -729,15 +729,15 @@ fn fee_deduction() {
 
 		// Seed account
 		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 100);
-		assert_eq!(Balances::free_balance(&substrate_addr), 100);
+		assert_eq!(Balances::free_balance(substrate_addr), 100);
 
 		// Deduct fees as 10 units
 		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10)).unwrap();
-		assert_eq!(Balances::free_balance(&substrate_addr), 90);
+		assert_eq!(Balances::free_balance(substrate_addr), 90);
 
 		// Refund fees as 5 units
 		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), U256::from(5), imbalance);
-		assert_eq!(Balances::free_balance(&substrate_addr), 95);
+		assert_eq!(Balances::free_balance(substrate_addr), 95);
 	});
 }
 
@@ -750,7 +750,7 @@ fn ed_0_refund_patch_works() {
         let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
         let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 21_777_000_000_000);
-        assert_eq!(Balances::free_balance(&substrate_addr), 21_777_000_000_000);
+        assert_eq!(Balances::free_balance(substrate_addr), 21_777_000_000_000);
 
         let _ = EVM::call(
             RuntimeOrigin::root(),
@@ -765,7 +765,7 @@ fn ed_0_refund_patch_works() {
             Vec::new(),
         );
         // All that was due, was refunded.
-        assert_eq!(Balances::free_balance(&substrate_addr), 776_000_000_000);
+        assert_eq!(Balances::free_balance(substrate_addr), 776_000_000_000);
     });
 }
 
@@ -778,7 +778,7 @@ fn ed_0_refund_patch_is_required() {
         let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
         let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 100);
-        assert_eq!(Balances::free_balance(&substrate_addr), 100);
+        assert_eq!(Balances::free_balance(substrate_addr), 100);
 
         // Drain funds
         let _ =
@@ -787,19 +787,18 @@ fn ed_0_refund_patch_is_required() {
                 U256::from(100),
             )
             .unwrap();
-        assert_eq!(Balances::free_balance(&substrate_addr), 0);
+        assert_eq!(Balances::free_balance(substrate_addr), 0);
 
         // Try to refund. With ED 0, although the balance is now 0, the account still exists.
         // So its expected that calling `deposit_into_existing` results in the AccountData to increase the Balance.
         //
         // Is not the case, and this proves that the refund logic needs to be handled taking this into account.
-        assert_eq!(
+        assert!(
             <Test as Config>::Currency::deposit_into_existing(&substrate_addr, 5u32.into())
-                .is_err(),
-            true
+                .is_err()
         );
         // Balance didn't change, and should be 5.
-        assert_eq!(Balances::free_balance(&substrate_addr), 0);
+        assert_eq!(Balances::free_balance(substrate_addr), 0);
     });
 }
 
@@ -960,7 +959,7 @@ fn refunds_and_priority_should_work() {
         );
         let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
         let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
-        let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
+        let total_cost = (used_gas * base_fee) + actual_tip + U256::from(1);
         let after_call = EVM::account_basic(&H160::default()).0.balance;
         // The tip is deducted but never refunded to the caller.
         assert_eq!(after_call, before_call - total_cost);
@@ -1029,7 +1028,7 @@ fn handle_sufficient_reference() {
             <Test as Config>::AddressMapping::into_account_id(addr_2);
 
         // Sufficients should increase when creating EVM accounts.
-        let _ = <crate::AccountCodes<Test>>::insert(addr, &vec![0]);
+        <crate::AccountCodes<Test>>::insert(addr, vec![0]);
         let account = frame_system::Account::<Test>::get(substrate_addr);
         // Using storage is not correct as it leads to a sufficient reference mismatch.
         assert_eq!(account.sufficients, 0);
@@ -1244,7 +1243,7 @@ fn metadata_code_gets_cached() {
                 .into()
         );
 
-        let metadata2 = <AccountCodesMetadata<Test>>::get(&address).expect("to have metadata set");
+        let metadata2 = <AccountCodesMetadata<Test>>::get(address).expect("to have metadata set");
         assert_eq!(metadata, metadata2);
     });
 }
@@ -1262,6 +1261,6 @@ fn metadata_empty_dont_code_gets_cached() {
                 .into()
         );
 
-        assert!(<AccountCodesMetadata<Test>>::get(&address).is_none());
+        assert!(<AccountCodesMetadata<Test>>::get(address).is_none());
     });
 }

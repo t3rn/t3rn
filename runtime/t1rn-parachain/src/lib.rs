@@ -22,14 +22,10 @@ pub use frame_support::traits::EqualPrivilegeOnly;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
-use sp_runtime::traits::NumberFor;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
-};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 

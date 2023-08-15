@@ -11,9 +11,7 @@ pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use pallet_contracts_registry_rpc_runtime_api::FetchContractsResult;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-    traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
 const RUNTIME_ERROR: i64 = 1;
 

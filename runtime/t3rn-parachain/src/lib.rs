@@ -28,9 +28,8 @@ pub use sp_runtime::BuildStorage;
 use frame_support::{
     construct_runtime, parameter_types,
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        constants::ExtrinsicBaseWeight, ConstantMultiplier, Weight, WeightToFeeCoefficient,
+        WeightToFeeCoefficients, WeightToFeePolynomial,
     },
 };
 

@@ -10,10 +10,8 @@ use frame_support::{
 };
 
 // use evm_precompile_util::KnownPrecompile;
-use pallet_3vm_contracts::{weights::WeightInfo, NoopMigration};
-use pallet_3vm_evm::{
-    EnsureAddressTruncated, GasWeightMapping, HashedAddressMapping, SubstrateBlockHashMapping,
-};
+use pallet_3vm_contracts::NoopMigration;
+use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
