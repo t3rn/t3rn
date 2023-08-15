@@ -37,8 +37,10 @@ pub type AccountId = u64;
 pub type BlockNumber = u32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
-
+pub type Block = sp_runtime::generic::Block<
+    sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
+    frame_system::mocking::MockUncheckedExtrinsic<Test>,
+>;
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
     pub enum Test where
@@ -46,9 +48,9 @@ construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        MaintenanceMode: pallet_maintenance_mode::{Pallet, Call, Storage, Event, Config},
-        MockPalletMaintenanceHooks: mock_pallet_maintenance_hooks::{Pallet, Call, Event},
+        System: frame_system,
+        MaintenanceMode: pallet_maintenance_mode,
+        MockPalletMaintenanceHooks: mock_pallet_maintenance_hooks,
     }
 );
 
@@ -63,17 +65,16 @@ impl frame_system::Config for Test {
     type AccountData = ();
     type AccountId = AccountId;
     type BaseCallFilter = MaintenanceMode;
+    type Block = Block;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = BlockNumber;
     type BlockWeights = ();
     type DbWeight = ();
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
@@ -273,7 +274,7 @@ impl Default for ExtBuilder {
         }
     }
 }
-
+use sp_runtime::BuildStorage;
 impl ExtBuilder {
     pub(crate) fn with_maintenance_mode(mut self, m: bool) -> Self {
         self.maintenance_mode = m;
@@ -281,17 +282,16 @@ impl ExtBuilder {
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
-        GenesisBuild::<Test>::assimilate_storage(
-            &pallet_maintenance_mode::GenesisConfig {
-                start_in_maintenance_mode: self.maintenance_mode,
-            },
-            &mut t,
-        )
-        .expect("Pallet maintenance mode storage can be assimilated");
+        pallet_maintenance_mode::GenesisConfig::<Test> {
+            start_in_maintenance_mode: self.maintenance_mode,
+            _config: Default::default(),
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet maintenance can be assimilated");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
