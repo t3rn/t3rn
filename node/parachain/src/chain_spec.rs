@@ -1,4 +1,34 @@
-use circuit_standalone_runtime::{AccountId, AuraId, Signature, SudoConfig, TRN};
+// #[cfg(feature = "t0rn")]
+// use t0rn_parachain_runtime::{
+//     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
+//     ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+//     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
+// };
+
+#[cfg(feature = "t1rn")]
+use t1rn_parachain_runtime::{
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
+    ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
+};
+
+#[cfg(feature = "t3rn")]
+use t3rn_parachain_runtime::{
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
+    ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, TRN, WASM_BINARY,
+};
+
+// #[cfg(not(any(feature = "t0rn", feature = "t1rn", feature = "t3rn")))]
+#[cfg(not(any(feature = "t1rn", feature = "t3rn")))]
+use t0rn_parachain_runtime::{
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
+    ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
+};
+
+use codec::Encode;
+
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -9,30 +39,32 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
+
 const PARACHAIN_ID: u32 = 3333;
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
+const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
 pub(crate) const SS58_FORMAT: u16 = 9935;
+pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-    sc_service::GenericChainSpec<circuit_standalone_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)]
-// #[serde(deny_unknown_fields)] // no ChainSpecGroup
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)] // removing ChainSpecGroup since bad blocks wont implement
+                                                                                   // #[serde(deny_unknown_fields)]
 pub struct Extensions {
     /// The relay chain of the Parachain.
     pub relay_chain: String,
     /// The id of the Parachain.
     pub para_id: u32,
     /// Known bad block hashes.
-    pub bad_blocks: sc_client_api::BadBlocks<circuit_standalone_runtime::Block>,
+    pub bad_blocks: sc_client_api::BadBlocks<Block>,
 }
 
 impl Extensions {
@@ -97,8 +129,8 @@ pub fn get_aura_id_from_adrs(adrs: &str) -> AuraId {
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn session_keys(keys: AuraId) -> circuit_standalone_runtime::SessionKeys {
-    circuit_standalone_runtime::SessionKeys { aura: keys }
+pub fn session_keys(keys: AuraId) -> SessionKeys {
+    SessionKeys { aura: keys }
 }
 
 pub fn local_testnet_config() -> ChainSpec {
@@ -281,35 +313,45 @@ fn polkadot_genesis(
     endowed_accounts: Vec<(AccountId, u128)>,
     id: ParaId,
     root_key: AccountId,
-) -> circuit_standalone_runtime::GenesisConfig {
-    circuit_standalone_runtime::GenesisConfig {
-        system: circuit_standalone_runtime::SystemConfig {
-            code: circuit_standalone_runtime::WASM_BINARY
+) -> GenesisConfig {
+    GenesisConfig {
+        system: SystemConfig {
+            code: WASM_BINARY
                 .expect("WASM binary was not build, please build it!")
                 .to_vec(),
+            _config: Default::default(),
         },
-        balances: circuit_standalone_runtime::BalancesConfig {
+        balances: BalancesConfig {
             balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|(acc, amt)| (acc, amt))
                 .collect(),
         },
+        #[cfg(not(feature = "t3rn"))]
         clock: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         account_manager: Default::default(),
         treasury: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         escrow_treasury: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         fee_treasury: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         parachain_treasury: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         slash_treasury: Default::default(),
-        parachain_info: circuit_standalone_runtime::ParachainInfoConfig { parachain_id: id },
-        collator_selection: circuit_standalone_runtime::CollatorSelectionConfig {
+        parachain_info: ParachainInfoConfig {
+            parachain_id: id,
+            _config: Default::default(),
+        },
+        collator_selection: CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
             candidacy_bond: CANDIDACY_BOND,
             desired_candidates: DESIRED_CANDIDATES,
             ..Default::default()
         },
-        session: circuit_standalone_runtime::SessionConfig {
+        session: SessionConfig {
             keys: invulnerables
                 .into_iter()
                 .map(|(acc, aura)| {
@@ -324,34 +366,154 @@ fn polkadot_genesis(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         assets: Default::default(),
         aura_ext: Default::default(),
         parachain_system: Default::default(),
-        polkadot_xcm: circuit_standalone_runtime::PolkadotXcmConfig {
+        polkadot_xcm: PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
+            _config: Default::default(),
         },
         sudo: SudoConfig {
             // Assign network admin rights.
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         contracts_registry: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         attesters: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         evm: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         three_vm: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         rewards: Default::default(),
+        #[cfg(not(feature = "t3rn"))]
         maintenance: Default::default(),
-        xdns: circuit_standalone_runtime::XDNSConfig {
+        #[cfg(not(feature = "t3rn"))]
+        xdns: XDNSConfig {
             known_gateway_records: vec![],
-            standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi(),
+            standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi().encode(),
+            _marker: Default::default(),
         },
-        // grandpa: GrandpaConfig {
-        //     authorities: vec![authority_keys_from_seed("Alice")]
-        //         .iter()
-        //         .map(|x| (x.1.clone(), 1))
-        //         .collect(),
-        // },
     }
+}
+
+pub fn rococo_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "T0RN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T0RN.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t0rn",
+        // Id
+        "t0rn_testnet",
+        ChainType::Live,
+        move || {
+            polkadot_genesis(
+                // Invulnerable collators
+                vec![
+                    (
+                        get_account_id_from_adrs(
+                            "5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW",
+                        ),
+                        get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW"),
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v",
+                        ),
+                        get_aura_id_from_adrs("5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v"),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    (
+                        get_account_id_from_adrs(
+                            "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV",
+                        ),
+                        1 << 60,
+                    ),
+                ],
+                PARACHAIN_ID.into(),
+                // Sudo
+                get_account_id_from_adrs(SUDO_T0RN),
+            )
+        },
+        // Bootnodes
+        Vec::new(),
+        // Telemetry
+        None,
+        // Protocol ID
+        Some("t0rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "rococo".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,        // You MUST set this correctly!
+            bad_blocks: None,
+        },
+    )
 }
 
 #[cfg(test)]

@@ -93,12 +93,11 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system = 0,
-        Grandpa: pallet_grandpa = 1,
-        Timestamp: pallet_timestamp = 2,
+        Timestamp: pallet_timestamp = 1,
+        Aura: pallet_aura = 2,
+        Grandpa: pallet_grandpa = 3,
 
         Utility: pallet_utility = 6,
-
-        Aura: pallet_aura = 23,
 
         // Monetary stuff.
         Balances: pallet_balances = 10,

@@ -2,6 +2,7 @@
 //! Runtime utilities
 
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
+use codec::{Decode, Encode};
 
 use frame_support::{
     pallet_prelude::Weight,
@@ -328,14 +329,15 @@ impl ExtBuilder {
             .expect("Pallet balances storage can be assimilated");
 
         pallet_attesters::GenesisConfig::<Runtime> {
-            phantom: Default::default(),
+            _marker: Default::default(),
             attestation_targets: self.attestation_targets,
         }
         .assimilate_storage(&mut t)
         .expect("Pallet attesters can be assimilated");
         pallet_xdns::GenesisConfig::<Runtime> {
-            known_gateway_records: self.known_gateway_records,
-            standard_sfx_abi: self.standard_sfx_abi,
+            known_gateway_records: self.known_gateway_records.encode(),
+            standard_sfx_abi: self.standard_sfx_abi.encode(),
+            _marker: Default::default(),
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");

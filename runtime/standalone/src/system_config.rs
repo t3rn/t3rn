@@ -6,7 +6,7 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, Credit},
-        ConstU32, ConstU8, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
+        ConstU32, ConstU64, ConstU8, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
         OnRuntimeUpgrade,
     },
     weights::IdentityFee,
@@ -23,7 +23,7 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     // type BaseCallFilter = MaintenanceMode; // todo: fix MaintananceMode compilation for v39 - XCMExecuteTransact trait unimplemented error
-    type BaseCallFilter = ();
+    type BaseCallFilter = frame_support::traits::Everything;
     /// The header type.
     type Block = Block;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
@@ -74,7 +74,7 @@ parameter_types! {
 }
 
 impl pallet_timestamp::Config for Runtime {
-    type MinimumPeriod = MinimumPeriod;
+    type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;

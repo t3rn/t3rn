@@ -1017,14 +1017,15 @@ impl ExtBuilder {
         .expect("Pallet balances storage can be assimilated");
 
         pallet_xdns::GenesisConfig::<MiniRuntime> {
-            known_gateway_records: self.known_gateway_records,
-            standard_sfx_abi: self.standard_sfx_abi,
+            known_gateway_records: self.known_gateway_records.encode(),
+            standard_sfx_abi: self.standard_sfx_abi.encode(),
+            _marker: Default::default(),
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
 
         pallet_rewards::GenesisConfig::<MiniRuntime> {
-            phantom: Default::default(),
+            _marker: Default::default(),
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");

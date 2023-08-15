@@ -34,6 +34,9 @@ pub type AssetId = u32;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
+/// Index of a transaction in the chain.
+pub type Nonce = u32;
+
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
@@ -67,6 +70,11 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(25);
 pub const UNIT: Balance = 1_000_000_000_000;
 pub const MILLIUNIT: Balance = 1_000_000_000;
 pub const MICROUNIT: Balance = 1_000_000;
+
+pub const DECIMALS: u8 = 12;
+pub const MILLIT3RN: u64 = 1_000_000_000;
+pub const MT3RN: Balance = MILLIT3RN as Balance;
+pub const TRN: u64 = 1_000_000_000_000;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;

@@ -1,7 +1,22 @@
+use circuit_standalone_runtime::opaque::SessionKeys;
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    AccountId,
+    AuraConfig,
+    BalancesConfig,
+    GenesisConfig,
+    GrandpaConfig,
+    Signature,
+    SudoConfig,
+    SystemConfig,
+    WASM_BINARY,
+    // SessionConfig,
+    // CollatorSelectionConfig,
+    // XDNSConfig
+    // EvmConfig
 };
+
+const CANDIDACY_BOND: u128 = 0; // 10K TRN
+const DESIRED_CANDIDATES: u32 = 2;
 
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -151,7 +166,12 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 // within contracts.
 // (PUSH1 0x00 PUSH1 0x00 REVERT)
 const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
-
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+// pub fn session_keys(keys: AuraId) -> SessionKeys {
+//     SessionKeys { aura: keys, grandpa: keys }
+// }
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
     wasm_binary: &[u8],
@@ -176,6 +196,18 @@ fn testnet_genesis(
                 .map(|k| (k, (10000 * 10u128.pow(12))))
                 .collect(),
         },
+        // session: SessionConfig {
+        //     keys: initial_authorities
+        //         .iter()
+        //         .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.1.clone())))
+        //         .collect(),
+        // },
+        // collator_selection: CollatorSelectionConfig {
+        //     invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
+        //     candidacy_bond: CANDIDACY_BOND,
+        //     desired_candidates: DESIRED_CANDIDATES,
+        //     ..Default::default()
+        // },
         treasury: Default::default(),
         escrow_treasury: Default::default(),
         fee_treasury: Default::default(),
@@ -184,7 +216,6 @@ fn testnet_genesis(
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
         },
-        rewards: Default::default(),
         grandpa: GrandpaConfig {
             authorities: initial_authorities
                 .iter()
@@ -198,6 +229,7 @@ fn testnet_genesis(
         },
         transaction_payment: Default::default(),
         assets: Default::default(),
+        rewards: Default::default(),
         xdns: Default::default(),
         contracts_registry: Default::default(),
         account_manager: Default::default(),
