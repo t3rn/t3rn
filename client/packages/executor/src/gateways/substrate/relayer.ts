@@ -8,7 +8,7 @@ import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
 import Estimator from "./estimator";
 import { CostEstimator, Estimate } from "./estimator/cost";
 import { Sdk, Utils } from "@t3rn/sdk";
-import { Gateway, config } from "../../../config/config";
+import { Gateway } from "../../../config/config";
 import { logger } from "../../logging";
 import { Prometheus } from "../../prometheus";
 import { AccountInfo } from "@polkadot/types/interfaces";
