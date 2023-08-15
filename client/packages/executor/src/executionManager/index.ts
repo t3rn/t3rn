@@ -54,15 +54,6 @@ export type Queue = {
   };
 };
 
-/** Persisted state for JSON de/serialization. WIP */
-export interface PersistedState {
-  queue: Queue;
-  xtx: { [id: string]: Execution };
-  sfxToXtx: { [sfxId: string]: string };
-  // targetEstimator: { [id: string]: Estimator }
-  // relayers: { [key: string]: SubstrateRelayer }
-}
-
 /**
  * The ExecutionManager lies at the heart of the t3rn executor. It is responsible for managing and coordinating the execution of incoming
  * XTXs and the corresponding SFXs. It processes incoming events, triggering the creation/execution/confirmation of SFXs.
@@ -110,22 +101,6 @@ export class ExecutionManager {
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.prometheus = prometheus;
-  }
-
-  /** Injects persisted execution state.
-   *
-   * @param state Persisted state to rebase ontop
-   *
-   */
-  inject(state: undefined | PersistedState): ExecutionManager {
-    if (state) {
-      this.queue = state.queue;
-      this.xtx = state.xtx;
-      this.sfxToXtx = state.sfxToXtx;
-      // this.targetEstimator = state.targetEstimator
-      // this.relayers = state.relayers
-    }
-    return this;
   }
 
   /** Setup all instances and listeners for the execution manager */

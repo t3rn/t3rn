@@ -15,7 +15,7 @@ import {
   Estimate,
   InclusionProof,
 } from "./gateways/substrate/relayer";
-import { ExecutionManager, PersistedState, Queue } from "./executionManager";
+import { ExecutionManager, Queue } from "./executionManager";
 import { config, Config, Circuit, Strategy, Gateway } from "../config/config";
 import { BiddingEngine, BiddingStrategy } from "./bidding";
 import { PriceEngine, CoingeckoPricing } from "./pricing";
