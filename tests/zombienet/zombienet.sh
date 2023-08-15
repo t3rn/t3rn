@@ -67,22 +67,14 @@ build_polkadot() {
         return
     fi
 
-    if [ ! -d "$polkadot_tmp_dir" ]; then
+    if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
-    fi
-
-    if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
-    fi
-
-    if [ ! -f "$bin_dir/polkadot" ]; then
         echo "Copying polkadot to bin dir"
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
-    else
-        echo "✅ Polkadot $pdot_branch installed"
     fi
 }
 
