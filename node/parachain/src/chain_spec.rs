@@ -1,18 +1,30 @@
-#[cfg(feature = "t1rn")]
+#[cfg(all(
+    feature = "t1rn",
+    not(feature = "t3rn"),
+    not(feature = "t0rn"),
+    not(feature = "default"),
+    not(feature = "runtime-benchmarks")
+))]
 use t1rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
     ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
-#[cfg(feature = "t3rn")]
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t1rn"),
+    not(feature = "t0rn"),
+    not(feature = "default"),
+    not(feature = "runtime-benchmarks")
+))]
 use t3rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
     ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, TRN, WASM_BINARY,
 };
 
-#[cfg(not(any(feature = "t1rn", feature = "t3rn")))]
+#[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
 use t0rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
     ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
@@ -139,7 +151,7 @@ pub fn local_testnet_config() -> ChainSpec {
         "local_testnet",
         ChainType::Local,
         move || {
-            polkadot_genesis(
+            polkadot_genesis_full(
                 // initial collators.
                 vec![
                     (
@@ -238,8 +250,7 @@ pub fn polkadot_config() -> ChainSpec {
         "t3rn",
         ChainType::Live,
         move || {
-            // TODO: needs updating
-            polkadot_genesis(
+            polkadot_genesis_full(
                 vec![
                     (
                         // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
@@ -300,7 +311,14 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-fn polkadot_genesis(
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t1rn"),
+    not(feature = "t0rn"),
+    not(feature = "default"),
+    not(feature = "runtime-benchmarks")
+))]
+fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
     id: ParaId,
@@ -320,18 +338,82 @@ fn polkadot_genesis(
                 .map(|(acc, amt)| (acc, amt))
                 .collect(),
         },
-        #[cfg(not(feature = "t3rn"))]
+        parachain_info: ParachainInfoConfig {
+            parachain_id: id,
+            _config: Default::default(),
+        },
+        collator_selection: CollatorSelectionConfig {
+            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+            candidacy_bond: CANDIDACY_BOND,
+            desired_candidates: DESIRED_CANDIDATES,
+            ..Default::default()
+        },
+        session: SessionConfig {
+            keys: invulnerables
+                .into_iter()
+                .map(|(acc, aura)| {
+                    (
+                        acc.clone(),        // account id
+                        acc,                // validator id
+                        session_keys(aura), // session keys
+                    )
+                })
+                .collect(),
+        },
+        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
+        // of this.
+        aura: Default::default(),
+        aura_ext: Default::default(),
+        parachain_system: Default::default(),
+        polkadot_xcm: PolkadotXcmConfig {
+            safe_xcm_version: Some(SAFE_XCM_VERSION),
+            _config: Default::default(),
+        },
+        sudo: SudoConfig {
+            // Assign network admin rights.
+            key: Some(root_key),
+        },
+        transaction_payment: Default::default(),
+    }
+}
+
+fn polkadot_genesis_full(
+    invulnerables: Vec<(AccountId, AuraId)>,
+    endowed_accounts: Vec<(AccountId, u128)>,
+    id: ParaId,
+    root_key: AccountId,
+) -> GenesisConfig {
+    #[cfg(all(
+        feature = "t3rn",
+        not(feature = "t1rn"),
+        not(feature = "t0rn"),
+        not(feature = "default"),
+        not(feature = "runtime-benchmarks")
+    ))]
+    #[rustfmt::skip]
+    return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
+
+    return GenesisConfig {
+        system: SystemConfig {
+            code: WASM_BINARY
+                .expect("WASM binary was not build, please build it!")
+                .to_vec(),
+            _config: Default::default(),
+        },
+        balances: BalancesConfig {
+            balances: endowed_accounts
+                .iter()
+                .cloned()
+                .map(|(acc, amt)| (acc, amt))
+                .collect(),
+        },
+
         clock: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         account_manager: Default::default(),
         treasury: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         escrow_treasury: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         fee_treasury: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         parachain_treasury: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         slash_treasury: Default::default(),
         parachain_info: ParachainInfoConfig {
             parachain_id: id,
@@ -358,7 +440,6 @@ fn polkadot_genesis(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         assets: Default::default(),
         aura_ext: Default::default(),
         parachain_system: Default::default(),
@@ -371,19 +452,12 @@ fn polkadot_genesis(
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         contracts_registry: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         attesters: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         evm: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         three_vm: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         rewards: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         maintenance: Default::default(),
-        #[cfg(not(feature = "t3rn"))]
         xdns: XDNSConfig {
             known_gateway_records: vec![],
             standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi().encode(),
@@ -405,7 +479,7 @@ pub fn rococo_config() -> ChainSpec {
         "t0rn_testnet",
         ChainType::Live,
         move || {
-            polkadot_genesis(
+            polkadot_genesis_full(
                 // Invulnerable collators
                 vec![
                     (

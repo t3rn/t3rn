@@ -73,7 +73,7 @@ frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
 # Local Dependencies
-t0rn-parachain-runtime      = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
+t0rn-parachain-runtime      = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime", optional = true }
 t1rn-parachain-runtime      = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime", optional = true }
 t3rn-parachain-runtime      = { path = "../../runtime/t3rn-parachain", package = "t3rn-parachain-runtime", optional = true }
 
@@ -111,7 +111,21 @@ xcm                                     = { workspace = true }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default            = [ ]
-runtime-benchmarks = [ ]
+default = [
+    "t0rn-parachain-runtime",
+    "t1rn-parachain-runtime",
+    "t3rn-parachain-runtime"
+]
+try-runtime = [
+    "t0rn-parachain-runtime?/try-runtime",
+    "t1rn-parachain-runtime?/try-runtime",
+    "t3rn-parachain-runtime?/try-runtime"
+]
+runtime-benchmarks = [
+    "t0rn-parachain-runtime?/runtime-benchmarks",
+    "t1rn-parachain-runtime?/runtime-benchmarks",
+    "t3rn-parachain-runtime?/runtime-benchmarks",
+]
+t0rn = ["t0rn-parachain-runtime"]
 t1rn = ["t1rn-parachain-runtime"]
 t3rn = ["t3rn-parachain-runtime"]
