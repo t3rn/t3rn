@@ -95,20 +95,18 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
-    let address;
     logger.info(
       { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
       `SFX Execution started 🔮`,
     );
 
-    logger.error([sfx.gateway])
-    if (sfx.gateway.gatewayType === "Substrate") {
+    if (sfx.gateway.executionVendor === "Substrate") {
       this.prometheus.executorClientBalance.set(
         {
           signer: sfx.arguments[0],
           target: sfx.target,
         },
-        await getBalance(this.client, address),
+        await getBalance(this.client, sfx.arguments[0]),
       );
     }
 
@@ -174,7 +172,7 @@ export class SubstrateRelayer extends EventEmitter {
                   signer: sfx.arguments[0],
                   target: sfx.target,
                 },
-                await getBalance(this.client, address),
+                await getBalance(this.client, sfx.arguments[0]),
               );
             }
 
@@ -373,13 +371,6 @@ async function getBalance(client: ApiPromise, address) {
   return (
     (await client.query.system.account(address)) as AccountInfo
   ).data.free.toNumber();
-}
-
-function hexToAccountId(hexValue, prefix) {
-  const keyring = new Keyring({ type: "sr25519", ss58Format: prefix });
-  const account = keyring.encodeAddress(hexValue);
-
-  return account;
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };
