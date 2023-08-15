@@ -100,18 +100,16 @@ export class SubstrateRelayer extends EventEmitter {
       { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
       `SFX Execution started 🔮`,
     );
-    config.gateways.forEach((gateway) => {
-      if (gateway.name === sfx.target) {
-        address = hexToAccountId(sfx.arguments[0], gateway.accountPrefix);
-      }
-    });
-    this.prometheus.executorClientBalance.set(
-      {
-        signer: address,
-        target: sfx.target,
-      },
-      await getBalance(this.client, address),
-    );
+
+    if (sfx.gateway.gatewayType === "Substrate") {
+      this.prometheus.executorClientBalance.set(
+        {
+          signer: sfx.arguments[0],
+          target: sfx.target,
+        },
+        await getBalance(this.client, address),
+      );
+    }
 
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
     const nonce = this.nonce;
@@ -169,13 +167,16 @@ export class SubstrateRelayer extends EventEmitter {
               `SFX Execution completed 🏁`,
             );
 
-            this.prometheus.executorClientBalance.set(
-              {
-                signer: address,
-                target: sfx.target,
-              },
-              await getBalance(this.client, sfx),
-            );
+            if (sfx.gateway.gatewayType === "Substrate") {
+              this.prometheus.executorClientBalance.set(
+                {
+                  signer: sfx.arguments[0],
+                  target: sfx.target,
+                },
+                await getBalance(this.client, address),
+              );
+            }
+
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,
               sfxId: sfx.id,
