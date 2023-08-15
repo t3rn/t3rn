@@ -59,7 +59,9 @@ jobs:
           fetch-depth: 1
 
       - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
-        run: rustup show
+        run: |
+          rm -rf ~/.rustup
+          rustup show
 
       - name: 📜 Check code format
         uses: actions-rs/cargo@v1
@@ -138,7 +140,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
-        run: rustup show
+        run: |
+          rm -rf ~/.rustup
+          rustup show
 
       - name: Print sccache stats
         working-directory: tests/zombienet
