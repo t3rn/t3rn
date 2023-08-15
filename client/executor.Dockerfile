@@ -17,7 +17,4 @@ WORKDIR /app/executor
 RUN chown -R node /app
 USER node
 
-RUN mkdir -p /home/node/.t3rn-executor-example/.t3rn-executor-example
-COPY --chown=node:node packages/executor/config.json /home/node/.t3rn-executor-example/config.json
-
 CMD ["pnpm", "run", "start"]

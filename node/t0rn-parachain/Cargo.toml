@@ -8,8 +8,6 @@ name        = "t0rn-parachain-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
-[package.metadata.docs.rs]
-targets = [ "x86_64-unknown-linux-gnu" ]
 
 [[bin]]
 name = "t0rn-collator"

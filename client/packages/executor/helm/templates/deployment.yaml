@@ -29,8 +29,13 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: WS_CIRCUIT_ENDPOINT
+            - name: CIRCUIT_WS_ENDPOINT
               value: "{{ .Values.websocketEndpoint }}"
+            - name: CIRCUIT_SIGNER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: circuit
+                  key: signer_key
             - name: PROCESS_BATCHES
               value: "true"
             - name: ETHEREUM_PRIVATE_KEY

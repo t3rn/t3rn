@@ -1,6 +1,8 @@
 #!/bin/env node
+import fs from 'fs'
 import { Command } from "commander"
-import { handleInitCmd } from "./commands/init.ts"
+import { handleInitCmd, initConfigFile } from "./commands/init.ts"
+import { CONFIG_FILE } from "@/consts.ts"
 import { wrapCryptoWaitReady } from "./utils/fns.ts"
 import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
@@ -8,6 +10,9 @@ import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
 import { handleEstimateMaxReward } from "./commands/estimate.ts"
 
+if (!fs.existsSync(CONFIG_FILE)) {
+    initConfigFile(CONFIG_FILE)
+}
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
 

@@ -367,7 +367,7 @@ export class ExecutionManager {
       );
       return;
     }
-    logger.info(`Received XTX ${xtx.humanId} 🌱`); // XTX is valid for execution
+    logger.info({ xtxId: xtx.id }, `Received XTX 🌱`); // XTX is valid for execution
 
     // add XTX and init required event listeners
     this.xtx[xtx.id] = xtx;
@@ -412,11 +412,8 @@ export class ExecutionManager {
       // Get the SFX that the executor has won the bid on and can execute now
       const ready = this.xtx[xtxId].getReadyToExecute();
       if (ready.length > 0) {
-        logger.info(
-          `Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map(
-            (sfx) => sfx.humanId,
-          )} 🏆`,
-        );
+        this.prometheus.executorBid.inc({ scenario: "Won" });
+        logger.info({ xtxId: xtxId }, `Won bid 🏆`);
       }
       for (const sfx of ready) {
         // move on the queue
@@ -571,8 +568,15 @@ export class ExecutionManager {
               sfx.bidAccepted(notification.payload.bidAmount as number);
             })
             .catch((e) => {
-              logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
-              sfx.bidRejected(e);
+              logger.warn(
+                {
+                  xtxId: sfx.xtxId,
+                  error: e.message,
+                },
+                `Bid rejected ❌`,
+              );
+              this.prometheus.executorBidRejected.inc({ error: e.message });
+              sfx.bidRejected();
             });
         }
       }

@@ -13,7 +13,7 @@ async function main() {
   await instance.setup();
 
   if (config.attestations.ethereum.privateKey === undefined) {
-    logger.error("Ethereum private key is not defined.");
+    logger.warn("Ethereum private key is not defined. Skipping Attestations.");
   } else {
     const attestationManager = new AttestationManager(
       instance.circuitClient,
