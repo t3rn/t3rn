@@ -36,6 +36,11 @@ spec:
                 secretKeyRef:
                   name: circuit
                   key: signer_key
+            - name: RELAYCHAIN_SIGNER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: relaychain
+                  key: signer_key
             - name: PROCESS_BATCHES
               value: "true"
             - name: ETHEREUM_PRIVATE_KEY

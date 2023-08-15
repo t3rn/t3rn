@@ -4,8 +4,8 @@ import { Sdk } from "@t3rn/sdk";
 import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { PathLike, existsSync } from "fs";
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { PathLike } from "fs";
+import { mkdir } from "fs/promises";
 import { join } from "path";
 import "@t3rn/types";
 import {
@@ -15,7 +15,7 @@ import {
   Estimate,
   InclusionProof,
 } from "./gateways/substrate/relayer";
-import { ExecutionManager, PersistedState, Queue } from "./executionManager";
+import { ExecutionManager, Queue } from "./executionManager";
 import { config, Config, Circuit, Strategy, Gateway } from "../config/config";
 import { BiddingEngine, BiddingStrategy } from "./bidding";
 import { PriceEngine, CoingeckoPricing } from "./pricing";
@@ -98,17 +98,24 @@ class Instance {
     });
 
     // TODO: print wallet balance on available networks
-    const balance = await this.circuitClient.query.system.account(
-      this.signer.address,
-    );
+    const balance = (
+      await this.circuitClient.query.system.account(this.signer.address)
+    ).data.free.toNumber();
 
     // Convert the balance to a human-readable format
     logger.info(
       {
         circuit_signer_address: this.signer.address,
-        circuit_signer_balance: balance.data.free.toHuman(),
+        circuit_signer_balance: balance,
       },
       `Circuit Signer Address`,
+    );
+    this.prometheus.executorBalance.set(
+      {
+        signer: this.signer.address,
+        target: this.config.circuit.name,
+      },
+      balance,
     );
 
     this.executionManager = new ExecutionManager(

@@ -17,6 +17,8 @@ export class Prometheus {
   executorXtxStrategyRejects: Counter;
   executorBid: Counter;
   executorBidRejected: Counter;
+  executorBalance: Gauge;
+  executorClientBalance: Gauge;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -71,6 +73,20 @@ export class Prometheus {
       help: "Number of times bid rejected",
       labelNames: ["error"],
       registers: [this.register],
+    });
+
+    this.executorBalance = new Gauge({
+      name: "executor_balance",
+      help: "Executor balance",
+      registers: [this.register],
+      labelNames: ["signer", "target"],
+    });
+
+    this.executorClientBalance = new Gauge({
+      name: "executor_client_balance",
+      help: "Executor client balance",
+      registers: [this.register],
+      labelNames: ["signer", "target"],
     });
 
     this.attestationsBatchesPending = new Gauge({
