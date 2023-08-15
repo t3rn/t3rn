@@ -13,7 +13,7 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec                     = { workspace = true, package = "parity-scale-codec" }
 pallet-contracts-registry = { path = "../..", default-features = false }
 sp-api                    = { workspace = true }
 sp-core                   = { workspace = true }
