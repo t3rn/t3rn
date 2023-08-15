@@ -160,7 +160,7 @@ fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::R
         },
         T3rnCodec::Rlp => {
             // TODO: inject addressmapping here, dont always assume padded 12
-            let address_bytes = vec![args.take(..=20)?, &[0_u8; 12][..]].concat();
+            let address_bytes = [args.take(..=20)?, &[0_u8; 12][..]].concat();
 
             match <T::AccountId as Decode>::decode(&mut &address_bytes[..]) {
                 Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),

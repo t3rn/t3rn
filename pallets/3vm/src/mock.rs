@@ -36,8 +36,13 @@ pub const DJANGO: AccountId = 4;
 pub const FRED: AccountId = 5;
 pub const ESCROW: AccountId = 15;
 
+pub type BlockNumber = u32;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+pub type Block = sp_runtime::generic::Block<
+    sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
+    frame_system::mocking::MockUncheckedExtrinsic<Test>,
+>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -54,7 +59,7 @@ frame_support::construct_runtime!(
         Utility: pallet_utility,
         ContractsRegistry: pallet_contracts_registry,
         Sudo: pallet_sudo,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
+        Circuit: pallet_circuit,
         Portal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
@@ -68,17 +73,16 @@ impl system::Config for Test {
     type AccountData = pallet_balances::AccountData<u64>;
     type AccountId = u64;
     type BaseCallFilter = frame_support::traits::Everything;
+    type Block = Block;
     type BlockHashCount = ConstU32<250>;
     type BlockLength = ();
-    type BlockNumber = u32;
     type BlockWeights = ();
     type DbWeight = ();
     type Hash = H256;
     type Hashing = Keccak256;
-    type Header = Header;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
@@ -94,17 +98,26 @@ impl system::Config for Test {
 impl pallet_sudo::Config for Test {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const ExistentialDeposit: u64 = 1;
 }
 
 impl pallet_balances::Config for Test {
     type AccountStore = System;
-    type Balance = u64;
+    type Balance = Balance;
     type DustRemoval = ();
-    type ExistentialDeposit = ConstU64<1>;
-    type MaxLocks = ();
-    type MaxReserves = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
+    type MaxLocks = ConstU32<50>;
+    type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = ();
     type WeightInfo = ();
 }
 
@@ -361,11 +374,12 @@ impl pallet_portal::Config for Test {
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;
 }
+use sp_runtime::BuildStorage;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    system::GenesisConfig::default()
-        .build_storage::<Test>()
+    system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap()
         .into()
 }
