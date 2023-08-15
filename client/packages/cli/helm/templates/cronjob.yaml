@@ -47,6 +47,11 @@ spec:
 {{ toYaml . | indent 12 }}
             {{- end }}
             {{- with $job.envFrom }}
+            - name: CIRCUIT_SIGNER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: circuit
+                  key: signer_key
             envFrom:
 {{ toYaml . | indent 12 }}
             {{- end }}
