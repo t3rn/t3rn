@@ -199,7 +199,7 @@ export class ExecutionManager {
         // initialize gateway relayer
         const relayer = new SubstrateRelayer();
 
-        await relayer.setup(config, this.logger);
+        await relayer.setup(config, this.prometheus);
 
         this.relayers[entry.id] = relayer;
 

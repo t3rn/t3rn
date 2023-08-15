@@ -9,8 +9,9 @@ import Estimator from "./estimator";
 import { CostEstimator, Estimate } from "./estimator/cost";
 import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
-import { Logger } from "pino";
 import { logger } from "../../logging";
+import { Prometheus } from "../../prometheus";
+import { AccountInfo } from "@polkadot/types/interfaces";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -31,15 +32,15 @@ export class SubstrateRelayer extends EventEmitter {
   nonce: number;
   /** Name of the target */
   name: string;
-  logger: Logger;
   nativeId: string;
+  prometheus: Prometheus;
 
-  async setup(config: Gateway, logger: Logger) {
+  async setup(config: Gateway, prometheus: Prometheus) {
     this.client = await ApiPromise.create({
       provider: new WsProvider(config.rpc),
     });
-    this.logger = logger;
     this.name = config.name;
+    this.prometheus = prometheus;
 
     const keyring = new Keyring({ type: "sr25519" });
     this.signer = config.signerKey
@@ -49,6 +50,24 @@ export class SubstrateRelayer extends EventEmitter {
     if (config.nativeId) this.nativeId = config.nativeId;
 
     this.nonce = await this.fetchNonce(this.client, this.signer.address);
+    const balance = (
+      (await this.client.query.system.account(
+        this.signer.address,
+      )) as AccountInfo
+    ).data.free.toNumber();
+    logger.info(
+      {
+        signer: this.signer.address,
+        nonce: this.nonce,
+        target: this.name,
+        balance: balance,
+      },
+      "Relayer setup completed 🏁",
+    );
+    this.prometheus.executorRelayerBalance.set(
+      { signer: this.signer.address, target: this.name },
+      balance,
+    );
   }
 
   /**
