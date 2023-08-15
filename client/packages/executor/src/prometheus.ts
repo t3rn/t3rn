@@ -18,6 +18,7 @@ export class Prometheus {
   executorBid: Counter;
   executorBidRejected: Counter;
   executorRelayerBalance: Gauge;
+  executorCircuitBalance: Gauge;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -79,6 +80,13 @@ export class Prometheus {
       help: "Relayer balance",
       registers: [this.register],
       labelNames: ["target", "signer"],
+    });
+
+    this.executorCircuitBalance = new Gauge({
+      name: "executor_circuit_balance",
+      help: "Circuit balance",
+      registers: [this.register],
+      labelNames: ["signer"],
     });
 
     this.attestationsBatchesPending = new Gauge({

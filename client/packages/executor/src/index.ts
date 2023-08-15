@@ -98,17 +98,23 @@ class Instance {
     });
 
     // TODO: print wallet balance on available networks
-    const balance = await this.circuitClient.query.system.account(
-      this.signer.address,
-    );
+    const balance = (
+      await this.circuitClient.query.system.account(this.signer.address)
+    ).data.free.toNumber();
 
     // Convert the balance to a human-readable format
     logger.info(
       {
         circuit_signer_address: this.signer.address,
-        circuit_signer_balance: balance.data.free.toHuman(),
+        circuit_signer_balance: balance,
       },
       `Circuit Signer Address`,
+    );
+    this.prometheus.executorCircuitBalance.set(
+      {
+        signer: this.signer.address,
+      },
+      balance,
     );
 
     this.executionManager = new ExecutionManager(
