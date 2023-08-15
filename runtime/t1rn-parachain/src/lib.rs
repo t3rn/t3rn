@@ -69,9 +69,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
-    // https://github.com/paritytech/cumulus/issues/998
-    // https://github.com/paritytech/substrate/pull/9732
-    // https://github.com/paritytech/substrate/pull/10073
     state_version: 1, // 0 = old, 1 = new; see above for details
 };
 use frame_system::EnsureRoot;

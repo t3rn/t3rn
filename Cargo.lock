@@ -6658,6 +6658,7 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "sp-std 8.0.0",
+ "t3rn-mini-mock-runtime",
  "t3rn-primitives",
 ]
 
