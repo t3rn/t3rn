@@ -7,7 +7,7 @@ bin_dir="$root_dir/bin"
 working_dir="$(pwd)"
 
 provider=native
-zombienet_version=v1.3.43
+zombienet_version=v1.3.64
 pdot_branch=release-v1.0.0
 polkadot_tmp_dir=/tmp/polkadot
 
