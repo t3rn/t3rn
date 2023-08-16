@@ -224,7 +224,7 @@ upgrade() {
     if [[ $# -ne 2 ]]; then
         echo "Expecting exactly 2 arguments"
         echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t1rn/t0rn>"
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
         return 1
     fi
     
