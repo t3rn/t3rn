@@ -40,11 +40,13 @@ fetch_zombienet() {
     fi
 
     if [ ! -f "$bin_dir/zombienet" ]; then
+        echo "::group::Install zombienet"
         echo "Fetching zombienet..."
         curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
 
         echo "Making zombienet executable"
         chmod +x "$bin_dir/zombienet"
+        echo "::endgroup::"
         echo "✅ zombienet-$zombienet_version"
     else
         echo "✅ zombienet-$zombienet_version"
@@ -53,12 +55,14 @@ fetch_zombienet() {
 
 build_polkadot() {
     if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
+        echo "::group::Install polkadot."
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+        echo "::endgroup::"
         echo "✅ polkadot-$pdot_branch"
     else
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
@@ -95,13 +99,10 @@ setup() {
     build_polkadot
 
     NODE_ARG=t0rn
-    build_collator
-
-    NODE_ARG=t1rn
-    build_collator
+    force_build_collator
 
     NODE_ARG=t3rn
-    build_collator
+    force_build_collator
 }
 
 smoke() {
