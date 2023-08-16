@@ -126,7 +126,10 @@ withExportMode(
     )
     .requiredOption("-t, --target <name>", "The target name")
     .requiredOption("-a, --action <action>", "The execution action")
-    .requiredOption("-p, --profit-margin <profit-margin>", "The profit margin")
+    .requiredOption(
+      "-p, --profit-margin <profit-margin>",
+      "The profit margin (%)",
+    )
     .option(
       "-o, --args <action>",
       "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",

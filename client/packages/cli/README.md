@@ -109,6 +109,40 @@ Options:
 - **-t, --timeout \<timeout\>**: Timeout in seconds for waiting for events from the chain. Default timeout is 30 seconds
 - **-x, --export**: Export extrinsic data to a file
 
+### estimate-gas-fee
+
+The `estimate-gas-fee` command is used to estimate the gas fee required for an execution
+
+Usage:
+
+```bash
+yarn cli estimate-gas-fee [options]
+```
+
+Options:
+
+- -t, **--target \<name\>**: The target on which is execution will be executed. i.e 'eth', 'roco'
+- -a, **--action \<action\>**: The execution action i.e tass, tran, swap
+- -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
+- -s, **--sfx \<file-path\>**: The SFX file path
+
+### estimate-bid-amount
+
+The `estimate-bid-amount` command is used to estimate the bid amount with a specified profit margin for an execution
+
+Usage:
+
+```bash
+yarn cli estimate-bid-amount [options]
+```
+
+Options:
+
+- -t, **--target \<name\>**: The target on which is execution will be executed. i.e 'eth', 'roco'
+- -a, **--action \<action\>**: The execution action i.e tass, tran, swap
+- -p, **--profit-margin \<profit-margin\>**: The profit margin (%)
+- -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
+- -s, **--sfx \<file-path\>**: The SFX file path
 
 ### estimate-max-reward
 
