@@ -165,6 +165,7 @@ runtime-benchmarks = [
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "cumulus-pallet-parachain-system/runtime-benchmarks",
+  "pallet-sudo/runtime-benchmarks",
 ]
 
 try-runtime = [

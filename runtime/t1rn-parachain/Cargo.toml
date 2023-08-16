@@ -266,6 +266,7 @@ runtime-benchmarks = [
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
+  "pallet-sudo/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -314,4 +315,5 @@ try-runtime = [
   "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
+  "pallet-3vm-evm/try-runtime",
 ]

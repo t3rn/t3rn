@@ -205,6 +205,7 @@ runtime-benchmarks = [
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
+  "pallet-sudo/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
 ]
