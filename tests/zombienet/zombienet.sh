@@ -58,7 +58,7 @@ build_polkadot() {
         echo "::group::Install polkadot."
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
-        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
+        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch" || true
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
@@ -114,6 +114,31 @@ smoke() {
     echo "::endgroup::"
 }
 
+upgrade() {
+    if [[ $# -ne 2 ]]; then
+        echo "Expecting exactly 2 arguments"
+        echo $@
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
+        return 1
+    fi
+    
+    parachain=$2
+
+    [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
+
+    echo "Testing real upgrade for parachain: ${parachain}"
+    
+    # Fetch latest release binary from Github
+    git fetch --all --tags -f || true > /dev/null
+    
+    source $working_dir/download.sh "$parachain"
+    
+    # Run collator and upgrade with built WASM binary
+    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
+
+    echo "Upgrade tests succeed!"
+}
+
 spawn_and_confirm_xtx() {
     # Function to handle signals sent to the script
     cleanup() {
@@ -123,7 +148,7 @@ spawn_and_confirm_xtx() {
         kill -s SIGINT $executor_pid
     }
     echo "Spawning zombienet in the background..."
-    nohup zombienet --provider=native spawn ./zombienet.toml > /dev/null 2>&1 &
+    nohup zombienet --provider=${provider} spawn ./zombienet.toml > /dev/null 2>&1 &
     zombienet_pid=$! # Save the PID of the zombienet process
     echo "Zombienet PID: $zombienet_pid"
     trap 'cleanup' INT TERM # Set up signal traps
@@ -220,34 +245,6 @@ spawn_executor_and_run_tests() {
     cleanup
 }
 
-upgrade() {
-    if [[ $# -ne 2 ]]; then
-        echo "Expecting exactly 2 arguments"
-        echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
-        return 1
-    fi
-    
-    parachain=$2
-
-    [[ "$machine" = "macos" ]] && echo "You're on macos, this is for CI :< - it uses previously built binaries from CI only" && exit 1
-
-    # run tests
-    echo "Testing real upgrade for parachain: ${parachain}"
-    
-    # get last release binary from github
-    git fetch --all --tags -f || true
-    
-    echo $working_dir
-    echo $parachain
-    source $working_dir/download.sh "$parachain"
-    
-    # deploy with test (ensuring old binary, new blob)
-    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
-
-    echo "Upgrade tests succeed!"
-}
-
 spawn() {
     echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet.toml
@@ -259,7 +256,6 @@ case "$1" in
       ;;
   "smoke")
       setup
-      force_build_collator
       smoke
       ;;
   "spawn_and_confirm_xtx")
@@ -267,10 +263,7 @@ case "$1" in
       spawn_and_confirm_xtx
       ;;
   "upgrade")
-      make_bin_dir
-      fetch_zombienet
-      build_polkadot
-
+      setup
       upgrade $@
       ;;
   "spawn")
