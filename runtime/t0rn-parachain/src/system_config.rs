@@ -24,7 +24,7 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     // type BaseCallFilter = MaintenanceMode; // todo: fix MaintananceMode compilation for v39 - XCMExecuteTransact trait unimplemented error
-    type BaseCallFilter = ();
+    type BaseCallFilter = frame_support::traits::Everything;
     /// The header type.
     type Block = Block;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).

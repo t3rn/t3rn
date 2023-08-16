@@ -1,4 +1,4 @@
-# bash shebang
+#!/usr/bin/env bash
 
 set -e
 
@@ -34,6 +34,8 @@ make_bin_dir() {
 fetch_zombienet() {
     if [ "$(nixos-version 2>/dev/null)" == "" ]; then
         # Don't fetch zombienet if it's already present in the system
+
+        echo $bin_dir
         if which zombienet-$zombienet_version >/dev/null; then
             cp $(which zombienet-$zombienet_version) "$bin_dir/zombienet"
             echo "✅ Zombienet $zombienet_version installed"
@@ -43,10 +45,10 @@ fetch_zombienet() {
         if [ ! -f "$bin_dir/zombienet" ]; then
             echo "Fetching zombienet..."
             curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
-            
+
             echo "Making zombienet executable"
             chmod +x "$bin_dir/zombienet"
-        else 
+        else
             echo "✅ Zombienet $zombienet_version installed"
         fi
     else
@@ -73,8 +75,13 @@ build_polkadot() {
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
-        echo "Copying polkadot to bin dir"
-        cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+    fi
+
+    if [ ! -f "$bin_dir/polkadot" ]; then
+            echo "Copying polkadot to bin dir"
+            cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+    else
+        echo "✅ Polkadot $pdot_branch installed"
     fi
 }
 
@@ -107,11 +114,11 @@ setup() {
     build_polkadot
 
     NODE_ARG=t0rn
-    build_collator
-
-    NODE_ARG=t1rn
     force_build_collator
 
+#    NODE_ARG=t1rn
+#    force_build_collator
+#
     NODE_ARG=t3rn
     build_collator
 }
@@ -261,6 +268,7 @@ upgrade() {
 
 spawn() {
     echo "Spawning zombienet..."
+    echo "Using provider: $provider"
     zombienet --provider="$provider" spawn ./zombienet.toml
 }
 
