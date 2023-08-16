@@ -6,8 +6,8 @@
     not(feature = "runtime-benchmarks")
 ))]
 use t1rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
-    ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
@@ -19,15 +19,15 @@ use t1rn_parachain_runtime::{
     not(feature = "runtime-benchmarks")
 ))]
 use t3rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
-    ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, TRN, WASM_BINARY,
 };
 
 #[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
 use t0rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, GenesisConfig,
-    ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, SessionConfig, SessionKeys, Signature,
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
@@ -54,7 +54,7 @@ pub(crate) const SS58_FORMAT: u16 = 9935;
 pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -323,8 +323,8 @@ fn polkadot_genesis_shell(
     endowed_accounts: Vec<(AccountId, u128)>,
     id: ParaId,
     root_key: AccountId,
-) -> GenesisConfig {
-    GenesisConfig {
+) -> RuntimeGenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig {
             code: WASM_BINARY
                 .expect("WASM binary was not build, please build it!")
@@ -382,7 +382,7 @@ fn polkadot_genesis_full(
     endowed_accounts: Vec<(AccountId, u128)>,
     id: ParaId,
     root_key: AccountId,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
     #[cfg(all(
         feature = "t3rn",
         not(feature = "t1rn"),
@@ -393,7 +393,7 @@ fn polkadot_genesis_full(
     #[rustfmt::skip]
     return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
 
-    return GenesisConfig {
+    return RuntimeGenesisConfig {
         system: SystemConfig {
             code: WASM_BINARY
                 .expect("WASM binary was not build, please build it!")

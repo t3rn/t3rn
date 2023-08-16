@@ -2,8 +2,8 @@ use circuit_standalone_runtime::{
     AccountId,
     AuraConfig,
     BalancesConfig,
-    GenesisConfig,
     GrandpaConfig,
+    RuntimeGenesisConfig,
     Signature,
     SudoConfig,
     SystemConfig,
@@ -30,7 +30,7 @@ use t3rn_types::sfx::Sfx4bId;
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<circuit_standalone_runtime::GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<circuit_standalone_runtime::RuntimeGenesisConfig>;
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -180,8 +180,8 @@ fn testnet_genesis(
     _gateway_records: Vec<GatewayRecord<AccountId>>,
     _standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     _enable_println: bool,
-) -> GenesisConfig {
-    GenesisConfig {
+) -> RuntimeGenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
