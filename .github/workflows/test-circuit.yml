@@ -9,6 +9,7 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
+      - ".github/workflows/test-circuit.yml"
   merge_group:
 
 # Automatically cancel older in-progress jobs on the same branch
@@ -130,7 +131,7 @@ jobs:
 
   # We should run zombienet only when tests are passing
   smoke-test:
-    name: Zombienet Smoke Test
+    name: Zombienet Test
     runs-on: [self-hosted, rust]
     # TODO: revert to [changes, build-test] after zombienet is fixed
     # needs: [changes, build-test]
