@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.47.0-rc.0] - 2023-08-16
+### :sparkles: New Features
+- [`7680747`](https://github.com/t3rn/t3rn/commit/768074798abaca51d0c3b2107c22cd0058bb51fd) - **executor**: optimistic execution for roco *(PR [#1212](https://github.com/t3rn/t3rn/pull/1212) by [@3h4x](https://github.com/3h4x))*
+- [`46d58e4`](https://github.com/t3rn/t3rn/commit/46d58e4bb3504bdcefb776a0b1da5bc5dcb3446f) - implement substrate price estimation *(PR [#1234](https://github.com/t3rn/t3rn/pull/1234) by [@ahkohd](https://github.com/ahkohd))*
+
+### :bug: Bug Fixes
+- [`1ef71ea`](https://github.com/t3rn/t3rn/commit/1ef71ea2d8459077b072843f8e3b6cf0e6785e26) - sdk docs build *(PR [#1236](https://github.com/t3rn/t3rn/pull/1236) by [@ahkohd](https://github.com/ahkohd))*
+- [`ae8fb8a`](https://github.com/t3rn/t3rn/commit/ae8fb8a69208af573f0fc9c4a8a4587f710661f4) - **executor**: custom signer for relaychain *(PR [#1241](https://github.com/t3rn/t3rn/pull/1241) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.46.2-rc.0] - 2023-08-09
 ### :bug: Bug Fixes
 - [`e32892e`](https://github.com/t3rn/t3rn/commit/e32892e9f9e1ff3fb2072e2c434f3d6e6f1b43ba) - **executor**: new contract for rotated committee *(PR [#1228](https://github.com/t3rn/t3rn/pull/1228) by [@3h4x](https://github.com/3h4x))*
@@ -1467,3 +1477,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.46.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.1-rc.0...v1.46.0-rc.0
 [v1.46.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.0-rc.0...v1.46.1-rc.0
 [v1.46.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.1-rc.0...v1.46.2-rc.0
+[v1.47.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.2-rc.0...v1.47.0-rc.0
