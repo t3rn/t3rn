@@ -58,7 +58,7 @@ build_polkadot() {
         echo "::group::Install polkadot."
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
-        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
+        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch" || true
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
