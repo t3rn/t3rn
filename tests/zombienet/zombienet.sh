@@ -32,56 +32,37 @@ make_bin_dir() {
 }
 
 fetch_zombienet() {
-    if [ "$(nixos-version 2>/dev/null)" == "" ]; then
-        # Don't fetch zombienet if it's already present in the system
+    # Don't fetch zombienet if it's already present in the system
+    if which zombienet-$zombienet_version >/dev/null; then
+        cp $(which zombienet-$zombienet_version) "$bin_dir/zombienet"
+        echo "✅ zombienet-$zombienet_version"
+        return
+    fi
 
-        echo $bin_dir
-        if which zombienet-$zombienet_version >/dev/null; then
-            cp $(which zombienet-$zombienet_version) "$bin_dir/zombienet"
-            echo "✅ Zombienet $zombienet_version installed"
-            return
-        fi
+    if [ ! -f "$bin_dir/zombienet" ]; then
+        echo "Fetching zombienet..."
+        curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
 
-        if [ ! -f "$bin_dir/zombienet" ]; then
-            echo "Fetching zombienet..."
-            curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
-
-            echo "Making zombienet executable"
-            chmod +x "$bin_dir/zombienet"
-        else
-            echo "✅ Zombienet $zombienet_version installed"
-        fi
+        echo "Making zombienet executable"
+        chmod +x "$bin_dir/zombienet"
+        echo "✅ zombienet-$zombienet_version"
     else
-        echo "This is a NixOS machine, skipping zombienet fetch"
-        zombienet() {
-            # nix run "github:paritytech/zombienet" $@
-            node /home/common/projects/zombienet/javascript/packages/cli/dist/cli.js $@
-        }
-        export -f zombienet
+        echo "✅ zombienet-$zombienet_version"
     fi
 }
 
 build_polkadot() {
-    # Don't compile polkadot if it's already present in the system
-    if which polkadot-$pdot_branch >/dev/null; then
-        cp $(which polkadot-$pdot_branch) "$bin_dir/polkadot"
-        echo "✅ Polkadot $pdot_branch installed"
-        return
-    fi
-
     if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
-    fi
-
-    if [ ! -f "$bin_dir/polkadot" ]; then
-            echo "Copying polkadot to bin dir"
-            cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+        cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+        echo "✅ polkadot-$pdot_branch"
     else
-        echo "✅ Polkadot $pdot_branch installed"
+        cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+        echo "✅ polkadot-$pdot_branch"
     fi
 }
 
@@ -267,8 +248,7 @@ upgrade() {
 }
 
 spawn() {
-    echo "Spawning zombienet..."
-    echo "Using provider: $provider"
+    echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet.toml
 }
 
