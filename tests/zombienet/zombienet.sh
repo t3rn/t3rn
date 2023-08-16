@@ -95,11 +95,11 @@ setup() {
     build_polkadot
 
     NODE_ARG=t0rn
-    force_build_collator
+    build_collator
 
-#    NODE_ARG=t1rn
-#    force_build_collator
-#
+    NODE_ARG=t1rn
+    build_collator
+
     NODE_ARG=t3rn
     build_collator
 }
@@ -223,7 +223,7 @@ upgrade() {
     if [[ $# -ne 2 ]]; then
         echo "Expecting exactly 2 arguments"
         echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t1rn/t0rn>"
         return 1
     fi
     

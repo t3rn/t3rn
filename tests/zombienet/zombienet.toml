@@ -30,6 +30,23 @@ ws_port  = 9941
 [[parachains]]
 chain         = "local"
 cumulus_based = true
+id            = 3335
+
+[[parachains.collators]]
+command  = "t1rn-collator"
+name     = "t1rn-collator01"
+rpc_port = 8810
+ws_port  = 9910
+
+[[parachains.collators]]
+command  = "t1rn-collator"
+name     = "t1rn-collator02"
+rpc_port = 8811
+ws_port  = 9911
+
+[[parachains]]
+chain         = "local"
+cumulus_based = true
 id            = 3334
 
 [[parachains.collators]]
