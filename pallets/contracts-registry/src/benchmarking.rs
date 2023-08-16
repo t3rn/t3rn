@@ -57,7 +57,7 @@ const CODE_CALL: &str = r#"
 
 benchmarks! {
     add_new_contract {
-        let test_contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> =
+        let test_contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>> =
             RegistryContract {
                 code_txt: CODE_CALL.as_bytes().to_vec(),
                 // hadrcoded bytes
@@ -98,7 +98,7 @@ benchmarks! {
     purge {
         let requester_1: T::AccountId = account("TEST", 1_u32, USER_SEED);
 
-        let test_contract_1: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> =
+        let test_contract_1: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>> =
             RegistryContract {
                 code_txt: b"some_code".to_vec(),
                 bytes: vec![],
@@ -122,7 +122,7 @@ benchmarks! {
 
         let requester_2: T::AccountId = account("TEST", 2_u32, USER_SEED);
 
-        let test_contract_2: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> =
+        let test_contract_2: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>> =
             RegistryContract {
                 code_txt: b"some_code_2".to_vec(),
                 bytes: vec![],
@@ -169,7 +169,7 @@ benchmarks! {
             T::Hash,
             T::AccountId,
             BalanceOf<T>,
-            T::BlockNumber,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
         > = RegistryContract {
             code_txt: b"some_code_1".to_vec(),
             bytes: vec![],
@@ -194,7 +194,7 @@ benchmarks! {
             T::Hash,
             T::AccountId,
             BalanceOf<T>,
-            T::BlockNumber,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
         > = RegistryContract {
             code_txt: b"some_code_2".to_vec(),
             bytes: vec![],
@@ -219,7 +219,7 @@ benchmarks! {
             T::Hash,
             T::AccountId,
             BalanceOf<T>,
-            T::BlockNumber,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
         > = RegistryContract {
             code_txt: b"some_code_3".to_vec(),
             bytes: vec![],

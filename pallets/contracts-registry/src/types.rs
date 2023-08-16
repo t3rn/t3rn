@@ -1,12 +1,12 @@
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 pub use t3rn_primitives::contracts_registry::{RegistryContract, RegistryContractId};
-
 /// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ContractAccessError {
     /// The given address doesn't point to a contract.
@@ -24,7 +24,7 @@ impl From<ContractAccessError> for i64 {
     }
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct ContractsRegistryResult<T> {

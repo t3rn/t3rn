@@ -149,10 +149,10 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     }
 }
 
-fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::Origin> {
+fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::RuntimeOrigin> {
     match codec {
         T3rnCodec::Scale => match <T::AccountId as Decode>::decode(args) {
-            Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
+            Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),
             Err(err) => {
                 log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
                 None
@@ -160,10 +160,10 @@ fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::O
         },
         T3rnCodec::Rlp => {
             // TODO: inject addressmapping here, dont always assume padded 12
-            let address_bytes = vec![args.take(..=20)?, &[0_u8; 12][..]].concat();
+            let address_bytes = [args.take(..=20)?, &[0_u8; 12][..]].concat();
 
             match <T::AccountId as Decode>::decode(&mut &address_bytes[..]) {
-                Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
+                Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),
                 Err(err) => {
                     log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
                     None
@@ -301,8 +301,8 @@ mod tests {
     fn invoke_raw_bad_pointer_rlp() {
         new_test_ext().execute_with(|| {
             let account = H160::from_low_u64_be(4);
-            let args = &mut &vec![vec![T3rnCodec::Rlp.into()], rlp::encode(&account).to_vec()]
-                .concat()[..];
+            let args =
+                &mut &[vec![T3rnCodec::Rlp.into()], rlp::encode(&account).to_vec()].concat()[..];
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, args, &mut out);
@@ -316,7 +316,7 @@ mod tests {
     #[test]
     fn invoke_raw_bad_pointer_scale() {
         new_test_ext().execute_with(|| {
-            let args = &mut &vec![vec![T3rnCodec::Scale.into()], ALICE.encode()].concat()[..];
+            let args = &mut &[vec![T3rnCodec::Scale.into()], ALICE.encode()].concat()[..];
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, args, &mut out);
@@ -331,7 +331,7 @@ mod tests {
     fn invoke_bad_origin() {
         new_test_ext().execute_with(|| {
             // RLP codec, scale encoded origin
-            let args = vec![vec![1], ALICE.encode()].concat();
+            let args = [vec![1], ALICE.encode()].concat();
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, &mut &args[..], &mut out);

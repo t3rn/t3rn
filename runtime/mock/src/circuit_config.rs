@@ -6,7 +6,6 @@ use sp_runtime::Percent;
 use std::marker::PhantomData;
 
 use circuit_runtime_pallets::{
-    pallet_eth2_finality_verifier::types::Root,
     pallet_grandpa_finality_verifier::light_clients::select_grandpa_light_client_instance,
     pallet_portal::Error as PortalError,
 };
@@ -14,7 +13,6 @@ use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     parameter_types,
     traits::{fungibles::Destroy, ConstU32},
-    weights::Weight,
     Blake2_128Concat, StorageHasher,
 };
 use pallet_grandpa_finality_verifier::{
@@ -23,7 +21,7 @@ use pallet_grandpa_finality_verifier::{
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Convert, Get, One, Zero},
+    traits::{BlakeTwo256, Convert, Get},
     Perbill,
 };
 
@@ -34,184 +32,13 @@ impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Time = Timestamp;
 }
 
-pub struct GlobalOnInitQueues;
-
-impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
-    fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
-        const PROCESS_SIGNAL_SHARE: u8 = 5;
-        const XTX_TICK_SHARE: u8 = 30;
-        const REVERT_XTX_SHARE: u8 = 5;
-        const WEEKLY_SHARE: u8 = 20;
-        const BI_WEEKLY_SHARE: u8 = 10;
-        const DAILY_SHARE: u8 = 10;
-        const HOURLY_SHARE: u8 = 20;
-
-        if PROCESS_SIGNAL_SHARE
-            + XTX_TICK_SHARE
-            + REVERT_XTX_SHARE
-            + WEEKLY_SHARE
-            + BI_WEEKLY_SHARE
-            + DAILY_SHARE
-            + HOURLY_SHARE
-            > 100
-        {
-            log::error!(
-                "GlobalOnInitQueues::Invalid shares exceed 100%, returning 0 - re-check the shares"
-            );
-            return 0
-        }
-
-        const BLOCKS_PER_HOUR: BlockNumber = 60 * 5; // Assuming 12 second block time
-        const BLOCKS_PER_DAY: BlockNumber = 24 * BLOCKS_PER_HOUR;
-        const BLOCKS_PER_WEEK: BlockNumber = 7 * BLOCKS_PER_DAY;
-        const BLOCKS_PER_2_WEEKS: BlockNumber = 2 * BLOCKS_PER_WEEK;
-
-        let mut total_consumed: Weight = 0;
-
-        if (n % BLOCKS_PER_HOUR).is_zero() {
-            let hourly_weight_limit: Weight =
-                Percent::from_percent(HOURLY_SHARE).mul_ceil(on_init_weight_limit);
-            total_consumed =
-                total_consumed.saturating_add(Self::process_hourly(n, hourly_weight_limit));
-        }
-
-        if (n % BLOCKS_PER_DAY).is_zero() {
-            let daily_weight_limit: Weight =
-                Percent::from_percent(DAILY_SHARE).mul_ceil(on_init_weight_limit);
-            total_consumed =
-                total_consumed.saturating_add(Self::process_daily(n, daily_weight_limit));
-        }
-
-        if (n % BLOCKS_PER_WEEK).is_zero() {
-            let weekly_weight_limit: Weight =
-                Percent::from_percent(WEEKLY_SHARE).mul_ceil(on_init_weight_limit);
-            total_consumed =
-                total_consumed.saturating_add(Self::process_weekly(n, weekly_weight_limit));
-        }
-
-        if (n % BLOCKS_PER_2_WEEKS).is_zero() {
-            let bi_weekly_weight_limit: Weight =
-                Percent::from_percent(BI_WEEKLY_SHARE).mul_ceil(on_init_weight_limit);
-            total_consumed =
-                total_consumed.saturating_add(Self::process_bi_weekly(n, bi_weekly_weight_limit));
-        }
-
-        let weight = Circuit::process_signal_queue(
-            n,
-            BlockNumber::one(),
-            Percent::from_percent(PROCESS_SIGNAL_SHARE).mul_ceil(on_init_weight_limit),
-        );
-        log::debug!("Circuit::process_signal_queue consumed: {:?}", weight);
-        total_consumed = total_consumed.saturating_add(weight);
-
-        let weight = Circuit::process_xtx_tick_queue(
-            n,
-            BlockNumber::one(),
-            Percent::from_percent(XTX_TICK_SHARE).mul_ceil(on_init_weight_limit),
-        );
-        log::debug!("Circuit::process_xtx_tick_queue consumed: {:?}", weight);
-        total_consumed = total_consumed.saturating_add(weight);
-
-        let weight = Circuit::process_emergency_revert_xtx_queue(
-            n,
-            10u32,
-            Percent::from_percent(REVERT_XTX_SHARE).mul_ceil(on_init_weight_limit),
-        );
-        log::debug!(
-            "Circuit::process_emergency_revert_xtx_queue consumed: {:?}",
-            weight
-        );
-        total_consumed = total_consumed.saturating_add(weight);
-
-        let (_success, weight) = Rewards::process_author();
-
-        log::debug!("Rewards::process_author consumed: {:?}", weight);
-        total_consumed = total_consumed.saturating_add(weight);
-
-        log::debug!(
-            "Total weight consumed by on init hook: {:?}",
-            total_consumed
-        );
-
-        total_consumed
-    }
-
-    fn process_bi_weekly(_n: BlockNumber, hook_weight_limit: Weight) -> Weight {
-        let mut total_consumed: Weight = 0;
-
-        let weight = Rewards::distribute_inflation();
-        log::debug!("Rewards::distribute_inflation consumed: {:?}", weight);
-        total_consumed = total_consumed.saturating_add(weight);
-
-        let weight = Rewards::process_authors_this_period();
-
-        log::debug!(
-            "Rewards::process_authors_this_period consumed: {:?}",
-            weight
-        );
-        total_consumed = total_consumed.saturating_add(weight);
-
-        if total_consumed > hook_weight_limit {
-            log::error!(
-                "GlobalOnInitQueues::process_bi_weekly consumed more than the limit: {:?}",
-                weight
-            );
-        }
-        total_consumed
-    }
-
-    fn process_weekly(_n: BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
-    }
-
-    fn process_daily(_n: BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
-    }
-
-    fn process_hourly(n: BlockNumber, hook_weight_limit: Weight) -> Weight {
-        let mut total_consumed: Weight = 0;
-
-        let weight = XDNS::check_for_manual_verifier_overview_process(n);
-        log::debug!(
-            "XDNS::check_for_manual_verifier_overview_process consumed: {:?}",
-            weight
-        );
-        total_consumed = total_consumed.saturating_add(weight);
-
-        let weight = Rewards::process_accumulated_settlements();
-        log::debug!(
-            "Rewards::process_accumulated_settlements consumed: {:?}",
-            weight
-        );
-        total_consumed = total_consumed.saturating_add(weight);
-
-        let weight = Clock::check_bump_round(n);
-        log::debug!("Clock::check_bump_round consumed: {:?}", weight);
-        total_consumed = total_consumed.saturating_add(weight);
-
-        if total_consumed > hook_weight_limit {
-            log::error!(
-                "GlobalOnInitQueues::process_hourly consumed more than the limit: {:?}",
-                weight
-            );
-        }
-
-        log::debug!(
-            "GlobalOnInitQueues::process_hourly total_consumed: {:?}",
-            total_consumed
-        );
-
-        total_consumed
-    }
-}
+pub use hooks::GlobalOnInitQueues;
 
 impl pallet_clock::Config for Runtime {
-    type AccountManager = AccountManager;
-    type Event = Event;
-    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<300>;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -220,8 +47,8 @@ impl pallet_xdns::Config for Runtime {
     type Balances = Balances;
     type CircuitDLQ = Circuit;
     type Currency = Balances;
-    type Event = Event;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SelfGatewayId = SelfGatewayId;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
@@ -245,7 +72,6 @@ impl pallet_attesters::Config for Runtime {
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
-    type Event = Event;
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
@@ -255,6 +81,7 @@ impl pallet_attesters::Config for Runtime {
     type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
     type Rewards = Rewards;
+    type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = EscrowAccount;
     type Xdns = XDNS;
@@ -263,8 +90,8 @@ impl pallet_attesters::Config for Runtime {
 impl pallet_vacuum::Config for Runtime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
-    type Event = Event;
     type ReadSFX = Circuit;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 use t3rn_primitives::{monetary::TRN, xdns::PalletAssetsOverlay};
@@ -294,12 +121,12 @@ impl pallet_rewards::Config for Runtime {
     type CollatorBootstrapRewards = CollatorBootstrapRewards;
     type CollatorInflation = CollatorInflation;
     type Currency = Balances;
-    type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
     type FindAuthor = ();
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
+    type RuntimeEvent = RuntimeEvent;
     type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = Runtime;
@@ -309,7 +136,7 @@ impl pallet_rewards::Config for Runtime {
 impl pallet_contracts_registry::Config for Runtime {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
@@ -345,7 +172,7 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
 
 impl pallet_portal::Config for Runtime {
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
@@ -363,7 +190,9 @@ parameter_types! {
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
     pub const SelfGatewayIdOptimistic: [u8; 4] = [0, 3, 3, 3];
 }
+
 use sp_runtime::DispatchResult;
+
 impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     fn contains_asset(asset_id: &AssetId) -> bool {
         const PALLET_NAME: &str = "Assets";
@@ -385,12 +214,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     }
 
     fn force_create_asset(
-        origin: Origin,
+        origin: RuntimeOrigin,
         asset_id: AssetId,
         admin: AccountId,
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
+        println!("BigMock::force_create_asset");
+        println!("asset_id: {asset_id:?}");
+        println!("admin: {admin:?}");
         Assets::force_create(
             origin,
             asset_id,
@@ -400,12 +232,19 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
         )
     }
 
-    fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
-        let destroy_witness = match Assets::get_destroy_witness(asset_id) {
-            Some(witness) => witness,
-            None => return Err("AssetNotFound".into()),
-        };
-        Assets::destroy(origin, *asset_id, destroy_witness)
+    fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+        println!("BigMock::freeze_asset ...");
+        Assets::freeze_asset(origin.clone(), *asset_id)?;
+        println!("BigMock::start_destroy ...");
+        Assets::start_destroy(origin.clone(), *asset_id)?;
+        println!("BigMock::destroy_accounts ...");
+        Assets::destroy_accounts(origin.clone(), *asset_id)?;
+        println!("BigMock::destroy_approvals ...");
+        Assets::destroy_approvals(origin.clone(), *asset_id)?;
+        println!("BigMock::finish_destroy ...");
+        Assets::finish_destroy(origin.clone(), *asset_id)?;
+
+        Ok(().into())
     }
 }
 
@@ -413,12 +252,11 @@ impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Attesters = Attesters;
     type Balances = Balances;
-    type Call = Call;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = SelfGatewayId;
@@ -451,59 +289,58 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
-    type MyVendor = KusamaVendor;
+    type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 parameter_types! {
-    pub const HeadersToStoreEth: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
-    pub const SessionLength: u64 = 5;
     pub const SyncCommitteeSize: u32 = 26;
-    pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    pub const GenesisValidatorsRoot: [u8; 32] = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
-    pub const EpochsPerSyncCommitteePeriod: u32 = 6;
+    pub const EpochsPerSyncCommitteePeriod: u32 = 256;
+    pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
     pub const CommitteeMajorityThreshold: u32 = 80;
 }
 
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
@@ -512,10 +349,10 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
 impl pallet_sepolia_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();

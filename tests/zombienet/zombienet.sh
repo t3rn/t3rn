@@ -1,4 +1,4 @@
-# bash shebang
+#!/usr/bin/env bash
 
 set -e
 
@@ -7,8 +7,8 @@ bin_dir="$root_dir/bin"
 working_dir="$(pwd)"
 
 provider=native
-zombienet_version=v1.3.43
-pdot_branch=release-v0.9.37
+zombienet_version=v1.3.64
+pdot_branch=release-v1.0.0
 polkadot_tmp_dir=/tmp/polkadot
 
 
@@ -32,57 +32,46 @@ make_bin_dir() {
 }
 
 fetch_zombienet() {
-    if [ "$(nixos-version 2>/dev/null)" == "" ]; then
-        # Don't fetch zombienet if it's already present in the system
-        if which zombienet-$zombienet_version >/dev/null; then
-            cp $(which zombienet-$zombienet_version) "$bin_dir/zombienet"
-            echo "✅ Zombienet $zombienet_version installed"
-            return
-        fi
+    # Don't fetch zombienet if it's already present in the system
+    if which zombienet-$zombienet_version >/dev/null; then
+        cp $(which zombienet-$zombienet_version) "$bin_dir/zombienet"
+        echo "✅ zombienet-$zombienet_version"
+        return
+    fi
 
-        if [ ! -f "$bin_dir/zombienet" ]; then
-            echo "Fetching zombienet..."
-            curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
-            
-            echo "Making zombienet executable"
-            chmod +x "$bin_dir/zombienet"
-        else 
-            echo "✅ Zombienet $zombienet_version installed"
-        fi
+    if [ ! -f "$bin_dir/zombienet" ]; then
+        echo "::group::Install zombienet"
+        echo "Fetching zombienet..."
+        curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
+
+        echo "Making zombienet executable"
+        chmod +x "$bin_dir/zombienet"
+        echo "::endgroup::"
+        echo "✅ zombienet-$zombienet_version"
     else
-        echo "This is a NixOS machine, skipping zombienet fetch"
-        zombienet() {
-            # nix run "github:paritytech/zombienet" $@
-            node /home/common/projects/zombienet/javascript/packages/cli/dist/cli.js $@
-        }
-        export -f zombienet
+        echo "✅ zombienet-$zombienet_version"
     fi
 }
 
 build_polkadot() {
-    # Don't compile polkadot if it's already present in the system
-    if which polkadot-$pdot_branch >/dev/null; then
-        cp $(which polkadot-$pdot_branch) "$bin_dir/polkadot"
-        echo "✅ Polkadot $pdot_branch installed"
+    if [ -f "$bin_dir/polkadot" ]; then
+        echo "✅ polkadot-$pdot_branch"
         return
     fi
 
-    if [ ! -d "$polkadot_tmp_dir" ]; then
+    if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
+        echo "::group::Install polkadot."
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
-        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
-    fi
-
-    if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
+        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch" || true
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
-    fi
-
-    if [ ! -f "$bin_dir/polkadot" ]; then
-        echo "Copying polkadot to bin dir"
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+        echo "::endgroup::"
+        echo "✅ polkadot-$pdot_branch"
     else
-        echo "✅ Polkadot $pdot_branch installed"
+        cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
+        echo "✅ polkadot-$pdot_branch"
     fi
 }
 
@@ -103,7 +92,7 @@ build_collator() {
 
 force_build_collator() {
     echo "::group::Rebuilding $NODE_ARG..."
-    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release
     echo "::endgroup::"
     
     cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
@@ -115,10 +104,10 @@ setup() {
     build_polkadot
 
     NODE_ARG=t0rn
-    build_collator
+    force_build_collator
 
     NODE_ARG=t3rn
-    build_collator
+    force_build_collator
 }
 
 smoke() {
@@ -130,6 +119,31 @@ smoke() {
     echo "::endgroup::"
 }
 
+upgrade() {
+    if [[ $# -ne 2 ]]; then
+        echo "Expecting exactly 2 arguments"
+        echo $@
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
+        return 1
+    fi
+    
+    parachain=$2
+
+    [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
+
+    echo "Testing real upgrade for parachain: ${parachain}"
+    
+    # Fetch latest release binary from Github
+    git fetch --all --tags -f || true > /dev/null
+    
+    source $working_dir/download.sh "$parachain"
+    
+    # Run collator and upgrade with built WASM binary
+    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
+
+    echo "Upgrade tests succeed!"
+}
+
 spawn_and_confirm_xtx() {
     # Function to handle signals sent to the script
     cleanup() {
@@ -139,7 +153,7 @@ spawn_and_confirm_xtx() {
         kill -s SIGINT $executor_pid
     }
     echo "Spawning zombienet in the background..."
-    nohup zombienet --provider=native spawn ./zombienet.toml > /dev/null 2>&1 &
+    nohup zombienet --provider=${provider} spawn ./zombienet.toml > /dev/null 2>&1 &
     zombienet_pid=$! # Save the PID of the zombienet process
     echo "Zombienet PID: $zombienet_pid"
     trap 'cleanup' INT TERM # Set up signal traps
@@ -236,36 +250,8 @@ spawn_executor_and_run_tests() {
     cleanup
 }
 
-upgrade() {
-    if [[ $# -ne 2 ]]; then
-        echo "Expecting exactly 2 arguments"
-        echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
-        return 1
-    fi
-    
-    parachain=$2
-
-    [[ "$machine" = "macos" ]] && echo "You're on macos, this is for CI :< - it uses previously built binaries from CI only" && exit 1
-
-    # run tests
-    echo "Testing real upgrade for parachain: ${parachain}"
-    
-    # get last release binary from github
-    git fetch --all --tags -f || true
-    
-    echo $working_dir
-    echo $parachain
-    source $working_dir/download.sh "$parachain"
-    
-    # deploy with test (ensuring old binary, new blob)
-    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
-
-    echo "Upgrade tests succeed!"
-}
-
 spawn() {
-    echo "Spawning zombienet..."
+    echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet.toml
 }
 
@@ -275,7 +261,6 @@ case "$1" in
       ;;
   "smoke")
       setup
-      force_build_collator
       smoke
       ;;
   "spawn_and_confirm_xtx")
@@ -283,10 +268,7 @@ case "$1" in
       spawn_and_confirm_xtx
       ;;
   "upgrade")
-      make_bin_dir
-      fetch_zombienet
-      build_polkadot
-
+      setup
       upgrade $@
       ;;
   "spawn")

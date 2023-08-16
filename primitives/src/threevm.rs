@@ -7,7 +7,10 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_system::Config as ConfigSystem;
+use frame_support::dispatch::Weight;
+use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
+use scale_info::TypeInfo;
+use sp_core::{H160, H256, U256};
 use sp_runtime::{DispatchError, DispatchResult};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
@@ -34,13 +37,13 @@ where
     T: ConfigSystem,
     Balance: Encode + Decode,
 {
-    GetState(T::Origin, GetState<T>),
+    GetState(T::RuntimeOrigin, GetState<T>),
     SubmitSideEffects(
-        T::Origin,
+        T::RuntimeOrigin,
         SideEffects<T::AccountId, Balance, T::Hash>,
         SpeedMode,
     ),
-    Signal(T::Origin, ExecutionSignal<T::Hash>),
+    Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
     Portal(PortalPrecompileArgs),
 }
 
@@ -68,6 +71,35 @@ impl<T: ConfigSystem, Balance> PrecompileInvocation<T, Balance> {
     }
 }
 
+pub trait Contracts<AccountId, Balance, EventRecord> {
+    type Outcome;
+    fn call(
+        origin: AccountId,
+        dest: AccountId,
+        value: Balance,
+        gas_limit: Weight,
+        storage_deposit_limit: Option<Balance>,
+        data: Vec<u8>,
+        debug: bool,
+    ) -> Self::Outcome;
+}
+
+pub trait Evm<Origin> {
+    type Outcome;
+    #[allow(clippy::too_many_arguments)] // Simply has a lot of args
+    fn call(
+        origin: Origin,
+        target: H160,
+        input: Vec<u8>,
+        value: U256,
+        gas_limit: u64,
+        max_fee_per_gas: U256,
+        max_priority_fee_per_gas: Option<U256>,
+        nonce: Option<U256>,
+        access_list: Vec<(H160, Vec<H256>)>,
+    ) -> Self::Outcome;
+}
+
 pub trait Precompile<T, Balance>
 where
     T: ConfigSystem,
@@ -90,7 +122,7 @@ where
     T: ConfigSystem,
 {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }
@@ -160,7 +192,7 @@ where
 {
     fn peek_registry(
         id: &T::Hash,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, Balance, T::BlockNumber>, DispatchError>;
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, Balance, BlockNumberFor<T>>, DispatchError>;
 
     /// Allows creating a `Module` from a binary blob from the contracts registry
     fn from_registry<Module, ModuleGen>(
@@ -194,7 +226,7 @@ where
     T: ConfigSystem,
 {
     fn load_local_state(
-        _origin: &T::Origin,
+        _origin: &T::RuntimeOrigin,
         _xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
         Err("Local State Not implemented").map_err(|e| e.into())
@@ -261,7 +293,7 @@ impl<T: ConfigSystem, Balance: Encode + Decode> ThreeVm<T, Balance> for NoopThre
             <T as ConfigSystem>::Hash,
             <T as ConfigSystem>::AccountId,
             Balance,
-            <T as ConfigSystem>::BlockNumber,
+            BlockNumberFor<T>,
         >,
         DispatchError,
     > {
@@ -313,4 +345,34 @@ pub trait ModuleOperations<T: ConfigSystem, Balance> {
     fn set_author(&mut self, author: AuthorInfo<T::AccountId, Balance>);
     fn get_type(&self) -> &ContractType;
     fn set_type(&mut self, kind: ContractType);
+}
+
+#[derive(Clone, Encode, Decode, TypeInfo, Default)]
+#[scale_info(skip_type_params(T))]
+pub struct ThreeVmInfo<T: ConfigSystem, Balance> {
+    author: AuthorInfo<T::AccountId, Balance>,
+    kind: ContractType,
+    bytecode: Vec<u8>,
+}
+
+impl<T: ConfigSystem, Balance> ModuleOperations<T, Balance> for ThreeVmInfo<T, Balance> {
+    fn get_bytecode(&self) -> &Vec<u8> {
+        &self.bytecode
+    }
+
+    fn get_author(&self) -> Option<&AuthorInfo<T::AccountId, Balance>> {
+        Some(&self.author)
+    }
+
+    fn set_author(&mut self, author: AuthorInfo<T::AccountId, Balance>) {
+        self.author = author;
+    }
+
+    fn get_type(&self) -> &ContractType {
+        &self.kind
+    }
+
+    fn set_type(&mut self, kind: ContractType) {
+        self.kind = kind;
+    }
 }

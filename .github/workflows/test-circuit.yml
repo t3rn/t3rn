@@ -9,6 +9,7 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
+      - ".github/workflows/test-circuit.yml"
   merge_group:
 
 # Automatically cancel older in-progress jobs on the same branch
@@ -59,7 +60,9 @@ jobs:
           fetch-depth: 1
 
       - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
-        run: rustup show
+        run: |
+          rm -rf ~/.rustup
+          rustup show
 
       - name: 📜 Check code format
         uses: actions-rs/cargo@v1
@@ -128,9 +131,11 @@ jobs:
 
   # We should run zombienet only when tests are passing
   smoke-test:
-    name: Zombienet Smoke Test
+    name: Zombienet Test
     runs-on: [self-hosted, rust]
-    needs: [changes, build-test]
+    # TODO: revert to [changes, build-test] after zombienet is fixed
+    # needs: [changes, build-test]
+    needs: [changes]
     # zombienet is always run before runtime upgrade so any additional run on development is superfluous
     if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
@@ -138,16 +143,24 @@ jobs:
         uses: actions/checkout@v3
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
-        run: rustup show
+        run: |
+          rm -rf ~/.rustup
+          rustup show
 
       - name: Print sccache stats
         working-directory: tests/zombienet
         run: sccache --show-stats
 
-      - name: 📼 Run zombienet tests
+      - name: 📼 Run zombienet smoke tests
         continue-on-error: false
         working-directory: tests/zombienet
         run: ./zombienet.sh smoke
+
+      - name: 📼 Run zombienet upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        # TODO: we should enhance it to t3rn as well
+        run: ./zombienet.sh upgrade t0rn
 
       - name: Print sccache stats
         working-directory: tests/zombienet

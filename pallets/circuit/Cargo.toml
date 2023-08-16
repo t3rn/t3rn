@@ -1,56 +1,44 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
-description = "on-chain composable contracts registry"
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+authors     = { workspace = true }
+description = "circuit implements fail-safe interoperable execution based on open-market mechanics and trust-free remote chain inclusion proofs"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-circuit"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.2.29-rc.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec            = { package = "parity-scale-codec", version = "3", default-features = false }
-log              = { version = "0.4", default-features = false }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-scale-info       = { version = "2.9.0", default-features = false, features = [ "derive" ] }
-serde            = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
+codec            = { workspace = true, package = "parity-scale-codec" }
+log              = { workspace = true }
+pallet-timestamp = { workspace = true }
+scale-info       = { workspace = true }
+serde            = { workspace = true, optional = true, features = [ "derive" ] }
+num-traits       = { workspace = true }
 
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
-frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-core            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-io              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-trie            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support      = { workspace = true }
+frame-system       = { workspace = true }
+sp-core            = { workspace = true }
+sp-io              = { workspace = true }
+sp-runtime         = { workspace = true }
+sp-std             = { workspace = true }
+sp-trie            = { workspace = true }
 
-pallet-xbi-portal   = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
+pallet-xbi-portal   = { workspace = true }
 t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.5", default-features = false }
+t3rn-sdk-primitives = { workspace = true }
 t3rn-types          = { default-features = false, path = "../../types", features = [ "runtime" ] }
 
 [dev-dependencies]
-frame-election-provider-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-hex                             = "0.4.2"
-hex-literal                     = "0.2.1"
-pallet-authorship               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-babe                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-offences                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-session                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-staking                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-staking-reward-curve     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-transaction-payment      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-serde_json                      = "1.0.103"
-sp-consensus-aura               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-consensus-babe               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-consensus-vrf                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-finality-grandpa             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-staking                      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+hex                             = { workspace = true }
+hex-literal                     = { workspace = true }
+serde_json                      = { workspace = true }
 
 # Needed because of testing features
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", features = [ "testing" ] }
@@ -75,6 +63,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "log/std",
+  "num-traits/std",
   "pallet-timestamp/std",
   "scale-info/std",
   "serde/std",
@@ -89,6 +78,5 @@ std = [
   "t3rn-sdk-primitives/std",
   "pallet-xbi-portal/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime" ]
-
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime" ]
 test-skip-verification = [  ]

@@ -1,5 +1,5 @@
 use crate::{pallet::Error, *};
-use sp_runtime::traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 
 use crate::square_up::SquareUp;
 use sp_std::marker::PhantomData;
@@ -11,13 +11,28 @@ pub struct Bids<T: Config> {
 
 impl<T: Config> Bids<T> {
     pub fn try_bid(
-        step_fsx: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        step_fsx: &mut Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        >,
         bid_amount: BalanceOf<T>,
         bidder: &T::AccountId,
         requester: &T::AccountId,
         sfx_id: SideEffectId<T>,
         xtx_id: XExecSignalId<T>,
-    ) -> Result<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>, Error<T>> {
+    ) -> Result<
+        Vec<
+            FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
+        >,
+        Error<T>,
+    > {
         // Check for the previous bids for SFX.
         let fsx = step_fsx
             .iter()

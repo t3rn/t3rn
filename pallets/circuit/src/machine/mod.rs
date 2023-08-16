@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::{pallet::Error, *};
 use frame_support::ensure;
 
@@ -15,9 +13,9 @@ pub mod test_extra;
 #[cfg(test)]
 pub mod test_extra_stress;
 
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_std::marker::PhantomData;
 use t3rn_primitives::SpeedMode;
-
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
 }
@@ -25,11 +23,7 @@ pub struct Machine<T: Config> {
 pub enum PrecompileResult<T: Config> {
     TryUpdateFSX(
         Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
+            FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
         >,
     ),
     TryBid(
@@ -43,7 +37,7 @@ pub enum PrecompileResult<T: Config> {
         SideEffectId<T>,
         ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
+            BlockNumberFor<T>,
             BalanceOf<T>,
         >,
     ),
@@ -66,20 +60,28 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
-        maybe_adaptive_timeout: Option<AdaptiveTimeout<T::BlockNumber, TargetId>>,
+        maybe_adaptive_timeout: Option<
+            AdaptiveTimeout<frame_system::pallet_prelude::BlockNumberFor<T>, TargetId>,
+        >,
     ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // ToDo: Introduce default delay
-        let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
+        let (timeouts_at, delay_steps_at): (
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+            Option<Vec<BlockNumberFor<T>>>,
+        ) = (
             T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
             None,
         );
 
         let adaptive_timeout = match maybe_adaptive_timeout {
-            None => AdaptiveTimeout::<T::BlockNumber, TargetId>::new_emergency(timeouts_at),
+            None => AdaptiveTimeout::<
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                TargetId,
+            >::new_emergency(timeouts_at),
             Some(adaptive_timeout) => adaptive_timeout,
         };
 
-        let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
+        let (xtx_id, xtx) = XExecSignal::<T::AccountId, BlockNumberFor<T>>::setup_fresh::<T>(
             requester,
             adaptive_timeout,
             SpeedMode::Finalized,
@@ -154,7 +156,7 @@ impl<T: Config> Machine<T> {
             &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
+                    BlockNumberFor<T>,
                     BalanceOf<T>,
                 >,
             >,
@@ -176,7 +178,7 @@ impl<T: Config> Machine<T> {
                 fsx: &mut Vec<
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
+                        BlockNumberFor<T>,
                         BalanceOf<T>,
                     >,
                 >,
@@ -204,7 +206,7 @@ impl<T: Config> Machine<T> {
             &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
+                    BlockNumberFor<T>,
                     BalanceOf<T>,
                 >,
             >,
@@ -312,11 +314,7 @@ impl<T: Config> Machine<T> {
     fn update_current_step_fsx(
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         updated_fsx: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
+            FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
         >,
     ) {
         let (current_step, _) = local_ctx.xtx.steps_cnt;
@@ -337,13 +335,8 @@ impl<T: Config> Machine<T> {
 
     pub fn read_current_step_fsx(
         local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
-    ) -> &Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-    > {
+    ) -> &Vec<FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>>
+    {
         let (current_step, _) = local_ctx.xtx.steps_cnt;
         local_ctx
             .full_side_effects
@@ -454,7 +447,7 @@ impl<T: Config> Machine<T> {
                                 (
                                     cnt,
                                     side_effect_hash,
-                                    XExecSignal::<T::AccountId, T::BlockNumber>::generate_step_id::<
+                                    XExecSignal::<T::AccountId, BlockNumberFor<T>>::generate_step_id::<
                                         T,
                                     >(local_ctx.xtx_id, cnt),
                                 )
@@ -464,7 +457,15 @@ impl<T: Config> Machine<T> {
                     .collect();
                 <pallet::Pallet<T> as Store>::FullSideEffects::insert::<
                     XExecSignalId<T>,
-                    Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                    Vec<
+                        Vec<
+                            FullSideEffect<
+                                T::AccountId,
+                                frame_system::pallet_prelude::BlockNumberFor<T>,
+                                BalanceOf<T>,
+                            >,
+                        >,
+                    >,
                 >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
 
                 for (_step_cnt, side_effect_id, _step_side_effect_id) in steps_side_effects_ids {
@@ -484,14 +485,14 @@ impl<T: Config> Machine<T> {
                 );
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::insert::<
                     XExecSignalId<T>,
-                    T::BlockNumber,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
                 >(
                     local_ctx.xtx_id,
                     T::SFXBiddingPeriod::get() + frame_system::Pallet::<T>::block_number(),
                 );
                 <pallet::Pallet<T> as Store>::XExecSignals::insert::<
                     XExecSignalId<T>,
-                    XExecSignal<T::AccountId, T::BlockNumber>,
+                    XExecSignal<T::AccountId, BlockNumberFor<T>>,
                 >(local_ctx.xtx_id, local_ctx.xtx.clone());
 
                 true

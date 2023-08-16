@@ -48,49 +48,49 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn register_gateway() -> Weight {
-        72_795_000_u64
+        Weight::from_parts(72_795_000_u64, 0u64)
             .saturating_add(T::DbWeight::get().reads(2_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn set_owner() -> Weight {
-        73_255_000_u64
+        Weight::from_parts(73_255_000_u64, 0u64)
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn set_operational() -> Weight {
-        58_912_000_u64
+        Weight::from_parts(58_912_000_u64, 0u64)
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn submit_headers() -> Weight {
-        25_265_000_u64.saturating_add(T::DbWeight::get().reads(1_u64))
+        Weight::from_parts(25_265_000_u64, 0u64).saturating_add(T::DbWeight::get().reads(1_u64))
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn register_gateway() -> Weight {
-        72_795_000_u64
+        Weight::from_parts(72_795_000_u64, 0u64)
             .saturating_add(RocksDbWeight::get().reads(2_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn set_owner() -> Weight {
-        73_255_000_u64
+        Weight::from_parts(73_255_000_u64, 0u64)
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn set_operational() -> Weight {
-        58_912_000_u64
+        Weight::from_parts(58_912_000_u64, 0u64)
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn submit_headers() -> Weight {
-        25_265_000_u64.saturating_add(RocksDbWeight::get().reads(1_u64))
+        Weight::from_parts(25_265_000_u64, 0u64).saturating_add(RocksDbWeight::get().reads(1_u64))
     }
 }

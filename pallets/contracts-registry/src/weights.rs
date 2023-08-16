@@ -46,37 +46,37 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn add_new_contract() -> Weight {
-        52_000_000_u64
+        Weight::from_parts(52_000_000_u64, 0u64)
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn purge() -> Weight {
-        37_000_000_u64
+        Weight::from_parts(37_000_000_u64, 0u64)
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn fetch_contracts() -> Weight {
-        53_000_000_u64.saturating_add(T::DbWeight::get().reads(4_u64))
+        Weight::from_parts(53_000_000_u64, 0u64).saturating_add(T::DbWeight::get().reads(4_u64))
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn add_new_contract() -> Weight {
-        52_000_000_u64
+        Weight::from_parts(52_000_000_u64, 0u64)
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn purge() -> Weight {
-        37_000_000_u64
+        Weight::from_parts(37_000_000_u64, 0u64)
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn fetch_contracts() -> Weight {
-        53_000_000_u64.saturating_add(RocksDbWeight::get().reads(4_u64))
+        Weight::from_parts(53_000_000_u64, 0u64).saturating_add(RocksDbWeight::get().reads(4_u64))
     }
 }

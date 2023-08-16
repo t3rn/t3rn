@@ -16,6 +16,7 @@ contract AttestationsVerifier {
     }
 
     mapping(bytes32 => bool) public committedSfxMap;
+    mapping(bytes32 => bool) public committedGMPMap;
     mapping(bytes32 => bool) public revertedSfxMap;
     mapping(address => uint256) public attestersIndices;
     address public owner;

@@ -1,0 +1,29 @@
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[tasks.toml-format]
+args          = [ "format" ]
+command       = "taplo"
+install_crate = "taplo-cli"
+workspace     = false
+
+[tasks.rust-format]
+args      = [ "fmt", "--all" ]
+command   = "cargo"
+workspace = false
+
+[tasks.format]
+dependencies = [ "toml-format", "rust-format" ]
+workspace    = false
+
+[tasks.build-contracts]
+dependencies = [ { name = "build", path = "contracts/flipper" } ]
+workspace    = false
+
+[tasks.test-workspaces]
+dependencies = [ { name = "test-parallel", path = "crates/primitives" }, { name = "test-parallel", path = "crates/sdk" } ]
+workspace    = false
+
+[tasks.build]
+dependencies = [ "build-contracts" ]
+workspace    = false

@@ -7,6 +7,7 @@ pub use pallet::*;
 use frame_support::{
     dispatch::DispatchResult, ensure, sp_runtime::DispatchError, traits::Currency,
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::StaticLookup;
 use sp_std::vec::Vec;
 use t3rn_primitives::{
@@ -45,15 +46,18 @@ pub mod pallet {
 
     use crate::BalanceOf;
     use frame_support::{pallet_prelude::*, traits::Currency};
+    use frame_system::pallet_prelude::BlockNumberFor;
+    use sp_std::vec::Vec;
     use t3rn_primitives::{
         account_manager::AccountManager, circuit::OnLocalTrigger, contract_metadata::ContractType,
         contracts_registry::ContractsRegistry, portal::Portal, ChainId,
     };
+
     use t3rn_sdk_primitives::signal::SignalKind;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The ID of the circuit
         type CircuitTargetId: Get<ChainId>;
@@ -79,7 +83,7 @@ pub mod pallet {
             Self::AccountId,
             BalanceOf<Self>,
             Self::Hash,
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             Self::AssetId,
         >;
 
@@ -108,21 +112,15 @@ pub mod pallet {
     pub(crate) type AuthorOf<T: Config> = StorageMap<_, Identity, T::AccountId, T::AccountId>;
 
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         pub precompiles: Vec<(T::Hash, u8)>,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                precompiles: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             for (hash, ptr) in &self.precompiles {
                 <PrecompileIndex<T>>::insert(hash, ptr);
@@ -211,7 +209,7 @@ impl<T: Config> Precompile<T, BalanceOf<T>> for Pallet<T> {
 
 impl<T: Config> LocalStateAccess<T, BalanceOf<T>> for Pallet<T> {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
         <T as Config>::OnLocalTrigger::load_local_state(origin, xtx_id.cloned())
@@ -253,8 +251,10 @@ impl<T: Config> Remuneration<T, BalanceOf<T>> for Pallet<T> {
 impl<T: Config> ThreeVm<T, BalanceOf<T>> for Pallet<T> {
     fn peek_registry(
         id: &T::Hash,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, DispatchError>
-    {
+    ) -> Result<
+        RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>,
+        DispatchError,
+    > {
         let contract = T::ContractsRegistry::fetch_contract_by_id(*id)
             .map_err(|_| Error::<T>::ContractNotFound)?;
         Ok(contract)

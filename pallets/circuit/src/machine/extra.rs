@@ -1,15 +1,9 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::{pallet::Error, *};
 use frame_support::ensure;
-
+use frame_system::pallet_prelude::BlockNumberFor;
 pub fn no_mangle<T: Config>(
     _current_fsx: &mut Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
+        FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
     >,
     _local_state: LocalState,
     _steps_cnt: (u32, u32),

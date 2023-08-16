@@ -17,9 +17,10 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
+use super::*;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 
-use super::*;
+type CurrencyOf<T> = <T as Config>::Currency;
 
 benchmarks! {
 
@@ -34,7 +35,6 @@ benchmarks! {
 
         use frame_benchmarking::vec;
         use rlp::RlpStream;
-        use sha3::{Digest, Keccak256};
         use sp_core::{H160, U256};
 
         // contract bytecode below is for:
@@ -69,61 +69,81 @@ benchmarks! {
             "2eeada8e094193a364736f6c63430008030033"))
             .expect("Bad hex string");
 
-        let caller = H160::default();
+        let caller = "1000000000000000000000000000000000000001".parse::<H160>().unwrap();
 
-        let mut nonce: u64 = 0;
+        let mut nonce: u64 = 1;
         let nonce_as_u256: U256 = nonce.into();
 
         let value = U256::default();
-        let gas_limit_create: u64 = 1_250_000_u64.checked_mul(1_000_000_000).unwrap();
+        let gas_limit_create: u64 = 1000000;
         let is_transactional = true;
+        let validate = true;
         let create_runner_results = T::Runner::create(
             caller,
             contract_bytecode,
             value,
             gas_limit_create,
-            None,
-            None,
+            Some(U256::from(1_000_000_000)),
+            Some(U256::from(1_000_000_000)),
             Some(nonce_as_u256),
             Vec::new(),
             is_transactional,
+            validate,
+            None,
+            None,
             T::config(),
         );
-        assert_eq!(create_runner_results.is_ok(), true, "create() failed");
+        assert!(create_runner_results.is_ok(), "create() failed");
 
         // derive the resulting contract address from our create
         let mut rlp = RlpStream::new_list(2);
         rlp.append(&caller);
         rlp.append(&0u8);
-        let contract_address = H160::from_slice(&Keccak256::digest(&rlp.out())[12..]);
+        let contract_address = H160::from_slice(&sp_io::hashing::keccak_256(&rlp.out())[12..]);
 
         // derive encoded contract call -- in this case, just the function selector
         let mut encoded_call = vec![0u8; 4];
-        encoded_call[0..4].copy_from_slice(&Keccak256::digest(b"infinite()")[0..4]);
+        encoded_call[0..4].copy_from_slice(&sp_io::hashing::keccak_256(b"infinite()")[0..4]);
 
-        let gas_limit_call = x as u64;
+        let gas_limit_call = gas_limit_create;
 
     }: {
 
-        nonce = nonce + 1;
+        nonce += 1;
         let nonce_as_u256: U256 = nonce.into();
 
         let is_transactional = true;
+        let validate = true;
         let call_runner_results = T::Runner::call(
             caller,
             contract_address,
             encoded_call,
             value,
             gas_limit_call,
-            None,
-            None,
+            Some(U256::from(1_000_000_000)),
+            Some(U256::from(1_000_000_000)),
             Some(nonce_as_u256),
             Vec::new(),
             is_transactional,
+            validate,
+            None,
+            None,
             T::config(),
         );
-        assert_eq!(call_runner_results.is_ok(), true, "call() failed");
+        assert!(call_runner_results.is_ok(), "call() failed");
+    }
+
+    withdraw {
+        let caller = frame_benchmarking::whitelisted_caller::<T::AccountId>();
+        let from = H160::from_low_u64_le(0);
+        let from_account_id = T::AddressMapping::into_account_id(from);
+        CurrencyOf::<T>::make_free_balance_be(&from_account_id, 100_000u32.into());
+    }: {
+        // Withdraw should always fail with `EnsureAddressNever` WithdrawOrigin.
+        let result = Pallet::<T>::withdraw(RawOrigin::Signed(caller.clone()).into(), from, 100_000u32.into());
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), sp_runtime::DispatchError::BadOrigin);
     }
 }
 
-impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::Test);
+impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::mock::Test);

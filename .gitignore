@@ -23,3 +23,5 @@ docs/attester
 **/parachains-integration-tests
 .idea
 *.iml
+
+vendor

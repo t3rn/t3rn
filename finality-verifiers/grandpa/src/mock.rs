@@ -18,6 +18,7 @@
 #![allow(clippy::from_over_into)]
 
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
+use frame_system::mocking::MockUncheckedExtrinsic;
 use sp_runtime::{
     generic,
     testing::H256,
@@ -34,7 +35,8 @@ pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
 pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
 
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
+// type Block = frame_system::mocking::MockBlock<TestRuntime>;
+pub type Block = sp_runtime::generic::Block<Header, MockUncheckedExtrinsic<TestRuntime>>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 use crate::{
@@ -50,19 +52,19 @@ construct_runtime! {
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system,
         GrandpaFinalityVerifier: crate,
         PolkadotBridge: crate::<Instance1>,
         KusamaBridge: crate::<Instance2>,
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances,
+        Timestamp: pallet_timestamp,
+        Sudo: pallet_sudo,
     }
 }
 
 parameter_types! {
     pub const BlockHashCount: u32 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: Weight = Weight::from_parts(1024, 1);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
@@ -71,24 +73,25 @@ impl frame_system::Config for TestRuntime {
     type AccountData = pallet_balances::AccountData<u64>;
     type AccountId = AccountId;
     type BaseCallFilter = Everything;
+    /// The block type.
+    type Block = Block;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u32;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    /// The index type for storing how many extrinsics an account has signed.
+    type Nonce = u32;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -107,8 +110,9 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 impl pallet_sudo::Config for TestRuntime {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -128,51 +132,58 @@ parameter_types! {
 
 impl pallet_balances::Config for TestRuntime {
     type AccountStore = System;
+    /// The type for recording an account's balance.
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type MaxLocks = ();
-    type MaxReserves = MaxReserves;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
+    type MaxLocks = ConstU32<50>;
+    type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
-    type WeightInfo = ();
+    /// The ubiquitous event type.
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<TestRuntime>;
 }
 
 impl Config<RococoInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl Config<KusamaInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
     type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
+
 impl Config<PolkadotInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
-    type MyVendor = PolkadotVendor;
+    type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -180,10 +191,10 @@ impl Config<PolkadotInstance> for TestRuntime {
 pub struct TestCircuitLikeChain;
 
 impl Chain for TestCircuitLikeChain {
-    type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
+    type BlockNumber = u32;
     type Hash = <TestRuntime as frame_system::Config>::Hash;
     type Hasher = <TestRuntime as frame_system::Config>::Hashing;
-    type Header = <TestRuntime as frame_system::Config>::Header;
+    type Header = Header;
 }
 
 pub fn run_test<T>(test: impl FnOnce() -> T) -> T {

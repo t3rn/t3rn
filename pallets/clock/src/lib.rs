@@ -17,8 +17,6 @@ pub use t3rn_primitives::{
     GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 
-use pallet_account_manager::BalanceOf;
-
 #[cfg(test)]
 mod tests;
 
@@ -31,33 +29,23 @@ mod weights;
 // `construct_runtime`.
 #[frame_support::pallet]
 pub mod pallet {
+
     // Import various types used to declare pallet in scope.
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use sp_std::prelude::*;
+
     use t3rn_primitives::clock::OnHookQueues;
 
-    const FIVE: Weight = 5;
+    const FIVE: u64 = 5;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_account_manager::Config {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         #[pallet::constant]
-        type RoundDuration: Get<Self::BlockNumber>;
-
-        type Executors: Executors<Self, BalanceOf<Self>>;
-
-        /// A type that provides access to AccountManager
-        type AccountManager: AccountManager<
-            Self::AccountId,
-            BalanceOf<Self>,
-            Self::Hash,
-            Self::BlockNumber,
-            u32,
-        >;
+        type RoundDuration: Get<BlockNumberFor<Self>>;
 
         /// Description of on_initialize queues and their max. consumption of % of total on_init weight.
         /// The first element of the tuple is the queue name, the second is the max. % of total on_init weight.}
@@ -69,29 +57,16 @@ pub mod pallet {
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
     // method.
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::storage]
-    pub type LastClaims<T: Config> =
-        StorageMap<_, Identity, T::AccountId, RoundInfo<T::BlockNumber>>;
-
-    #[pallet::storage]
-    pub type ClaimableArtifactsPerRound<T: Config> = StorageMap<
-        _,
-        Identity,
-        RoundInfo<T::BlockNumber>,
-        Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>,
-    >;
-
-    #[pallet::storage]
     #[pallet::getter(fn current_round)]
     /// Information on the current round.
-    pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
+    pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<BlockNumberFor<T>>, ValueQuery>;
 
     impl<T: Config> Pallet<T> {
-        pub fn check_bump_round(n: T::BlockNumber) -> Weight {
+        pub fn check_bump_round(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             let past_round = <CurrentRound<T>>::get();
             let term = T::RoundDuration::get();
             let new_round = RoundInfo {
@@ -122,7 +97,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(n: T::BlockNumber) {
+        fn on_finalize(n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             let max_on_finalize_weight = T::BlockWeights::get().max_block.saturating_div(FIVE);
             log::debug!(
                 "Clock::on_finalize process hooks with max_on_finalize_weight: {:?}",
@@ -135,7 +110,7 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+        fn on_initialize(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             let max_on_initialize_weight = T::BlockWeights::get().max_block.saturating_div(FIVE);
             log::debug!(
                 "Clock::on_initialize process hooks with max_on_initialize_weight: {:?} and block number: {:?}",
@@ -148,7 +123,7 @@ pub mod pallet {
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.
@@ -162,8 +137,8 @@ pub mod pallet {
     pub enum Event<T: Config> {
         NewRound {
             index: u32,
-            head: T::BlockNumber,
-            term: T::BlockNumber,
+            head: frame_system::pallet_prelude::BlockNumberFor<T>,
+            term: frame_system::pallet_prelude::BlockNumberFor<T>,
         },
     }
 
@@ -171,32 +146,25 @@ pub mod pallet {
     pub enum Error<T> {}
 
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                phantom: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {}
     }
 
     impl<T: Config> Clock<T> for Pallet<T> {
-        fn current_round() -> RoundInfo<T::BlockNumber> {
+        fn current_round() -> RoundInfo<BlockNumberFor<T>> {
             Self::current_round()
         }
 
-        fn round_duration() -> T::BlockNumber {
+        fn round_duration() -> frame_system::pallet_prelude::BlockNumberFor<T> {
             T::RoundDuration::get()
         }
     }

@@ -1,0 +1,119 @@
+env_files = [ { path = ".env" } ]
+
+[env]
+ALICE                                = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+CONTRACT_PATH                        = "Storage.json"
+FERDIE                               = "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL"
+GAS_LIMIT                            = 10000000
+SALT                                 = "0x0fd923ca5e7218c4ba3c3801c26a617ecdbfdaebb9c76ce2eca166e7855eb8b8"
+
+[tasks.clean_env]
+script = "rm -rf .env && touch .env"
+
+[tasks.build]
+dependencies  = [ "clean_env" ]
+script = '''
+    solc --combined-json abi,bin,bin-runtime,hashes,metadata Storage.sol | jq . > Storage.json
+'''
+
+[tasks.registry_params_part_one]
+script = '''
+printf "%s " ${FERDIE} > /tmp/upload.params
+'''
+
+[tasks.registry_params_part_two]
+script = '''
+printf "{\"codeTxt\":\"%s\",\"bytes\":\"%s\",\"author\":{\"account\":\"%s\",\"feesPerSingleUse\":%d},\"meta\":{\"metadataVersion\":\"1.0\",\"name\":\"bojopartyman\",\"contractType\":3,\"version\":\"1.0\"}}" \
+    $(jq -r '.contracts."Storage.sol:Storage".metadata' ${CONTRACT_PATH} | jq -r '.sources."Storage.sol".keccak256') \
+    0x$(jq -r '.contracts."Storage.sol:Storage".bin' ${CONTRACT_PATH}) \
+    ${FERDIE} 1000000000000 \
+    >> /tmp/upload.params
+'''
+
+[tasks.registry_upload]
+dependencies = [ "clean_env", "registry_params_part_one", "registry_params_part_two" ]
+script = '''
+  hash=$(polkadot-js-api \
+  --ws ws://localhost:9944 \
+  --seed //Alice \
+  --params /tmp/upload.params \
+  --sudo tx.contractsRegistry.addNewContract \
+  | jq -r '.addNewContract.events[1].event.data[1] | select( . != null )') && \
+  echo "CONTRACT_HASH=${hash}" > .env && \
+  echo ${hash}
+'''
+
+[tasks.transfer]
+script = '''
+    printf \
+        "%s %d" \
+        "$FERDIE" \
+        1000000000000 \
+        > /tmp/balance.params && \
+    polkadot-js-api \
+        --ws ws://localhost:9944 \
+        --seed //Alice \
+        --params /tmp/balance.params \
+        tx.balances.transfer
+'''
+
+[tasks.registry_instantiate]
+dependencies = [ "registry_upload" ]
+script = '''
+    source .env && \
+    printf \
+        "%s %s %d %d %d %s %s %s" \
+        0x7265673a$(echo ${CONTRACT_HASH} | cut -c 3-) \
+        $SALT \
+        "0" \
+        ${GAS_LIMIT} \
+        "1" \
+        "null" \
+        "null" \
+        "null" \
+        > /tmp/storage.params && \
+    polkadot-js-api \
+        --ws ws://localhost:9944 \
+        --seed //Alice \
+        --params /tmp/storage.params tx.evm.create2
+'''
+
+[tasks.reinstantiate]
+script = '''
+    source .env && \
+    printf \
+        "%s %s %d %d %d %s %s %s" \
+        0x7265673a$(echo ${CONTRACT_HASH} | cut -c 3-) \
+        $SALT \
+        "0" \
+        ${GAS_LIMIT} \
+        "100" \
+        "null" \
+        "null" \
+        "null" \
+        > /tmp/storage.params && \
+    polkadot-js-api \
+        --ws ws://localhost:9944 \
+        --seed //Alice \
+        --params /tmp/storage.params tx.evm.create2
+'''
+
+[tasks.call]
+script = '''
+    printf \
+        "%s %d %d %d %s" \
+        ${CONTRACT_ADDRESS} \
+        "0" \
+        ${GAS_LIMIT} \
+        ${STORAGE_DEPOSIT_LIMIT} \
+        $(jq -r .V3.spec.messages[1].selector ${CONTRACT_PATH})00 \
+        > /tmp/flipper_call.params && \
+    polkadot-js-api \
+        --ws ws://localhost:9944 \
+        --seed //Alice \
+        --params /tmp/flipper_call.params tx.contracts.call
+'''
+
+[tasks.registry_instantiate_and_call]
+dependencies = [ "registry_instantiate", "call" ]

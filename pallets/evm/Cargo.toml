@@ -1,102 +1,85 @@
 [package]
 authors     = [ "Parity Technologies <admin@parity.io>", "t3rn ltd. <team@t3rn.io>" ]
 description = "FRAME EVM contracts pallet that is t3rn 3VM enabled"
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-evm"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/3vm/"
-version     = "0.1.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
-targets = [ "x86_64-unknown-linux-gnu" ]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-evm             = { git = "https://github.com/rust-blockchain/evm.git", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = [ "with-codec" ] }
-hex             = { version = "0.4", default-features = false, features = [ "serde" ] }
-log             = { version = "0.4", default-features = false }
-primitive-types = { version = "0.11.1", default-features = false, features = [ "rlp", "byteorder" ] }
-rlp             = { version = "0.5", default-features = false }
-serde           = { version = "1.0.175", optional = true, features = [ "derive" ] }
-sha3            = { version = "0.10.8", default-features = false }
+environmental = { version = "1.1.4", default-features = false, optional = true }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "b7b82c7e1fc57b7449d6dfa6826600de37cc1e65", default-features = false, features = ["with-codec"]  }
+hex = { workspace = true, optional = true }
+hex-literal = { workspace = true }
+impl-trait-for-tuples = "0.2.2"
+log = { workspace = true }
+rlp = { workspace = true, optional = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+# Substrate
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+# Frontier
+fp-account = { path = "account", default-features = false }
+fp-evm = { path = "primitives", default-features = false }
 
-codec      = { package = "parity-scale-codec", version = "3.1.0", default-features = false, features = [ "derive" ] }
-scale-info = { version = "2.9.0", default-features = false, features = [ "derive" ] }
-sp-core    = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-io      = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-std     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false, optional = true }
-frame-support      = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-frame-system       = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-pallet-timestamp   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-
-fp-evm = { version = "3.0.0-dev", path = "primitives", default-features = false }
-
-# t3rn dependencies
-t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
-t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.5", default-features = false }
-
-#t3rn-sdk-primitives = { path = "../../../../sdk/crates/primitives", default-features = false }
+# t3rn 3VM patch
+t3rn-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
-hex-literal = "*"
-serde_json  = { version = "1.0.103" }
-
-# Substrate Dependencies
-pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-
-# t3rn dependencies
-pallet-3vm                       = { path = "../3vm" }
-pallet-account-manager           = { path = "../account-manager" }
-pallet-circuit                   = { path = "../circuit" }
-pallet-contracts-registry        = { path = "../contracts-registry" }
-pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
-pallet-portal                    = { path = "../portal" }
-pallet-xdns                      = { path = "../xdns" }
-
-# TODO: automatically build fixtures, broken as we need to patch the k256 crate
-## Solc dependencies
-#ethers-solc = { git = "https://github.com/gakonst/ethers-rs.git" }
-
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
+hex = { workspace = true }
+# Substrate
+pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
+pallet-evm-precompile-simple = { path = "precompile/simple", default-features = false }
+pallet-timestamp = { workspace = true, features = ["default"] }
 
 [features]
-default = [ "std" ]
-runtime-benchmarks = [
-  "frame-benchmarking/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
-  "frame-system/runtime-benchmarks",
-  "pallet-timestamp/runtime-benchmarks",
-  "sp-runtime/runtime-benchmarks",
-]
+default = ["std"]
 std = [
-  "evm/std",
-  "evm/with-serde",
-  "hex/std",
-  "log/std",
-  "primitive-types/std",
-  "rlp/std",
-  "serde",
-  "sha3/std",
-  "codec/std",
-  "scale-info/std",
-  "sp-core/std",
-  "sp-io/std",
-  "sp-runtime/std",
-  "sp-std/std",
-  "frame-support/std",
-  "frame-system/std",
-  "pallet-timestamp/std",
-  "t3rn-abi/std",
-  "t3rn-primitives/std",
-  "t3rn-sdk-primitives/std",
-  "fp-evm/std",
+	"environmental?/std",
+	"evm/std",
+	"evm/with-serde",
+	"hex?/std",
+	"log/std",
+	"rlp?/std",
+	"scale-codec/std",
+	"scale-info/std",
+	# Substrate
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	# Frontier
+	"fp-account/std",
+	"fp-evm/std",
+	# t3rn 3VM patch
+	"t3rn-primitives/std",
 ]
+runtime-benchmarks = [
+	"hex",
+	"rlp",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]
+forbid-evm-reentrancy = ["dep:environmental"]

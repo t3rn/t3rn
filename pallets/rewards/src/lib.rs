@@ -63,7 +63,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type Currency: Currency<Self::AccountId>;
 
@@ -105,13 +105,13 @@ pub mod pallet {
         ///
         /// Default: 2_628_000 (assuming 12s block time)
         #[pallet::constant]
-        type OneYear: Get<Self::BlockNumber>;
+        type OneYear: Get<BlockNumberFor<Self>>;
 
         /// The number of blocks between inflation distribution.
         ///
         /// Default: 100_800 (assuming one distribution per two weeks)
         #[pallet::constant]
-        type InflationDistributionPeriod: Get<Self::BlockNumber>;
+        type InflationDistributionPeriod: Get<BlockNumberFor<Self>>;
 
         type AvailableBootstrapSpenditure: Get<BalanceOf<Self>>;
 
@@ -129,7 +129,7 @@ pub mod pallet {
             Self::AccountId,
             BalanceOf<Self>,
             Self::Hash,
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             u32,
         >;
 
@@ -137,7 +137,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -179,11 +178,14 @@ pub mod pallet {
     pub type RepatriationPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
-    pub type DistributionBlock<T: Config> = StorageValue<_, T::BlockNumber>;
+    pub type DistributionBlock<T: Config> = StorageValue<_, BlockNumberFor<T>>;
 
     #[pallet::storage]
-    pub type DistributionHistory<T: Config> =
-        StorageValue<_, Vec<DistributionRecord<T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
+    pub type DistributionHistory<T: Config> = StorageValue<
+        _,
+        Vec<DistributionRecord<frame_system::pallet_prelude::BlockNumberFor<T>, BalanceOf<T>>>,
+        ValueQuery,
+    >;
 
     #[pallet::storage]
     pub type IsDistributionHalted<T: Config> = StorageValue<_, bool, ValueQuery>;
@@ -193,7 +195,7 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type LastProcessedRound<T: Config> =
-        StorageValue<_, RoundInfo<T::BlockNumber>, OptionQuery>;
+        StorageValue<_, RoundInfo<BlockNumberFor<T>>, OptionQuery>;
 
     #[pallet::storage]
     pub type MaxRewardExecutorsKickback<T: Config> = StorageValue<_, Percent, ValueQuery>;
@@ -509,7 +511,7 @@ pub mod pallet {
 
             for (author, block_count) in authors_this_period {
                 let this_author_reward: BalanceOf<T> = Perbill::from_rational(
-                    T::BlockNumber::from(block_count),
+                    frame_system::pallet_prelude::BlockNumberFor::<T>::from(block_count),
                     T::InflationDistributionPeriod::get(),
                 )
                 .mul_ceil(current_distribution);
@@ -591,7 +593,7 @@ pub mod pallet {
         }
 
         pub fn process_accumulated_settlements() -> Weight {
-            let mut weight: Weight = 0;
+            let mut weight: Weight = Zero::zero();
 
             // Ensure settlements accumulation is not halted
             if IsSettlementAccumulationHalted::<T>::get() {
@@ -834,7 +836,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> RewardsWriteApi<T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
+    impl<T: Config> RewardsWriteApi<T::AccountId, BalanceOf<T>, BlockNumberFor<T>> for Pallet<T> {
         /// This function is called by the attesters pallet to repatriate the executor of honest SFX
         /// for attesters not signing on the attestation within the acceptable time limit.
         /// The repatriation is done on the agreed percentage value of the SlashTreasury, the current percantage is available through the `repatriation_percentage` function.
@@ -844,7 +846,11 @@ pub mod pallet {
         /// Remaining funds in the SlashTreasury after repatriation are used as a base for Finality Fee, therefore land in Fee Treasury.
         fn repatriate_for_late_attestation(
             sfx_id: &H256,
-            fsx: &FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            fsx: &FullSideEffect<
+                T::AccountId,
+                frame_system::pallet_prelude::BlockNumberFor<T>,
+                BalanceOf<T>,
+            >,
             status: &CircuitStatus,
             requester: Option<T::AccountId>,
         ) -> bool {
@@ -927,32 +933,24 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_finalize(_n: BlockNumberFor<T>) {}
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {}
 
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             Self::process_update_estimated_treasury_balance()
         }
     }
 
     // The genesis config type.
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        pub phantom: PhantomData<T>,
-    }
-
-    // The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                phantom: Default::default(),
-            }
-        }
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
 
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             IsClaimingHalted::<T>::put(false);
             IsDistributionHalted::<T>::put(false);
@@ -974,8 +972,8 @@ pub mod test {
     use sp_runtime::Percent;
     use t3rn_mini_mock_runtime::{
         AccountId, Authors, AuthorsThisPeriod, Balance, Balances, Clock, ConfigRewards,
-        DistributionHistory, ExtBuilder, MiniRuntime, Origin, PendingClaims, Rewards, RewardsError,
-        SettlementsPerRound, System,
+        DistributionHistory, ExtBuilder, MiniRuntime, PendingClaims, Rewards, RewardsError,
+        RuntimeOrigin, SettlementsPerRound, System,
     };
 
     use t3rn_primitives::{
@@ -1139,7 +1137,10 @@ pub mod test {
 
             Rewards::process_accumulated_settlements();
 
-            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+            Rewards::set_max_rewards_executors_kickback(
+                RuntimeOrigin::root(),
+                Percent::from_percent(90),
+            );
 
             let available_rewards_10x_less_of_total_settlements = 100 as Balance;
 
@@ -1313,7 +1314,10 @@ pub mod test {
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
 
-            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+            Rewards::set_max_rewards_executors_kickback(
+                RuntimeOrigin::root(),
+                Percent::from_percent(90),
+            );
 
             let rewards_res =
                 Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
@@ -1367,7 +1371,7 @@ pub mod test {
 
             // Claim the rewards
             let claim_res = Rewards::claim(
-                Origin::signed(beneficiary.clone()),
+                RuntimeOrigin::signed(beneficiary.clone()),
                 Some(CircuitRole::Executor),
             );
 
@@ -1383,7 +1387,7 @@ pub mod test {
 
             // Claim the rewards again
             let claim_res = Rewards::claim(
-                Origin::signed(beneficiary.clone()),
+                RuntimeOrigin::signed(beneficiary.clone()),
                 Some(CircuitRole::Executor),
             );
             assert_err!(claim_res, RewardsError::<MiniRuntime>::NoPendingClaims);
@@ -1535,7 +1539,10 @@ pub mod test {
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
 
-            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+            Rewards::set_max_rewards_executors_kickback(
+                RuntimeOrigin::root(),
+                Percent::from_percent(90),
+            );
 
             let rewards_res =
                 Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
@@ -1568,7 +1575,7 @@ pub mod test {
 
             // Claim the rewards
             let claim_res = Rewards::claim(
-                Origin::signed(single_executor.clone()),
+                RuntimeOrigin::signed(single_executor.clone()),
                 Some(CircuitRole::Executor),
             );
             assert_ok!(claim_res);

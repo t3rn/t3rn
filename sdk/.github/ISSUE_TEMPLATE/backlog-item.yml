@@ -1,0 +1,68 @@
+name: Backlog Item
+description: Add an item to the backlog
+title: "Add a title here"
+labels: []
+assignees: []
+body:
+  - type: dropdown
+    id: item-type
+    attributes:
+      label: Item Type
+      description: What is the type of this item?
+      options:
+        - Epic
+        - Story
+        - Task
+        - Spike
+        - Bug
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Write a description of the issue
+    validations:
+      required: true
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional Information
+      description: Any additional related items or nested items can be written here
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Acceptance Criteria is the criteria needed for the issue creator to be able to accept the issue to be marked as done
+      placeholder: >
+        For a `spike`, this might just be the risks that the spike is to help resolve.
+        For a `story`, it might be testable actions to validate the feature works and any edge cases/unhappy paths that the issuer might know of.
+    validations:
+      required: true
+  - type: dropdown
+    id: points
+    attributes:
+      label: What are the points assigned to this item?
+      options:
+        - 0.5
+        - 1
+        - 2
+        - 3
+        - 5
+        - 8
+        - 13
+        - 21
+    validations:
+      required: false
+  - type: checkboxes
+    id: ready
+    attributes:
+      label: Is the issue ready?
+      description: Ready means that the issue is actionable right away, has a defined acceptance criteria and size so that anybody with reasonable knowledge can start to work on the item
+      options:
+        - label: This issue is ready
+          required: false
+    validations:
+      required: false

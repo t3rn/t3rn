@@ -1,0 +1,12 @@
+[tasks.test-primitives-std]
+args      = [ "test", "--features", "std" ]
+command   = "cargo"
+workspace = false
+
+[tasks.test-primitives]
+args      = [ "test" ]
+command   = "cargo"
+workspace = false
+
+[tasks.test-parallel]
+run_task = { name = [ "test-primitives-std", "test-primitives" ], parallel = true }

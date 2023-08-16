@@ -1,12 +1,26 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    AccountId,
+    AuraConfig,
+    BalancesConfig,
+    GrandpaConfig,
+    RuntimeGenesisConfig,
+    Signature,
+    SudoConfig,
+    SystemConfig,
+    WASM_BINARY,
+    // SessionConfig,
+    // CollatorSelectionConfig,
+    // XDNSConfig
+    // EvmConfig
 };
+
+const CANDIDACY_BOND: u128 = 0; // 10K TRN
+const DESIRED_CANDIDATES: u32 = 2;
 
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{sr25519, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use t3rn_abi::sfx_abi::SFXAbi;
 use t3rn_primitives::xdns::GatewayRecord;
@@ -15,8 +29,8 @@ use t3rn_types::sfx::Sfx4bId;
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
-/// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+/// Specialized `ChainSpec` for the normal parachain runtime.
+pub type ChainSpec = sc_service::GenericChainSpec<circuit_standalone_runtime::RuntimeGenesisConfig>;
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -151,21 +165,27 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 // within contracts.
 // (PUSH1 0x00 PUSH1 0x00 REVERT)
 const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
-
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+// pub fn session_keys(keys: AuraId) -> SessionKeys {
+//     SessionKeys { aura: keys, grandpa: keys }
+// }
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
     wasm_binary: &[u8],
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-    gateway_records: Vec<GatewayRecord<AccountId>>,
-    standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+    _gateway_records: Vec<GatewayRecord<AccountId>>,
+    _standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     _enable_println: bool,
-) -> GenesisConfig {
-    GenesisConfig {
+) -> RuntimeGenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
+            _config: Default::default(),
         },
         balances: BalancesConfig {
             // Configure endowed accounts with initial balance of 1 << 60.
@@ -175,6 +195,18 @@ fn testnet_genesis(
                 .map(|k| (k, (10000 * 10u128.pow(12))))
                 .collect(),
         },
+        // session: SessionConfig {
+        //     keys: initial_authorities
+        //         .iter()
+        //         .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.1.clone())))
+        //         .collect(),
+        // },
+        // collator_selection: CollatorSelectionConfig {
+        //     invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
+        //     candidacy_bond: CANDIDACY_BOND,
+        //     desired_candidates: DESIRED_CANDIDATES,
+        //     ..Default::default()
+        // },
         treasury: Default::default(),
         escrow_treasury: Default::default(),
         fee_treasury: Default::default(),
@@ -183,12 +215,12 @@ fn testnet_genesis(
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
         },
-        rewards: Default::default(),
         grandpa: GrandpaConfig {
             authorities: initial_authorities
                 .iter()
                 .map(|x| (x.1.clone(), 1))
                 .collect(),
+            _config: Default::default(),
         },
         sudo: SudoConfig {
             // Assign network admin rights.
@@ -196,34 +228,14 @@ fn testnet_genesis(
         },
         transaction_payment: Default::default(),
         assets: Default::default(),
-        xdns: XDNSConfig {
-            known_gateway_records: gateway_records,
-            standard_sfx_abi,
-        },
+        rewards: Default::default(),
+        xdns: Default::default(),
         contracts_registry: Default::default(),
         account_manager: Default::default(),
         attesters: Default::default(),
         clock: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
-        evm: EvmConfig {
-            // We need _some_ code inserted at the precompile address so that
-            // the evm will actually call the address.
-            accounts: circuit_standalone_runtime::contracts_config::PrecompilesValue::get()
-                .used_addresses()
-                .into_iter()
-                .map(|addr| {
-                    (
-                        addr,
-                        circuit_standalone_runtime::contracts_config::EvmGenesisAccount {
-                            nonce: Default::default(),
-                            balance: Default::default(),
-                            storage: Default::default(),
-                            code: REVERT_BYTECODE.into(),
-                        },
-                    )
-                })
-                .collect(),
-        },
+        evm: Default::default(),
         maintenance_mode: Default::default(),
     }
 }

@@ -39,7 +39,7 @@ impl<T: Config>
         T::AccountId,
         BalanceOf<T>,
         T::Hash,
-        T::BlockNumber,
+        frame_system::pallet_prelude::BlockNumberFor<T>,
         <T::Assets as Inspect<T::AccountId>>::AssetId,
     > for Pallet<T>
 {
@@ -155,7 +155,7 @@ impl<T: Config>
             Self::withdraw_immediately(
                 &request_charge.payee,
                 total_deposit,
-                request_charge.maybe_asset_id,
+                request_charge.maybe_asset_id.clone(),
             )?;
             PendingCharges::<T>::insert(charge_id, request_charge.clone());
             Self::deposit_event(crate::Event::DepositReceived {
@@ -204,6 +204,8 @@ impl<T: Config>
                 None => T::EscrowAccount::get(),
             };
 
+            let maybe_asset_id = charge.maybe_asset_id.clone();
+
             if charge.offered_reward > Zero::zero() {
                 match outcome {
                     Outcome::Commit => {
@@ -227,21 +229,21 @@ impl<T: Config>
                                 outcome,
                                 source: charge.source,
                                 role: charge.role,
-                                maybe_asset_id: charge.maybe_asset_id,
+                                maybe_asset_id,
                             },
                         );
                     },
                     Outcome::Slash => {
                         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
                             &T::EscrowAccount::get(),
-                            charge.maybe_asset_id,
+                            maybe_asset_id,
                             charge.offered_reward,
                         );
                     },
                     Outcome::UnexpectedFailure | Outcome::Revert => {
                         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
                             &charge.payee,
-                            charge.maybe_asset_id,
+                            maybe_asset_id,
                             charge.offered_reward,
                         );
                     },
@@ -324,7 +326,7 @@ impl<T: Config>
                     T::AccountId,
                     BalanceOf<T>,
                     T::Hash,
-                    T::BlockNumber,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
                     <T::Assets as Inspect<T::AccountId>>::AssetId,
                 >>::deposit(
                     new_charge_id,

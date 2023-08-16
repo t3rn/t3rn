@@ -1,7 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{sp_runtime::DispatchError, traits::Get};
-use frame_system::{ensure_root, pallet_prelude::OriginFor};
+use frame_support::{
+    sp_runtime::{traits::Zero, DispatchError},
+    traits::Get,
+};
+use frame_system::{
+    ensure_root,
+    pallet_prelude::{BlockNumberFor, OriginFor},
+};
+
 pub use pallet::*;
 use sp_std::{boxed::Box, prelude::*};
 use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
@@ -9,6 +16,7 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 #[cfg(test)]
 mod tests;
 
+use frame_support::transactional;
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self, execution_source_to_option,
@@ -18,14 +26,10 @@ use t3rn_primitives::{
     xdns::Xdns,
     ChainId, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo,
 };
-
 pub mod weights;
-
 pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
-use frame_support::transactional;
-use sp_runtime::traits::Zero;
 use t3rn_primitives::{light_client::LightClientHeartbeat, portal::InclusionReceipt};
 
 reexport_currency_types!();
@@ -42,15 +46,15 @@ pub mod pallet {
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Currency access
         type Currency: Currency<Self::AccountId>;
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Access to XDNS pallet
         type Xdns: Xdns<Self, BalanceOf<Self>>;
         /// Type representing the weight of this pallet
         type WeightInfo: crate::weights::WeightInfo;
-
+        /// Selects the light client implementation
         type SelectLightClient: SelectLightClient<Self>;
     }
 
@@ -106,7 +110,7 @@ pub mod pallet {
     // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
         #[transactional]
         pub fn register_gateway(
             origin: OriginFor<T>,
@@ -179,19 +183,21 @@ impl<T: Config> Portal<T> for Pallet<T> {
 
     fn get_finalized_height(
         gateway_id: ChainId,
-    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    ) -> Result<HeightResult<BlockNumberFor<T>>, DispatchError> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_finalized_height())
     }
 
     fn get_rational_height(
         gateway_id: ChainId,
-    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    ) -> Result<HeightResult<BlockNumberFor<T>>, DispatchError> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_rational_height())
     }
 
-    fn get_fast_height(gateway_id: ChainId) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    fn get_fast_height(
+        gateway_id: ChainId,
+    ) -> Result<HeightResult<BlockNumberFor<T>>, DispatchError> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_fast_height())
     }
@@ -206,34 +212,40 @@ impl<T: Config> Portal<T> for Pallet<T> {
         vec![]
     }
 
-    fn get_finalized_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+    fn get_finalized_height_precompile(
+        gateway_id: ChainId,
+    ) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
         if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
             if let HeightResult::Height(height) = light_client.get_finalized_height() {
                 return height
             }
         }
-        T::BlockNumber::zero()
+        frame_system::pallet_prelude::BlockNumberFor::<T>::zero()
     }
 
-    fn get_rational_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+    fn get_rational_height_precompile(
+        gateway_id: ChainId,
+    ) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
         if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
             if let HeightResult::Height(height) = light_client.get_rational_height() {
                 return height
             }
         }
-        T::BlockNumber::zero()
+        frame_system::pallet_prelude::BlockNumberFor::<T>::zero()
     }
 
-    fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+    fn get_fast_height_precompile(
+        gateway_id: ChainId,
+    ) -> frame_system::pallet_prelude::BlockNumberFor<T> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
         if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
             if let HeightResult::Height(height) = light_client.get_fast_height() {
                 return height
             }
         }
-        T::BlockNumber::zero()
+        frame_system::pallet_prelude::BlockNumberFor::<T>::zero()
     }
 
     fn verify_event_inclusion(
@@ -241,7 +253,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         speed_mode: SpeedMode,
         source: Option<ExecutionSource>,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         // ToDo: we need to verify the event source here
         match_light_client_by_gateway_id::<T>(gateway_id)?
             .verify_event_inclusion(gateway_id, speed_mode, source, message)
@@ -251,7 +263,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?
             .verify_state_inclusion(gateway_id, speed_mode, message)
     }
@@ -260,7 +272,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?
             .verify_tx_inclusion(gateway_id, speed_mode, message)
     }
@@ -308,7 +320,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         let mut inclusion_check = Self::verify_state_inclusion(gateway_id, speed_mode, message)?;
 
         let in_codec = match_vendor_with_codec(
@@ -333,7 +345,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         let mut inclusion_check = Self::verify_tx_inclusion(gateway_id, speed_mode, message)?;
 
         let in_codec = match_vendor_with_codec(
@@ -359,7 +371,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         let mut inclusion_check = Self::verify_event_inclusion(
             gateway_id,
             speed_mode,

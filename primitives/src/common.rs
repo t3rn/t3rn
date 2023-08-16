@@ -158,9 +158,9 @@ mod tests {
     #[test]
     fn test_should_update() {
         let mut r = RoundInfo::<u32>::new(1, 1, 400);
-        assert_eq!(r.should_update(402), true);
-        assert_eq!(r.should_update(401), true);
+        assert!(r.should_update(402));
+        assert!(r.should_update(401));
         r.head = 50;
-        assert_eq!(r.should_update(50), false);
+        assert!(!r.should_update(50));
     }
 }

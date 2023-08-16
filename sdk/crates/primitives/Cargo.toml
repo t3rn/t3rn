@@ -1,0 +1,23 @@
+[package]
+authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+description = "Primitives that support the t3rn smart contracts SDK"
+edition     = "2021"
+homepage    = "https://t3rn.io"
+license     = "Apache-2.0"
+name        = "t3rn-sdk-primitives"
+repository  = "https://github.com/t3rn/sdk/"
+version     = "0.3.0-rc.0"
+
+[dependencies]
+codec      = { workspace = true, package = "parity-scale-codec" }
+scale-info = { workspace = true }
+
+arrayvec = { version = "0.7.2", default-features = false }
+cfg-if   = { version = "1.0.0", default-features = false }
+
+t3rn-types = { path = "../../../types", default-features = false }
+
+
+[features]
+default = [ "std" ]
+std     = [ "codec/std", "scale-info/std", "arrayvec/std", "t3rn-types/std" ]
