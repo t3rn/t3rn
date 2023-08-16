@@ -11,6 +11,7 @@ import { handleDgfCmd } from "./commands/dgf.ts"
 import { handleEstimateGasFee } from "./commands/estimate/gas.ts"
 import { handleEstimateMaxReward } from "./commands/estimate/reward.ts"
 import { handleEstimateBidAmount } from "./commands/estimate/bid.ts"
+import { validateEstimationArgs } from "./commands/estimate/args.ts"
 
 if (!fs.existsSync(CONFIG_FILE)) {
   initConfigFile(CONFIG_FILE)
@@ -91,7 +92,8 @@ withExportMode(
       "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",
     )
     .option("-s, --sfx <action>", "The SFX file path")
-    .action(wrapCryptoWaitReady(handleEstimateGasFee)),
+    .option("--signer <address>", "The signer's address")
+    .action(wrapCryptoWaitReady(validateEstimationArgs(handleEstimateGasFee))),
 )
 
 withExportMode(
@@ -115,7 +117,9 @@ withExportMode(
       "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",
     )
     .option("-s, --sfx <action>", "The SFX file path")
-    .action(wrapCryptoWaitReady(handleEstimateMaxReward)),
+    .option("--signer <address>", "The signer's address")
+    .action(wrapCryptoWaitReady(validateEstimationArgs(handleEstimateMaxReward))),
+
 )
 
 withExportMode(
@@ -135,7 +139,8 @@ withExportMode(
       "The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string",
     )
     .option("-s, --sfx <action>", "The SFX file path")
-    .action(wrapCryptoWaitReady(handleEstimateBidAmount)),
+    .option("--signer <address>", "The signer's address")
+    .action(wrapCryptoWaitReady(validateEstimationArgs(handleEstimateBidAmount))),
 )
 
 program.parse(process.argv)

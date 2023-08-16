@@ -1,7 +1,6 @@
 import { z } from "zod"
 import {
   SideEffectActionSchema,
-  SideEffectSchema,
   SideEffectTargetSchema,
 } from "./sfx.ts"
 import { ExtrinsicSchema } from "./extrinsic.ts"
@@ -44,6 +43,14 @@ export const EstimateEvmCallGasParamsSchema = z.object({
   speedMode: EthSpeedModeSchema,
 })
 
+export const EstimateSubmittableExtrinsicSchema = z.object({
+  sideEffect: ExtrinsicSchema,
+  signer: z.string({
+    invalid_type_error: "To address must be a string",
+    required_error: "To address is required",
+  })
+})
+
 export const EstimateSchema = z.object({
   action: SideEffectActionSchema,
   target: SideEffectTargetSchema,
@@ -51,11 +58,12 @@ export const EstimateSchema = z.object({
     (str) => {
       const isSpeedModeEnum = EthSpeedModeSchema.safeParse(str).success
       if (isSpeedModeEnum) return true
+      const record = JSON.parse(str)
       const isEvmCallGasParams = EstimateEvmCallGasParamsSchema.safeParse(
-        JSON.parse(str),
+        record
       ).success
       if (isEvmCallGasParams) return true
-      return ExtrinsicSchema.safeParse(JSON.parse(str)).success
+      return EstimateSubmittableExtrinsicSchema.safeParse(record).success
     },
     {
       message:

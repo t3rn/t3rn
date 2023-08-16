@@ -3,7 +3,6 @@ import {
   Action,
   Target,
   estimateBidAmount,
-  estimateGasFee,
 } from "@t3rn/sdk/price-estimation"
 import { colorLogMsg } from "@/utils/log.ts"
 import { Args, WithRequiredProperty } from "@/types.ts"
@@ -12,7 +11,7 @@ import { getEstimationArgs } from "./args.ts"
 export const spinner = ora()
 
 type CommandArgs = Args<
-  "target" | "action" | "profitMargin" | "args" | "sfx" | "export"
+  "target" | "action" | "profitMargin" | "args" | "sfx" | "signer" | "export"
 >
 
 export const handleEstimateBidAmount = async (args: CommandArgs) => {
@@ -33,8 +32,10 @@ export const handleEstimateBidAmount = async (args: CommandArgs) => {
     )
     console.log("\n")
     console.table(estimate)
+    spinner.stop()
+    process.exit(0)
   } catch (e) {
     spinner.fail(colorLogMsg("ERROR", e))
+    process.exit(1)
   }
-  spinner.stop()
 }

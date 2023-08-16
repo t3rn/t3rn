@@ -17,6 +17,7 @@ type CommandArgs = Args<
   | "overSpend"
   | "args"
   | "sfx"
+  | "signer"
   | "export"
 >
 
@@ -27,12 +28,12 @@ export const handleEstimateMaxReward = async (args: CommandArgs) => {
     const opts = validate(
       MaxRewardEstimateSchema,
       {
-        action: args?.action,
-        baseAsset: args?.baseAsset,
-        target: args?.target,
-        targetAmount: parseFloat(args?.targetAmount),
-        targetAsset: args?.targetAsset,
-        overSpend: parseFloat(args?.overSpend),
+        action: args.action,
+        baseAsset: args.baseAsset,
+        target: args.target,
+        targetAmount: parseFloat(args.targetAmount),
+        targetAsset: args.targetAsset,
+        overSpend: parseFloat(args.overSpend),
       },
       {
         configFileName: "estimation arguments",
@@ -56,8 +57,10 @@ export const handleEstimateMaxReward = async (args: CommandArgs) => {
     })
     console.log("\n")
     console.table(estimate)
+    spinner.stop()
+    process.exit(0)
   } catch (e) {
     spinner.fail(colorLogMsg("ERROR", e))
+    process.exit(1)
   }
-  spinner.stop()
 }

@@ -1,5 +1,6 @@
-import { EstimateSchema } from "@/schemas/estimate.ts"
-import { Extrinsic, ExtrinsicSchema } from "@/schemas/extrinsic.ts"
+import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
+import { EstimateSchema, EstimateSubmittableExtrinsicSchema } from "@/schemas/estimate.ts"
+import { Extrinsic } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { validate } from "@/utils/fns.ts"
 import { buildSfx, readSfxFile } from "@/utils/sfx.ts"
@@ -9,6 +10,9 @@ import {
   EstimateParams,
   SpeedMode,
 } from "@t3rn/sdk/price-estimation"
+import { Keyring } from '@t3rn/sdk'
+import { Args } from '@/types.ts'
+import { log } from '@/utils/log.ts'
 
 export const getEstimationArgs = async <
   T extends {
@@ -16,39 +20,39 @@ export const getEstimationArgs = async <
     action: string
     args?: string
     sfx?: string
+    signer?: string
     export?: string
   },
 >(
-  args: T,
+  commandArgs: T,
 ): Promise<EstimateParams> => {
-  const exportMode = Boolean(args.export)
+  const exportMode = Boolean(commandArgs.export)
+  const rawEstimationArgs = buildRawEstimationArgs(commandArgs)
 
-  const estimationArgs = readEstimationArgs(args)
-  if (!estimationArgs) process.exit()
-
+  if (!rawEstimationArgs) process.exit()
   const opts = validate(
     EstimateSchema,
-    { ...args, args: estimationArgs },
+    {
+      target: commandArgs.target,
+      action: commandArgs.action,
+      args: rawEstimationArgs,
+    },
     {
       configFileName: "gas estimation arguments",
     },
   )
+
   if (!opts) process.exit()
-
-  let isExtrinsicArgs: boolean
   try {
-    isExtrinsicArgs = Boolean(
-      args.sfx || ExtrinsicSchema.safeParse(JSON.parse(opts.args)).success,
-    )
+    const { sideEffect, signer } =
+      EstimateSubmittableExtrinsicSchema.parse(JSON.parse(rawEstimationArgs))
+    const tx =
+      (await buildExtrinsic(sideEffect,
+        exportMode,
+      )) as Awaited<SubmittableExtrinsic>
+    return { tx, account: signer } as EstimateSubmittableExtrinsicParams
   } catch (e) {
-    isExtrinsicArgs = false
-  }
-
-  if (isExtrinsicArgs) {
-    return (await buildExtrinsic(
-      JSON.parse(opts.args),
-      exportMode,
-    )) as EstimateSubmittableExtrinsicParams
+    //
   }
 
   try {
@@ -59,15 +63,23 @@ export const getEstimationArgs = async <
   }
 }
 
-const readEstimationArgs = <T extends { args?: string; sfx?: string }>(
+const buildRawEstimationArgs = <T extends { args?: string; sfx?: string; signer?: string }>(
   args: T,
-) => {
+): string => {
   if (args.sfx) {
-    const sfxFile = JSON.stringify(readSfxFile(args.sfx))
-    return sfxFile
-  } else {
-    return args.args
+    const maybeSideEffect: Record<string, unknown> = readSfxFile(args.sfx)
+
+    let signer = args?.signer
+    if (!args?.signer) {
+      const keyring = new Keyring({ type: "sr25519" })
+      const alice = keyring.addFromUri("//Alice")
+      signer = alice.address
+    }
+
+    return JSON.stringify({ sideEffect: maybeSideEffect, signer })
   }
+
+  return args.args
 }
 
 const buildExtrinsic = async (extrinsic: Extrinsic, exportMode: boolean) => {
@@ -85,3 +97,21 @@ const buildExtrinsic = async (extrinsic: Extrinsic, exportMode: boolean) => {
     transactionArgs.speed_mode,
   )
 }
+
+export const validateEstimationArgs = (callback: (args: Args<never>) => void) =>
+  (args:
+    Args<"args" | "sfx" | "signer">
+  ) => {
+    if (args.sfx && args.args) {
+      log("ERROR", "Cannot specify both --sfx and --args")
+      process.exit(1)
+    }
+
+    if (args.args && args.signer) {
+      log("ERROR", "The --signer option can only be used with --sfx")
+      process.exit(1)
+    }
+
+    callback(args)
+  }
+

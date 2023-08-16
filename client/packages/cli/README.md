@@ -125,6 +125,7 @@ Options:
 - -a, **--action \<action\>**: The execution action i.e tass, tran, swap
 - -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
 - -s, **--sfx \<file-path\>**: The SFX file path
+- **--signer \<address\>**: The signer's address
 
 ### estimate-bid-amount
 
@@ -143,6 +144,7 @@ Options:
 - -p, **--profit-margin \<profit-margin\>**: The profit margin (%)
 - -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
 - -s, **--sfx \<file-path\>**: The SFX file path
+- **--signer \<address\>**: The signer's address
 
 ### estimate-max-reward
 
@@ -163,6 +165,7 @@ Options:
 - **--target-amount \<amount\>**: The target amount
 - -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
 - -s, **--sfx \<file-path\>**: The SFX file path
+- **--signer \<address\>**: The signer's address
 
 A sample estimate will look like this:
 | Index               | 0                                       | 1                                        | Value                  | Symbol |

@@ -6,7 +6,7 @@ import { getEstimationArgs } from "./args.ts"
 
 export const spinner = ora()
 
-type CommandArgs = Args<"target" | "action" | "args" | "sfx" | "export">
+type CommandArgs = Args<"target" | "action" | "args" | "sfx" | "signer" | "export">
 
 export const handleEstimateGasFee = async (args: CommandArgs) => {
   spinner.text = "Estimating..."
@@ -22,8 +22,10 @@ export const handleEstimateGasFee = async (args: CommandArgs) => {
     })
     console.log("\n")
     console.table(estimate)
+    spinner.stop()
+    process.exit(0)
   } catch (e) {
     spinner.fail(colorLogMsg("ERROR", e))
+    process.exit(1)
   }
-  spinner.stop()
 }
