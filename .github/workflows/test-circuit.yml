@@ -132,7 +132,9 @@ jobs:
   smoke-test:
     name: Zombienet Smoke Test
     runs-on: [self-hosted, rust]
-    needs: [changes, build-test]
+    # TODO: revert to [changes, build-test] after zombienet is fixed
+    # needs: [changes, build-test]
+    needs: [changes]
     # zombienet is always run before runtime upgrade so any additional run on development is superfluous
     if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
