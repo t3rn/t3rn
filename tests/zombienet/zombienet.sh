@@ -54,6 +54,11 @@ fetch_zombienet() {
 }
 
 build_polkadot() {
+    if [ -f "$bin_dir/polkadot" ]; then
+        echo "✅ polkadot-$pdot_branch"
+        return
+    fi
+
     if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
         echo "::group::Install polkadot."
         echo "Cloning polkadot into $polkadot_tmp_dir"
