@@ -1,5 +1,8 @@
-import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
-import { EstimateSchema, EstimateSubmittableExtrinsicSchema } from "@/schemas/estimate.ts"
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import {
+  EstimateSchema,
+  EstimateSubmittableExtrinsicSchema,
+} from "@/schemas/estimate.ts"
 import { Extrinsic } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { validate } from "@/utils/fns.ts"
@@ -10,9 +13,9 @@ import {
   EstimateParams,
   SpeedMode,
 } from "@t3rn/sdk/price-estimation"
-import { Keyring } from '@t3rn/sdk'
-import { Args } from '@/types.ts'
-import { log } from '@/utils/log.ts'
+import { Keyring } from "@t3rn/sdk"
+import { Args } from "@/types.ts"
+import { log } from "@/utils/log.ts"
 
 export const getEstimationArgs = async <
   T extends {
@@ -29,7 +32,11 @@ export const getEstimationArgs = async <
   const exportMode = Boolean(commandArgs.export)
   const rawEstimationArgs = buildRawEstimationArgs(commandArgs)
 
-  if (!rawEstimationArgs) process.exit()
+  if (!rawEstimationArgs) {
+    log("ERROR", "No estimation arguments provided")
+    process.exit(1)
+  }
+
   const opts = validate(
     EstimateSchema,
     {
@@ -42,14 +49,16 @@ export const getEstimationArgs = async <
     },
   )
 
-  if (!opts) process.exit()
+  if (!opts) process.exit(1)
+
   try {
-    const { sideEffect, signer } =
-      EstimateSubmittableExtrinsicSchema.parse(JSON.parse(rawEstimationArgs))
-    const tx =
-      (await buildExtrinsic(sideEffect,
-        exportMode,
-      )) as Awaited<SubmittableExtrinsic>
+    const { sideEffect, signer } = EstimateSubmittableExtrinsicSchema.parse(
+      JSON.parse(rawEstimationArgs),
+    )
+    const tx = (await buildExtrinsic(
+      sideEffect,
+      exportMode,
+    )) as Awaited<SubmittableExtrinsic>
     return { tx, account: signer } as EstimateSubmittableExtrinsicParams
   } catch (e) {
     //
@@ -63,7 +72,9 @@ export const getEstimationArgs = async <
   }
 }
 
-const buildRawEstimationArgs = <T extends { args?: string; sfx?: string; signer?: string }>(
+const buildRawEstimationArgs = <
+  T extends { args?: string; sfx?: string; signer?: string },
+>(
   args: T,
 ): string => {
   if (args.sfx) {
@@ -98,20 +109,18 @@ const buildExtrinsic = async (extrinsic: Extrinsic, exportMode: boolean) => {
   )
 }
 
-export const validateEstimationArgs = (callback: (args: Args<never>) => void) =>
-  (args:
-    Args<"args" | "sfx" | "signer">
-  ) => {
-    if (args.sfx && args.args) {
-      log("ERROR", "Cannot specify both --sfx and --args")
-      process.exit(1)
+export const validateEstimationArgs =
+  (callback: (args: Args<never>) => void) =>
+    (args: Args<"args" | "sfx" | "signer">) => {
+      if (args.sfx && args.args) {
+        log("ERROR", "Cannot specify both --sfx and --args")
+        process.exit(1)
+      }
+
+      if (args.args && args.signer) {
+        log("ERROR", "The --signer option can only be used with --sfx")
+        process.exit(1)
+      }
+
+      callback(args)
     }
-
-    if (args.args && args.signer) {
-      log("ERROR", "The --signer option can only be used with --sfx")
-      process.exit(1)
-    }
-
-    callback(args)
-  }
-
