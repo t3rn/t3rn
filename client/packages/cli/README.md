@@ -189,6 +189,7 @@ Options:
 - **--target \<name\>**: The target on which is execution will be executed. i.e 'eth', 'roco'
 - **--target-asset \<symbol\>**: The target asset symbol. i.e usdt, dot 
 - **--target-amount \<amount\>**: The target amount
+- **--over-spend \<amount\>**: The percentage of the target amount to be used as a profit margin
 - -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
 - -s, **--sfx \<file-path\>**: The SFX file path
 - **--signer \<address\>**: The signer's address
@@ -216,9 +217,12 @@ Please note that these estimations are subject to change based on the state of t
 
 Examples:
 ```
-# Estimate the max reward for executing the side-effect
+# Estimate the max reward of an asset transfer DOT -> ETH on Seploia target with a given over spend percent
+p cli estimate-max-reward --action tass --base-asset dot --target sepl --target-asset eth --target-amount 10 --over-spend 0.1 -o 'fast'
+
+# Estimate the max reward of an asset transfer DOT -> ACA  on Rococo target with a given over spend percent
 # --signer is optional, if not provided, Alice address is used
-p cli estimate-max-reward --action tass --base-asset dot --target sepl --target-asset eth --target-amount 10 --over-spend 0.1 -s ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+p cli estimate-max-reward --action tass --base-asset DOT --target roco --target-asset aca --target-amount 10 --over-spend 0.1 -s ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 ```
 
 ### Export
