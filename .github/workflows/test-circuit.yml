@@ -61,7 +61,6 @@ jobs:
 
       - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
         run: |
-          rm -rf ~/.rustup
           rustup show
 
       - name: 📜 Check code format
@@ -144,7 +143,6 @@ jobs:
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: |
-          rm -rf ~/.rustup
           rustup show
 
       - name: Print sccache stats
