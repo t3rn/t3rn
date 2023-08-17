@@ -127,6 +127,19 @@ Options:
 - -s, **--sfx \<file-path\>**: The SFX file path
 - **--signer \<address\>**: The signer's address
 
+Examples:
+```
+# Estimate the gas fee for an asset transfer on ETH target
+p cli estimate-gas-fee -t eth -a tass -o 'fast'
+
+# Estimate the gas fee an EVM call on ETH target
+p cli estimate-gas-fee -t eth -a cevm -o '{"fromAddress":"0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321","toAddress":"0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12","data":"0x0000","speedMode":"fast"}'
+
+# Estimate the gas fee required for executing the side effect
+# --signer is optional, if not provided, Alice address is used
+p cli estimate-gas-fee -t roco -a tass --sfx ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+```
+
 ### estimate-bid-amount
 
 The `estimate-bid-amount` command is used to estimate the bid amount with a specified profit margin for an execution
@@ -145,6 +158,19 @@ Options:
 - -o, **--args \<speed mode, eth estimation param or SFX JSON string\>**: The execution arguments. It's value can be a speed mode, a EVM call estimation or a side-effect JSON string
 - -s, **--sfx \<file-path\>**: The SFX file path
 - **--signer \<address\>**: The signer's address
+
+Examples:
+```
+# Estimate the bid amount for an asset transfer on ETH target with a given profit margin
+p cli estimate-bid-amount -t eth -a tass --profit-margin 0.1 -o 'fast'
+
+# Estimate the bid amount for an EVM call on ETH target with a given profit margin
+p cli estimate-bid-amount -t eth -a cevm --profit-margin 0.1 -o '{"fromAddress":"0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321","toAddress":"0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12","data":"0x0000","speedMode":"fast"}'
+
+# Estimate the bid amount for executing the side effect with a given profit margin
+# --signer is optional, if not provided, Alice address is used
+p cli estimate-bid-amount -t roco -a tass --profit-margin 0.1 --sfx ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+```
 
 ### estimate-max-reward
 
@@ -187,6 +213,13 @@ Below is a detailed explanation of the estimation results for a blockchain trans
 - **estimatedValue**: This field represents the estimated value of the target amount in the base asset. It is included primarily for debugging purposes and provides a way to understand the value of the transaction in terms of the base asset.
 
 Please note that these estimations are subject to change based on the state of the blockchain network at the time of the transaction, and they serve as a guide to understanding the potential costs and rewards associated with a transaction.
+
+Examples:
+```
+# Estimate the max reward for executing the side-effect
+# --signer is optional, if not provided, Alice address is used
+p cli estimate-max-reward --action tass --base-asset dot --target sepl --target-asset eth --target-amount 10 --over-spend 0.1 -s ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+```
 
 ### Export
 
