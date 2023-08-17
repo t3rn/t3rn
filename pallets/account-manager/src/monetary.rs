@@ -7,6 +7,13 @@ use frame_support::{
         ExistenceRequirement, ReservableCurrency, WithdrawReasons,
     },
 };
+
+use frame_support::traits::tokens::{
+    Fortitude::{Force, Polite},
+    Precision::{BestEffort, Exact},
+    Preservation::{Expendable, Preserve, Protect},
+    Restriction::Free,
+};
 use sp_runtime::traits::Convert;
 
 pub struct Monetary<AccountId, Assets, NativeCurrency, AssetBalanceOf>(
@@ -29,10 +36,11 @@ impl<
                 NativeCurrency::deposit_creating(beneficiary, amount);
             },
             Some(asset_id) => {
-                Assets::increase_balance_at_most(
+                Assets::increase_balance(
                     asset_id,
                     beneficiary,
                     AssetBalanceOf::convert(amount),
+                    Exact,
                 );
             },
         }
@@ -72,7 +80,14 @@ impl<
                 Ok(_imbalance) => Ok(()),
             },
             Some(asset_id) => {
-                match Assets::decrease_balance(asset_id, source, AssetBalanceOf::convert(amount)) {
+                match Assets::decrease_balance(
+                    asset_id,
+                    source,
+                    AssetBalanceOf::convert(amount),
+                    Exact,
+                    Expendable,
+                    Polite,
+                ) {
                     Err(e) => Err(e),
                     Ok(_imbalance) => Ok(()),
                 }
@@ -120,7 +135,7 @@ mod tests {
             const FOREIGN_ASSET_A: AssetId = 1;
             const MIN_BALANCE_ASSET_A: Balance = 1;
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 FOREIGN_ASSET_A,
                 sp_runtime::MultiAddress::Id(BOB), /* owner */
                 true,                              /* is_sufficient */
@@ -150,7 +165,7 @@ mod tests {
             const FOREIGN_ASSET_A: AssetId = 1;
             const MIN_BALANCE_ASSET_A: Balance = 1;
             assert_ok!(Assets::force_create(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 FOREIGN_ASSET_A,
                 sp_runtime::MultiAddress::Id(BOB), /* owner */
                 true,                              /* is_sufficient */

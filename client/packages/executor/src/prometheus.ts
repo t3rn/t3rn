@@ -15,9 +15,10 @@ export class Prometheus {
   circuitDisconnects: Counter;
   executorBids: Counter;
   executorXtxStrategyRejects: Counter;
-  executorNoBidAndNoCompetition: Counter;
-  executorNoBidButCompetition: Counter;
-  executorBeenOutBid: Counter;
+  executorBid: Counter;
+  executorBidRejected: Counter;
+  executorBalance: Gauge;
+  executorClientBalance: Gauge;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -60,22 +61,32 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.executorNoBidAndNoCompetition = new Counter({
-      name: "executor_no_bid_and_no_competition",
-      help: "Number of times no bid and no competition",
+    this.executorBid = new Counter({
+      name: "executor_bid_total",
+      help: "Number of times bid happened",
+      labelNames: ["scenario"],
       registers: [this.register],
     });
 
-    this.executorNoBidButCompetition = new Counter({
-      name: "executor_no_bid_but_competition",
-      help: "Number of times no bid but competition",
+    this.executorBidRejected = new Counter({
+      name: "executor_bid_rejected",
+      help: "Number of times bid rejected",
+      labelNames: ["error"],
       registers: [this.register],
     });
 
-    this.executorBeenOutBid = new Counter({
-      name: "executor_been_out_bid",
-      help: "Number of times been out bid",
+    this.executorBalance = new Gauge({
+      name: "executor_balance",
+      help: "Executor balance",
       registers: [this.register],
+      labelNames: ["signer", "target"],
+    });
+
+    this.executorClientBalance = new Gauge({
+      name: "executor_client_balance",
+      help: "Executor client balance",
+      registers: [this.register],
+      labelNames: ["signer", "target"],
     });
 
     this.attestationsBatchesPending = new Gauge({
@@ -119,6 +130,7 @@ export class Prometheus {
       name: "attestations_batches_failed_total",
       help: "Number of attestations batches failed",
       registers: [this.register],
+      labelNames: ["error"],
     });
 
     this.startServer();
@@ -126,7 +138,7 @@ export class Prometheus {
   }
 
   startServer() {
-    const port = process.env.PROMETHEUS_PORT || 8080;
+    const port = process.env.PROMETHEUS_PORT || 9333;
     this.server = http.createServer(async (req, res) => {
       try {
         if (req.url === "/metrics") {

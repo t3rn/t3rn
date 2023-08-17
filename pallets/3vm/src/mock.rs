@@ -1,12 +1,16 @@
 use crate as pallet_3vm;
 use frame_support::{
     parameter_types,
-    traits::{ConstU16, ConstU32, ConstU64},
+    traits::{ConstU16, ConstU32},
 };
 use frame_system as system;
 
 use circuit_runtime_types::AssetId;
-use frame_support::pallet_prelude::{DispatchResult, DispatchResultWithPostInfo};
+use frame_support::{
+    pallet_prelude::{DispatchResult, DispatchResultWithPostInfo},
+    traits::AsEnsureOriginWithArg,
+};
+use frame_system::EnsureRoot;
 use pallet_grandpa_finality_verifier::light_clients::{
     select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
     RococoInstance,
@@ -32,8 +36,13 @@ pub const DJANGO: AccountId = 4;
 pub const FRED: AccountId = 5;
 pub const ESCROW: AccountId = 15;
 
+pub type BlockNumber = u32;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+pub type Block = sp_runtime::generic::Block<
+    sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
+    frame_system::mocking::MockUncheckedExtrinsic<Test>,
+>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -42,15 +51,15 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        ThreeVm: pallet_3vm::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        ThreeVm: pallet_3vm,
         Balances: pallet_balances,
         Timestamp: pallet_timestamp,
         Assets: pallet_assets,
-        Utility: pallet_utility::{Pallet, Call, Storage, Event},
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Utility: pallet_utility,
+        ContractsRegistry: pallet_contracts_registry,
         Sudo: pallet_sudo,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
+        Circuit: pallet_circuit,
         Portal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
@@ -64,43 +73,51 @@ impl system::Config for Test {
     type AccountData = pallet_balances::AccountData<u64>;
     type AccountId = u64;
     type BaseCallFilter = frame_support::traits::Everything;
+    type Block = Block;
     type BlockHashCount = ConstU32<250>;
     type BlockLength = ();
-    type BlockNumber = u32;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = Keccak256;
-    type Header = Header;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ConstU16<42>;
     type SystemWeightInfo = ();
     type Version = ();
 }
 
 impl pallet_sudo::Config for Test {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const ExistentialDeposit: u64 = 1;
 }
 
 impl pallet_balances::Config for Test {
     type AccountStore = System;
-    type Balance = u64;
+    type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
-    type ExistentialDeposit = ConstU64<1>;
-    type MaxLocks = ();
-    type MaxReserves = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
+    type MaxLocks = ConstU32<50>;
+    type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = ();
     type WeightInfo = ();
 }
 
@@ -116,9 +133,9 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_utility::Config for Test {
-    type Call = Call;
-    type Event = Event;
     type PalletsOrigin = OriginCaller;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -130,8 +147,8 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1; // 1 UNIT deposit to create asset
-    pub const ApprovalDeposit: Balance = 1;
+    pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset
+    pub const ApprovalDeposit: Balance = 0;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -144,19 +161,22 @@ impl pallet_assets::Config for Test {
     type ApprovalDeposit = ApprovalDeposit;
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
-    type AssetId = u32;
+    type AssetId = circuit_runtime_types::AssetId;
+    type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type Currency = Balances;
-    type Event = Event;
     type Extra = ();
-    type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1>;
+    type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
-
 impl pallet_3vm::Config for Test {
     type AccountManager = AccountManager;
     type AssetId = u32;
@@ -164,16 +184,16 @@ impl pallet_3vm::Config for Test {
     type ContractsRegistry = ContractsRegistry;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type OnLocalTrigger = Circuit;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
 impl pallet_contracts_registry::Config for Test {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -184,8 +204,8 @@ impl pallet_account_manager::Config for Test {
     type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -199,12 +219,11 @@ impl pallet_circuit::Config for Test {
     type Attesters =
         t3rn_primitives::attesters::AttestersReadApiEmptyMock<AccountId, Balance, DispatchError>;
     type Balances = Balances;
-    type Call = Call;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<1024>;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = CircuitTargetId;
@@ -229,7 +248,7 @@ impl PalletAssetsOverlay<Test, Balance> for Test {
     }
 
     fn force_create_asset(
-        _origin: Origin,
+        _origin: RuntimeOrigin,
         _asset_id: AssetId,
         _admin: AccountId,
         _is_sufficient: bool,
@@ -238,7 +257,7 @@ impl PalletAssetsOverlay<Test, Balance> for Test {
         Err("Mock PalletAssetsOverlay::force_create_asset - not implemented".into())
     }
 
-    fn destroy(_origin: Origin, _asset_id: &AssetId) -> DispatchResultWithPostInfo {
+    fn destroy(_origin: RuntimeOrigin, _asset_id: &AssetId) -> DispatchResultWithPostInfo {
         Err("Mock PalletAssetsOverlay::destroy - not implemented".into())
     }
 }
@@ -250,8 +269,8 @@ impl pallet_xdns::Config for Test {
     type Balances = Balances;
     type CircuitDLQ = Circuit;
     type Currency = Balances;
-    type Event = Event;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SelfGatewayId = CircuitTargetId;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
@@ -286,39 +305,39 @@ impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU32C
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = Xdns;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = Xdns;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = Xdns;
     type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -350,16 +369,17 @@ impl pallet_portal::SelectLightClient<Test> for SelectLightClientRegistry {
 
 impl pallet_portal::Config for Test {
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;
 }
+use sp_runtime::BuildStorage;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    system::GenesisConfig::default()
-        .build_storage::<Test>()
+    system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap()
         .into()
 }

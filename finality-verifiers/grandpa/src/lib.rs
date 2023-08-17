@@ -38,25 +38,29 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-extern crate core;
+// Re-export in crate namespace for `construct_runtime!`
+pub use pallet::*;
 
 use crate::weights::WeightInfo;
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
-use sp_std::convert::TryInto;
-
+use bridges::{
+    header_chain as bp_header_chain, header_chain::ProofTriePointer, runtime as bp_runtime,
+};
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*, transactional, StorageHasher};
-use frame_system::{ensure_signed, RawOrigin};
+use frame_system::{ensure_signed, pallet_prelude::BlockNumberFor, RawOrigin};
+
+use sp_consensus_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_core::crypto::ByteArray;
-use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
-use sp_std::vec::Vec;
 use t3rn_primitives::light_client::LightClientAsyncAPI;
 
-pub mod types;
-
+use sp_std::{convert::TryInto, vec, vec::Vec};
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
+
+// #[cfg(feature = "runtime-benchmarks")]
+// pub mod benchmarking;
 
 #[cfg(feature = "testing")]
 pub mod mock;
@@ -64,19 +68,9 @@ pub mod mock;
 pub mod bridges;
 pub mod light_clients;
 mod side_effects;
+pub mod types;
 /// Pallet containing weights for this pallet.
 pub mod weights;
-
-use bridges::{
-    header_chain as bp_header_chain, header_chain::ProofTriePointer, runtime as bp_runtime,
-};
-
-// #[cfg(feature = "runtime-benchmarks")]
-// pub mod benchmarking;
-
-// Re-export in crate namespace for `construct_runtime!`
-pub use pallet::*;
-
 /// Block number of the bridged chain.
 pub type BridgedBlockNumber<T, I> = BlockNumberOf<<T as Config<I>>::BridgedChain>;
 /// Block hash of the bridged chain.
@@ -94,9 +88,9 @@ pub enum VMSource {
 
 pub fn to_local_block_number<T: Config<I>, I: 'static>(
     block_number: BridgedBlockNumber<T, I>,
-) -> Result<T::BlockNumber, DispatchError> {
-    let local_block_number: T::BlockNumber = Decode::decode(&mut block_number.encode().as_slice())
-        .map_err(|_e| {
+) -> Result<BlockNumberFor<T>, DispatchError> {
+    let local_block_number: BlockNumberFor<T> =
+        Decode::decode(&mut block_number.encode().as_slice()).map_err(|_e| {
             DispatchError::Other(
                 "LightClient::Grandpa - failed to decode block number from bridged header",
             )
@@ -137,105 +131,33 @@ pub mod pallet {
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
 
-        type FastConfirmationOffset: Get<Self::BlockNumber>;
+        type FastConfirmationOffset: Get<BlockNumberFor<Self>>;
 
-        type RationalConfirmationOffset: Get<Self::BlockNumber>;
+        type RationalConfirmationOffset: Get<BlockNumberFor<Self>>;
 
-        type FinalizedConfirmationOffset: Get<Self::BlockNumber>;
+        type FinalizedConfirmationOffset: Get<BlockNumberFor<Self>>;
 
-        type EpochOffset: Get<Self::BlockNumber>;
-
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+        type EpochOffset: Get<BlockNumberFor<Self>>;
 
         type LightClientAsyncAPI: LightClientAsyncAPI<Self>;
 
         type MyVendor: Get<GatewayVendor>;
+
+        type RuntimeEvent: From<Event<Self, I>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
-
-    #[pallet::pallet]
-    #[pallet::without_storage_info]
-    pub struct Pallet<T, I = ()>(pub PhantomData<(T, I)>);
-
-    #[pallet::hooks]
-    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
-
-    /// Hash of the header used to bootstrap the pallet.
-    #[pallet::storage]
-    #[pallet::getter(fn get_initial_hash)]
-    pub(super) type InitialHash<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, BridgedBlockHash<T, I>, OptionQuery>;
-
-    /// Hash of the best finalized header.
-    #[pallet::storage]
-    #[pallet::getter(fn get_best_block_hash)]
-    pub(super) type BestFinalizedHash<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, BridgedBlockHash<T, I>, OptionQuery>;
-
-    /// A ring buffer of imported hashes. Ordered by the insertion time.
-    #[pallet::storage]
-    #[pallet::getter(fn get_imported_hashes)]
-    pub(super) type ImportedHashes<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, u32, BridgedBlockHash<T, I>>;
-
-    /// Count successful submissions.
-    #[pallet::storage]
-    #[pallet::getter(fn get_submissions_counter)]
-    pub(super) type SubmissionsCounter<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, T::BlockNumber, ValueQuery>;
-
-    /// Current ring buffer position.
-    #[pallet::storage]
-    #[pallet::getter(fn get_imported_hashes_pointer)]
-    pub(super) type ImportedHashesPointer<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, u32, OptionQuery>;
-
-    /// Headers which have been imported into the pallet.
-    #[pallet::storage]
-    #[pallet::getter(fn get_imported_headers)]
-    pub(super) type ImportedHeaders<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, BridgedBlockHash<T, I>, BridgedHeader<T, I>>;
-
-    #[pallet::storage]
-    pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, ChainId, OptionQuery>;
-
-    /// The current GRANDPA Authority set.
-    #[pallet::storage]
-    pub(super) type CurrentAuthoritySet<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, bp_header_chain::AuthoritySet, OptionQuery>;
-
-    /// Maps a parachain chain_id to the corresponding chain ID.
-    #[pallet::storage]
-    pub(super) type ParachainIdMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, ParachainRegistrationData>;
-
-    /// Optional pallet owner.
-    ///
-    /// Pallet owner has a right to halt all pallet operations and then resume it. If it is
-    /// `None`, then there are no direct ways to halt/resume pallet operations, but other
-    /// runtime methods may still be used to do that (i.e. democracy::referendum to update halt
-    /// flag directly or call the `halt_operations`).
-    #[pallet::storage]
-    pub(super) type PalletOwner<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, T::AccountId, OptionQuery>;
-
-    /// If true, all pallet transactions are failed immediately.
-    #[pallet::storage]
-    #[pallet::getter(fn is_halted)]
-    pub(super) type IsHalted<T: Config<I>, I: 'static = ()> = StorageValue<_, bool, ValueQuery>;
-
-    /// If true, all pallet transactions are failed immediately.
-    #[pallet::storage]
-    #[pallet::getter(fn ever_initialized)]
-    pub(super) type EverInitialized<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, bool, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
         HeadersAdded(BridgedBlockNumber<T, I>),
     }
+    #[pallet::pallet]
+    #[pallet::without_storage_info]
+    pub struct Pallet<T, I = ()>(pub PhantomData<(T, I)>);
+
+    #[pallet::hooks]
+    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
@@ -291,6 +213,77 @@ pub mod pallet {
         InvalidSourceFormat,
     }
 
+    /// Hash of the header used to bootstrap the pallet.
+    #[pallet::storage]
+    #[pallet::getter(fn get_initial_hash)]
+    pub(super) type InitialHash<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, BridgedBlockHash<T, I>, OptionQuery>;
+
+    /// Hash of the best finalized header.
+    #[pallet::storage]
+    #[pallet::getter(fn get_best_block_hash)]
+    pub(super) type BestFinalizedHash<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, BridgedBlockHash<T, I>, OptionQuery>;
+
+    /// A ring buffer of imported hashes. Ordered by the insertion time.
+    #[pallet::storage]
+    #[pallet::getter(fn get_imported_hashes)]
+    pub(super) type ImportedHashes<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Blake2_256, u32, BridgedBlockHash<T, I>>;
+
+    /// Count successful submissions.
+    #[pallet::storage]
+    #[pallet::getter(fn get_submissions_counter)]
+    pub(super) type SubmissionsCounter<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, BlockNumberFor<T>, ValueQuery>;
+
+    /// Current ring buffer position.
+    #[pallet::storage]
+    #[pallet::getter(fn get_imported_hashes_pointer)]
+    pub(super) type ImportedHashesPointer<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, u32, OptionQuery>;
+
+    /// Headers which have been imported into the pallet.
+    #[pallet::storage]
+    #[pallet::getter(fn get_imported_headers)]
+    pub(super) type ImportedHeaders<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Blake2_256, BridgedBlockHash<T, I>, BridgedHeader<T, I>>;
+
+    #[pallet::storage]
+    pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, ChainId, OptionQuery>;
+
+    /// The current GRANDPA Authority set.
+    #[pallet::storage]
+    pub(super) type CurrentAuthoritySet<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, bp_header_chain::AuthoritySet, OptionQuery>;
+
+    /// Maps a parachain chain_id to the corresponding chain ID.
+    #[pallet::storage]
+    pub(super) type ParachainIdMap<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Blake2_256, ChainId, ParachainRegistrationData>;
+
+    /// Optional pallet owner.
+    ///
+    /// Pallet owner has a right to halt all pallet operations and then resume it. If it is
+    /// `None`, then there are no direct ways to halt/resume pallet operations, but other
+    /// runtime methods may still be used to do that (i.e. democracy::referendum to update halt
+    /// flag directly or call the `halt_operations`).
+    #[pallet::storage]
+    pub(super) type PalletOwner<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, T::AccountId, OptionQuery>;
+
+    /// If true, all pallet transactions are failed immediately.
+    #[pallet::storage]
+    #[pallet::getter(fn is_halted)]
+    pub(super) type IsHalted<T: Config<I>, I: 'static = ()> = StorageValue<_, bool, ValueQuery>;
+
+    /// If true, all pallet transactions are failed immediately.
+    #[pallet::storage]
+    #[pallet::getter(fn ever_initialized)]
+    pub(super) type EverInitialized<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, bool, ValueQuery>;
+
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
         /// Add a header range for the relaychain
@@ -303,7 +296,7 @@ pub mod pallet {
         /// pallet.
         ///
         /// If the new range was accepted, pays no fee.
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(Weight::from_parts(10_000, 0u64) + T::DbWeight::get().writes(1))]
         pub fn submit_headers(
             origin: OriginFor<T>,
             // seq vector of headers to be added.
@@ -334,7 +327,10 @@ pub mod pallet {
                     },
                 }
 
-                <SubmissionsCounter<T, I>>::put(counter.saturating_add(T::BlockNumber::one()));
+                <SubmissionsCounter<T, I>>::put(
+                    counter
+                        .saturating_add(frame_system::pallet_prelude::BlockNumberFor::<T>::one()),
+                );
 
                 Ok(Pays::No.into())
             } else {
@@ -342,7 +338,7 @@ pub mod pallet {
             }
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[pallet::weight(100_000)]
         pub fn reset(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             <EverInitialized<T, I>>::kill();
@@ -364,7 +360,7 @@ pub mod pallet {
     /// since these types of changes are indicitive of abnormal behaviour from GRANDPA.
     pub(crate) fn try_enact_authority_change_single<T: Config<I>, I: 'static>(
         header: &BridgedHeader<T, I>,
-        current_set_id: sp_finality_grandpa::SetId,
+        current_set_id: sp_consensus_grandpa::SetId,
     ) -> Result<bool, sp_runtime::DispatchError> {
         let mut change_enacted = false;
 
@@ -629,7 +625,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     pub fn initialize(
-        origin: OriginFor<T>,
+        origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -668,7 +664,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                         .authorities
                         .iter()
                         .map(|id| {
-                            sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
+                            sp_consensus_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
                         }) // not sure why this is still needed
                         .map(|authority| (authority, 1))
                         .collect::<Vec<_>>(),
@@ -686,7 +682,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_owner(
-        origin: OriginFor<T>,
+        origin: T::RuntimeOrigin,
         _gateway_id: ChainId,
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -778,7 +774,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
         maybe_source: Option<ExecutionSource>,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
         let (payload_proof, encoded_payload, header, header_hash) = if is_relaychain {
@@ -820,7 +816,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             Self::check_vm_source(source, message.clone())?;
         }
 
-        Ok(InclusionReceipt::<T::BlockNumber> {
+        Ok(InclusionReceipt::<BlockNumberFor<T>> {
             height: to_local_block_number::<T, I>(*header.number())?,
             including_header: header_hash.encode(),
             message,
@@ -844,7 +840,13 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 ) -> Result<Vec<u8>, &'static str> {
     let root = get_header_roots::<T, I>(header, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref()) {
+    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(
+        &db,
+        &root,
+        key.as_ref(),
+        None,
+        None,
+    ) {
         Ok(Some(value)) => Ok(value),
         _ => Err(Error::<T, I>::InvalidStorageProof.into()),
     }
@@ -864,7 +866,7 @@ pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
 
 pub(crate) fn find_scheduled_change<H: HeaderT>(
     header: &H,
-) -> Option<sp_finality_grandpa::ScheduledChange<H::Number>> {
+) -> Option<sp_consensus_grandpa::ScheduledChange<H::Number>> {
     use sp_runtime::generic::OpaqueDigestItemId;
 
     let id = OpaqueDigestItemId::Consensus(&GRANDPA_ENGINE_ID);
@@ -905,7 +907,7 @@ fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> 
 
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
-    submission_target_height: T::BlockNumber,
+    submission_target_height: BlockNumberFor<T>,
     header: &BridgedHeader<T, I>,
 ) -> Result<(), &'static str> {
     let submission_target: BridgedBlockNumber<T, I> =
@@ -923,7 +925,7 @@ fn executed_after_creation<T: Config<I>, I: 'static>(
 /// extracts it.
 pub(crate) fn find_forced_change<H: HeaderT>(
     header: &H,
-) -> Option<(H::Number, sp_finality_grandpa::ScheduledChange<H::Number>)> {
+) -> Option<(H::Number, sp_consensus_grandpa::ScheduledChange<H::Number>)> {
     use sp_runtime::generic::OpaqueDigestItemId;
 
     let id = OpaqueDigestItemId::Consensus(&GRANDPA_ENGINE_ID);
@@ -1030,7 +1032,8 @@ pub mod tests {
     use super::*;
     use crate::mock::{
         produce_mock_headers_range, run_test, test_header, test_header_range,
-        test_header_with_correct_parent, AccountId, Origin, TestHeader, TestNumber, TestRuntime,
+        test_header_with_correct_parent, AccountId, RuntimeOrigin as Origin, TestHeader,
+        TestNumber, TestRuntime,
     };
     use bp_runtime::ChainId;
     use bridges::{
@@ -1042,8 +1045,8 @@ pub mod tests {
     };
     use codec::Encode;
     use frame_support::{assert_noop, assert_ok};
+    use sp_consensus_grandpa::AuthorityId;
     use sp_core::{crypto::AccountId32, H160, H256};
-    use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
     use crate::types::GrandpaHeaderData;
@@ -1126,14 +1129,12 @@ pub mod tests {
 
         let current_number = frame_system::Pallet::<TestRuntime>::block_number();
         frame_system::Pallet::<TestRuntime>::set_block_number(current_number + 1);
-        let _ = <Pallet<TestRuntime> as OnInitialize<
-            <TestRuntime as frame_system::Config>::BlockNumber,
-        >>::on_initialize(current_number);
+        let _ = <Pallet<TestRuntime> as OnInitialize<u32>>::on_initialize(current_number);
     }
 
     fn change_log(delay: u32) -> Digest {
         let consensus_log =
-            ConsensusLog::<TestNumber>::ScheduledChange(sp_finality_grandpa::ScheduledChange {
+            ConsensusLog::<TestNumber>::ScheduledChange(sp_consensus_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
                 delay,
             });
@@ -1149,7 +1150,7 @@ pub mod tests {
     fn forced_change_log(delay: u32) -> Digest {
         let consensus_log = ConsensusLog::<TestNumber>::ForcedChange(
             delay,
-            sp_finality_grandpa::ScheduledChange {
+            sp_consensus_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
                 delay,
             },

@@ -1,4 +1,4 @@
-use super::{AccountId, Balance, Balances, Event, Runtime, SlashTreasury};
+use super::{AccountId, Balance, Balances, Runtime, RuntimeEvent, SlashTreasury};
 use frame_support::{parameter_types, traits::NeverEnsureOrigin, PalletId};
 use frame_system::EnsureRoot;
 use sp_runtime::{traits::AccountIdConversion, Permill};
@@ -25,7 +25,6 @@ impl pallet_treasury::Config<DefaultTreasuryInstance> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type Event = Event;
     type MaxApprovals = MaxApprovals;
     type OnSlash = SlashTreasury;
     type PalletId = TreasuryId;
@@ -33,6 +32,7 @@ impl pallet_treasury::Config<DefaultTreasuryInstance> for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;
@@ -49,7 +49,6 @@ impl pallet_treasury::Config<EscrowTreasuryInstance> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type Event = Event;
     type MaxApprovals = MaxApprovals;
     type OnSlash = SlashTreasury;
     type PalletId = EscrowTreasuryId;
@@ -57,6 +56,7 @@ impl pallet_treasury::Config<EscrowTreasuryInstance> for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;
@@ -73,7 +73,6 @@ impl pallet_treasury::Config<FeeTreasuryInstance> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type Event = Event;
     type MaxApprovals = MaxApprovals;
     type OnSlash = SlashTreasury;
     type PalletId = FeeTreasuryId;
@@ -81,6 +80,7 @@ impl pallet_treasury::Config<FeeTreasuryInstance> for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;
@@ -97,7 +97,6 @@ impl pallet_treasury::Config<ParachainTreasuryInstance> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type Event = Event;
     type MaxApprovals = MaxApprovals;
     type OnSlash = SlashTreasury;
     type PalletId = ParachainTreasuryId;
@@ -105,6 +104,7 @@ impl pallet_treasury::Config<ParachainTreasuryInstance> for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;
@@ -121,7 +121,6 @@ impl pallet_treasury::Config<SlashTreasuryInstance> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type Event = Event;
     type MaxApprovals = MaxApprovals;
     type OnSlash = SlashTreasury;
     type PalletId = SlashTreasuryId;
@@ -129,6 +128,7 @@ impl pallet_treasury::Config<SlashTreasuryInstance> for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;

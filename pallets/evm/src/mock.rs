@@ -17,76 +17,58 @@
 
 //! Test mock for unit tests and benchmarking
 
-use fp_evm::FeeCalculator;
 use frame_support::{
     parameter_types,
     traits::{ConstU32, FindAuthor},
-    ConsensusEngineId,
+    weights::Weight,
 };
-use sp_core::{crypto::AccountId32, H160, H256, U256};
+use sp_core::{H160, H256, U256};
 use sp_runtime::{
-    generic,
-    traits::{BlakeTwo256, IdentityLookup, Keccak256},
+    traits::{BlakeTwo256, IdentityLookup},
+    ConsensusEngineId,
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
-use crate::{EnsureAddressNever, EnsureSigned, StoredHashAddressMapping, ThreeVMCurrencyAdapter};
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+use crate::{
+    EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
+    IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
+};
 
 frame_support::construct_runtime! {
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+    pub enum Test {
+        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-        EVM: crate::{Pallet, Call, Storage, Config, Event<T>},
-        ThreeVm: pallet_3vm::{Pallet, Call, Storage, Event<T>},
-        // Utility: pallet_utility::{Pallet, Call, Storage, Event},
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Sudo: pallet_sudo,
-        Assets: pallet_assets,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
-        CircuitPortal: pallet_portal,
-        Xdns: pallet_xdns,
-        AccountManager: pallet_account_manager,
-        RococoBridge: pallet_grandpa_finality_verifier = 129,
-        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
-        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EVM: crate::{Pallet, Call, Storage, Config<T>, Event<T>},
     }
 }
 
 parameter_types! {
-    pub const BlockHashCount: u32 = 250;
+    pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(1024);
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<u64>;
-    type AccountId = AccountId32;
+    type AccountId = H160;
     type BaseCallFilter = frame_support::traits::Everything;
+    type Block = frame_system::mocking::MockBlock<Self>;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u32;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
-    type Hashing = Keccak256;
-    type Header = generic::Header<u32, BlakeTwo256>;
-    type Index = u64;
+    type Hashing = BlakeTwo256;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type Nonce = u64;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -99,11 +81,15 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type MaxHolds = ();
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = ();
     type WeightInfo = ();
 }
 
@@ -117,11 +103,11 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
-/// Fixed gas price of `0`.
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        1u128.into()
+    fn min_gas_price() -> (U256, Weight) {
+        // Return some meaningful gas price and weight
+        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -134,22 +120,62 @@ impl FindAuthor<H160> for FindAuthorTruncated {
         Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
     }
 }
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
+parameter_types! {
+    pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+    pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
+}
 impl crate::Config for Test {
-    type AddressMapping = StoredHashAddressMapping<Test>;
-    type BlockGasLimit = ();
+    type AddressMapping = IdentityAddressMapping;
+    type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-    type CallOrigin = EnsureSigned<Self>;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type ChainId = ();
     type Currency = Balances;
-    type Event = Event;
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated;
-    type GasWeightMapping = ();
-    type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-    type PrecompilesType = ();
-    type PrecompilesValue = ();
+    type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+    type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
+    type OnChargeTransaction = ();
+    type OnCreate = ();
+    type PrecompilesType = MockPrecompileSet;
+    type PrecompilesValue = MockPrecompiles;
     type Runner = crate::runner::stack::Runner<Self>;
-    type ThreeVm = ThreeVm;
+    type RuntimeEvent = RuntimeEvent;
+    type ThreeVm = t3rn_primitives::threevm::NoopThreeVm;
+    type Timestamp = Timestamp;
+    type WeightInfo = ();
+    type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+}
+
+/// Example PrecompileSet with only Identity precompile.
+pub struct MockPrecompileSet;
+
+impl PrecompileSet for MockPrecompileSet {
+    /// Tries to execute a precompile in the precompile set.
+    /// If the provided address is not a precompile, returns None.
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+        let address = handle.code_address();
+
+        if address == H160::from_low_u64_be(1) {
+            return Some(pallet_evm_precompile_simple::Identity::execute(handle))
+        }
+
+        None
+    }
+
+    /// Check if the given address is a precompile. Should only be called to
+    /// perform the check while not executing the precompile afterward, since
+    /// `execute` already performs a check internally.
+    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+        IsPrecompileResult::Answer {
+            is_precompile: address == H160::from_low_u64_be(1),
+            extra_cost: 0,
+        }
+    }
 }

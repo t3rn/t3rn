@@ -128,7 +128,7 @@ impl<
             if step.is_empty() {
                 return Err("Xtx has an empty single step.")
             }
-            for mut full_side_effect in step.iter_mut() {
+            for full_side_effect in step.iter_mut() {
                 if full_side_effect.confirmed.is_none() {
                     // Mark the first step no with encountered unconfirmed side effect
                     if unconfirmed_step_no.is_none() {
@@ -233,7 +233,7 @@ mod tests {
             }]],
         );
 
-        assert_eq!(xtx.is_completed(), false);
+        assert!(!xtx.is_completed());
 
         let res = xtx
             .complete_side_effect::<Hashing>(
@@ -244,7 +244,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(res, true);
+        assert!(res);
         // Check that xtx.full_side_effects has been updated
         assert_eq!(
             xtx.full_side_effects[0][0],
@@ -258,7 +258,7 @@ mod tests {
             }
         );
 
-        assert_eq!(xtx.is_completed(), true);
+        assert!(xtx.is_completed());
     }
 
     #[test]
@@ -339,7 +339,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(res_1, true);
+        assert!(res_1);
         // Check that the first xtx.full_side_effects has been updated
         assert_eq!(
             xtx.full_side_effects[0][0],
@@ -366,7 +366,7 @@ mod tests {
             }
         );
 
-        assert_eq!(xtx.is_completed(), false);
+        assert!(!xtx.is_completed());
 
         let res_2 = xtx
             .complete_side_effect::<Hashing>(
@@ -377,7 +377,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(res_2, true);
+        assert!(res_2);
 
         // Check that the second xtx.full_side_effects has now been updated
         assert_eq!(
@@ -391,7 +391,7 @@ mod tests {
                 index: 1
             }
         );
-        assert_eq!(xtx.is_completed(), true);
+        assert!(xtx.is_completed());
     }
 
     #[test]
@@ -473,7 +473,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(res_1, true);
+        assert!(res_1);
         // Check that the first xtx.full_side_effects has been updated
         assert_eq!(
             xtx.full_side_effects[0][0],
@@ -509,7 +509,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(res_2, true);
+        assert!(res_2);
 
         // Check that the second xtx.full_side_effects has now been updated
         assert_eq!(
@@ -523,7 +523,7 @@ mod tests {
                 index: 1
             }
         );
-        assert_eq!(xtx.is_completed(), true);
+        assert!(xtx.is_completed());
     }
 
     #[test]
@@ -630,6 +630,6 @@ mod tests {
             }
         );
 
-        assert_eq!(xtx.is_completed(), false);
+        assert!(!xtx.is_completed());
     }
 }

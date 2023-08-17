@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.47.0-rc.0] - 2023-08-16
+### :sparkles: New Features
+- [`7680747`](https://github.com/t3rn/t3rn/commit/768074798abaca51d0c3b2107c22cd0058bb51fd) - **executor**: optimistic execution for roco *(PR [#1212](https://github.com/t3rn/t3rn/pull/1212) by [@3h4x](https://github.com/3h4x))*
+- [`46d58e4`](https://github.com/t3rn/t3rn/commit/46d58e4bb3504bdcefb776a0b1da5bc5dcb3446f) - implement substrate price estimation *(PR [#1234](https://github.com/t3rn/t3rn/pull/1234) by [@ahkohd](https://github.com/ahkohd))*
+
+### :bug: Bug Fixes
+- [`1ef71ea`](https://github.com/t3rn/t3rn/commit/1ef71ea2d8459077b072843f8e3b6cf0e6785e26) - sdk docs build *(PR [#1236](https://github.com/t3rn/t3rn/pull/1236) by [@ahkohd](https://github.com/ahkohd))*
+- [`ae8fb8a`](https://github.com/t3rn/t3rn/commit/ae8fb8a69208af573f0fc9c4a8a4587f710661f4) - **executor**: custom signer for relaychain *(PR [#1241](https://github.com/t3rn/t3rn/pull/1241) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.46.2-rc.0] - 2023-08-09
+### :bug: Bug Fixes
+- [`e32892e`](https://github.com/t3rn/t3rn/commit/e32892e9f9e1ff3fb2072e2c434f3d6e6f1b43ba) - **executor**: new contract for rotated committee *(PR [#1228](https://github.com/t3rn/t3rn/pull/1228) by [@3h4x](https://github.com/3h4x))*
+- [`d1178a6`](https://github.com/t3rn/t3rn/commit/d1178a6f3d507e9636e196b976e7ef4e40f3cd58) - reduce majority threshold to unbrick LC *(PR [#1235](https://github.com/t3rn/t3rn/pull/1235) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.46.1-rc.0] - 2023-08-03
+### :bug: Bug Fixes
+- [`e410842`](https://github.com/t3rn/t3rn/commit/e41084273564fffc586d532810701036dbb5d340) - temporarily set 67% committee majority threshold to Sepolia light client  *(PR [#1232](https://github.com/t3rn/t3rn/pull/1232) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.46.0-rc.0] - 2023-08-03
+### :sparkles: New Features
+- [`7dca20e`](https://github.com/t3rn/t3rn/commit/7dca20e525ab4b1e3648c32bc0d010fabc004b19) - implement evm call price estimation *(PR [#1229](https://github.com/t3rn/t3rn/pull/1229) by [@ahkohd](https://github.com/ahkohd))*
+
+### :bug: Bug Fixes
+- [`9811de3`](https://github.com/t3rn/t3rn/commit/9811de379f3c59a0a5563ebd4e3274e0edb9fcea) - reduce majority threshold to unbrick LC *(PR [#1230](https://github.com/t3rn/t3rn/pull/1230) by [@petscheit](https://github.com/petscheit))*
+
+
+## [v1.45.1-rc.0] - 2023-07-28
+### :bug: Bug Fixes
+- [`e4b9c82`](https://github.com/t3rn/t3rn/commit/e4b9c82a38a9ffb2fa40b9ceeb55ab6eddc0c492) - move process estimation of treasury balances to on_initialize hook *(PR [#1223](https://github.com/t3rn/t3rn/pull/1223) by [@MaciejBaj](https://github.com/MaciejBaj))*
+  - :arrow_lower_right: *fixes issue [#1162](undefined) opened by [@3h4x](https://github.com/3h4x)*
+
+
+## [v1.45.0-rc.0] - 2023-07-28
+### :sparkles: New Features
+- [`12050ac`](https://github.com/t3rn/t3rn/commit/12050ac82ea545076b1edbdf27c7c1817fd701d1) - extend GatewayVendor select with XBI and Sepolia *(PR [#1224](https://github.com/t3rn/t3rn/pull/1224) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.44.2-rc.0] - 2023-07-28
+### :bug: Bug Fixes
+- [`25073b1`](https://github.com/t3rn/t3rn/commit/25073b1f98f92ce246333de14e829e03774a7780) - remove remaining deprecated XDNS records with storage migration *(PR [#1225](https://github.com/t3rn/t3rn/pull/1225) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`6377990`](https://github.com/t3rn/t3rn/commit/6377990cdc19197fb503f7f8c9744702ade17c8e) - disable dependabot until polkadot upgrade is done *(PR [#1227](https://github.com/t3rn/t3rn/pull/1227) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.44.1-rc.0] - 2023-07-27
 ### :bug: Bug Fixes
 - [`6075c3b`](https://github.com/t3rn/t3rn/commit/6075c3b35aa29a45b96e8cb5931795e49cad5e27) - stop committee shuffle if previous transition request still awaits attestation *(PR [#1221](https://github.com/t3rn/t3rn/pull/1221) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1423,3 +1471,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.43.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.3-rc.0...v1.43.4-rc.0
 [v1.44.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.4-rc.0...v1.44.0-rc.0
 [v1.44.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.0-rc.0...v1.44.1-rc.0
+[v1.44.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.1-rc.0...v1.44.2-rc.0
+[v1.45.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.2-rc.0...v1.45.0-rc.0
+[v1.45.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.0-rc.0...v1.45.1-rc.0
+[v1.46.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.45.1-rc.0...v1.46.0-rc.0
+[v1.46.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.0-rc.0...v1.46.1-rc.0
+[v1.46.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.1-rc.0...v1.46.2-rc.0
+[v1.47.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.2-rc.0...v1.47.0-rc.0

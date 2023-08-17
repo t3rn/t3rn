@@ -1,5 +1,5 @@
 use crate::*;
-use frame_support::traits::ConstU32;
+use frame_support::traits::{ConstBool, ConstU32};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -20,24 +20,19 @@ pub mod opaque {
 }
 
 impl pallet_aura::Config for Runtime {
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<32>;
 }
 
-use pallet_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::ConstU64;
 
 impl pallet_grandpa::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
-    type HandleEquivocation = ();
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        GrandpaId,
-    )>>::IdentificationTuple;
-    type KeyOwnerProof =
-        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-    type KeyOwnerProofSystem = ();
+    type EquivocationReportSystem = ();
+    type KeyOwnerProof = sp_core::Void;
     type MaxAuthorities = ConstU32<32>;
+    type MaxSetIdSessionEntries = ConstU64<0>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

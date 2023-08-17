@@ -37,7 +37,7 @@ use sp_runtime::{
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 // pub use orml_traits;
 
-use num_traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
@@ -131,28 +131,34 @@ pub enum GatewayVendor {
     #[default]
     Rococo,
     Ethereum,
+    Sepolia,
+    XBI,
 }
 use sp_std::slice::Iter;
 impl GatewayVendor {
     pub fn iterator() -> Iter<'static, GatewayVendor> {
-        static VENDORS: [GatewayVendor; 4] = [
+        static VENDORS: [GatewayVendor; 6] = [
             GatewayVendor::Polkadot,
             GatewayVendor::Kusama,
             GatewayVendor::Rococo,
             GatewayVendor::Ethereum,
+            GatewayVendor::Sepolia,
+            GatewayVendor::XBI,
         ];
         VENDORS.iter()
     }
 
     pub fn eta_per_speed_mode_in_epochs<Epoch: From<u32>>(&self, speed_mode: &SpeedMode) -> Epoch {
         match self {
-            GatewayVendor::Polkadot | GatewayVendor::Kusama | GatewayVendor::Rococo =>
-                match speed_mode {
-                    SpeedMode::Fast => 4u32.into(),
-                    SpeedMode::Rational => 6u32.into(),
-                    SpeedMode::Finalized => 8u32.into(),
-                },
-            GatewayVendor::Ethereum => match speed_mode {
+            GatewayVendor::Polkadot
+            | GatewayVendor::Kusama
+            | GatewayVendor::Rococo
+            | GatewayVendor::XBI => match speed_mode {
+                SpeedMode::Fast => 4u32.into(),
+                SpeedMode::Rational => 6u32.into(),
+                SpeedMode::Finalized => 8u32.into(),
+            },
+            GatewayVendor::Ethereum | GatewayVendor::Sepolia => match speed_mode {
                 SpeedMode::Fast => 1u32.into(),
                 SpeedMode::Rational => 2u32.into(),
                 SpeedMode::Finalized => 3u32.into(),

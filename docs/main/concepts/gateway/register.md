@@ -156,7 +156,7 @@ As explained above, the finality verification of blocks is dependent on storing 
 
 ```rust
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
-    origin: T::Origin,
+    origin: T::RuntimeOrigin,
     first_header: Vec<u8>,
     authorities: Option<Vec<T::AccountId>>,
     gateway_id: bp_runtime::ChainId,

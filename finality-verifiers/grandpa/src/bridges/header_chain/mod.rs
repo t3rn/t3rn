@@ -23,7 +23,7 @@ use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_finality_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
+use sp_consensus_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{generic::OpaqueDigestItemId, traits::Header as HeaderT, RuntimeDebug};
 pub mod justification;
 
@@ -127,7 +127,7 @@ pub trait FinalityProof<Number>: Clone + Send + Sync + Debug {
 /// Find header digest that schedules next GRANDPA authorities set.
 pub fn find_grandpa_authorities_scheduled_change<H: HeaderT>(
     header: &H,
-) -> Option<sp_finality_grandpa::ScheduledChange<H::Number>> {
+) -> Option<sp_consensus_grandpa::ScheduledChange<H::Number>> {
     let id = OpaqueDigestItemId::Consensus(&GRANDPA_ENGINE_ID);
 
     let filter_log = |log: ConsensusLog<H::Number>| match log {

@@ -1,0 +1,28 @@
+[package]
+authors     = { workspace = true }
+build       = "build.rs"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
+name        = "t1rn-parachain-collator"
+repository  = { workspace = true }
+version     = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = [ "x86_64-unknown-linux-gnu" ]
+
+[[bin]]
+name = "t1rn-collator"
+path = "src/main.rs"
+
+[dependencies]
+# Extras
+t3rn-parachain-collator = { path = "../parachain", features = [ "t1rn" ], package = "parachain-collator" }
+sc-cli                  = { workspace = true }
+
+[build-dependencies]
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+[features]
+default            = [  ]
+runtime-benchmarks = [  ]

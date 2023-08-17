@@ -1,5 +1,6 @@
 use super::*;
-use frame_support::traits::ConstU32;
+use frame_support::traits::{ConstBool, ConstU32};
+use sp_core::ConstU64;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -26,22 +27,17 @@ pub mod opaque {
 }
 
 impl pallet_aura::Config for Runtime {
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<32>;
 }
 
 impl pallet_grandpa::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
-    type HandleEquivocation = ();
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        GrandpaId,
-    )>>::IdentificationTuple;
-    type KeyOwnerProof =
-        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-    type KeyOwnerProofSystem = ();
+    type EquivocationReportSystem = ();
+    type KeyOwnerProof = sp_core::Void;
     type MaxAuthorities = ConstU32<32>;
+    type MaxSetIdSessionEntries = ConstU64<0>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

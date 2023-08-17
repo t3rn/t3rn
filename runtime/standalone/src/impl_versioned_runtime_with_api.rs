@@ -1,23 +1,4 @@
-use super::*;
-
-use pallet_3vm_evm::AddressMapping;
-use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
-};
-use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
-use sp_api::impl_runtime_apis;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
-use sp_runtime::{
-    traits::{Block as BlockT, NumberFor},
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
-};
-use t3rn_primitives::{
-    light_client::HeightResult,
-    xdns::{FullGatewayRecord, GatewayRecord},
-    TreasuryAccountProvider,
-};
+use crate::{Aura, Grandpa, Runtime, System, TransactionPayment, *};
 
 pub use frame_support::{
     construct_runtime, parameter_types,
@@ -26,15 +7,28 @@ pub use frame_support::{
         StorageInfo,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{
+            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+        },
         IdentityFee, Weight,
     },
     StorageValue,
 };
+
 pub use pallet_balances::Call as BalancesCall;
+use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
+
+use sp_api::impl_runtime_apis;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::{
+    traits::{Block as BlockT, NumberFor},
+    transaction_validity::{TransactionSource, TransactionValidity},
+    ApplyExtrinsicResult,
+};
 pub use sp_runtime::{Perbill, Permill};
 
 pub use crate::consensus_aura_config::*;
@@ -57,7 +51,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 2,
+    spec_version: 100,
     impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -108,6 +102,14 @@ impl_runtime_apis! {
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
+        }
+
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+            Runtime::metadata_at_version(version)
+        }
+
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
         }
     }
 
@@ -170,29 +172,29 @@ impl_runtime_apis! {
         }
     }
 
-    impl fg_primitives::GrandpaApi<Block> for Runtime {
-        fn grandpa_authorities() -> GrandpaAuthorityList {
+    impl sp_consensus_grandpa::GrandpaApi<Block> for Runtime {
+        fn grandpa_authorities() -> sp_consensus_grandpa::AuthorityList {
             Grandpa::grandpa_authorities()
         }
 
-        fn current_set_id() -> fg_primitives::SetId {
+        fn current_set_id() -> sp_consensus_grandpa::SetId {
             Grandpa::current_set_id()
         }
 
         fn submit_report_equivocation_unsigned_extrinsic(
-            _equivocation_proof: fg_primitives::EquivocationProof<
+            _equivocation_proof: sp_consensus_grandpa::EquivocationProof<
                 <Block as BlockT>::Hash,
                 NumberFor<Block>,
             >,
-            _key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
+            _key_owner_proof: sp_consensus_grandpa::OpaqueKeyOwnershipProof,
         ) -> Option<()> {
             None
         }
 
         fn generate_key_ownership_proof(
-            _set_id: fg_primitives::SetId,
+            _set_id: sp_consensus_grandpa::SetId,
             _authority_id: GrandpaId,
-        ) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
+        ) -> Option<sp_consensus_grandpa::OpaqueKeyOwnershipProof> {
             // NOTE: this is the only implementation possible since we've
             // defined our key owner proof type as a bottom type (i.e. a type
             // with no values).
@@ -200,8 +202,8 @@ impl_runtime_apis! {
         }
     }
 
-    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-        fn account_nonce(account: AccountId) -> Index {
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+        fn account_nonce(account: AccountId) -> Nonce {
             System::account_nonce(account)
         }
     }
@@ -219,111 +221,34 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
-    impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
         for Runtime
     {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        fn query_call_info(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
         }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_3vm_contracts_primitives::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
-        {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+        fn query_call_fee_details(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
         }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
         }
-
-        fn get_storage(
-            address: AccountId,
-            key: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
-
-    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
-        fn get_evm_address(
-            account_id: AccountId,
-        ) -> Option<H160> {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
-        }
-        fn get_or_into_account_id(
-            address: H160,
-        ) -> AccountId {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
-        }
-
-        fn get_threevm_info(
-            address: H160,
-        ) -> Option<(AccountId, Balance, u8)> {
-            Evm::get_threevm_info(&address)
-        }
-
-        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
-            let account = Evm::account_basic(&address);
-            let code = Evm::get_account_code(&address);
-
-            (account.balance, account.nonce, code)
-        }
-
-        fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
-            Evm::account_storages(address, H256::from_slice(&tmp[..]))
-        }
-    }
-
-    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
-        fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
-             <XDNS as t3rn_primitives::xdns::Xdns<Runtime, Balance>>::fetch_gateways()
-        }
-
-        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<AccountId>> {
-             <XDNS as t3rn_primitives::xdns::Xdns<Runtime, Balance>>::fetch_full_gateway_records()
-        }
-
-        fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
-            // deprecated
-            None
-        }
-
-        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
-            Runtime::get_treasury_account(treasury_account)
-        }
-    }
-
-    impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
-        fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
-            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
-
-            match res {
-                Ok(HeightResult::Height(height)) => Some(height.into()),
-                _ => None,
-            }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
         }
     }
 
@@ -343,7 +268,7 @@ impl_runtime_apis! {
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
-            return (list, storage_info)
+            (list, storage_info)
         }
 
         fn dispatch_benchmark(
@@ -357,18 +282,8 @@ impl_runtime_apis! {
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            let whitelist: Vec<TrackedStorageKey> = vec![
-                // Block Number
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
-                // Total Issuance
-                hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
-                // Execution Phase
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
-                // Event Count
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
-                // System Events
-                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
-            ];
+            use frame_support::traits::WhitelistedStorageKeys;
+            let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
@@ -377,16 +292,26 @@ impl_runtime_apis! {
             Ok(batches)
         }
     }
-}
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benches {
-    use frame_benchmarking::define_benchmarks;
-    define_benchmarks!(
-        [frame_benchmarking, BaselineBench::<Runtime>]
-        [frame_system, SystemBench::<Runtime>]
-        [pallet_balances, Balances]
-        [pallet_timestamp, Timestamp]
-        [pallet_account_manager, AccountManager]
-    );
+    #[cfg(feature = "try-runtime")]
+    impl frame_try_runtime::TryRuntime<Block> for Runtime {
+        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
+            // NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
+            // have a backtrace here. If any of the pre/post migration checks fail, we shall stop
+            // right here and right now.
+            let weight = Executive::try_runtime_upgrade(checks).unwrap();
+            (weight, BlockWeights::get().max_block)
+        }
+
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            signature_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            // NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
+            // have a backtrace here.
+            Executive::try_execute_block(block, state_root_check, signature_check, select).expect("execute-block failed")
+        }
+    }
 }

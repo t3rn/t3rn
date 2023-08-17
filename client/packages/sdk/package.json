@@ -40,7 +40,8 @@
   "dependencies": {
     "@polkadot/api": "^8.9.1",
     "dotenv": "^16.0.3",
-    "node-fetch": "2"
+    "node-fetch": "2",
+    "web3": "^4.0.3"
   },
   "types": "./dist/index.d.ts",
   "main": "./dist/index.cjs",

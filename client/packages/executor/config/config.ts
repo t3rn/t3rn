@@ -1,9 +1,6 @@
 import { BiddingStrategy } from "src/bidding";
 import { SfxStrategy, XtxStrategy } from "src/index";
 
-const WS_CIRCUIT_ENDPOINT =
-  process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944";
-
 /**
  * The gateway configuration for the executor.
  *
@@ -22,6 +19,8 @@ export type Gateway = {
   nativeId?: any;
   /** The assets the executor is willing to execute on the target. Matches the key used in assets */
   signerKey?: string;
+  /** The account prefix used by the target */
+  accountPrefix: number;
 };
 
 /**
@@ -30,6 +29,8 @@ export type Gateway = {
  * @group Configuration
  */
 export type Circuit = {
+  /** Name of the chain */
+  name: string;
   /** Endpoint */
   rpc: string;
   /** Ticker of native asset */
@@ -171,11 +172,11 @@ export type Config = {
 export const config: Config = {
   name: "example",
   circuit: {
-    rpc: WS_CIRCUIT_ENDPOINT,
+    name: "t0rn",
+    rpc: process.env.CIRCUIT_WS_ENDPOINT || "ws://127.0.0.1:9944",
     ticker: "TRN",
     decimals: 12,
-    signerKey:
-      "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
+    signerKey: process.env.CIRCUIT_SIGNER_KEY,
   },
   vendors: ["Rococo"],
   gateways: [
@@ -184,8 +185,8 @@ export const config: Config = {
       id: "roco",
       rpc: "wss://rococo-rpc.polkadot.io",
       type: "Substrate",
-      signerKey:
-        "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
+      signerKey: process.env.RELAYCHAIN_SIGNER_KEY,
+      accountPrefix: 42,
     },
     {
       name: "Basilisk",
@@ -193,6 +194,7 @@ export const config: Config = {
       rpc: "wss://rococo-basilisk-rpc.hydration.dev",
       type: "Substrate",
       nativeId: 2090,
+      accountPrefix: 10041,
     },
   ],
   pricing: {
@@ -259,7 +261,7 @@ export const config: Config = {
     ethereum: {
       name: "sepl",
       rpc: "https://endpoints.omniatech.io/v1/eth/sepolia/public",
-      attestationVerifierAddress: "0x20301d42De13BF315d234893Db1A139bc5737293",
+      attestationVerifierAddress: "0x12b6B6F917b9B1af3751eBe41b0A1D7D1a0d4a29",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
     processBatches: process.env.PROCESS_BATCHES == "true" ? true : false,

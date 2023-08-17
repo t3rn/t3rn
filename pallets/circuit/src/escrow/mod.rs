@@ -166,7 +166,7 @@ pub mod test {
     use frame_system::{EventRecord, Phase};
     use t3rn_primitives::SpeedMode;
 
-    use circuit_mock_runtime::test_utils::*;
+    use circuit_mock_runtime::{test_utils::*, RuntimeEvent as Event, RuntimeOrigin as Origin, *};
 
     use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;

@@ -1,6 +1,7 @@
 use crate::{ExecutionSource, GatewayVendor, SpeedMode};
 use codec::{Decode, Encode};
-use num_traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
+use frame_system::pallet_prelude::BlockNumberFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
@@ -27,10 +28,10 @@ pub struct InclusionReceipt<BlockNumber> {
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub struct LightClientHeartbeat<T: frame_system::Config> {
-    pub last_heartbeat: T::BlockNumber,
-    pub last_finalized_height: T::BlockNumber,
-    pub last_rational_height: T::BlockNumber,
-    pub last_fast_height: T::BlockNumber,
+    pub last_heartbeat: BlockNumberFor<T>,
+    pub last_finalized_height: BlockNumberFor<T>,
+    pub last_rational_height: BlockNumberFor<T>,
+    pub last_fast_height: BlockNumberFor<T>,
     pub is_halted: bool,
     pub ever_initialized: bool,
 }
@@ -51,7 +52,7 @@ impl<T: frame_system::Config> Default for LightClientHeartbeat<T> {
 pub trait LightClientAsyncAPI<T: frame_system::Config> {
     fn on_new_epoch(
         verifier: GatewayVendor,
-        new_epoch: T::BlockNumber,
+        new_epoch: BlockNumberFor<T>,
         current_hearbeat: LightClientHeartbeat<T>,
     );
 }
@@ -63,7 +64,7 @@ pub struct LightClientAsyncAPIEmptyMock<T> {
 impl<T: frame_system::Config> LightClientAsyncAPI<T> for LightClientAsyncAPIEmptyMock<T> {
     fn on_new_epoch(
         _verifier: GatewayVendor,
-        _new_epoch: T::BlockNumber,
+        _new_epoch: BlockNumberFor<T>,
         _current_hearbeat: LightClientHeartbeat<T>,
     ) {
     }
@@ -72,32 +73,32 @@ impl<T: frame_system::Config> LightClientAsyncAPI<T> for LightClientAsyncAPIEmpt
 pub trait LightClient<T: frame_system::Config> {
     fn get_latest_finalized_header(&self) -> HeaderResult;
 
-    fn get_fast_height(&self) -> HeightResult<T::BlockNumber>;
+    fn get_fast_height(&self) -> HeightResult<BlockNumberFor<T>>;
 
-    fn get_rational_height(&self) -> HeightResult<T::BlockNumber>;
+    fn get_rational_height(&self) -> HeightResult<BlockNumberFor<T>>;
 
-    fn get_finalized_height(&self) -> HeightResult<T::BlockNumber>;
+    fn get_finalized_height(&self) -> HeightResult<BlockNumberFor<T>>;
 
     fn get_latest_finalized_header_precompile(&self) -> Bytes;
 
-    fn get_fast_height_precompile(&self) -> T::BlockNumber;
+    fn get_fast_height_precompile(&self) -> BlockNumberFor<T>;
 
-    fn get_rational_height_precompile(&self) -> T::BlockNumber;
+    fn get_rational_height_precompile(&self) -> BlockNumberFor<T>;
 
-    fn get_finalized_height_precompile(&self) -> T::BlockNumber;
+    fn get_finalized_height_precompile(&self) -> BlockNumberFor<T>;
 
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError>;
 
     fn initialize(
         &self,
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         gateway_id: [u8; 4],
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError>;
 
-    fn turn_on(&self, origin: T::Origin) -> Result<bool, DispatchError>;
+    fn turn_on(&self, origin: T::RuntimeOrigin) -> Result<bool, DispatchError>;
 
-    fn turn_off(&self, origin: T::Origin) -> Result<bool, DispatchError>;
+    fn turn_off(&self, origin: T::RuntimeOrigin) -> Result<bool, DispatchError>;
 
     fn submit_encoded_headers(&self, encoded_headers_data: Bytes) -> Result<bool, DispatchError>;
 
@@ -107,21 +108,21 @@ pub trait LightClient<T: frame_system::Config> {
         speed_mode: SpeedMode,
         source: Option<ExecutionSource>,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_state_inclusion(
         &self,
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_tx_inclusion(
         &self,
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_event_inclusion_precompile(
         &self,

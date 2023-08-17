@@ -7,8 +7,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
-use sp_runtime::sp_std;
-use sp_std::prelude::*;
+
 pub use t3rn_primitives::ChainId;
 
 sp_api::decl_runtime_apis! {

@@ -1,12 +1,12 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "A crate that hosts a common definitions that are relevant for the all t3rn pallets."
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "t3rn-primitives"
-repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.0.0-alpha.1"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -15,40 +15,42 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 bytes        = { version = "1.2.1", default-features = false }
 libsecp256k1 = { version = "0.7", default-features = false }
 tiny-keccak  = { version = "2.0.0", features = [ "keccak" ], default-features = false }
+
 # This crate should not rely on any of the frame primitives.
-codec                 = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
-ed25519-dalek         = { version = "1.0", default-features = false, features = [ "u64_backend" ] }
-frame-support         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-log                   = { version = "0.4", default-features = false }
-pallet-sudo           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-scale-info            = { version = "2.9.0", default-features = false, features = [ "derive" ] }
+codec                 = { workspace = true, package = "parity-scale-codec" }
+ed25519-dalek         = { workspace = true }
+frame-support         = { workspace = true }
+frame-system          = { workspace = true }
+log                   = { workspace = true }
+pallet-sudo           = { workspace = true }
+scale-info            = { workspace = true }
 serde                 = { default-features = false, version = "1.0", optional = true }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-core               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-io                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-runtime            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-std                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-version            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-application-crypto = { workspace = true }
+sp-core               = { workspace = true }
+sp-io                 = { workspace = true }
+sp-runtime            = { workspace = true }
+sp-std                = { workspace = true }
+sp-version            = { workspace = true }
 
 #bridges
 finality-grandpa    = { version = "0.16", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
-num-traits          = { version = "0.2", default-features = false }
-sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.27' }
-sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+num-traits          = { workspace = true }
+sp-api              = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
+sp-state-machine    = { workspace = true }
+sp-trie             = { workspace = true }
+
+t3rn-abi            = { path = "../types/abi", default-features = false, features = [ "runtime" ] }
+t3rn-sdk-primitives = { workspace = true }
+t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 
 circuit-runtime-types = { path = "../runtime/common-types", default-features = false }
-t3rn-abi              = { path = "../types/abi", default-features = false, features = [ "runtime" ] }
-t3rn-sdk-primitives   = { version = "=0.1.1-rc.5", default-features = false }
-t3rn-types            = { path = "../types", default-features = false, features = [ "runtime" ] }
 
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = { version = '0.3.1' }
-serde_json  = "1.0.103"
+serde_json  = "1.0.41"
 mini-mock =  { path = "../runtime/mini-mock", package = "t3rn-mini-mock-runtime" }
 
 [features]
@@ -76,11 +78,11 @@ std = [
   "num-traits/std",
   "sp-state-machine/std",
   "sp-trie/std",
-  "sp-finality-grandpa/std",
+  "sp-consensus-grandpa/std",
   "t3rn-sdk-primitives/std",
   "t3rn-types/std",
-  "circuit-runtime-types/std",
   "t3rn-abi/std",
+  "circuit-runtime-types/std",
   "t3rn-types/runtime-std",
   "finality-grandpa/std",
 ]

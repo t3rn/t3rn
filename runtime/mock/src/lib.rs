@@ -2,14 +2,15 @@
 //! Runtime utilities
 
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
+use codec::Encode;
 
 use frame_support::{
-    pallet_prelude::{GenesisBuild, Weight},
-    traits::KeyOwnerProofSystem,
+    pallet_prelude::Weight,
+    weights::{constants::ExtrinsicBaseWeight, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use hex_literal::hex;
 use pallet_sudo::GenesisConfig as SudoGenesisConfig;
-use sp_core::{crypto::KeyTypeId, H256};
+use sp_core::H256;
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
 pub mod signed_extrinsics_config;
@@ -22,17 +23,21 @@ mod accounts_config;
 mod circuit_config;
 mod consensus_aura_config;
 mod contracts_config;
+mod hooks;
 mod system_no_version_config;
 pub mod test_utils;
 mod treasuries_config;
 mod xbi_config;
-
 pub type RococoLightClient = ();
 pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
 pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
-
 pub use crate::circuit_config::GlobalOnInitQueues;
+use frame_support::traits::GenesisBuild;
+pub use pallet_3vm_evm::Config as ConfigEvm;
+pub use pallet_contracts_registry::ContractsRegistry as ContractsRegistryStorage;
 
+use smallvec::smallvec;
+use sp_runtime::BuildStorage;
 frame_support::construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -42,9 +47,8 @@ frame_support::construct_runtime!(
         System: frame_system,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
-        ParachainSystem: cumulus_pallet_parachain_system::{
-            Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-        },
+        ParachainSystem: cumulus_pallet_parachain_system,
+        ParachainInfo: parachain_info,
 
         RandomnessCollectiveFlip: pallet_randomness_collective_flip,
         Timestamp: pallet_timestamp,
@@ -68,21 +72,21 @@ frame_support::construct_runtime!(
 
         // Circuit
         // t3rn pallets
-        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        Attesters: pallet_attesters::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
-        Rewards: pallet_rewards::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
+        XDNS: pallet_xdns = 100,
+        Attesters: pallet_attesters = 101,
+        Rewards: pallet_rewards = 102,
 
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        ContractsRegistry: pallet_contracts_registry = 106,
+        Circuit: pallet_circuit = 108,
+        Clock: pallet_clock = 110,
         Vacuum: pallet_vacuum = 111,
 
         // XCM helpers.
-        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-        PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
-        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
-        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
-        XbiPortal: pallet_xbi_portal = 34,
+        XcmpQueue: cumulus_pallet_xcmp_queue = 30,
+        PolkadotXcm: pallet_xcm = 31,
+        CumulusXcm: cumulus_pallet_xcm = 32,
+        DmpQueue: cumulus_pallet_dmp_queue = 33,
+        // XbiPortal: pallet_xbi_portal = 34,
         AssetRegistry: pallet_asset_registry = 35,
 
         // 3VM
@@ -92,13 +96,33 @@ frame_support::construct_runtime!(
         AccountManager: pallet_account_manager = 125,
 
         // Portal
-        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
         EthereumBridge: pallet_eth2_finality_verifier = 132,
+        SepoliaBridge: pallet_sepolia_finality_verifier = 133,
     }
 );
+use frame_support::weights::WeightToFeeCoefficient;
+use sp_runtime::Perbill;
+pub struct WeightToFee;
+impl WeightToFeePolynomial for WeightToFee {
+    type Balance = Balance;
+
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        // in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
+        // in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
+        let p = MILLIUNIT / 10;
+        let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        smallvec![WeightToFeeCoefficient {
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::from_rational(p % q, q),
+            coeff_integer: p / q,
+        }]
+    }
+}
 
 use t3rn_abi::SFXAbi;
 use t3rn_primitives::{
@@ -279,7 +303,7 @@ impl ExtBuilder {
     fn activate_all_light_clients() {
         use t3rn_primitives::portal::Portal as PortalT;
         for &gateway in XDNS::all_gateway_ids().iter() {
-            Portal::turn_on(Origin::root(), gateway).unwrap();
+            Portal::turn_on(RuntimeOrigin::root(), gateway).unwrap();
         }
         XDNS::process_all_verifier_overviews(System::block_number());
         XDNS::process_overview(System::block_number());
@@ -289,8 +313,8 @@ impl ExtBuilder {
     }
 
     pub fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         let sudo_genesis_config = SudoGenesisConfig::<Runtime> {
@@ -305,14 +329,15 @@ impl ExtBuilder {
             .expect("Pallet balances storage can be assimilated");
 
         pallet_attesters::GenesisConfig::<Runtime> {
-            phantom: Default::default(),
+            _marker: Default::default(),
             attestation_targets: self.attestation_targets,
         }
         .assimilate_storage(&mut t)
         .expect("Pallet attesters can be assimilated");
         pallet_xdns::GenesisConfig::<Runtime> {
-            known_gateway_records: self.known_gateway_records,
-            standard_sfx_abi: self.standard_sfx_abi,
+            known_gateway_records: self.known_gateway_records.encode(),
+            standard_sfx_abi: self.standard_sfx_abi.encode(),
+            _marker: Default::default(),
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");

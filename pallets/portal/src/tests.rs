@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod tests {
     use ::pallet_eth2_finality_verifier::mock::{generate_epoch_update, generate_initialization};
-    use circuit_mock_runtime::{ExtBuilder, Portal, *};
-    use circuit_test_utils::replay::*;
+    use circuit_mock_runtime::{ExtBuilder, Portal, RuntimeOrigin as Origin, *};
     use codec::Encode;
     use frame_support::assert_ok;
     use pallet_grandpa_finality_verifier::{
@@ -217,7 +216,7 @@ mod tests {
                 let result = Portal::register_gateway(
                     Origin::root(),
                     [44u8; 4],
-                    0u32,
+                    100u32,
                     GatewayVendor::Ethereum,
                     ExecutionVendor::EVM,
                     t3rn_abi::Codec::Rlp,
@@ -365,6 +364,8 @@ mod tests {
                     GatewayVendor::Kusama => *b"ksma",
                     GatewayVendor::Polkadot => *b"pdot",
                     GatewayVendor::Ethereum => *b"eth2",
+                    GatewayVendor::Sepolia => *b"sepl",
+                    GatewayVendor::XBI => *b"xbi_",
                 };
                 let origin = Origin::root();
                 let result = Portal::turn_on(origin, gateway_id);
@@ -372,26 +373,26 @@ mod tests {
             });
     }
 
-    #[test]
-    #[ignore]
-    fn run_e2e_tests() {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let mut paths: Vec<_> = fs::read_dir("fixtures/")
-                    .unwrap()
-                    .map(|r| r.unwrap())
-                    .collect();
-                paths.sort_by_key(|dir| dir.path());
-
-                for entry in paths {
-                    let path = entry.path();
-                    let file = fs::read_to_string(&path).unwrap();
-                    let data: ExtrinsicParam = serde_json::from_str(&file).unwrap();
-                    assert_ok!(replay_and_evaluate_extrinsic::<Runtime>(&data));
-                }
-            })
-    }
+    // #[test]
+    // #[ignore]
+    // fn run_e2e_tests() {
+    //     ExtBuilder::default()
+    //         .with_standard_sfx_abi()
+    //         .with_default_xdns_records()
+    //         .build()
+    //         .execute_with(|| {
+    //             let mut paths: Vec<_> = fs::read_dir("fixtures/")
+    //                 .unwrap()
+    //                 .map(|r| r.unwrap())
+    //                 .collect();
+    //             paths.sort_by_key(|dir| dir.path());
+    //
+    //             for entry in paths {
+    //                 let path = entry.path();
+    //                 let file = fs::read_to_string(&path).unwrap();
+    //                 let data: ExtrinsicParam = serde_json::from_str(&file).unwrap();
+    //                 assert_ok!(replay_and_evaluate_extrinsic::<Runtime>(&data));
+    //             }
+    //         })
+    // }
 }

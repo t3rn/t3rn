@@ -15,15 +15,15 @@ pub type SignedExtra = (
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-    sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+    sp_runtime::generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = sp_runtime::generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic =
+    sp_runtime::generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
-impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
-where
-    Call: From<C>,
-{
-    // type Extrinsic = TestXt<Call, ()>;
-    type Extrinsic = UncheckedExtrinsic;
-    type OverarchingCall = Call;
-}
+// impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+// where
+//     RuntimeCall: From<C>,
+// {
+//     type Extrinsic = Extrinsic;
+//     type OverarchingCall = RuntimeCall;
+// }

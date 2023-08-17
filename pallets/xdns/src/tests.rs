@@ -18,11 +18,14 @@
 //! Runtimes for pallet-xdns.
 
 use super::*;
-use circuit_mock_runtime::{ExtBuilder, Portal, *};
+use circuit_mock_runtime::{
+    pallet_contracts_registry::pallet::Error, ExtBuilder, Portal, RuntimeEvent as Event,
+    RuntimeOrigin as Origin, *,
+};
 use codec::Decode;
+use frame_support::pallet_prelude::Weight;
 
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
-use frame_system::Origin;
 use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
@@ -38,7 +41,10 @@ use t3rn_primitives::{
 };
 
 use t3rn_abi::Codec::{Rlp, Scale};
-use t3rn_primitives::xdns::EpochEstimate;
+use t3rn_primitives::{
+    xdns::EpochEstimate,
+    GatewayVendor::{Sepolia, XBI},
+};
 
 use t3rn_types::fsx::SecurityLvl;
 
@@ -53,7 +59,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
         .execute_with(|| {
             assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
             assert_ok!(XDNS::reboot_self_gateway(
-                circuit_mock_runtime::Origin::root(),
+                Origin::root(),
                 GatewayVendor::Rococo
             ));
             assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
@@ -75,15 +81,15 @@ fn reboot_self_gateway_populates_entry_all_gateway_ids_entry_only_once() {
         .execute_with(|| {
             assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
             assert_ok!(XDNS::reboot_self_gateway(
-                circuit_mock_runtime::Origin::root(),
+                Origin::root(),
                 GatewayVendor::Rococo
             ));
             assert_ok!(XDNS::reboot_self_gateway(
-                circuit_mock_runtime::Origin::root(),
+                Origin::root(),
                 GatewayVendor::Rococo
             ));
             assert_ok!(XDNS::reboot_self_gateway(
-                circuit_mock_runtime::Origin::root(),
+                Origin::root(),
                 GatewayVendor::Rococo
             ));
 
@@ -104,7 +110,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_no_sfx() {
     ExtBuilder::default().build().execute_with(|| {
         assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
         assert_ok!(XDNS::reboot_self_gateway(
-            circuit_mock_runtime::Origin::root(),
+            Origin::root(),
             GatewayVendor::Rococo
         ));
         assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
@@ -185,7 +191,7 @@ fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
         assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
 
         assert_ok!(XDNS::register_new_token(
-            &circuit_mock_runtime::Origin::root(),
+            &Origin::root(),
             u32::from_le_bytes(*b"test"),
             TokenInfo::Substrate(SubstrateToken {
                 id: 1,
@@ -307,7 +313,7 @@ fn should_register_token_and_populate_assets_storage_successfully() {
             assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
 
             assert_ok!(XDNS::register_new_token(
-                &circuit_mock_runtime::Origin::root(),
+                &Origin::root(),
                 u32::from_le_bytes(*b"test"),
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
@@ -335,7 +341,7 @@ fn should_purge_token_and_destroy_asset_storage_successfully() {
             assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
 
             assert_ok!(XDNS::register_new_token(
-                &circuit_mock_runtime::Origin::root(),
+                &Origin::root(),
                 u32::from_le_bytes(*b"test"),
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
@@ -346,10 +352,16 @@ fn should_purge_token_and_destroy_asset_storage_successfully() {
 
             assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
 
-            assert_ok!(XDNS::purge_token_record(
-                circuit_mock_runtime::Origin::root(),
-                u32::from_le_bytes(*b"test"),
+            let admin_origin = AccountId32::from(hex_literal::hex!(
+                "6d6f646c657363726f7772790000000000000000000000000000000000000000"
             ));
+            let res = XDNS::purge_token_record(
+                Origin::signed(admin_origin),
+                u32::from_le_bytes(*b"test"),
+            );
+
+            println!("{:?}", res);
+            assert_ok!(res);
 
             assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
         });
@@ -367,7 +379,7 @@ fn should_purge_a_gateway_record_successfully() {
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
             assert_ok!(XDNS::register_new_token(
-                &circuit_mock_runtime::Origin::root(),
+                &Origin::root(),
                 u32::from_le_bytes(*b"test"),
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
@@ -403,11 +415,7 @@ fn should_purge_a_gateway_record_successfully() {
                     .is_some(),
             );
 
-            assert_ok!(XDNS::purge_gateway_record(
-                Origin::<Runtime>::Root.into(),
-                ALICE,
-                *b"gate"
-            ));
+            assert_ok!(XDNS::purge_gateway_record(Origin::root(), ALICE, *b"gate"));
 
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
@@ -450,7 +458,7 @@ fn should_error_trying_to_purge_a_missing_xdns_record() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_gateway_record(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
+                XDNS::purge_gateway_record(Origin::root(), ALICE, *b"miss"),
                 pallet_xdns::pallet::Error::<Runtime>::XdnsRecordNotFound
             );
             assert_eq!(
@@ -468,11 +476,7 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_gateway_record(
-                    Origin::<Runtime>::Signed(ALICE).into(),
-                    ALICE,
-                    *b"gate"
-                ),
+                XDNS::purge_gateway_record(Origin::signed(ALICE), ALICE, *b"gate"),
                 DispatchError::BadOrigin
             );
             assert_eq!(
@@ -677,14 +681,13 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 if gateway.gateway_record.verification_vendor == Ethereum {
                     continue
                 }
-                Portal::turn_on(
-                    circuit_mock_runtime::Origin::root(),
-                    gateway.gateway_record.gateway_id,
-                )
-                .unwrap();
+                Portal::turn_on(Origin::root(), gateway.gateway_record.gateway_id).unwrap();
             }
 
-            assert_eq!(XDNS::process_all_verifier_overviews(10), 25000000u64);
+            assert_eq!(
+                XDNS::process_all_verifier_overviews(10),
+                Weight::from_parts(25000000u64, 0)
+            );
             assert_eq!(XDNS::process_overview(10), ());
             let overview = XDNS::gateways_overview();
 
@@ -723,6 +726,16 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
+                        reported_at: 10,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
                         reported_at: 10,
                         justified_height: 24,
                         finalized_height: 24,
@@ -780,13 +793,12 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
         .build()
         .execute_with(|| {
             assert_ok!(XDNS::add_escrow_account(
-                circuit_mock_runtime::Origin::root(),
+                Origin::root(),
                 [1, 1, 1, 1],
                 AccountId32::new([1; 32])
             ));
 
-            Attesters::force_activate_target(circuit_mock_runtime::Origin::root(), [1, 1, 1, 1])
-                .unwrap();
+            Attesters::force_activate_target(Origin::root(), [1, 1, 1, 1]).unwrap();
             Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
             Attesters::on_initialize(System::block_number());
 
@@ -828,6 +840,16 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
                         reported_at: 17,
                         justified_height: 24,
                         finalized_height: 24,
@@ -916,6 +938,24 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                     epoch: 26,
                     is_active: false,
                 },
+                FinalityVerifierActivity {
+                    verifier: Sepolia,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: XBI,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
             ];
 
             let expected_verifier_overview_all_on = vec![
@@ -955,17 +995,31 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                     epoch: 26,
                     is_active: true,
                 },
+                FinalityVerifierActivity {
+                    verifier: Sepolia,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: XBI,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
             ];
 
             assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
 
             // Turn all the gateways off at the beginning. expect that the verifiers overview will be updated only after 50 blocks
             for gateway in XDNS::fetch_full_gateway_records().iter() {
-                Portal::turn_off(
-                    circuit_mock_runtime::Origin::root(),
-                    gateway.gateway_record.gateway_id,
-                )
-                .unwrap();
+                Portal::turn_off(Origin::root(), gateway.gateway_record.gateway_id).unwrap();
             }
 
             let last_reported_block = expected_verifier_overview_all_on[0].reported_at;
@@ -973,21 +1027,21 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
             System::set_block_number(last_reported_block + 1);
             <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
                 System::block_number(),
-                u64::MAX,
+                Weight::from_parts(u64::MAX, 0),
             );
             assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
 
             System::set_block_number(last_reported_block + 5);
             <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
                 System::block_number(),
-                u64::MAX,
+                Weight::from_parts(u64::MAX, 0),
             );
             assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
 
             System::set_block_number(System::block_number() + 52);
             <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
                 System::block_number(),
-                u64::MAX,
+                Weight::from_parts(u64::MAX, 0),
             );
 
             assert_eq!(
@@ -1193,13 +1247,12 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
         .build()
         .execute_with(|| {
             for gateway in XDNS::fetch_full_gateway_records().iter() {
-                Portal::turn_off(
-                    circuit_mock_runtime::Origin::root(),
-                    gateway.gateway_record.gateway_id,
-                )
-                .unwrap();
+                Portal::turn_off(Origin::root(), gateway.gateway_record.gateway_id).unwrap();
             }
-            assert_eq!(XDNS::process_all_verifier_overviews(100), 1225000000u64);
+            assert_eq!(
+                XDNS::process_all_verifier_overviews(100),
+                Weight::from_parts(1825000000u64, 0)
+            );
             assert_eq!(XDNS::process_overview(100), ());
 
             let overview = XDNS::gateways_overview();
@@ -1239,6 +1292,16 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
                         reported_at: 100,
                         justified_height: 24,
                         finalized_height: 24,
@@ -1462,6 +1525,46 @@ fn test_storage_migration_v143_to_v144_that_kills_old_xdns_records_entry() {
                     225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13,
                     175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249,
                     114, 111, 99, 111,
+                ],),
+                None
+            );
+        });
+}
+
+#[test]
+fn test_storage_migration_v144_to_v145_that_kills_old_xdns_records_entry() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert raw xdns records entry
+            frame_support::storage::unhashed::put_raw(
+                &[
+                    84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                    191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                    8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                    171, 135, 85,
+                ],
+                &[3, 2, 1],
+            );
+
+            pallet_xdns::StorageMigrations::<Runtime>::set(2);
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <XDNS as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight = <Runtime as frame_system::Config>::DbWeight::get().reads_writes(0, 1);
+            assert_eq!(consumed_weight, max_weight);
+
+            assert_eq!(
+                frame_support::storage::unhashed::get::<Vec<u8>>(&[
+                    84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                    191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                    8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                    171, 135, 85,
                 ],),
                 None
             );

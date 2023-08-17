@@ -5,8 +5,9 @@ use crate::{
     transfers::CurrencyBalanceOf,
     ChainId, Compose,
 };
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::Currency;
+use frame_system::pallet_prelude::BlockNumberFor;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 
@@ -23,7 +24,7 @@ where
     fn fetch_contract_by_id(
         contract_id: T::Hash,
     ) -> Result<
-        RegistryContract<T::Hash, T::AccountId, CurrencyBalanceOf<T, C>, T::BlockNumber>,
+        RegistryContract<T::Hash, T::AccountId, CurrencyBalanceOf<T, C>, BlockNumberFor<T>>,
         Self::Error,
     >;
 
@@ -31,12 +32,12 @@ where
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
     ) -> Result<
-        Vec<RegistryContract<T::Hash, T::AccountId, CurrencyBalanceOf<T, C>, T::BlockNumber>>,
+        Vec<RegistryContract<T::Hash, T::AccountId, CurrencyBalanceOf<T, C>, BlockNumberFor<T>>>,
         Self::Error,
     >;
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, MaxEncodedLen, RuntimeDebug, TypeInfo)]
 pub struct AuthorInfo<AccountId, BalanceOf> {
     /// Original code author
     pub account: AccountId,

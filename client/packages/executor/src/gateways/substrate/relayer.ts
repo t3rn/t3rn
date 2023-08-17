@@ -9,8 +9,9 @@ import Estimator from "./estimator";
 import { CostEstimator, Estimate } from "./estimator/cost";
 import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
-import { Logger } from "pino";
 import { logger } from "../../logging";
+import { Prometheus } from "../../prometheus";
+import { AccountInfo } from "@polkadot/types/interfaces";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -31,15 +32,15 @@ export class SubstrateRelayer extends EventEmitter {
   nonce: number;
   /** Name of the target */
   name: string;
-  logger: Logger;
   nativeId: string;
+  prometheus: Prometheus;
 
-  async setup(config: Gateway, logger: Logger) {
+  async setup(config: Gateway, prometheus: Prometheus) {
     this.client = await ApiPromise.create({
       provider: new WsProvider(config.rpc),
     });
-    this.logger = logger;
     this.name = config.name;
+    this.prometheus = prometheus;
 
     const keyring = new Keyring({ type: "sr25519" });
     this.signer = config.signerKey
@@ -49,6 +50,24 @@ export class SubstrateRelayer extends EventEmitter {
     if (config.nativeId) this.nativeId = config.nativeId;
 
     this.nonce = await this.fetchNonce(this.client, this.signer.address);
+    const balance = (
+      (await this.client.query.system.account(
+        this.signer.address,
+      )) as AccountInfo
+    ).data.free.toNumber();
+    logger.info(
+      {
+        signer: this.signer.address,
+        nonce: this.nonce,
+        target: this.name,
+        balance: balance,
+      },
+      "Relayer setup completed 🏁",
+    );
+    this.prometheus.executorBalance.set(
+      { signer: this.signer.address, target: this.name },
+      balance,
+    );
   }
 
   /**
@@ -77,8 +96,20 @@ export class SubstrateRelayer extends EventEmitter {
    */
   async executeTx(sfx: SideEffect) {
     logger.info(
-      `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`,
+      { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
+      `SFX Execution started 🔮`,
     );
+
+    if (sfx.gateway.executionVendor === "Substrate") {
+      this.prometheus.executorClientBalance.set(
+        {
+          signer: sfx.arguments[0],
+          target: sfx.target,
+        },
+        await getBalance(this.client, sfx.arguments[0]),
+      );
+    }
+
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
     const nonce = this.nonce;
     this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
@@ -92,7 +123,14 @@ export class SubstrateRelayer extends EventEmitter {
             const err = this.client.registry.findMetaError(
               dispatchError.asModule,
             );
-            logger.info(`Execution failed SFX: ${sfx.humanId}`);
+            logger.info(
+              {
+                sfxId: sfx.id,
+                sfx: sfx,
+                error: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+              },
+              `SFX Execution failed 🚨`,
+            );
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutionError,
               data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
@@ -124,8 +162,20 @@ export class SubstrateRelayer extends EventEmitter {
               events,
             );
             logger.info(
-              `Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`,
+              { sfxId: sfx.id, target: sfx.target, blockNumber },
+              `SFX Execution completed 🏁`,
             );
+
+            if (sfx.gateway.gatewayType === "Substrate") {
+              this.prometheus.executorClientBalance.set(
+                {
+                  signer: sfx.arguments[0],
+                  target: sfx.target,
+                },
+                await getBalance(this.client, sfx.arguments[0]),
+              );
+            }
+
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,
               sfxId: sfx.id,
@@ -315,6 +365,12 @@ export class SubstrateRelayer extends EventEmitter {
       return parseInt(nextIndex.toHuman());
     });
   }
+}
+
+async function getBalance(client: ApiPromise, address) {
+  return (
+    (await client.query.system.account(address)) as AccountInfo
+  ).data.free.toNumber();
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };

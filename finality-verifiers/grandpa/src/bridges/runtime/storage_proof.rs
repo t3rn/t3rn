@@ -53,7 +53,7 @@ where
     /// incomplete or otherwise invalid proof, this returns an error.
     pub fn read_value(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Error> {
         // LayoutV1 or LayoutV0 is identical for proof that only read values.
-        read_trie_value::<LayoutV1<H>, _>(&self.db, &self.root, key)
+        read_trie_value::<LayoutV1<H>, _>(&self.db, &self.root, key, None, None) // FIXME: can optimise with new fields
             .map_err(|_| Error::StorageValueUnavailable)
     }
 }
@@ -88,7 +88,7 @@ pub fn craft_valid_storage_proof() -> (sp_core::H256, StorageProof) {
     let proof = StorageProof::new(
         prove_read(backend, &[&b"key1"[..], &b"key2"[..], &b"key22"[..]])
             .unwrap()
-            .iter_nodes(),
+            .into_iter_nodes(),
     );
 
     (root, proof)

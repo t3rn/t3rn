@@ -1,11 +1,9 @@
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
+use frame_support::{parameter_types, RuntimeDebug};
+
 #[cfg(test)]
 use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{ConstU32, IdentityLookup, Keccak256},
-};
+use sp_runtime::traits::{ConstU32, IdentityLookup, Keccak256};
 
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MiniRuntime>;
@@ -23,42 +21,49 @@ frame_support::construct_runtime!(
     }
 );
 
+parameter_types! {
+    pub const ExistentialDeposit: u128 = 1;
+}
+
 impl pallet_balances::Config for MiniRuntime {
     type AccountStore = System;
     /// The type for recording an account's balance.
-    type Balance = Balance;
+    type Balance = u128;
     type DustRemoval = ();
-    /// The ubiquitous event type.
-    type Event = ();
-    type ExistentialDeposit = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<0>;
+    type MaxHolds = ConstU32<0>;
     type MaxLocks = ConstU32<50>;
-    type MaxReserves = ();
+    type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
-    type WeightInfo = ();
+    /// The ubiquitous event type.
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<MiniRuntime>;
 }
 
 impl frame_system::Config for MiniRuntime {
     type AccountData = pallet_balances::AccountData<u128>;
     type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
+    type Block = Block;
     type BlockHashCount = ();
     type BlockLength = ();
-    type BlockNumber = u64;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = ();
     type Hash = H256;
     type Hashing = Keccak256;
-    type Header = Header;
-    type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;
+    type Nonce = u32;
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();

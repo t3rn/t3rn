@@ -1,8 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet_3vm_evm_primitives::{
-    Context, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
+    Context, IsPrecompileResult, LinearCostPrecompile, Precompile, PrecompileHandle,
+    PrecompileResult, PrecompileSet,
 };
+
 use pallet_3vm_evm_primitives::{ExitError, PrecompileFailure};
 pub use pallet_evm_precompile_modexp::Modexp;
 pub use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
@@ -12,7 +14,6 @@ pub use pallet_evm_precompile_simple::{
 use portal_precompile::PortalPrecompile;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
-
 pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     // Ethereum precompiles:
     ECRecover,
@@ -33,19 +34,23 @@ impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match self {
             // Ethereum:
-            KnownPrecompile::ECRecover => ECRecover::execute(handle),
-            KnownPrecompile::Sha256 => Sha256::execute(handle),
-            KnownPrecompile::Ripemd160 => Ripemd160::execute(handle),
-            KnownPrecompile::Identity => Identity::execute(handle),
-            KnownPrecompile::Modexp => Modexp::execute(handle),
-            // Non-Frontier specific nor Ethereum:
-            KnownPrecompile::Sha3FIPS256 => Sha3FIPS256::execute(handle),
-            KnownPrecompile::Sha3FIPS512 => Sha3FIPS512::execute(handle),
-            KnownPrecompile::ECRecoverPublicKey => ECRecoverPublicKey::execute(handle),
+            KnownPrecompile::ECRecover => <ECRecover as Precompile>::execute(handle),
+            KnownPrecompile::Sha256 => <Sha256 as Precompile>::execute(handle),
+            KnownPrecompile::Ripemd160 => <Ripemd160 as Precompile>::execute(handle),
+            KnownPrecompile::Identity => <Identity as Precompile>::execute(handle),
+            KnownPrecompile::Modexp => <Modexp as Precompile>::execute(handle),
+            // // Non-Frontier specific nor Ethereum:
+            KnownPrecompile::Sha3FIPS256 => <Sha3FIPS256 as Precompile>::execute(handle),
+            KnownPrecompile::Sha3FIPS512 => <Sha3FIPS512 as Precompile>::execute(handle),
+            KnownPrecompile::ECRecoverPublicKey =>
+                <ECRecoverPublicKey as Precompile>::execute(handle),
             KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
             KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
                 ExitError::Other("Noop precompile".into()),
             )),
+            _ => PrecompileResult::Err(PrecompileFailure::from(ExitError::Other(
+                "Unknown precompile".into(),
+            ))),
         }
     }
 }
@@ -75,8 +80,14 @@ impl<T: pallet_3vm_evm::Config> PrecompileSet for Precompiles<T> {
             .map(|precompile| precompile.execute(handle))
     }
 
-    fn is_precompile(&self, address: H160) -> bool {
-        self.used_addresses().contains(&address)
+    /// Check if the given address is a precompile. Should only be called to
+    /// perform the check while not executing the precompile afterward, since
+    /// `execute` already performs a check internally.
+    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+        IsPrecompileResult::Answer {
+            is_precompile: self.used_addresses().contains(&address),
+            extra_cost: 0,
+        }
     }
 }
 

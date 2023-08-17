@@ -4,6 +4,7 @@ use crate::{
     GatewayType, GatewayVendor, SpeedMode, TokenInfo,
 };
 use codec::{Decode, Encode};
+use frame_system::pallet_prelude::BlockNumberFor;
 
 use crate::light_client::LightClientHeartbeat;
 use scale_info::TypeInfo;
@@ -38,40 +39,48 @@ pub trait Portal<T: frame_system::Config> {
 
     fn get_finalized_height(
         gateway_id: ChainId,
-    ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
+    ) -> Result<HeightResult<BlockNumberFor<T>>, DispatchError>;
 
     fn get_rational_height(
         gateway_id: ChainId,
-    ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
+    ) -> Result<HeightResult<BlockNumberFor<T>>, DispatchError>;
 
-    fn get_fast_height(gateway_id: ChainId) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
+    fn get_fast_height(
+        gateway_id: ChainId,
+    ) -> Result<HeightResult<BlockNumberFor<T>>, DispatchError>;
 
     fn get_latest_finalized_header_precompile(gateway_id: ChainId) -> Bytes;
 
-    fn get_finalized_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
+    fn get_finalized_height_precompile(
+        gateway_id: ChainId,
+    ) -> frame_system::pallet_prelude::BlockNumberFor<T>;
 
-    fn get_rational_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
+    fn get_rational_height_precompile(
+        gateway_id: ChainId,
+    ) -> frame_system::pallet_prelude::BlockNumberFor<T>;
 
-    fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
+    fn get_fast_height_precompile(
+        gateway_id: ChainId,
+    ) -> frame_system::pallet_prelude::BlockNumberFor<T>;
 
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         source: Option<ExecutionSource>,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
         message: Bytes,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_event_inclusion_precompile(
         gateway_id: [u8; 4],
@@ -98,7 +107,7 @@ pub trait Portal<T: frame_system::Config> {
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
@@ -106,7 +115,7 @@ pub trait Portal<T: frame_system::Config> {
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
@@ -115,10 +124,10 @@ pub trait Portal<T: frame_system::Config> {
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 
     fn initialize(
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         gateway_id: [u8; 4],
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError>;
@@ -128,17 +137,17 @@ pub trait Portal<T: frame_system::Config> {
         encoded_header_data: Vec<u8>,
     ) -> Result<(), DispatchError>;
 
-    fn turn_on(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
+    fn turn_on(origin: T::RuntimeOrigin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
 
-    fn turn_off(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
+    fn turn_off(origin: T::RuntimeOrigin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
 }
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub enum PortalExecution<T: frame_system::Config> {
     Header(HeaderResult),
-    Height(HeightResult<T::BlockNumber>),
-    Inclusion(InclusionReceipt<T::BlockNumber>),
-    BlockNumber(T::BlockNumber),
+    Height(HeightResult<BlockNumberFor<T>>),
+    Inclusion(InclusionReceipt<BlockNumberFor<T>>),
+    BlockNumber(frame_system::pallet_prelude::BlockNumberFor<T>),
     Data(Bytes),
     Switched(bool),
     Noop,
@@ -149,13 +158,13 @@ impl<T: frame_system::Config> From<HeaderResult> for PortalExecution<T> {
         Self::Header(value)
     }
 }
-impl<T: frame_system::Config> From<HeightResult<T::BlockNumber>> for PortalExecution<T> {
-    fn from(value: HeightResult<T::BlockNumber>) -> Self {
+impl<T: frame_system::Config> From<HeightResult<BlockNumberFor<T>>> for PortalExecution<T> {
+    fn from(value: HeightResult<BlockNumberFor<T>>) -> Self {
         Self::Height(value)
     }
 }
-impl<T: frame_system::Config> From<InclusionReceipt<T::BlockNumber>> for PortalExecution<T> {
-    fn from(value: InclusionReceipt<T::BlockNumber>) -> Self {
+impl<T: frame_system::Config> From<InclusionReceipt<BlockNumberFor<T>>> for PortalExecution<T> {
+    fn from(value: InclusionReceipt<BlockNumberFor<T>>) -> Self {
         Self::Inclusion(value)
     }
 }

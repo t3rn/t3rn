@@ -15,7 +15,7 @@ spec:
     app.kubernetes.io/instance: executor
   ports:
     - name: http
-      port: 8080
-      targetPort: 8080
+      port: 9333
+      targetPort: 9333
       protocol: TCP
   type: ClusterIP

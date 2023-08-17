@@ -1,17 +1,22 @@
 use crate::{
-    AccountId, AssetId, Assets, Balance, Balances, Call, Clock, EnsureRoot, Event, Imbalance,
-    OnUnbalanced, Runtime, ThreeVm, Timestamp,
+    hooks::GlobalOnInitQueues, treasuries_config::EscrowTreasuryId, AssetId, Assets, Balance,
+    Balances, Clock, Imbalance, OnUnbalanced, Runtime, RuntimeCall, RuntimeEvent, ThreeVm,
+    Timestamp,
 };
 use frame_support::parameter_types;
-use sp_core::crypto::AccountId32;
-use sp_runtime::traits::ConvertInto;
+use sp_core::{crypto::AccountId32, ConstU32};
+use sp_runtime::traits::{AccountIdConversion, ConvertInto};
 
 parameter_types! {
-    // TODO: update me to be better
-    pub EscrowAccount: AccountId32 = AccountId32::new([51_u8; 32]);
+    pub EscrowAccount: AccountId32 = EscrowTreasuryId::get().into_account_truncating();
 }
 
-pallet_account_manager::setup_currency_adapter!();
+impl pallet_clock::Config for Runtime {
+    type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
+    type OnInitializeQueues = GlobalOnInitQueues;
+    type RoundDuration = ConstU32<300u32>;
+    type RuntimeEvent = RuntimeEvent;
+}
 
 impl pallet_account_manager::Config for Runtime {
     type AssetBalanceOf = ConvertInto;
@@ -20,11 +25,13 @@ impl pallet_account_manager::Config for Runtime {
     type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
+
+pallet_account_manager::setup_currency_adapter!();
 
 parameter_types! {
     pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset
@@ -37,31 +44,14 @@ parameter_types! {
     pub const AssetAccountDeposit: Balance = 0;
 }
 
-impl pallet_assets::Config for Runtime {
-    type ApprovalDeposit = ApprovalDeposit;
-    type AssetAccountDeposit = AssetAccountDeposit;
-    type AssetDeposit = AssetDeposit;
-    type AssetId = circuit_runtime_types::AssetId;
-    type Balance = Balance;
-    type Currency = Balances;
-    type Event = Event;
-    type Extra = ();
-    type ForceOrigin = EnsureRoot<AccountId>;
-    type Freezer = ();
-    type MetadataDepositBase = MetadataDepositBase;
-    type MetadataDepositPerByte = MetadataDepositPerByte;
-    type StringLimit = AssetsStringLimit;
-    type WeightInfo = ();
-}
-
 parameter_types! {
     pub const RegCost: u128 = 100_000_000_000;
 }
 
 impl pallet_asset_registry::Config for Runtime {
     type Assets = Assets;
-    type Call = Call;
     type Currency = Balances;
-    type Event = Event;
     type RegistrationCost = RegCost;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
 }

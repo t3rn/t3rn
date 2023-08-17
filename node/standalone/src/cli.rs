@@ -2,7 +2,7 @@ use sc_cli::RunCmd;
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub subcommand: Option<Subcommand>,
 
     #[clap(flatten)]
@@ -11,8 +11,8 @@ pub struct Cli {
 
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
-    /// Key management CLI utilities
-    #[clap(subcommand)]
+    /// Key management cli utilities
+    #[command(subcommand)]
     Key(sc_cli::KeySubcommand),
 
     /// Build a chain specification.
@@ -36,7 +36,18 @@ pub enum Subcommand {
     /// Revert the chain to a previous state.
     Revert(sc_cli::RevertCmd),
 
-    /// The custom benchmark subcommand benchmarking runtime pallets.
-    #[clap(subcommand)]
+    /// Sub-commands concerned with benchmarking.
+    #[command(subcommand)]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+
+    /// Try some command against runtime state.
+    #[cfg(feature = "try-runtime")]
+    TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
+    /// Try some command against runtime state. Note: `try-runtime` feature must be enabled.
+    #[cfg(not(feature = "try-runtime"))]
+    TryRuntime,
+
+    /// Db meta columns information.
+    ChainInfo(sc_cli::ChainInfoCmd),
 }

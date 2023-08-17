@@ -8,7 +8,7 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 
-use sp_runtime::traits::Zero;
+use frame_support::sp_runtime::traits::Zero;
 use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
 pub use t3rn_types::{
@@ -74,7 +74,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
@@ -104,7 +104,6 @@ pub mod pallet {
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
     // method.
     #[pallet::pallet]
-    #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -115,22 +114,21 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
-
-            0
+            Zero::zero()
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // Perform necessary data/state clean up here.
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
         //
         // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
+        fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {
             // We don't do anything here.
             // but we could dispatch extrinsic (transaction/unsigned/inherent) using
             // sp_io::submit_extrinsic.
@@ -182,20 +180,38 @@ pub mod pallet {
                         // Return the weight consumed by the migration.
                         Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
                     }
+                    // Storage Migration: Another Raw XDNS storage entry kill
+                    // Storage Migration Details: 27-07-2023; v1.4.44-rc -> v1.4.45-rc
+                    //     Many Collators on t0rn hit: frame_support::storage: (key, value) failed to decode at [84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                    //      18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250, 191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204, 8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101, 171, 135, 85,]
+                    2 => {
+                        // Manually kill the old XDNS storage entry (XDNSRegistry is now replaced by Gateways)
+                        frame_support::storage::unhashed::kill(&[84, 10, 79, 135, 84, 170, 82, 152, 163, 214, 233, 170, 9, 233, 63, 151, 78, 11,
+                            18, 119, 80, 58, 19, 112, 111, 133, 165, 20, 116, 96, 124, 88, 24, 172, 250,
+                            191, 195, 140, 91, 41, 106, 32, 177, 28, 37, 248, 177, 35, 27, 230, 169, 204,
+                            8, 192, 121, 163, 226, 24, 100, 166, 207, 36, 66, 173, 219, 150, 184, 250, 101,
+                            171, 135, 85,]);
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
+                    }
                     // Add more migration cases here, if needed in the future
                     _ => {
                         // No migration needed.
-                        Ok::<Weight, DispatchError>(0 as Weight)
+                        Ok::<Weight, DispatchError>(Default::default())
                     }
                 }
             })
-            .unwrap_or(0)
+            .unwrap_or_default()
         }
     }
 
     impl<T: Config> Pallet<T> {
-        pub fn check_for_manual_verifier_overview_process(n: BlockNumberFor<T>) -> Weight {
-            let mut total_weight: Weight = 0;
+        pub fn check_for_manual_verifier_overview_process(
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> Weight {
+            let mut total_weight: Weight = Zero::zero();
 
             let latest_overview = <VerifierOverviewStore<T>>::get();
             total_weight = total_weight.saturating_add(T::DbWeight::get().reads(1));
@@ -211,7 +227,9 @@ pub mod pallet {
                 let estimated_epoch_length = EpochHistory::<T>::get(&verifier)
                     .and_then(|epochs| epochs.last().cloned())
                     .map(|epoch| epoch.local)
-                    .unwrap_or_else(|| T::BlockNumber::from(50u8));
+                    .unwrap_or_else(|| {
+                        frame_system::pallet_prelude::BlockNumberFor::<T>::from(50u8)
+                    });
 
                 if latest_vendor_overview.reported_at + estimated_epoch_length < n {
                     let latest_heartbeat =
@@ -230,17 +248,19 @@ pub mod pallet {
             total_weight
         }
 
-        pub fn process_all_verifier_overviews(n: BlockNumberFor<T>) -> Weight {
+        pub fn process_all_verifier_overviews(
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> Weight {
             Self::check_for_manual_verifier_overview_process(n)
         }
 
         pub fn process_single_verifier_overview(
-            n: BlockNumberFor<T>,
+            n: frame_system::pallet_prelude::BlockNumberFor<T>,
             verifier: GatewayVendor,
-            new_epoch: BlockNumberFor<T>,
+            new_epoch: frame_system::pallet_prelude::BlockNumberFor<T>,
             latest_heartbeat: LightClientHeartbeat<T>,
         ) -> Weight {
-            let mut total_weight: Weight = 0;
+            let mut total_weight: Weight = Zero::zero();
 
             let (justified_height, finalized_height, updated_height, is_active) = (
                 latest_heartbeat.last_rational_height,
@@ -328,7 +348,7 @@ pub mod pallet {
 
         pub fn update_historic_overview(
             verifier: GatewayVendor,
-            activity: FinalityVerifierActivity<T::BlockNumber>,
+            activity: FinalityVerifierActivity<BlockNumberFor<T>>,
         ) {
             let mut historic_overview = VerifierOverviewStoreHistory::<T>::get(&verifier);
             if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
@@ -340,7 +360,7 @@ pub mod pallet {
 
         pub fn update_overview_store(
             verifier: GatewayVendor,
-            activity: FinalityVerifierActivity<T::BlockNumber>,
+            activity: FinalityVerifierActivity<BlockNumberFor<T>>,
         ) {
             VerifierOverviewStore::<T>::mutate(|all_overviews| {
                 if let Some(overview) = all_overviews.iter_mut().find(|o| o.verifier == verifier) {
@@ -351,16 +371,11 @@ pub mod pallet {
             });
         }
 
-        pub fn process_overview(n: BlockNumberFor<T>) {
-            let mut all_overviews: Vec<GatewayActivity<T::BlockNumber>> = Vec::new();
+        pub fn process_overview(n: frame_system::pallet_prelude::BlockNumberFor<T>) {
+            let mut all_overviews: Vec<GatewayActivity<BlockNumberFor<T>>> = Vec::new();
 
             for gateway in Self::fetch_full_gateway_records() {
                 let gateway_id = gateway.gateway_record.gateway_id;
-                // ToDo: Uncomment when eth2::turn_on implemented
-                if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
-                    continue
-                }
-
                 let last_finality_verifier_update = VerifierOverviewStoreHistory::<T>::get(
                     &gateway.gateway_record.verification_vendor,
                 )
@@ -489,8 +504,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             token_id: AssetId,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin.clone())?;
-
+            // AssetsOverlay ensures the admin / ownership rights
             T::AssetsOverlay::destroy(origin, &token_id)?;
 
             // Remove from all destinations
@@ -631,20 +645,20 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn gateways_overview)]
     pub type GatewaysOverviewStore<T: Config> =
-        StorageValue<_, Vec<GatewayActivity<T::BlockNumber>>, ValueQuery>;
+        StorageValue<_, Vec<GatewayActivity<BlockNumberFor<T>>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn verifier_overview)]
     pub type VerifierOverviewStore<T: Config> =
-        StorageValue<_, Vec<FinalityVerifierActivity<T::BlockNumber>>, ValueQuery>;
+        StorageValue<_, Vec<FinalityVerifierActivity<BlockNumberFor<T>>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn gateways_overview_history)]
     pub type GatewaysOverviewStoreHistory<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        TargetId,                             // Gateway Id
-        Vec<GatewayActivity<T::BlockNumber>>, // Activity
+        TargetId,                                // Gateway Id
+        Vec<GatewayActivity<BlockNumberFor<T>>>, // Activity
         ValueQuery,
     >;
 
@@ -653,8 +667,8 @@ pub mod pallet {
     pub type VerifierOverviewStoreHistory<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        GatewayVendor,                                 // Gateway Id
-        Vec<FinalityVerifierActivity<T::BlockNumber>>, // Activity
+        GatewayVendor,                                    // Gateway Id
+        Vec<FinalityVerifierActivity<BlockNumberFor<T>>>, // Activity
         ValueQuery,
     >;
 
@@ -662,38 +676,50 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn epoch_history)]
     pub type EpochHistory<T: Config> =
-        StorageMap<_, Identity, GatewayVendor, Vec<EpochEstimate<T::BlockNumber>>>;
+        StorageMap<_, Identity, GatewayVendor, Vec<EpochEstimate<BlockNumberFor<T>>>>;
 
     // The genesis config type.
     #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
-        pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+        pub known_gateway_records: Vec<u8>,
+        // Fixme: GatewayRecord is not serializable with DefaultNoBound with current serde settings. Debug what changed after v1.0.0 update.
+        // pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
+        // pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+        pub standard_sfx_abi: Vec<u8>,
+        #[serde(skip)]
+        pub _marker: PhantomData<T>,
     }
-
-    /// The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                known_gateway_records: Default::default(),
-                standard_sfx_abi: Default::default(),
-            }
-        }
-    }
+    //
+    // /// The default value for the genesis config type.
+    // #[cfg(feature = "std")]
+    // impl<T: Config> Default for GenesisConfig<T> {
+    //     fn default() -> Self {
+    //         Self {
+    //             known_gateway_records: Default::default(),
+    //             standard_sfx_abi: Default::default(),
+    //         }
+    //     }
+    // }
 
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
+            let mut known_gateway_records: Vec<GatewayRecord<T::AccountId>> =
+                Decode::decode(&mut &self.known_gateway_records[..]).unwrap_or_default();
+
+            let mut standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)> =
+                Decode::decode(&mut &self.standard_sfx_abi[..]).unwrap_or_default();
+
+            for (sfx_4b_id, sfx_abi) in standard_sfx_abi {
                 let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
                     .unwrap_or("invalid utf8 4b sfx id format");
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
 
-            for gateway_record in self.known_gateway_records.clone() {
+            for gateway_record in known_gateway_records {
                 Pallet::<T>::override_gateway(
                     gateway_record.gateway_id,
                     gateway_record.verification_vendor,
@@ -767,8 +793,8 @@ pub mod pallet {
 
         pub fn update_epoch_history(
             verifier: &GatewayVendor,
-            epoch_duration_in_remote_blocks: T::BlockNumber,
-            epoch_duration_in_local_blocks: T::BlockNumber,
+            epoch_duration_in_remote_blocks: frame_system::pallet_prelude::BlockNumberFor<T>,
+            epoch_duration_in_local_blocks: frame_system::pallet_prelude::BlockNumberFor<T>,
         ) {
             const N: usize = 10; // Number of epochs to consider for the moving average
 
@@ -796,7 +822,7 @@ pub mod pallet {
                 .unwrap_or(Zero::zero())
                 .into();
 
-            let epoch_duration_estimate_update = EpochEstimate::<T::BlockNumber> {
+            let epoch_duration_estimate_update = EpochEstimate::<BlockNumberFor<T>> {
                 remote: epoch_duration_in_remote_blocks,
                 local: epoch_duration_in_local_blocks,
                 moving_average_local,
@@ -812,7 +838,7 @@ pub mod pallet {
     impl<T: Config> LightClientAsyncAPI<T> for Pallet<T> {
         fn on_new_epoch(
             verifier: GatewayVendor,
-            new_epoch: T::BlockNumber,
+            new_epoch: frame_system::pallet_prelude::BlockNumberFor<T>,
             current_hearbeat: LightClientHeartbeat<T>,
         ) {
             Self::process_single_verifier_overview(
@@ -1120,13 +1146,13 @@ pub mod pallet {
                 .collect()
         }
 
-        fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>> {
+        fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<BlockNumberFor<T>>> {
             Self::read_last_activity_overview()
                 .into_iter()
                 .find(|activity| activity.gateway_id == gateway_id)
         }
 
-        fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>> {
+        fn read_last_activity_overview() -> Vec<GatewayActivity<BlockNumberFor<T>>> {
             // Self::process_overview(<frame_system::Pallet<T>>::block_number());
             // <GatewaysOverviewStore<T>>::get()
 
@@ -1148,7 +1174,7 @@ pub mod pallet {
 
         fn verify_active(
             gateway_id: &ChainId,
-            max_acceptable_heartbeat_offset: T::BlockNumber,
+            max_acceptable_heartbeat_offset: frame_system::pallet_prelude::BlockNumberFor<T>,
             security_lvl: &SecurityLvl,
         ) -> Result<LightClientHeartbeat<T>, DispatchError> {
             let heartbeat = T::Portal::get_latest_heartbeat(gateway_id)
@@ -1176,8 +1202,13 @@ pub mod pallet {
         fn get_slowest_verifier_target(
             all_targets: Vec<TargetId>,
             speed_mode: &SpeedMode,
-            emergency_offset: T::BlockNumber,
-        ) -> Option<(GatewayVendor, TargetId, T::BlockNumber, T::BlockNumber)> {
+            emergency_offset: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> Option<(
+            GatewayVendor,
+            TargetId,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+            frame_system::pallet_prelude::BlockNumberFor<T>,
+        )> {
             // map all targets to their respective vendors, and collect them into a BTreeSet to eliminate duplicates
             let all_distinct_verifiers: BTreeSet<_> = all_targets
                 .iter()
@@ -1201,8 +1232,8 @@ pub mod pallet {
         fn estimate_adaptive_timeout_on_slowest_target(
             all_targets: Vec<TargetId>,
             speed_mode: &SpeedMode,
-            emergency_offset: T::BlockNumber,
-        ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+            emergency_offset: frame_system::pallet_prelude::BlockNumberFor<T>,
+        ) -> AdaptiveTimeout<frame_system::pallet_prelude::BlockNumberFor<T>, TargetId> {
             let current_block = <frame_system::Pallet<T>>::block_number();
 
             let (slowest_verifier, target, submit_by_local_offset, submit_by_remote_offset) =
@@ -1237,7 +1268,15 @@ pub mod pallet {
             }
         }
 
-        fn estimate_costs(_fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>) {
+        fn estimate_costs(
+            _fsx: &Vec<
+                FullSideEffect<
+                    T::AccountId,
+                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                    BalanceOf<T>,
+                >,
+            >,
+        ) {
             todo!("estimate costs")
         }
     }

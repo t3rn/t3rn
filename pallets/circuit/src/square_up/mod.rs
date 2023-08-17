@@ -193,11 +193,7 @@ impl<T: Config> SquareUp<T> {
     /// Finalize Xtx after successful run.
     pub fn finalize(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) -> bool {
         let optimistic_fsx_in_step: Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
+            FullSideEffect<<T as frame_system::Config>::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
         > = Machine::<T>::read_current_step_fsx(local_ctx)
             .iter()
             .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)

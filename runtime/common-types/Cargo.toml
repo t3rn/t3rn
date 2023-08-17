@@ -1,20 +1,21 @@
 [package]
-authors     = [ "devs @ t3rn" ]
+authors     = { workspace = true }
 description = "Circuit parachain runtime"
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "circuit-runtime-types"
-repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.0.0-alpha.0"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [dependencies]
-frame-support     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-frame-system      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-parachains-common = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
-sp-core           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-runtime        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+frame-support     = { workspace = true }
+frame-system      = { workspace = true }
+parachains-common = { workspace = true }
+sp-core           = { workspace = true }
+sp-runtime        = { workspace = true }
+cumulus-primitives-core = { workspace = true }
 
 [features]
 default = [ "std" ]
-std     = [ "frame-system/std", "frame-support/std", "sp-runtime/std", "sp-core/std", "parachains-common/std" ]
+std     = [ "frame-system/std", "frame-support/std", "sp-runtime/std", "sp-core/std", "parachains-common/std", "cumulus-primitives-core/std" ]

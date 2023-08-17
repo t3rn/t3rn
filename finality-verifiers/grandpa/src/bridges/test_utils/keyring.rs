@@ -19,8 +19,8 @@
 use codec::Encode;
 use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signature};
 use finality_grandpa::voter_set::VoterSet;
+use sp_consensus_grandpa::{AuthorityId, AuthorityList, AuthorityWeight};
 use sp_core::crypto::UncheckedFrom;
-use sp_finality_grandpa::{AuthorityId, AuthorityList, AuthorityWeight};
 use sp_runtime::RuntimeDebug;
 use sp_std::{prelude::*, vec};
 

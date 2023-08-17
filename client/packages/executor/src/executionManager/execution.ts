@@ -66,6 +66,7 @@ export class Execution extends EventEmitter {
     this.xtxId = eventData[1];
     this.id = this.xtxId.toHex();
     this.humanId = this.id.slice(0, 8);
+    this.prometheus = prometheus;
     this.initializeSideEffects(
       eventData[2],
       eventData[3],
@@ -74,7 +75,6 @@ export class Execution extends EventEmitter {
       biddingEngine,
     );
     this.currentPhase = 0;
-    this.prometheus = prometheus;
   }
 
   /**
@@ -139,13 +139,25 @@ export class Execution extends EventEmitter {
       sfx.readyToExecute();
     }
 
-    logger.info(`Ready XTX: ${this.humanId}`);
+    logger.info(
+      {
+        xtxId: this.id,
+        escrowSfxIds: this.phases[0],
+        optimisticSfxIds: this.phases[1],
+      },
+      `Ready XTX`,
+    );
   }
 
   /** Update XTX status to complete */
   completed() {
     this.status = XtxStatus.FinishedAllSteps;
-    logger.info(`Completed XTX: ✨${this.humanId}✨`);
+    logger.info(
+      {
+        xtxId: this.id,
+      },
+      `Completed XTX ✨`,
+    );
   }
 
   /** Update XTX and all its SFX status to ready. */

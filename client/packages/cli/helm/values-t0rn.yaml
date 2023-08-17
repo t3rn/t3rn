@@ -1,16 +1,21 @@
 jobs:
   - name: send-sfx-transfer
     env:
-      - name: WS_CIRCUIT_ENDPOINT
+      - name: CIRCUIT_WS_ENDPOINT
         value: wss://ws.t0rn.io
       - name: RPC_CIRCUIT_ENDPOINT
         value: https://rpc.t0rn.io
       - name: LOG_LEVEL
         value: debug
       # SFX CONFIG
+      - name: SFX_TRAN_TO
+        value: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
       - name: SFX_TRAN_INSURANCE
-        name: "1"
-    schedule: "*/5 * * * *"
+        value: "1"
+      - name: SFX_TRAN_AMOUNT
+        value: "0.1"
+      
+    schedule: "*/1 * * * *"
     args:
     - submit
     - -s

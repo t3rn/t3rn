@@ -41,53 +41,53 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn on_local_trigger() -> Weight {
-        6_984_000_u64
+        Weight::from_parts(6_984_000_u64, 0u64)
     }
 
     fn on_extrinsic_trigger() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn confirm_side_effect() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn cancel_xtx() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn bid_sfx() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn execute_side_effects_with_xbi() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn on_local_trigger() -> Weight {
-        6_984_000_u64
+        Weight::from_parts(6_984_000_u64, 0u64)
     }
 
     fn on_extrinsic_trigger() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn confirm_side_effect() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn cancel_xtx() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn bid_sfx() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 
     fn execute_side_effects_with_xbi() -> Weight {
-        60_000_000_u64
+        Weight::from_parts(60_000_000_u64, 0u64)
     }
 }

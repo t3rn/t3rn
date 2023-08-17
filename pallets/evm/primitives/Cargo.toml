@@ -1,28 +1,44 @@
 [package]
-authors       = [ "Parity Technologies <admin@parity.io>" ]
-description   = "Primitive EVM abstractions for Substrate."
-documentation = "https://docs.rs/sp-evm"
-edition       = "2021"
-homepage      = "https://substrate.io"
-license       = "Apache-2.0"
-name          = "fp-evm"
-repository    = "https://github.com/paritytech/frontier/"
-version       = "3.0.0-dev"
+authors     = [ "Parity Technologies <admin@parity.io>", "devs @ t3rn" ]
+description = "Primitive EVM abstractions for Substrate."
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
+name        = "fp-evm"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
-targets = [ "x86_64-unknown-linux-gnu" ]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-evm   = { git = "https://github.com/rust-blockchain/evm.git", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = [ "with-codec" ] }
-serde = { version = "1.0.144", features = [ "derive" ], optional = true }
-
-# TODO: frontier still on 3.0.0
-codec   = { package = "parity-scale-codec", version = "3.1.0", default-features = false }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-sp-std  = { version = "4.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-
-frontier-fp-evm = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false, package = "fp-evm" }
+evm = { workspace = true, features = ["with-codec"] }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+# Substrate
+frame-support = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
-default = [ "std" ]
-std     = [ "evm/std", "evm/with-serde", "serde", "codec/std", "sp-core/std", "sp-std/std", "frontier-fp-evm/std" ]
+default = ["std"]
+std = [
+	"evm/std",
+	"evm/with-serde",
+	"serde/std",
+	"scale-codec/std",
+	# Substrate
+	"frame-support/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
+]
+serde = [
+	"dep:serde",
+	"evm/with-serde",
+	"scale-info/serde",
+	"sp-core/serde",
+	"sp-runtime/serde",
+]
