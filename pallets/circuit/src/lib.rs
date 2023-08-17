@@ -1197,7 +1197,7 @@ impl<T: Config> Pallet<T> {
                 }
             }
 
-            let submission_target_height = match T::Portal::get_fast_height(sfx.target)? {
+            let submission_target_height = match T::Portal::get_finalized_height(sfx.target)? {
                 HeightResult::Height(block_numer) => block_numer,
                 HeightResult::NotActive =>
                     return Err("SFX validate failed - get_latest_finalized_height returned None"),
@@ -1340,9 +1340,10 @@ impl<T: Config> Pallet<T> {
         #[cfg(not(feature = "test-skip-verification"))]
         if inclusion_receipt.height > fsx.submission_target_height {
             log::error!(
-                "Inclusion height is higher than target {:?} > {:?}",
+                "Inclusion height is higher than target {:?} > {:?}. Xtx status: {:?}",
                 inclusion_receipt.height,
-                fsx.submission_target_height
+                fsx.submission_target_height,
+                Self::get_xtx_status(xtx_id),
             );
             return Err(DispatchError::Other(
                 "SideEffect confirmation of inclusion failed - inclusion height is higher than target",
