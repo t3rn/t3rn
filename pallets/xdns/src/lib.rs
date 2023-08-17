@@ -90,7 +90,7 @@ pub mod pallet {
 
         type CircuitDLQ: CircuitDLQ<Self>;
 
-        type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
+        type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
 
         type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
 

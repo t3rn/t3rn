@@ -232,7 +232,7 @@ impl FindAuthor<AccountId> for FindAuthorMockRoundRobinRotate32 {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         // Get current block number
-        let current_block_number = <frame_system::Module<MiniRuntime>>::block_number();
+        let current_block_number = <frame_system::Pallet<MiniRuntime>>::block_number();
 
         let round_robin_rotate_32: u8 = (current_block_number % 32) as u8;
 
@@ -277,7 +277,7 @@ parameter_types! {
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
-    type CommitmentRewardSource = CommitmentRewardSource;
+    // type CommitmentRewardSource = CommitmentRewardSource;
     type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
@@ -292,7 +292,8 @@ impl pallet_attesters::Config for MiniRuntime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
-    type SlashAccount = SlashAccount;
+    // type SlashAccount = SlashAccount;
+    type TreasuryAccounts = MiniRuntime;
     type Xdns = XDNS;
 }
 
@@ -456,6 +457,7 @@ impl pallet_circuit::Config for MiniRuntime {
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
+    type TreasuryAccounts = MiniRuntime;
     type WeightInfo = ();
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;

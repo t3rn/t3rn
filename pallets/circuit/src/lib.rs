@@ -54,6 +54,7 @@ pub use t3rn_types::{
 
 pub use t3rn_primitives::{
     account_manager::{AccountManager, Outcome},
+    attesters::AttestersReadApi,
     circuit::{XExecSignalId, XExecStepSideEffectId},
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
@@ -287,7 +288,8 @@ pub mod pallet {
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self, BalanceOf<Self>>;
 
-        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>;
+        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>
+            + AttestersReadApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
 
@@ -318,6 +320,9 @@ pub mod pallet {
         ///		limit the amount of items that can be deleted per block.
         #[pallet::constant]
         type SignalQueueDepth: Get<u32>;
+
+        // Needed in square_up mod
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -492,8 +497,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
+            preferred_security_level: SecurityLvl,
         ) -> DispatchResultWithPostInfo {
-            Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
+            Self::on_extrinsic_trigger(origin, side_effects, speed_mode, preferred_security_level)
         }
 
         fn on_remote_origin_trigger(
@@ -517,7 +523,8 @@ pub mod pallet {
             let local_ctx = match maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
+                    let mut local_ctx =
+                        Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -601,7 +608,8 @@ pub mod pallet {
             let mut local_ctx = match trigger.maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
+                    let mut local_ctx =
+                        Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -728,7 +736,12 @@ pub mod pallet {
                 OrderOrigin::Remote(_) => order_origin.clone(),
             };
 
-            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+            Self::do_on_extrinsic_trigger(
+                requester,
+                side_effects,
+                speed_mode,
+                &SecurityLvl::Optimistic,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
@@ -736,11 +749,17 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
+            preferred_security_level: SecurityLvl,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
-            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+            Self::do_on_extrinsic_trigger(
+                requester,
+                side_effects,
+                speed_mode,
+                &preferred_security_level,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
@@ -1094,6 +1113,7 @@ impl<T: Config> Pallet<T> {
         requester: T::AccountId,
         side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
         speed_mode: SpeedMode,
+        preferred_security_level: &SecurityLvl,
     ) -> DispatchResultWithPostInfo {
         // Setup: new xtx context with SFX validation
         let mut fresh_xtx = Machine::<T>::setup(
@@ -1107,6 +1127,7 @@ impl<T: Config> Pallet<T> {
                 &speed_mode,
                 T::XtxTimeoutDefault::get(),
             )),
+            preferred_security_level,
         )?;
 
         fresh_xtx.xtx.set_speed_mode(speed_mode);
@@ -1142,6 +1163,7 @@ impl<T: Config> Pallet<T> {
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
+        preferred_security_lvl: &SecurityLvl,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<
             FullSideEffect<
@@ -1151,7 +1173,14 @@ impl<T: Config> Pallet<T> {
             >,
         > = vec![];
 
-        pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
+        pub fn determine_security_lvl(
+            gateway_type: GatewayType,
+            sfx_len: usize,
+            preferred_security_lvl: &SecurityLvl,
+        ) -> SecurityLvl {
+            if sfx_len < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
+                return SecurityLvl::Optimistic
+            }
             if gateway_type == GatewayType::ProgrammableInternal(0)
                 || gateway_type == GatewayType::OnCircuit(0)
             {
@@ -1180,7 +1209,8 @@ impl<T: Config> Pallet<T> {
 
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
-            let security_lvl = determine_security_lvl(gateway_type);
+            let security_lvl =
+                determine_security_lvl(gateway_type, side_effects.len(), preferred_security_lvl);
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
@@ -1575,14 +1605,14 @@ impl<T: Config> Pallet<T> {
         <DLQ<T>>::insert(
             xtx_id,
             (
-                <frame_system::Module<T>>::block_number(),
+                <frame_system::Pallet<T>>::block_number(),
                 targets,
                 speed_mode,
             ),
         );
         <XExecSignals<T>>::mutate(xtx_id, |xtx| {
             if let Some(xtx) = xtx {
-                xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
+                xtx.timeouts_at.dlq = Some(<frame_system::Pallet<T>>::block_number());
             } else {
                 log::error!(
                     "Xtx not found in XExecSignals for xtx_id when add_xtx_to_dlq: {:?}",

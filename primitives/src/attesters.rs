@@ -5,7 +5,7 @@ use frame_support::pallet_prelude::*;
 use serde::{Deserialize, Serialize};
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{H160, H256};
-use sp_runtime::Percent;
+use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
 // Key types for attester crypto
@@ -220,7 +220,7 @@ pub const COMMITTEE_SIZE: usize = 32;
 pub enum LatencyStatus {
     #[default]
     OnTime,
-    // Late: (n amount of missed latency windows, total amount of successful repatriations)
+    /// Late: (n amount of missed latency windows, total amount of successful repatriations)
     Late(u32, u32),
 }
 
@@ -243,7 +243,15 @@ pub trait AttestersWriteApi<Account, Error> {
     fn request_next_committee_attestation() -> Vec<(TargetId, u32)>;
 }
 
-pub trait AttestersReadApi<Account, Balance> {
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+pub struct BatchingFactor {
+    pub latest_confirmed: u16,
+    pub latest_signed: u16,
+    pub current_next: u16,
+    pub up_to_last_10_confirmed: Vec<u16>,
+}
+
+pub trait AttestersReadApi<Account, Balance, BlockNumber> {
     fn previous_committee() -> Vec<Account>;
     fn current_committee() -> Vec<Account>;
     fn active_set() -> Vec<Account>;
@@ -252,13 +260,19 @@ pub trait AttestersReadApi<Account, Balance> {
     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)>;
     fn get_activated_targets() -> Vec<TargetId>;
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
+    // Estimate finality fee for user including set overcharge factor (32%)
+    fn estimate_finality_fee(target: &TargetId) -> Balance;
+    // Estimate finality reward for executor based on the current estimated batching factor
+    fn estimate_finality_reward(target: &TargetId, blocks_delay: BlockNumber) -> Balance;
+    fn estimate_batching_factor(target: &TargetId) -> Option<BatchingFactor>;
+    // fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
     _phantom: PhantomData<(Account, Balance, Error)>,
 }
 
-impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
+impl<Account, Balance: Zero, Error, BlockNumber> AttestersReadApi<Account, Balance, BlockNumber>
     for AttestersReadApiEmptyMock<Account, Balance, Error>
 {
     fn previous_committee() -> Vec<Account> {
@@ -292,6 +306,30 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
     fn read_attestation_latency(_target: &TargetId) -> Option<LatencyStatus> {
         None
     }
+
+    fn estimate_finality_fee(_target: &TargetId) -> Balance {
+        // Balance::from(0)
+        Zero::zero()
+    }
+
+    fn estimate_finality_reward(_target: &TargetId, _blocks_delay: BlockNumber) -> Balance {
+        // Balance::from(0)
+        Zero::zero()
+    }
+
+    fn estimate_batching_factor(_target: &TargetId) -> Option<BatchingFactor> {
+        Some(BatchingFactor {
+            latest_confirmed: 0,
+            latest_signed: 0,
+            current_next: 0,
+            up_to_last_10_confirmed: vec![],
+        })
+    }
+
+    // fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16 {
+    //     // 0
+    //     Zero::zero()
+    // }
 }
 
 impl<Account, Balance, Error> AttestersWriteApi<Account, Error>
@@ -362,6 +400,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::previous_committee(),
             vec![]
         );
@@ -370,6 +409,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::current_committee(),
             vec![]
         );
@@ -378,6 +418,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::active_set(),
             vec![]
         );
@@ -386,6 +427,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::honest_active_set(),
             vec![]
         );
@@ -394,6 +436,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::read_attester_info(&AccountId32::new([0; 32])),
             None
         );
@@ -402,6 +445,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::read_nominations(&AccountId32::new([0; 32])),
             vec![]
         );
@@ -410,6 +454,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::get_activated_targets(),
             Vec::<TargetId>::new()
         );
@@ -418,6 +463,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
                 AccountId32,
                 u128,
+                u32,
             >>::read_attestation_latency(&[0u8; 4]),
             None
         );
