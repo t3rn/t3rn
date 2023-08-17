@@ -1,9 +1,5 @@
 import ora from "ora"
-import {
-  Action,
-  Target,
-  estimateBidAmount,
-} from "@t3rn/sdk/price-estimation"
+import { Action, Target, estimateBidAmount } from "@t3rn/sdk/price-estimation"
 import { colorLogMsg } from "@/utils/log.ts"
 import { Args, WithRequiredProperty } from "@/types.ts"
 import { getEstimationArgs } from "./args.ts"
@@ -17,7 +13,7 @@ type CommandArgs = Args<
 export const handleEstimateBidAmount = async (args: CommandArgs) => {
   spinner.text = "Estimating..."
   spinner.start()
-  const estimateArgs = await getEstimationArgs(
+  const rawEstimateArgs = await getEstimationArgs(
     args as WithRequiredProperty<CommandArgs, "target" | "action">,
   )
   try {
@@ -26,7 +22,7 @@ export const handleEstimateBidAmount = async (args: CommandArgs) => {
       {
         action: args.action as Action,
         target: args.target as Target,
-        args: estimateArgs,
+        args: rawEstimateArgs,
       },
       (fee) => fee * profitMargin,
     )
