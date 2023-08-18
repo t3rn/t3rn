@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.47.1-rc.0] - 2023-08-18
+### :wrench: Chores
+- [`06c7f1e`](https://github.com/t3rn/t3rn/commit/06c7f1e8293b0702c44d490be16239a3b731fd71) - add extra Xtx Status log for submission target height *(PR [#1244](https://github.com/t3rn/t3rn/pull/1244) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.47.0-rc.0] - 2023-08-16
 ### :sparkles: New Features
 - [`7680747`](https://github.com/t3rn/t3rn/commit/768074798abaca51d0c3b2107c22cd0058bb51fd) - **executor**: optimistic execution for roco *(PR [#1212](https://github.com/t3rn/t3rn/pull/1212) by [@3h4x](https://github.com/3h4x))*
@@ -1478,3 +1483,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.46.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.0-rc.0...v1.46.1-rc.0
 [v1.46.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.1-rc.0...v1.46.2-rc.0
 [v1.47.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.2-rc.0...v1.47.0-rc.0
+[v1.47.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.0-rc.0...v1.47.1-rc.0
