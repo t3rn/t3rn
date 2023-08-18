@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.47.2-rc.0] - 2023-08-18
+### :bug: Bug Fixes
+- [`ee49da9`](https://github.com/t3rn/t3rn/commit/ee49da9ce4fd92ae788e6d2844eec5ddb520db3d) - zombienet and improve runtime upgrade pipeline *(PR [#1249](https://github.com/t3rn/t3rn/pull/1249) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.47.1-rc.0] - 2023-08-18
 ### :wrench: Chores
 - [`06c7f1e`](https://github.com/t3rn/t3rn/commit/06c7f1e8293b0702c44d490be16239a3b731fd71) - add extra Xtx Status log for submission target height *(PR [#1244](https://github.com/t3rn/t3rn/pull/1244) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1484,3 +1489,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.46.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.1-rc.0...v1.46.2-rc.0
 [v1.47.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.2-rc.0...v1.47.0-rc.0
 [v1.47.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.0-rc.0...v1.47.1-rc.0
+[v1.47.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.1-rc.0...v1.47.2-rc.0
