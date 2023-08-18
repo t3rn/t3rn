@@ -6,7 +6,6 @@ async function run(nodeName, networkInfo, args) {
 
     // get blockhash/runtimeVersion at block 1
     const hashAtBlock1 = await api.rpc.chain.getBlockHash(1);
-    const expectedVersion = parseInt(versionAtBlock1.specVersion.toHuman(), 10) + 1;
     const versionAtBlock1 = await api.rpc.state.getRuntimeVersion(hashAtBlock1.toHuman());
     const initSpecVersion = versionAtBlock1.specVersion.toHuman();
     console.log("specVersion: ", initSpecVersion);
@@ -19,6 +18,7 @@ async function run(nodeName, networkInfo, args) {
     console.log("specVersion after upgrade: ", humanCurrent);
 
 
+    const expectedVersion = parseInt(versionAtBlock1.specVersion.toHuman(), 10) + 1;
     assert.ok(humanCurrent >= expectedVersion, "Current specVersion after upgrade is not increased. Aborting!");
 }
 
