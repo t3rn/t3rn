@@ -270,6 +270,7 @@ case "$1" in
   "upgrade")
       make_bin_dir
       fetch_zombienet
+      build_polkadot
       upgrade $@
       ;;
   "spawn")
