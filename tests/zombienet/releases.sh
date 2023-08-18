@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 repo_owner="t3rn"
 repo_name="t3rn"
 releases=$(curl -s "https://api.github.com/repos/$repo_owner/$repo_name/releases")
