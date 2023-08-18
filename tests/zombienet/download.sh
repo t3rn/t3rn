@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 bin_dir=../../bin
 
 case "$1" in
