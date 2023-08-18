@@ -136,7 +136,7 @@ upgrade() {
     # Fetch latest release binary from Github
     git fetch --all --tags -f || true > /dev/null
     
-    source $working_dir/download.sh "$parachain"
+    $working_dir/download.sh "$parachain"
     
     # Run collator and upgrade with built WASM binary
     zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
@@ -268,7 +268,9 @@ case "$1" in
       spawn_and_confirm_xtx
       ;;
   "upgrade")
-      setup
+      make_bin_dir
+      fetch_zombienet
+      build_polkadot
       upgrade $@
       ;;
   "spawn")
