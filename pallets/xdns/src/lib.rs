@@ -142,7 +142,9 @@ pub mod pallet {
             // Define the current storage migration version.
             const CURRENT_STORAGE_VERSION: u32 = 3;
 
-            Ok::<Weight, DispatchError>(Default::default())
+            // Ok::<Weight, DispatchError>(Default::default())
+            // Ok::<Weight>(Default::default())
+            max_weight
             // Migrate the storage entries.
             //     StorageMigrations::<T>::try_mutate(|current_version| {
             //         match *current_version {
