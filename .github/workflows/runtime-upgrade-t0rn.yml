@@ -43,9 +43,9 @@ jobs:
           echo "${{ steps.release.outputs.upload_url }}"
           echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
           echo "CIRCUIT_BINARY=./target/release/${{ env.PARACHAIN_NAME }}-collator" >> $GITHUB_ENV
-          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-v${GITHUB_REF/refs\/tags\//}-x86_64-unknown-linux-gnu" >> $GITHUB_ENV
+          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-${GITHUB_REF/refs\/tags\//}-x86_64-unknown-linux-gnu" >> $GITHUB_ENV
           echo "WASM_BINARY=./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm" >> $GITHUB_ENV
-          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-v${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: rustup show
