@@ -1,0 +1,60 @@
+name: Circuit
+
+on:
+  merge_group:
+
+env:
+  RUST_BACKTRACE: 1
+  RUSTC_WRAPPER: sccache
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  # This job checks if circuit files has been modified.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - ".github/workflows/test-circuit.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  zombienet-upgrade-test:
+    name: Zombienet Upgrade Test
+    runs-on: [self-hosted, rust]
+    needs: [changes]
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: |
+          rustup show
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats
+
+      - name: 📼 Run zombienet upgrade with built WASM test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade_local t0rn
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats
