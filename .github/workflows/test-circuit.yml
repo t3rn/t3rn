@@ -152,6 +152,11 @@ jobs:
         working-directory: tests/zombienet
         run: ./zombienet.sh smoke
 
+      - name: 📼 Run zombienet upgrade with built WASM test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade_local t0rn
+
       - name: Print sccache stats
         working-directory: tests/zombienet
         run: sccache --show-stats
