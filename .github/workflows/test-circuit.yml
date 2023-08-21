@@ -132,9 +132,10 @@ jobs:
   smoke-test:
     name: Zombienet Test
     runs-on: [self-hosted, rust]
-    needs: [changes, build-test]
+    # TODO: uncomment needs after tests are ✅
+    # needs: [changes, build-test]
     # zombienet is always run before runtime upgrade so any additional run on development is superfluous
-    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
+    # if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
@@ -146,6 +147,11 @@ jobs:
       - name: Print sccache stats
         working-directory: tests/zombienet
         run: sccache --show-stats
+
+      - name: 📼 Run zombienet upgrade with built WASM test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade_local t0rn
 
       - name: 📼 Run zombienet smoke tests
         continue-on-error: false
