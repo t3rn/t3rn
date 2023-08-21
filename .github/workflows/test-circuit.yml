@@ -151,7 +151,7 @@ jobs:
       - name: 📼 Run zombienet upgrade with built WASM test
         continue-on-error: false
         working-directory: tests/zombienet
-        run: ./zombienet.sh upgrade_local
+        run: ./zombienet.sh upgrade_local t0rn
 
       - name: 📼 Run zombienet smoke tests
         continue-on-error: false
