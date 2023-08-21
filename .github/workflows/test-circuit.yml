@@ -61,7 +61,6 @@ jobs:
 
       - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
         run: |
-          rm -rf ~/.rustup
           rustup show
 
       - name: 📜 Check code format
@@ -133,9 +132,7 @@ jobs:
   smoke-test:
     name: Zombienet Test
     runs-on: [self-hosted, rust]
-    # TODO: revert to [changes, build-test] after zombienet is fixed
-    # needs: [changes, build-test]
-    needs: [changes]
+    needs: [changes, build-test]
     # zombienet is always run before runtime upgrade so any additional run on development is superfluous
     if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
@@ -144,7 +141,6 @@ jobs:
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: |
-          rm -rf ~/.rustup
           rustup show
 
       - name: Print sccache stats
@@ -155,12 +151,6 @@ jobs:
         continue-on-error: false
         working-directory: tests/zombienet
         run: ./zombienet.sh smoke
-
-      - name: 📼 Run zombienet upgrade test
-        continue-on-error: false
-        working-directory: tests/zombienet
-        # TODO: we should enhance it to t3rn as well
-        run: ./zombienet.sh upgrade t0rn
 
       - name: Print sccache stats
         working-directory: tests/zombienet

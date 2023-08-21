@@ -11,7 +11,7 @@ count = 2
 name  = "bob"
 
 [[parachains]]
-chain         = "rococo-local"
+chain         = "local"
 cumulus_based = true
 id            = 3000
 
