@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.48.1-rc.0] - 2023-08-21
+### :bug: Bug Fixes
+- [`f38c65b`](https://github.com/t3rn/t3rn/commit/f38c65b4811ce7f533c7dca984d7f0b83ccf3936) - runtime upgrade script using sudo flag *(PR [#1252](https://github.com/t3rn/t3rn/pull/1252) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.48.0-rc.0] - 2023-08-21
 ### :sparkles: New Features
 - [`1ffa9e3`](https://github.com/t3rn/t3rn/commit/1ffa9e3419fa6d66d005585a55671239c9bb232d) - **zombienet**: zombienet parachain id fix and upgrade ci *(PR [#1251](https://github.com/t3rn/t3rn/pull/1251) by [@3h4x](https://github.com/3h4x))*
@@ -1496,3 +1501,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.47.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.0-rc.0...v1.47.1-rc.0
 [v1.47.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.1-rc.0...v1.47.2-rc.0
 [v1.48.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.2-rc.0...v1.48.0-rc.0
+[v1.48.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.0-rc.0...v1.48.1-rc.0
