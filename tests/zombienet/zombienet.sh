@@ -298,7 +298,7 @@ case "$1" in
       build_polkadot
       upgrade $@
       ;;
-  "upgrade-build")
+  "upgrade_local")
       setup
       upgrade_local $@
       ;;
@@ -311,5 +311,6 @@ case "$1" in
       ;;
   *)
       echo "Enter an appropriate command"
+      exit 1
       ;;
 esac
