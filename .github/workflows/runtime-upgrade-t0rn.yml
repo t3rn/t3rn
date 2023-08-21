@@ -8,9 +8,10 @@ on:
 
 env:
   PARACHAIN_NAME: t0rn
-  RUST_BACKTRACE: full
-  CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  RUSTC_WRAPPER: sccache
+  RUST_BACKTRACE: full
 
 jobs:
   build-release:
@@ -162,7 +163,7 @@ jobs:
           asset_content_type: text/plain
 
 
-  runtime-upgrade-smoke-tests:
+  runtime-upgrade-zombienet-test:
     runs-on: [self-hosted, rust]
     # This can only run when all release artificats are available
     concurrency: runtime-upgrade
@@ -181,7 +182,7 @@ jobs:
 
   runtime-upgrade:
     runs-on: self-hosted
-    needs: runtime-upgrade-smoke-tests
+    needs: runtime-upgrade-zombienet-test
     concurrency: runtime-upgrade
     steps:
       - name: ☁ Checkout git repo

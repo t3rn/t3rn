@@ -1,6 +1,6 @@
 #!/bin/bash
 
-POLKADOT_CLI_VERSION="@polkadot/api-cli@0.52.27"
+POLKADOT_CLI_VERSION="@polkadot/api-cli@0.55.3"
 
 if [[ -z "$1" || -z $2 || -z $3 ]]; then
   echo "usage 'sudo secret' \$tag \$parachain_name [--dryrun]"
@@ -13,7 +13,7 @@ get_finalized_head(){
     curl \
       -sSfH "content-type: application/json" \
       -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
-      $http_provider \
+      $rpc_endpoint \
       | \
       jq -r .result \
   )"
@@ -21,7 +21,7 @@ get_finalized_head(){
     curl \
       -sSfH "content-type: application/json" \
       -d "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"chain_getBlock\",\"params\":[\"$block_hash\"]}" \
-      $http_provider \
+      $rpc_endpoint \
       | \
       jq -r .result.block.header.number \
   )"
@@ -31,8 +31,7 @@ get_finalized_head(){
 sudo_secret="$1"
 tag=$2
 parachain_name=$3
-ws_provider="wss://ws.${parachain_name}.io"
-http_provider="https://rpc.${parachain_name}.io"
+rpc_endpoint="wss://rpc.${parachain_name}.io"
 wasm_binary=./${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry) || true
@@ -67,7 +66,7 @@ echo "🔎 making sure runtime version got updated..."
 
 runtime_version="$( \
   npm exec -- $POLKADOT_CLI_VERSION \
-    --ws $ws_provider \
+    --ws $rpc_endpoint \
     consts.system.version \
     2>/dev/null )"
 
@@ -133,8 +132,8 @@ fi
 # Execute runtime upgrade if dryrun flag is not present
 if [[ -z $dryrun ]]; then
   npm exec -- $POLKADOT_CLI_VERSION \
-    --ws $ws_provider \
-    --sudoUncheckedWeight "100000" \
+    --ws $rpc_endpoint \
+    --sudo \
     --seed "$sudo_secret" \
     --params $wasm_binary \
     tx.system.setCode
