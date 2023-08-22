@@ -267,9 +267,8 @@ export class AttestationManager {
       estimatedGas: estimatedGas,
     };
 
-    const signedTransaction = await this.wallet.signTransaction(
-      transactionObject,
-    );
+    const signedTransaction =
+      await this.wallet.signTransaction(transactionObject);
 
     const transactionReceipt = await this.web3.eth.sendSignedTransaction(
       signedTransaction.rawTransaction,
