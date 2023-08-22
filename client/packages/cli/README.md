@@ -7,8 +7,8 @@ A CLI tool for interacting with the t3rn circuit.
 The CLI is yet to be published to NPM, so you must manually install the dependencies and build the CLI from the source. To do so, run the command below to install the CLI dependencies:
 
 ```bash
-npm i -g yarn
-yarn i
+npm i -g pnpm
+pnpm i
 ```
 
 ## Setup
@@ -16,7 +16,7 @@ yarn i
 To start using the cli, you need to generate a `.t3rnrc.json` config file.
 
 ```bash
-yarn cli init -c
+pnpm cli init -c
 ```
 
 By using this command, you will create a configuration file that is already set up for you in your current working directory.
@@ -32,7 +32,7 @@ The `init` command is used to generate a config or transfer template.
 Usage:
 
 ```bash
-yarn cli init [options]
+pnpm cli init [options]
 ```
 
 Options:
@@ -47,7 +47,7 @@ The `register` command is used to register a gateway with the t3rn circuit.
 Usage:
 
 ```bash
-yarn cli register [options]
+pnpm cli register [options]
 ```
 
 Options:
@@ -62,7 +62,7 @@ The `submit` command is used to submit an extrinsic to the t3rn circuit.
 Usage:
 
 ```bash
-yarn cli submit [options]
+pnpm cli submit [options]
 ```
 
 Options:
@@ -76,7 +76,7 @@ Options:
 The `bid` command is used to bid on an execution as an executor.
 
 ```bash
-yarn cli bid [sfxId] [amount]
+pnpm cli bid [sfxId] [amount]
 ```
 
 Arguments:
@@ -100,7 +100,7 @@ and aim to ensure that transactions fail where they should.
 Usage:
 
 ```bash
-yarn cli dgf [options]
+pnpm cli dgf [options]
 ```
 
 Options:
@@ -116,7 +116,7 @@ The `estimate-gas-fee` command is used to estimate the gas fee required for an e
 Usage:
 
 ```bash
-yarn cli estimate-gas-fee [options]
+pnpm cli estimate-gas-fee [options]
 ```
 
 Options:
@@ -130,14 +130,14 @@ Options:
 Examples:
 ```
 # Estimate the gas fee for an asset transfer on ETH target
-p cli estimate-gas-fee -t eth -a tass -o 'fast'
+pnpm cli estimate-gas-fee -t eth -a tass -o 'fast'
 
 # Estimate the gas fee an EVM call on ETH target
-p cli estimate-gas-fee -t eth -a cevm -o '{"fromAddress":"0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321","toAddress":"0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12","data":"0x0000","speedMode":"fast"}'
+pnpm cli estimate-gas-fee -t eth -a cevm -o '{"fromAddress":"0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321","toAddress":"0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12","data":"0x0000","speedMode":"fast"}'
 
 # Estimate the gas fee required for executing the side effect
 # --signer is optional, if not provided, Alice address is used
-p cli estimate-gas-fee -t roco -a tass --sfx ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+pnpm cli estimate-gas-fee -t roco -a tass --sfx ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 ```
 
 ### estimate-bid-amount
@@ -147,7 +147,7 @@ The `estimate-bid-amount` command is used to estimate the bid amount with a spec
 Usage:
 
 ```bash
-yarn cli estimate-bid-amount [options]
+pnpm cli estimate-bid-amount [options]
 ```
 
 Options:
@@ -162,14 +162,14 @@ Options:
 Examples:
 ```
 # Estimate the bid amount for an asset transfer on ETH target with a given profit margin
-p cli estimate-bid-amount -t eth -a tass --profit-margin 0.1 -o 'fast'
+pnpm cli estimate-bid-amount -t eth -a tass --profit-margin 0.1 -o 'fast'
 
 # Estimate the bid amount for an EVM call on ETH target with a given profit margin
-p cli estimate-bid-amount -t eth -a cevm --profit-margin 0.1 -o '{"fromAddress":"0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321","toAddress":"0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12","data":"0x0000","speedMode":"fast"}'
+pnpm cli estimate-bid-amount -t eth -a cevm --profit-margin 0.1 -o '{"fromAddress":"0x1234567890AbCdEfFeDcBa09876eFfEDCBA54321","toAddress":"0x9876543210FeDcBaABcDEfFeDCbA98765EDCBA12","data":"0x0000","speedMode":"fast"}'
 
 # Estimate the bid amount for executing the side effect with a given profit margin
 # --signer is optional, if not provided, Alice address is used
-p cli estimate-bid-amount -t roco -a tass --profit-margin 0.1 --sfx ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+pnpm cli estimate-bid-amount -t roco -a tass --profit-margin 0.1 --sfx ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 ```
 
 ### estimate-max-reward
@@ -179,7 +179,7 @@ The `estimate-max-reward` command is used to estimate the max reward with a give
 Usage:
 
 ```bash
-yarn cli estimate-max-reward [options]
+pnpm cli estimate-max-reward [options]
 ```
 
 Options:
@@ -218,11 +218,11 @@ Please note that these estimations are subject to change based on the state of t
 Examples:
 ```
 # Estimate the max reward of an asset transfer DOT -> ETH on Seploia target with a given over spend percent
-p cli estimate-max-reward --action tass --base-asset dot --target sepl --target-asset eth --target-amount 10 --over-spend 0.1 -o 'fast'
+pnpm cli estimate-max-reward --action tass --base-asset dot --target sepl --target-asset eth --target-amount 10 --over-spend 0.1 -o 'fast'
 
 # Estimate the max reward of an asset transfer DOT -> ACA  on Rococo target with a given over spend percent
 # --signer is optional, if not provided, Alice address is used
-p cli estimate-max-reward --action tass --base-asset DOT --target roco --target-asset aca --target-amount 10 --over-spend 0.1 -s ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+pnpm cli estimate-max-reward --action tass --base-asset DOT --target roco --target-asset aca --target-amount 10 --over-spend 0.1 -s ./transfer.json --signer "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 ```
 
 ### Export
@@ -230,7 +230,7 @@ p cli estimate-max-reward --action tass --base-asset DOT --target roco --target-
 Each command that interacts with the node incorporates the `-x, --export` option. This feature facilitates the export of extrinsic data to a file. By default, this data is directed to the `/exports` directory in your current working environment. To alter this default path, you need to adjust the `EXPORT_PATH` variable. Here's an example:
 
 ```bash
-EXPORT_PATH="path/to/folder" yarn cli submit -h roco -x
+EXPORT_PATH="path/to/folder" pnpm cli submit -h roco -x
 ```
 
 ## Examples
@@ -241,14 +241,14 @@ Use the following commands to submit a sample transfer:
 
 ```bash
 # Generate config file
-yarn cli init -c
+pnpm cli init -c
 
 # Generate a sample transfer file
-yarn cli init -t
+pnpm cli init -t
 
 # Register the roco gateway
-yarn cli register -g roco
+pnpm cli register -g roco
 
 # Submit a transfer
-yarn cli submit -s transfer.json
+pnpm cli submit -s transfer.json
 ```
