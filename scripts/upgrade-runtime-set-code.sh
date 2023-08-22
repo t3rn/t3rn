@@ -2,20 +2,19 @@
 
 POLKADOT_CLI_VERSION="@polkadot/api-cli@0.55.3"
 
-if [[ -z "$1" || -z $2 || -z $3 ]]; then
-  echo "usage 'sudo secret' \$tag \$parachain_name [--dryrun]"
-  # fx: $0 'sudo secret' v0.0.0-up t0rn --dryrun
+if [ $# -lt 3 ]; then
+  echo "Usage <sudo secret> <tag> <parachain_name> [--dryrun]"
   exit 1
 fi
 
 get_current_block(){
-  block_hash="$( npm exec -- $POLKADOT_CLI_VERSION --ws ${rpc_endpoint} rpc.chain.getFinalizedHead \
+  block_hash="$( npm exec -- ${POLKADOT_CLI_VERSION} --ws ${rpc_endpoint} rpc.chain.getFinalizedHead \
     | jq -r .getFinalizedHead
   )"
-  block_number="$( npm exec -- $POLKADOT_CLI_VERSION --ws ${rpc_endpoint} rpc.chain.getBlock ${block_hash} \
-      | jq -r .result.block.header.number
-  )"get_finalized_head
-  printf $(( block_number ))
+  block_number="$( npm exec -- ${POLKADOT_CLI_VERSION} --ws ${rpc_endpoint} rpc.chain.getBlock ${block_hash} \
+      | jq -r .getBlock.block.header.number
+  )"
+  printf "%s" ${block_number//,/}
 }
 
 sudo_secret="$1"
@@ -41,21 +40,21 @@ if [[ ! -f $wasm_binary ]]; then
 fi
 
 if ! git tag --list | grep -Fq $tag; then
-  echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade"
+  echo -e "$tag has not been found in the git repository."
   exit 1
 fi
 
 set -Ee
 
-echo "🐙 checking out $tag..."
+echo "🐙 Checking out $tag..."
 git checkout $tag &>/dev/null
-echo "✅ tag checked out"
+echo "✅ Tag checked out"
 echo
 
-echo "🔎 making sure runtime version got updated..."
+echo "🔎 Making sure runtime version got updated..."
 
 runtime_version="$( \
-  npm exec -- $POLKADOT_CLI_VERSION \
+  npm exec -- ${POLKADOT_CLI_VERSION} \
     --ws $rpc_endpoint \
     consts.system.version \
     2>/dev/null )"
@@ -71,28 +70,28 @@ new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | 
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
 
 if [[ $new_spec_version -le $old_spec_version ]]; then
-  echo "🔴 runtime spec version not incremented"
+  echo "🔴 Runtime spec version not incremented"
   exit 1
 fi
 
 if [[ $new_impl_version -le $old_impl_version ]]; then
-  echo "🔴 runtime impl version not incremented"
+  echo "🔴 Runtime impl version not incremented"
   exit 1
 fi
 
 if [[ $new_tx_version -le $old_tx_version ]]; then
-  echo "🔴 runtime transaction version not incremented"
+  echo "🔴 Runtime transaction version not incremented"
   exit 1
 fi
 
 if [[ $new_author_version -le $old_author_version ]]; then
-  echo "🔴 runtime authoring version not incremented"
+  echo "🔴 Runtime authoring version not incremented"
   exit 1
 fi
-echo "✅ runtime versions updated"
+echo "✅ Runtime versions updated"
 
 echo
-echo "🫧 check WASM artifact..."
+echo "🫧 Check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $wasm_binary | jq -r .blake2_256)
 wasm_hash_fetched="$(cat ${wasm_binary}.blake2_256)"
 echo "🔢 WASM blake2_256 hash: $wasm_hash_calculated"
@@ -105,7 +104,7 @@ else
   echo "✅ WASM blake2_256 hash is matching"
 fi
 
-echo "⚙️ set_code runtime upgrade... $dryrun"
+echo "⚙️ Set_code runtime upgrade... $dryrun"
 
 # Skip converting wasm to hex when run with dryrun flag
 if [[ -z $dryrun ]]; then
@@ -121,11 +120,11 @@ fi
 
 # Execute runtime upgrade if dryrun flag is not present
 if [[ -z $dryrun ]]; then
-  npm exec -- $POLKADOT_CLI_VERSION \
+  npm exec -- ${POLKADOT_CLI_VERSION} \
     --ws $rpc_endpoint \
     --sudo \
     --seed "$sudo_secret" \
     --params $wasm_binary \
     tx.system.setCode
 fi
-echo "✅ runtime upgrade executed... $dryrun"
+echo "✅ Runtime upgrade executed... $dryrun"

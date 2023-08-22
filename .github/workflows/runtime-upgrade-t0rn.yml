@@ -165,7 +165,6 @@ jobs:
 
   runtime-upgrade-zombienet-test:
     runs-on: [self-hosted, rust]
-    # This can only run when all release artificats are available
     concurrency: runtime-upgrade
     needs: build-release
     steps:
