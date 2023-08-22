@@ -70,25 +70,25 @@ new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | 
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
 
 if [[ $new_spec_version -le $old_spec_version ]]; then
-  echo "🔴 runtime spec version not incremented"
+  echo "🔴 Runtime spec version not incremented"
   exit 1
 fi
 
 if [[ $new_impl_version -le $old_impl_version ]]; then
-  echo "🔴 runtime impl version not incremented"
+  echo "🔴 Runtime impl version not incremented"
   exit 1
 fi
 
 if [[ $new_tx_version -le $old_tx_version ]]; then
-  echo "🔴 runtime transaction version not incremented"
+  echo "🔴 Runtime transaction version not incremented"
   exit 1
 fi
 
 if [[ $new_author_version -le $old_author_version ]]; then
-  echo "🔴 runtime authoring version not incremented"
+  echo "🔴 Runtime authoring version not incremented"
   exit 1
 fi
-echo "✅ runtime versions updated"
+echo "✅ Runtime versions updated"
 
 echo
 echo "🫧 Check WASM artifact..."
