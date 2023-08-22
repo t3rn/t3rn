@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "npm exec -- only-allow pnpm",
     "start": "yarn build && EXECUTOR=example node dist/main.js",
     "dev": "ts-node src/main.ts",
     "build": "tsup",
