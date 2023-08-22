@@ -1,0 +1,11 @@
+export EXECUTOR=example
+export LOG_LEVEL=debug	
+export LOG_PRETTY=true	
+export CIRCUIT_WS_ENDPOINT=wss://rpc.t0rn.io 
+
+export ETHEREUM_PRIVATE_KEY=
+
+export CIRCUIT_SIGNER_KEY=
+export RELAYCHAIN_SIGNER_KEY=
+
+export PROCESS_BATCHES=false

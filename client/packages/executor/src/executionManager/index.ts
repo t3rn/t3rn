@@ -565,9 +565,8 @@ export class ExecutionManager {
    */
   async addRiskRewardParameters(sfx: SideEffect) {
     // get txCost on target
-    const txCostSubject = await this.targetEstimator[
-      sfx.target
-    ].getNativeTxCostSubject(sfx);
+    const txCostSubject =
+      await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx);
     // get price of native token on target
     const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
       sfx.gateway.ticker,

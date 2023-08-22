@@ -2,7 +2,7 @@ jobs:
   - name: send-sfx-transfer
     env:
       - name: CIRCUIT_WS_ENDPOINT
-        value: wss://ws.t0rn.io
+        value: wss://rpc.t0rn.io
       - name: RPC_CIRCUIT_ENDPOINT
         value: https://rpc.t0rn.io
       - name: LOG_LEVEL
