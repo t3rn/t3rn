@@ -61,6 +61,7 @@ export class SubstrateRelayer extends EventEmitter {
         nonce: this.nonce,
         target: this.name,
         balance: balance,
+        rpc: config.rpc,
       },
       "Relayer setup completed 🏁",
     );
@@ -362,7 +363,7 @@ export class SubstrateRelayer extends EventEmitter {
   async fetchNonce(api: ApiPromise, address: string): Promise<number> {
     return await api.rpc.system.accountNextIndex(address).then((nextIndex) => {
       // @ts-ignore - property does not exist on type
-      return parseInt(nextIndex.toHuman());
+      return parseInt(nextIndex.toNumber());
     });
   }
 }
