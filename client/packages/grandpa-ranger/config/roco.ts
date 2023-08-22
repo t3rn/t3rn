@@ -1,7 +1,7 @@
 export default {
  circuit: {
   rpc1: {
-   ws: "wss://ws.t0rn.io",
+   ws: "wss://rpc.t0rn.io",
    http: "https://rpc.t0rn.io"
   },
  },

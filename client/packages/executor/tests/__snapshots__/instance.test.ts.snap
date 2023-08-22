@@ -32,7 +32,7 @@ Object {
   },
   "circuit": Object {
     "decimals": 12,
-    "rpc": "wss://ws.t0rn.io",
+    "rpc": "wss://rpc.t0rn.io",
     "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
     "ticker": "TRN",
   },
@@ -67,7 +67,7 @@ Object {
     },
     "circuit": Object {
       "decimals": 12,
-      "rpc": "wss://ws.t0rn.io",
+      "rpc": "wss://rpc.t0rn.io",
       "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
       "ticker": "TRN",
     },
@@ -184,7 +184,7 @@ Object {
   },
   "circuit": Object {
     "decimals": 12,
-    "rpc": "wss://ws.t0rn.io",
+    "rpc": "wss://rpc.t0rn.io",
     "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
     "ticker": "TRN",
   },
@@ -219,7 +219,7 @@ Object {
     },
     "circuit": Object {
       "decimals": 12,
-      "rpc": "wss://ws.t0rn.io",
+      "rpc": "wss://rpc.t0rn.io",
       "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
       "ticker": "TRN",
     },

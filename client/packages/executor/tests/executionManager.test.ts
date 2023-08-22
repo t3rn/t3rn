@@ -32,7 +32,7 @@
 //   let misc = {
 //     executorName: "alina",
 //     logsDir: logger.logsDir,
-//     circuitRpc: "wss://ws.t0rn.io",
+//     circuitRpc: "wss://rpc.t0rn.io",
 //     circuitSignerAddress: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 //     circuitSignerSecret:
 //       "0xe5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a",
