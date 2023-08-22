@@ -2,30 +2,19 @@
 
 POLKADOT_CLI_VERSION="@polkadot/api-cli@0.55.3"
 
-if [[ -z "$1" || -z $2 || -z $3 ]]; then
-  echo "usage 'sudo secret' \$tag \$parachain_name [--dryrun]"
-  # fx: $0 'sudo secret' v0.0.0-up t0rn --dryrun
+if [ $# -lt 3 ]; then
+  echo "Usage <sudo secret> <tag> <parachain_name> [--dryrun]"
   exit 1
 fi
 
-get_finalized_head(){
-  block_hash="$( \
-    curl \
-      -sSfH "content-type: application/json" \
-      -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
-      $rpc_endpoint \
-      | \
-      jq -r .result \
+get_current_block(){
+  block_hash="$( npm exec -- ${POLKADOT_CLI_VERSION} --ws ${rpc_endpoint} rpc.chain.getFinalizedHead \
+    | jq -r .getFinalizedHead
   )"
-  block_number="$( \
-    curl \
-      -sSfH "content-type: application/json" \
-      -d "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"chain_getBlock\",\"params\":[\"$block_hash\"]}" \
-      $rpc_endpoint \
-      | \
-      jq -r .result.block.header.number \
+  block_number="$( npm exec -- ${POLKADOT_CLI_VERSION} --ws ${rpc_endpoint} rpc.chain.getBlock ${block_hash} \
+      | jq -r .getBlock.block.header.number
   )"
-  printf $(( block_number ))
+  printf "%s" ${block_number//,/}
 }
 
 sudo_secret="$1"
@@ -36,7 +25,7 @@ wasm_binary=./${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry) || true
 
-echo "💈 Script started at $(get_finalized_head) block in ${parachain_name} chain"
+echo "💈 Script started at $(get_current_block) block in ${parachain_name} chain"
 
 if [[ ! -z $dryrun ]]; then
   echo
@@ -51,21 +40,21 @@ if [[ ! -f $wasm_binary ]]; then
 fi
 
 if ! git tag --list | grep -Fq $tag; then
-  echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade"
+  echo -e "$tag has not been found in the git repository."
   exit 1
 fi
 
 set -Ee
 
-echo "🐙 checking out $tag..."
+echo "🐙 Checking out $tag..."
 git checkout $tag &>/dev/null
-echo "✅ tag checked out"
+echo "✅ Tag checked out"
 echo
 
-echo "🔎 making sure runtime version got updated..."
+echo "🔎 Making sure runtime version got updated..."
 
 runtime_version="$( \
-  npm exec -- $POLKADOT_CLI_VERSION \
+  npm exec -- ${POLKADOT_CLI_VERSION} \
     --ws $rpc_endpoint \
     consts.system.version \
     2>/dev/null )"
@@ -102,7 +91,7 @@ fi
 echo "✅ runtime versions updated"
 
 echo
-echo "🫧 check WASM artifact..."
+echo "🫧 Check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $wasm_binary | jq -r .blake2_256)
 wasm_hash_fetched="$(cat ${wasm_binary}.blake2_256)"
 echo "🔢 WASM blake2_256 hash: $wasm_hash_calculated"
@@ -115,7 +104,7 @@ else
   echo "✅ WASM blake2_256 hash is matching"
 fi
 
-echo "⚙️ set_code runtime upgrade... $dryrun"
+echo "⚙️ Set_code runtime upgrade... $dryrun"
 
 # Skip converting wasm to hex when run with dryrun flag
 if [[ -z $dryrun ]]; then
@@ -131,11 +120,11 @@ fi
 
 # Execute runtime upgrade if dryrun flag is not present
 if [[ -z $dryrun ]]; then
-  npm exec -- $POLKADOT_CLI_VERSION \
+  npm exec -- ${POLKADOT_CLI_VERSION} \
     --ws $rpc_endpoint \
     --sudo \
     --seed "$sudo_secret" \
     --params $wasm_binary \
     tx.system.setCode
 fi
-echo "✅ runtime upgrade executed... $dryrun"
+echo "✅ Runtime upgrade executed... $dryrun"
