@@ -8,23 +8,13 @@ if [[ -z "$1" || -z $2 || -z $3 ]]; then
   exit 1
 fi
 
-get_finalized_head(){
-  block_hash="$( \
-    curl \
-      -sSfH "content-type: application/json" \
-      -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
-      $rpc_endpoint \
-      | \
-      jq -r .result \
+get_current_block(){
+  block_hash="$( npm exec -- $POLKADOT_CLI_VERSION --ws ${rpc_endpoint} rpc.chain.getFinalizedHead \
+    | jq -r .getFinalizedHead
   )"
-  block_number="$( \
-    curl \
-      -sSfH "content-type: application/json" \
-      -d "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"chain_getBlock\",\"params\":[\"$block_hash\"]}" \
-      $rpc_endpoint \
-      | \
-      jq -r .result.block.header.number \
-  )"
+  block_number="$( npm exec -- $POLKADOT_CLI_VERSION --ws ${rpc_endpoint} rpc.chain.getBlock ${block_hash} \
+      | jq -r .result.block.header.number
+  )"get_finalized_head
   printf $(( block_number ))
 }
 
@@ -36,7 +26,7 @@ wasm_binary=./${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry) || true
 
-echo "💈 Script started at $(get_finalized_head) block in ${parachain_name} chain"
+echo "💈 Script started at $(get_current_block) block in ${parachain_name} chain"
 
 if [[ ! -z $dryrun ]]; then
   echo
