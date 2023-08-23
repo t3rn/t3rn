@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.48.4-rc.0] - 2023-08-23
+### :bug: Bug Fixes
+- [`4f10ae4`](https://github.com/t3rn/t3rn/commit/4f10ae4752d20286cf868bb7c4dccea7b7b5d2c4) - inclusion_receipt.height should be lower than submission_target_height *(PR [#1262](https://github.com/t3rn/t3rn/pull/1262) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.48.3-rc.0] - 2023-08-23
 ### :bug: Bug Fixes
 - [`0cbba7d`](https://github.com/t3rn/t3rn/commit/0cbba7d2c39df3a4dbee0ed01b73c8dc4f51871f) - **executor**: outdated transactions *(PR [#1256](https://github.com/t3rn/t3rn/pull/1256) by [@3h4x](https://github.com/3h4x))*
@@ -1513,3 +1518,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.48.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.2-rc.0...v1.48.0-rc.0
 [v1.48.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.0-rc.0...v1.48.1-rc.0
 [v1.48.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.2-rc.0...v1.48.3-rc.0
+[v1.48.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.3-rc.0...v1.48.4-rc.0
