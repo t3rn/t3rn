@@ -163,7 +163,12 @@ export class SubstrateRelayer extends EventEmitter {
               events,
             );
             logger.info(
-              { sfxId: sfx.id, target: sfx.target, blockNumber },
+              {
+                sfxId: sfx.id,
+                target: sfx.target,
+                blockNumber,
+                gatewayType: sfx.gateway.gatewayType,
+              },
               `SFX Execution completed 🏁`,
             );
 
@@ -175,10 +180,10 @@ export class SubstrateRelayer extends EventEmitter {
                 },
                 await getBalance(this.client, sfx.arguments[0]),
               );
-              this.prometheus.executorExecutionCompleted.inc({
-                target: sfx.target,
-              });
             }
+            this.prometheus.executorExecutionCompleted.inc({
+              target: sfx.target,
+            });
 
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,

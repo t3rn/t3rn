@@ -454,17 +454,6 @@ export class ExecutionManager {
       }
     }
 
-    logger.debug(
-      {
-        vendor,
-        queuedBlocks,
-        batchBlocks,
-        readyByHeight,
-        blockHeight: this.queue[vendor].blockHeight,
-      },
-      "Execute confirmation queue",
-    );
-
     const readyByStep: SideEffect[] = [];
 
     // In case we have executed SFXs from the next phase already, we ensure that we only confirm the SFXs of the current phase
@@ -486,8 +475,12 @@ export class ExecutionManager {
         {
           gatewayId: vendor,
           sfxIds: readyByStep.map((sfx) => sfx.id),
+          queuedBlocks,
+          batchBlocks,
+          readyByHeight,
+          blockHeight: this.queue[vendor].blockHeight,
         },
-        "Execute confirmation queue",
+        "SFXs ready for confirmation",
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
