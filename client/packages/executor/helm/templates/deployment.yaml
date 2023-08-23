@@ -30,7 +30,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: CIRCUIT_WS_ENDPOINT
-              value: "{{ .Values.websocketEndpoint }}"
+              value: "{{ .Values.config.websocketEndpoint }}"
             - name: CIRCUIT_SIGNER_KEY
               valueFrom:
                 secretKeyRef:
@@ -42,12 +42,14 @@ spec:
                   name: relaychain
                   key: signer_key
             - name: PROCESS_BATCHES
-              value: "true"
+              value: "{{ .Values.config.processBatches }}"
             - name: ETHEREUM_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   name: ethereum
                   key: private_key
+            - name: LOG_LEVEL
+              value: "{{ .Values.config.logLevel }}"
 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
