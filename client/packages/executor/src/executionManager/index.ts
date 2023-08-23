@@ -251,7 +251,7 @@ export class ExecutionManager {
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-      this.prometheus.events.inc({ event: eventData.type });
+      this.prometheus.events.inc({ event: ListenerEvents[eventData.type] });
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
