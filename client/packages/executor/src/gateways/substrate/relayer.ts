@@ -300,6 +300,21 @@ export class SubstrateRelayer extends EventEmitter {
     const blockHash = await this.client.rpc.chain.getBlockHash(
       relaychainBlockNumber,
     );
+    logger.debug(
+      {
+        blockHash,
+        relaychainBlockNumber,
+        parachainId,
+        inclusionProof: Utils.Substrate.getStorageProof(
+          this.client,
+          blockHash,
+          "Paras",
+          "Heads",
+          parachainId,
+        ),
+      },
+      "Generating header inclusion proof with Substrate.getStorageProof",
+    );
 
     return Utils.Substrate.getStorageProof(
       this.client,

@@ -448,6 +448,17 @@ export class ExecutionManager {
       }
     }
 
+    logger.debug(
+      {
+        vendor,
+        queuedBlocks,
+        batchBlocks,
+        readyByHeight,
+        blockHeight: this.queue[vendor].blockHeight,
+      },
+      "Execute confirmation queue",
+    );
+
     const readyByStep: SideEffect[] = [];
 
     // In case we have executed SFXs from the next phase already, we ensure that we only confirm the SFXs of the current phase
@@ -482,17 +493,18 @@ export class ExecutionManager {
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
           logger.info(
             {
+              sfxIds: readyByStep.map((sfx) => sfx.id),
               vendor: vendor,
             },
             "Confirmation batch successful",
           );
         })
         .catch((err) => {
-          logger.info(
+          logger.error(
             {
               vendor: vendor,
               sfxIds: readyByStep.map((sfx) => sfx.id),
-              error: err,
+              error: err.message,
             },
             "Error confirming side effects",
           );

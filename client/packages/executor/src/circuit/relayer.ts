@@ -83,6 +83,14 @@ export class CircuitRelayer extends EventEmitter {
         relay_block_hash: sfx.inclusionProof.block_hash,
       });
     }
+    logger.debug(
+      {
+        inclusionData: inclusionData.toHex(),
+        target: sfx.target,
+        inclusionProof: sfx.inclusionProof,
+      },
+      "Inclusion data for SFX",
+    );
 
     const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType(
       "T3rnTypesSfxConfirmedSideEffect",
