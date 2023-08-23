@@ -13,7 +13,6 @@ export class Prometheus {
   // Metrics
   events: Counter;
   circuitDisconnects: Counter;
-  executorBids: Counter;
   executorXtxStrategyRejects: Counter;
   executorBid: Counter;
   executorBidRejected: Counter;
@@ -37,12 +36,6 @@ export class Prometheus {
   createMetrics() {
     // Collects default metrics
     collectDefaultMetrics({ register: this.register });
-    this.executorBids = new Counter({
-      name: "executor_bids",
-      help: "Number of bids",
-      registers: [this.register],
-    });
-
     this.events = new Counter({
       name: "events",
       help: "Number of events",
