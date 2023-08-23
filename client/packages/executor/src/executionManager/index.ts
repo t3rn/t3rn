@@ -485,18 +485,35 @@ export class ExecutionManager {
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(() => {
-          // remove from queue and update status
-          logger.info(
-            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`,
+        .then(async (blockHash) => {
+          const events =
+            await this.circuitClient.query.system.events.at(blockHash);
+          // TODO: can batch fail in any different way?
+          const batchInterruptedEvent = events.find(
+            (event) => event.event.method === "BatchInterrupted",
           );
+
+          if (batchInterruptedEvent) {
+            const data = batchInterruptedEvent.event.data[1] as any;
+            if (data.toHuman().Module.index === "108") {
+              // TODO: this log should be not necessary as we throw already
+              logger.error(
+                "Batch failed due to BatchInterrupted error in Circuit",
+              );
+              throw new Error(
+                `Batch failed due to BatchInterrupted error in Circuit ${blockHash}`,
+              );
+            }
+          }
+          // remove from queue and update status
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
           logger.info(
             {
               sfxIds: readyByStep.map((sfx) => sfx.id),
-              vendor: vendor,
+              blockHash,
+              vendor,
             },
-            "Confirmation batch successful",
+            `Confirmed SFXs 📜`,
           );
         })
         .catch((err) => {
