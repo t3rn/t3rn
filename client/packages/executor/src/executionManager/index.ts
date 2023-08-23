@@ -499,7 +499,12 @@ export class ExecutionManager {
           if (batchInterruptedEvent) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const data = batchInterruptedEvent.event.data[1] as any;
-            if (data.toHuman().Module.index === "108") {
+            if (
+              // 108 is Circuit
+              data.toHuman().Module.index === "108" &&
+              // 0x05000000 is Confirmation Error
+              data.toHuman().Module.error === "0x05000000"
+            ) {
               // TODO: this log should be not necessary as we throw already
               throw new Error(
                 `Batch failed due to BatchInterrupted error in Circuit at block ${blockHash}`,
@@ -518,7 +523,7 @@ export class ExecutionManager {
           );
         })
         .catch((err) => {
-          this.prometheus.executorConfirmationErrors.inc(readyByStep.length)
+          this.prometheus.executorConfirmationErrors.inc(readyByStep.length);
           logger.error(
             {
               vendor: vendor,
