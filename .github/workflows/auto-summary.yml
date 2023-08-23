@@ -6,7 +6,7 @@ permissions:
 
 on:
   pull_request:
-    types: [opened, closed, ready_for_review, assigned, review_requested, auto_merge_enabled]
+    types: [closed, ready_for_review, assigned, review_requested, auto_merge_enabled]
 
 concurrency:
   group:
