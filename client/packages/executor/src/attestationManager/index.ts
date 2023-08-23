@@ -136,7 +136,9 @@ export class AttestationManager {
         // Extract the phase, event and the event types
         const { event } = record;
 
-        this.prometheus.attestationEvents.inc({ method: event.method });
+        this.prometheus.attestationEvents.inc({
+          event: event.toHuman().method,
+        });
         if (record.event.method != "NewConfirmationBatch") {
           return;
         }
@@ -267,9 +269,8 @@ export class AttestationManager {
       estimatedGas: estimatedGas,
     };
 
-    const signedTransaction = await this.wallet.signTransaction(
-      transactionObject,
-    );
+    const signedTransaction =
+      await this.wallet.signTransaction(transactionObject);
 
     const transactionReceipt = await this.web3.eth.sendSignedTransaction(
       signedTransaction.rawTransaction,

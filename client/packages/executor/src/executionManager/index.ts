@@ -251,7 +251,7 @@ export class ExecutionManager {
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-      this.prometheus.events.inc();
+      this.prometheus.events.inc({ event: ListenerEvents[eventData.type] });
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
@@ -448,6 +448,17 @@ export class ExecutionManager {
       }
     }
 
+    logger.debug(
+      {
+        vendor,
+        queuedBlocks,
+        batchBlocks,
+        readyByHeight,
+        blockHeight: this.queue[vendor].blockHeight,
+      },
+      "Execute confirmation queue",
+    );
+
     const readyByStep: SideEffect[] = [];
 
     // In case we have executed SFXs from the next phase already, we ensure that we only confirm the SFXs of the current phase
@@ -474,25 +485,49 @@ export class ExecutionManager {
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(() => {
-          // remove from queue and update status
-          logger.info(
-            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`,
+        .then(async (blockHeight) => {
+          const blockHash =
+            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
+          const events =
+            await this.circuitClient.query.system.events.at(blockHash);
+          // TODO: can batch fail in any different way?
+          const batchInterruptedEvent = events.find(
+            (event) => event.event.method === "BatchInterrupted",
           );
+
+          if (batchInterruptedEvent) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = batchInterruptedEvent.event.data[1] as any;
+            if (
+              // 108 is Circuit
+              data.toHuman().Module.index === "108" &&
+              // 0x05000000 is Confirmation Error
+              data.toHuman().Module.error === "0x05000000"
+            ) {
+              // TODO: this log should be not necessary as we throw already
+              throw new Error(
+                `Batch failed due to BatchInterrupted error in Circuit at block ${blockHash}`,
+              );
+            }
+          }
+          // remove from queue and update status
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
           logger.info(
             {
-              vendor: vendor,
+              sfxIds: readyByStep.map((sfx) => sfx.id),
+              blockHash,
+              vendor,
             },
-            "Confirmation batch successful",
+            `Confirmed SFXs 📜`,
           );
         })
         .catch((err) => {
-          logger.info(
+          this.prometheus.executorConfirmationErrors.inc(readyByStep.length);
+          logger.error(
             {
               vendor: vendor,
               sfxIds: readyByStep.map((sfx) => sfx.id),
-              error: err,
+              error: err.message,
             },
             "Error confirming side effects",
           );
@@ -565,9 +600,8 @@ export class ExecutionManager {
    */
   async addRiskRewardParameters(sfx: SideEffect) {
     // get txCost on target
-    const txCostSubject = await this.targetEstimator[
-      sfx.target
-    ].getNativeTxCostSubject(sfx);
+    const txCostSubject =
+      await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx);
     // get price of native token on target
     const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
       sfx.gateway.ticker,

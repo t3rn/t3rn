@@ -23,7 +23,7 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "preinstall": "npx -y only-allow pnpm",
+    "preinstall": "npm exec -- only-allow pnpm",
     "compile": "hardhat compile",
     "test": "hardhat test"
   },

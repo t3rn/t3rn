@@ -8,9 +8,10 @@ on:
 
 env:
   PARACHAIN_NAME: t0rn
-  RUST_BACKTRACE: full
-  CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  RUSTC_WRAPPER: sccache
+  RUST_BACKTRACE: full
 
 jobs:
   build-release:
@@ -43,9 +44,9 @@ jobs:
           echo "${{ steps.release.outputs.upload_url }}"
           echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
           echo "CIRCUIT_BINARY=./target/release/${{ env.PARACHAIN_NAME }}-collator" >> $GITHUB_ENV
-          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-v${GITHUB_REF/refs\/tags\//}-x86_64-unknown-linux-gnu" >> $GITHUB_ENV
+          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-${GITHUB_REF/refs\/tags\//}-x86_64-unknown-linux-gnu" >> $GITHUB_ENV
           echo "WASM_BINARY=./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm" >> $GITHUB_ENV
-          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-v${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: rustup show
@@ -162,9 +163,8 @@ jobs:
           asset_content_type: text/plain
 
 
-  runtime-upgrade-smoke-tests:
+  runtime-upgrade-zombienet-test:
     runs-on: [self-hosted, rust]
-    # This can only run when all release artificats are available
     concurrency: runtime-upgrade
     needs: build-release
     steps:
@@ -181,7 +181,7 @@ jobs:
 
   runtime-upgrade:
     runs-on: self-hosted
-    needs: runtime-upgrade-smoke-tests
+    needs: runtime-upgrade-zombienet-test
     concurrency: runtime-upgrade
     steps:
       - name: ☁ Checkout git repo

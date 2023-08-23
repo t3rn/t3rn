@@ -19,7 +19,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "preinstall": "npx -y only-allow yarn",
+    "preinstall": "npm exec -- only-allow yarn",
     "prepublishOnly": "yarn clean && yarn build",
     "prepack": "yarn clean && yarn build",
     "ci": "rm -rf node_modules && rm yarn.lock && yarn",

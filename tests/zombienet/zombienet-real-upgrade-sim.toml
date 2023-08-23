@@ -13,7 +13,7 @@ name  = "bob"
 [[parachains]]
 chain         = "local"
 cumulus_based = true
-id            = 3000
+id            = 3333
 
 # Arbitrary collator needs to be set based on param
 [[parachains.collators]]

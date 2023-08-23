@@ -19,6 +19,7 @@ export class Prometheus {
   executorBidRejected: Counter;
   executorBalance: Gauge;
   executorClientBalance: Gauge;
+  executorConfirmationErrors: Counter;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -46,6 +47,7 @@ export class Prometheus {
       name: "events",
       help: "Number of events",
       registers: [this.register],
+      labelNames: ["event"],
     });
 
     this.circuitDisconnects = new Counter({
@@ -87,6 +89,12 @@ export class Prometheus {
       help: "Executor client balance",
       registers: [this.register],
       labelNames: ["signer", "target"],
+    });
+
+    this.executorConfirmationErrors = new Counter({
+      name: "executor_confirmation_errors_total",
+      help: "Number of times confirmation errors happened",
+      registers: [this.register],
     });
 
     this.attestationsBatchesPending = new Gauge({

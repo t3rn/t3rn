@@ -37,8 +37,6 @@ To execute transactions on other blockchains, a custom relayer class is needed. 
 ## Getting Started:
 
 - in the parent `packages` directory, run `make` to build the local dependencies (`types` & `sdk`)
-- run `yarn install`
-- configure your executor by editing `config.json`
-- run `EXECUTOR=myexec CIRCUIT_SIGNER_KEY=abc ROCOCO_GATEWAY_SIGNER_KEY=xyz yarn start`
-
-The `EXECUTOR` env var passed to the `start` command determines the config file location for given executor instance. The [default config](./config.json) can be overridden by a custom config file that is located at `~/.t3rn-executor-$EXECUTOR/config.json`. Those custom named config files allow running multiple executors on a single machine.
+- run `pnpm install`
+- configure your executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc` and using with `direnv`
+- run `EXECUTOR=myexec CIRCUIT_SIGNER_KEY=abc RELAYCHAIN_SIGNER_KEY=xyz pnpm start`
