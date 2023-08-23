@@ -19,6 +19,7 @@ export class Prometheus {
   executorBalance: Gauge;
   executorClientBalance: Gauge;
   executorConfirmationErrors: Counter;
+  executorExecutionCompleted: Counter;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -26,6 +27,7 @@ export class Prometheus {
   attestationVerifierCurrentCommitteeTransitionCount: Gauge;
   attestationBatchesProcessed: Counter;
   attestatonBatchesFailed: Counter;
+  gatewayHeight: Gauge;
 
   constructor() {
     const Registry = client.Registry;
@@ -90,6 +92,13 @@ export class Prometheus {
       registers: [this.register],
     });
 
+    this.executorExecutionCompleted = new Counter({
+      name: "executor_execution_completed_total",
+      help: "Number of times execution completed",
+      registers: [this.register],
+      labelNames: ["target"],
+    });
+
     this.attestationsBatchesPending = new Gauge({
       name: "attestations_batches_pending_count",
       help: "Number of attestations batches pending",
@@ -132,6 +141,13 @@ export class Prometheus {
       help: "Number of attestations batches failed",
       registers: [this.register],
       labelNames: ["error"],
+    });
+
+    this.gatewayHeight = new Gauge({
+      name: "gateway_height",
+      help: "Gateway height",
+      registers: [this.register],
+      labelNames: ["vendor"],
     });
 
     this.startServer();

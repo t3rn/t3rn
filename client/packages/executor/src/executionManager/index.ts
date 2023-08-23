@@ -275,6 +275,12 @@ export class ExecutionManager {
             if (!data.vendor || !data.height) break;
 
             this.updateGatewayHeight(data.vendor, data.height);
+            this.prometheus.gatewayHeight.set(
+              {
+                vendor: data.vendor,
+              },
+              data.height,
+            );
           }
           break;
         case ListenerEvents.SideEffectConfirmed:

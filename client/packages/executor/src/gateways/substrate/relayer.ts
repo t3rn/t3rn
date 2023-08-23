@@ -175,6 +175,9 @@ export class SubstrateRelayer extends EventEmitter {
                 },
                 await getBalance(this.client, sfx.arguments[0]),
               );
+              this.prometheus.executorExecutionCompleted.inc({
+                target: sfx.target,
+              });
             }
 
             this.emit("Event", <RelayerEventData>{
