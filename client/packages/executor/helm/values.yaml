@@ -5,7 +5,7 @@ config:
   processBatches: false
 
   # Temporary change loglevel to debug
-  logLevel: "debug"
+  logLevel: "info"
 
 securityContext: 
   capabilities:
