@@ -1338,9 +1338,9 @@ impl<T: Config> Pallet<T> {
         }; // Empty encoded_event_params for testing purposes
 
         #[cfg(not(feature = "test-skip-verification"))]
-        if inclusion_receipt.height > fsx.submission_target_height {
+        if inclusion_receipt.height < fsx.submission_target_height {
             log::error!(
-                "Inclusion height is higher than target {:?} > {:?}. Xtx Id: {:?}",
+                "Inclusion height is higher than target {:?} < {:?}. Xtx Id: {:?}",
                 inclusion_receipt.height,
                 fsx.submission_target_height,
                 xtx_id,
