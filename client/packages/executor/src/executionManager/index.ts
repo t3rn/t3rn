@@ -485,8 +485,10 @@ export class ExecutionManager {
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(async (blockHash) => {
-          logger.error(`Block hash: ${blockHash}`)
+        .then(async (blockHeight) => {
+          const blockHash =
+            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
+          logger.error({ blockHash }, `Block hash with SFX Confirmation Batch`);
           const events =
             await this.circuitClient.query.system.events.at(blockHash);
           // TODO: can batch fail in any different way?
