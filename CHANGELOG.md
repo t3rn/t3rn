@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.48.3-rc.0] - 2023-08-23
+### :bug: Bug Fixes
+- [`0cbba7d`](https://github.com/t3rn/t3rn/commit/0cbba7d2c39df3a4dbee0ed01b73c8dc4f51871f) - **executor**: outdated transactions *(PR [#1256](https://github.com/t3rn/t3rn/pull/1256) by [@3h4x](https://github.com/3h4x))*
+- [`b59ff49`](https://github.com/t3rn/t3rn/commit/b59ff49029e88941e2b999e237a2debe37c61726) - **cli**: correctly define secret variables in cronjob.yaml *(PR [#1258](https://github.com/t3rn/t3rn/pull/1258) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`527f158`](https://github.com/t3rn/t3rn/commit/527f158a07bc5b1bb4d00a245f6bbd82dbe3ac1d) - add debug logs for inclusion proof *(PR [#1259](https://github.com/t3rn/t3rn/pull/1259) by [@3h4x](https://github.com/3h4x))*
+- [`ac97fa8`](https://github.com/t3rn/t3rn/commit/ac97fa888d950943c8588aa31047854a9995065e) - improve failed xtx logging *(PR [#1261](https://github.com/t3rn/t3rn/pull/1261) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.48.1-rc.0] - 2023-08-21
 ### :bug: Bug Fixes
 - [`f38c65b`](https://github.com/t3rn/t3rn/commit/f38c65b4811ce7f533c7dca984d7f0b83ccf3936) - runtime upgrade script using sudo flag *(PR [#1252](https://github.com/t3rn/t3rn/pull/1252) by [@3h4x](https://github.com/3h4x))*
@@ -1502,3 +1512,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.47.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.1-rc.0...v1.47.2-rc.0
 [v1.48.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.2-rc.0...v1.48.0-rc.0
 [v1.48.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.0-rc.0...v1.48.1-rc.0
+[v1.48.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.2-rc.0...v1.48.3-rc.0
