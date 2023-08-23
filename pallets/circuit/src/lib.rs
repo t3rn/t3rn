@@ -1340,10 +1340,10 @@ impl<T: Config> Pallet<T> {
         #[cfg(not(feature = "test-skip-verification"))]
         if inclusion_receipt.height > fsx.submission_target_height {
             log::error!(
-                "Inclusion height is higher than target {:?} > {:?}. Xtx status: {:?}",
+                "Inclusion height is higher than target {:?} > {:?}. Xtx Id: {:?}",
                 inclusion_receipt.height,
                 fsx.submission_target_height,
-                Self::get_xtx_status(xtx_id),
+                xtx_id,
             );
             return Err(DispatchError::Other(
                 "SideEffect confirmation of inclusion failed - inclusion height is higher than target",
