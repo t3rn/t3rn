@@ -15,7 +15,7 @@ jobs:
       - name: SFX_TRAN_AMOUNT
         value: "0.1"
       
-    schedule: "*/1 * * * *"
+    schedule: "*/30 * * * *"
     args:
     - submit
     - -s
