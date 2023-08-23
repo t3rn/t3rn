@@ -501,11 +501,8 @@ export class ExecutionManager {
             const data = batchInterruptedEvent.event.data[1] as any;
             if (data.toHuman().Module.index === "108") {
               // TODO: this log should be not necessary as we throw already
-              logger.error(
-                "Batch failed due to BatchInterrupted error in Circuit",
-              );
               throw new Error(
-                `Batch failed due to BatchInterrupted error in Circuit ${blockHash}`,
+                `Batch failed due to BatchInterrupted error in Circuit at block ${blockHash}`,
               );
             }
           }
@@ -521,7 +518,7 @@ export class ExecutionManager {
           );
         })
         .catch((err) => {
-          this.prometheus.executorConfirmationErrors.inc()
+          this.prometheus.executorConfirmationErrors.inc(readyByStep.length)
           logger.error(
             {
               vendor: vendor,
