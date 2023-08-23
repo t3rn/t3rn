@@ -486,6 +486,7 @@ export class ExecutionManager {
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
         .then(async (blockHash) => {
+          logger.error(`Block hash: ${blockHash}`)
           const events =
             await this.circuitClient.query.system.events.at(blockHash);
           // TODO: can batch fail in any different way?
