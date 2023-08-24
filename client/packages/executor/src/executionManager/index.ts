@@ -288,6 +288,10 @@ export class ExecutionManager {
             const sfxId = eventData.data[0].toString();
             const xtxId = this.sfxToXtx[sfxId];
             const xtx = this.xtx[xtxId];
+
+            // TODO: We should check if this is our XTX
+            if (!xtx) break;
+
             const sfx = xtx.sideEffects.get(sfxId);
 
             if (!sfx) break;

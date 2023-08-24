@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { EventMapper, SideEffect } from "../../executionManager/sideEffect";
-import { getEventProofs } from "../../utils";
+import { getBalanceWithDecimals, getEventProofs } from "../../utils";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { SfxType } from "@t3rn/sdk/side-effects/types";
 import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
@@ -50,11 +50,10 @@ export class SubstrateRelayer extends EventEmitter {
     if (config.nativeId) this.nativeId = config.nativeId;
 
     this.nonce = await this.fetchNonce(this.client, this.signer.address);
-    const balance = (
-      (await this.client.query.system.account(
-        this.signer.address,
-      )) as AccountInfo
-    ).data.free.toNumber();
+    const balance = await getBalanceWithDecimals(
+      this.client,
+      this.signer.address,
+    );
     logger.info(
       {
         signer: this.signer.address,
@@ -107,7 +106,7 @@ export class SubstrateRelayer extends EventEmitter {
           signer: sfx.arguments[0],
           target: sfx.target,
         },
-        await getBalance(this.client, sfx.arguments[0]),
+        await getBalanceWithDecimals(this.client, sfx.arguments[0]),
       );
     }
 
@@ -178,7 +177,7 @@ export class SubstrateRelayer extends EventEmitter {
                   signer: sfx.arguments[0],
                   target: sfx.target,
                 },
-                await getBalance(this.client, sfx.arguments[0]),
+                await getBalanceWithDecimals(this.client, sfx.arguments[0]),
               );
             }
             this.prometheus.executorExecutionCompleted.inc({
