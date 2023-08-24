@@ -22,6 +22,7 @@ import { Logger } from "pino";
 import BN from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
+import { getBalanceWithDecimals } from "../utils";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -334,6 +335,15 @@ export class ExecutionManager {
       this.strategyEngine,
       this.biddingEngine,
       this.prometheus,
+    );
+
+    const balance = await getBalanceWithDecimals(
+      this.circuitClient,
+      xtx.owner.toString(),
+    );
+    this.prometheus.executorClientBalance.set(
+      { signer: xtx.owner.toString() },
+      balance,
     );
 
     // Run the XTX strategy checks

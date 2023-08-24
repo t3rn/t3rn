@@ -101,7 +101,7 @@ export class SubstrateRelayer extends EventEmitter {
     );
 
     if (sfx.gateway.executionVendor === "Substrate") {
-      this.prometheus.executorClientBalance.set(
+      this.prometheus.executorTargetBalance.set(
         {
           signer: sfx.arguments[0],
           target: sfx.target,
@@ -172,7 +172,7 @@ export class SubstrateRelayer extends EventEmitter {
             );
 
             if (sfx.gateway.gatewayType === "Substrate") {
-              this.prometheus.executorClientBalance.set(
+              this.prometheus.executorTargetBalance.set(
                 {
                   signer: sfx.arguments[0],
                   target: sfx.target,

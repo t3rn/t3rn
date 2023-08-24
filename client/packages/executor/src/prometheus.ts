@@ -18,6 +18,7 @@ export class Prometheus {
   executorBidRejected: Counter;
   executorBalance: Gauge;
   executorClientBalance: Gauge;
+  executorTargetBalance: Gauge;
   executorConfirmationErrors: Counter;
   executorExecutionCompleted: Counter;
   attestationsBatchesPending: Gauge;
@@ -82,6 +83,13 @@ export class Prometheus {
     this.executorClientBalance = new Gauge({
       name: "executor_client_balance",
       help: "Executor client balance",
+      registers: [this.register],
+      labelNames: ["signer", "target"],
+    });
+
+    this.executorTargetBalance = new Gauge({
+      name: "executor_target_balance",
+      help: "Executor target balance",
       registers: [this.register],
       labelNames: ["signer", "target"],
     });
