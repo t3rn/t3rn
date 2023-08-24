@@ -131,7 +131,7 @@ chmod +x t0rn-collator
 #### Pull latest Docker image
 
 ```sh
-docker pull ghcr.io/t3rn/t0rn-collator:v1.48.4-rc.0
+docker pull ghcr.io/t3rn/t0rn-collator:vv1.48.4-rc.0
 ```
 
 #### Start the Collator
