@@ -22,6 +22,7 @@ import { Logger } from "pino";
 import BN from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
+import { getBalanceWithDecimals } from "../utils";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -275,6 +276,12 @@ export class ExecutionManager {
             if (!data.vendor || !data.height) break;
 
             this.updateGatewayHeight(data.vendor, data.height);
+            this.prometheus.gatewayHeight.set(
+              {
+                vendor: data.vendor,
+              },
+              data.height,
+            );
           }
           break;
         case ListenerEvents.SideEffectConfirmed:
@@ -282,6 +289,10 @@ export class ExecutionManager {
             const sfxId = eventData.data[0].toString();
             const xtxId = this.sfxToXtx[sfxId];
             const xtx = this.xtx[xtxId];
+
+            // TODO: We should check if this is our XTX
+            if (!xtx) break;
+
             const sfx = xtx.sideEffects.get(sfxId);
 
             if (!sfx) break;
@@ -324,6 +335,15 @@ export class ExecutionManager {
       this.strategyEngine,
       this.biddingEngine,
       this.prometheus,
+    );
+
+    const balance = await getBalanceWithDecimals(
+      this.circuitClient,
+      xtx.owner.toString(),
+    );
+    this.prometheus.executorClientBalance.set(
+      { signer: xtx.owner.toString() },
+      balance,
     );
 
     // Run the XTX strategy checks
@@ -448,17 +468,6 @@ export class ExecutionManager {
       }
     }
 
-    logger.debug(
-      {
-        vendor,
-        queuedBlocks,
-        batchBlocks,
-        readyByHeight,
-        blockHeight: this.queue[vendor].blockHeight,
-      },
-      "Execute confirmation queue",
-    );
-
     const readyByStep: SideEffect[] = [];
 
     // In case we have executed SFXs from the next phase already, we ensure that we only confirm the SFXs of the current phase
@@ -480,8 +489,12 @@ export class ExecutionManager {
         {
           gatewayId: vendor,
           sfxIds: readyByStep.map((sfx) => sfx.id),
+          queuedBlocks,
+          batchBlocks,
+          readyByHeight,
+          blockHeight: this.queue[vendor].blockHeight,
         },
-        "Execute confirmation queue",
+        "SFXs ready for confirmation",
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
