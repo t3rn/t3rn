@@ -1,5 +1,5 @@
 Description: Runtime Upgrade test
-Network: ../zombienet-real-upgrade-sim.toml
+Network: ../zombienet-runtime-upgrade.toml
 Creds: config
 
 alice: is up
