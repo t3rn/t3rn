@@ -16,6 +16,11 @@ permissions:
 env:
   APP: executor
 
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
+
 jobs:
   # This job checks if files has been modified.
   # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
@@ -108,10 +113,10 @@ jobs:
   deploy:
     name: Build & Deploy Executor
     runs-on: self-hosted
-    # needs: test-executor
-    # concurrency: executor
+    needs: test-executor
+    concurrency: executor
 
-    # if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-executor')
+    if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-executor')
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
