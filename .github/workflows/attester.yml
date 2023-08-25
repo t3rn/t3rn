@@ -21,7 +21,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
 
-
 jobs:
   # This job checks if files has been modified.
   # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
@@ -92,6 +91,9 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/attester/eslint_report.json
+          fail-on-error: true
+          fail-on-warning: false
+          only-pr-files: true
 
       - name: 🏗 Build Docs
         run: pnpm build-docs
@@ -180,4 +182,3 @@ jobs:
         run: |
           aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
           helm upgrade ${{ env.APP }} helm -n ${{ env.APP }} -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ env.IMAGE_URL }}" --install
-
