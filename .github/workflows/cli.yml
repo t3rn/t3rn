@@ -79,6 +79,9 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/cli/eslint_report.json
+          fail-on-error: true
+          fail-on-warning: false
+          only-pr-files: true
 
       - run: pnpm test
 
@@ -104,11 +107,11 @@ jobs:
 
     if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-cli')
     steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
-
       - name: Export variables
         run: echo IMAGE_URL="ghcr.io/t3rn/${{ env.APP }}" >> $GITHUB_ENV
+
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
 
       - name: 🐋 Login to the GitHub Container Registry
         uses: docker/login-action@v2
@@ -126,6 +129,9 @@ jobs:
           context: client
           push: true
           tags: ${{ env.IMAGE_URL }}:${{ github.sha }},${{ env.IMAGE_URL }}:latest
+          labels: |
+            org.opencontainers.image.title=t3rn
+            org.opencontainers.image.description=CLI
           platforms: linux/amd64
           file: client/${{ env.APP }}.Dockerfile
           github-token: ${{ secrets.GITHUB_TOKEN }}
