@@ -154,5 +154,5 @@ jobs:
         working-directory: ./client/packages/cli
         run: |
           aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
-          helm upgrade ${{ env.APP }} helm -n ${{ env.APP }} -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository=" ${{ env.IMAGE_URL }}" --install
+          helm upgrade ${{ env.APP }} helm -n ${{ env.APP }} -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository="${{ env.IMAGE_URL }}" --install
 
