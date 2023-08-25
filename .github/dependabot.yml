@@ -30,8 +30,6 @@ updates:
       interval: weekly
 
   # Rust
-  # workspace is not correctly detected by dependabot
-  # that's why we need to specify each dir
   - package-ecosystem: cargo
     directory: /
     registries:
