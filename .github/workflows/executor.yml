@@ -11,6 +11,15 @@ permissions:
   contents: read
   pull-requests: write
   checks: write
+  packages: write
+
+env:
+  APP: executor
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
 
 jobs:
   # This job checks if files has been modified.
@@ -44,7 +53,7 @@ jobs:
         run: |
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
-  test-executor:
+  test:
     name: Test Executor
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
@@ -80,14 +89,15 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/executor/eslint_report.json
-        # TODO: remove at some point
-        continue-on-error: true
+          fail-on-error: true
+          fail-on-warning: false
+          only-pr-files: true
 
       - run: pnpm run test
         timeout-minutes: 5
 
   build-docker:
-    name: Build Executor Docker
+    name: Build Docker Image
     needs: [changes]
     if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
 
@@ -98,18 +108,46 @@ jobs:
       - name: Build Docker
         working-directory: ./client
         run: |
-          docker build . -f executor.Dockerfile
+          docker build . -f ${{ env.APP }}.Dockerfile
 
   deploy:
     name: Build & Deploy Executor
     runs-on: self-hosted
-    needs: test-executor
+    needs: test
     concurrency: executor
 
     if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-executor')
     steps:
+      - name: Export variables
+        run: echo IMAGE_URL="ghcr.io/t3rn/${{ env.APP }}" >> $GITHUB_ENV
+
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
+
+      - name: 🐋 Login to the GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🐳 Build and publish the Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: client
+          push: true
+          tags: ${{ env.IMAGE_URL }}:${{ github.sha }},${{ env.IMAGE_URL }}:latest
+          labels: |
+            org.opencontainers.image.title=t3rn
+            org.opencontainers.image.description=Executor
+          platforms: linux/amd64
+          file: client/${{ env.APP }}.Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -118,24 +156,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build executor
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: test-t0rn-executor
-          IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./client
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . -f executor.Dockerfile
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: EKS
-        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
-
-      - name: Helm Upgrade
+      - name: Deployment on EKS
         working-directory: ./client/packages/executor
-        run: helm upgrade executor helm -n executor -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-executor" --install
+        run: |
+          aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
+          helm upgrade ${{ env.APP }} helm -n ${{ env.APP }} -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ env.IMAGE_URL }}" --install
