@@ -84,9 +84,9 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/executor/eslint_report.json
-          fail-on-error: false
-          # fail-on-warning: false
-          # only-pr-files: false
+          fail-on-error: true
+          fail-on-warning: false
+          only-pr-files: true
 
       - run: pnpm run test
         timeout-minutes: 5
