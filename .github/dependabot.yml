@@ -3,13 +3,18 @@
 # Please see the documentation for all configuration options:
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
-# Beta groupping feature
-# https://github.com/dependabot/dependabot-core/issues/7795
-
-# More issues about groupping
-# https://github.com/dependabot/dependabot-core/issues/3951
-
 version: 2
+
+# Grouppings are used to group together dependencies that should be updated
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#groups
+groups:
+  dev-dependencies:
+    patterns:
+    - "*" # match all packages in single ecosystem
+    update-types:
+    - "minor"
+    - "patch"
+
 registries:
   github:
     type: git
@@ -22,10 +27,7 @@ updates:
     directory: /
     open-pull-requests-limit: 2
     schedule:
-      interval: daily
-    ignore:
-      - dependency-name: "*"
-        update-types: [version-update:semver-patch]
+      interval: weekly
 
   # Rust
   # workspace is not correctly detected by dependabot
