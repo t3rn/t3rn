@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.48.5-rc.0] - 2023-08-25
+### :bug: Bug Fixes
+- [`e4ea788`](https://github.com/t3rn/t3rn/commit/e4ea788ab94b5939e5f782e4b8a327c73927700c) - **executor**: balance calculation and new metrics *(PR [#1260](https://github.com/t3rn/t3rn/pull/1260) by [@3h4x](https://github.com/3h4x))*
+- [`b6bdfb6`](https://github.com/t3rn/t3rn/commit/b6bdfb64b44b0cc3724b9af48dd1d97faf2b8d9c) - docker image name aligned *(PR [#1263](https://github.com/t3rn/t3rn/pull/1263) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`8ca4111`](https://github.com/t3rn/t3rn/commit/8ca4111e68106bd5ecc513bd8eb99aaf88572df5) - move docker images from aws to ghcr *(PR [#1267](https://github.com/t3rn/t3rn/pull/1267) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.48.4-rc.0] - 2023-08-23
 ### :bug: Bug Fixes
 - [`4f10ae4`](https://github.com/t3rn/t3rn/commit/4f10ae4752d20286cf868bb7c4dccea7b7b5d2c4) - inclusion_receipt.height should be lower than submission_target_height *(PR [#1262](https://github.com/t3rn/t3rn/pull/1262) by [@3h4x](https://github.com/3h4x))*
@@ -1519,3 +1528,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.48.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.0-rc.0...v1.48.1-rc.0
 [v1.48.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.2-rc.0...v1.48.3-rc.0
 [v1.48.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.3-rc.0...v1.48.4-rc.0
+[v1.48.5-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.4-rc.0...v1.48.5-rc.0
