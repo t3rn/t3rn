@@ -13,9 +13,9 @@ jobs:
       - name: SFX_TRAN_INSURANCE
         value: "1"
       - name: SFX_TRAN_AMOUNT
-        value: "0.01"
+        value: "0.001"
       
-    schedule: "*/30 * * * *"
+    schedule: "*/1 * * * *"
     args:
     - submit
     - -s
