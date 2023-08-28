@@ -28,7 +28,7 @@ class GrandpaRanger {
 
 	async connectClients() {
 		await cryptoWaitReady()
-		this.circuit = new Connection(this.config.circuit.rpc1, this.config.circuit.rpc2, true, this.prometheus, this.config.targetGatewayId, this.config.circuitSigner);
+		this.circuit = new Connection(this.config.circuit.rpc1, this.config.circuit.rpc2, true, this.prometheus, this.config.targetGatewayId);
 		this.circuit.connect();
 		this.target = new Connection(this.config.target.rpc1, this.config.target.rpc2, false, this.prometheus, this.config.targetGatewayId);
 		this.target.connect();

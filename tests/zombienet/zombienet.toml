@@ -4,7 +4,7 @@ command = "polkadot"
 
 [[relaychain.nodes]]
 name    = "alice"
-ws_port = 9900
+ws_port = 9933
 
 [[relaychain.node_groups]]
 count = 1
@@ -18,31 +18,11 @@ id            = 3333
 [[parachains.collators]]
 command  = "t0rn-collator"
 name     = "t0rn-collator01"
-rpc_port = 8840
-ws_port  = 9940
+ws_port = 9944
 
 [[parachains.collators]]
 command  = "t0rn-collator"
 name     = "t0rn-collator02"
-rpc_port = 8841
-ws_port  = 9941
-
-[[parachains]]
-chain         = "local"
-cumulus_based = true
-id            = 3334
-
-[[parachains.collators]]
-command  = "t3rn-collator"
-name     = "t3rn-collator01"
-rpc_port = 8830
-ws_port  = 9930
-
-[[parachains.collators]]
-command  = "t3rn-collator"
-name     = "t3rn-collator02"
-rpc_port = 8831
-ws_port  = 9931
 
 [types.Header]
 number = "u64"

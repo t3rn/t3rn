@@ -104,16 +104,13 @@ setup() {
     build_polkadot
 
     NODE_ARG=t0rn
-    force_build_collator
-
-    NODE_ARG=t3rn
-    force_build_collator
+    build_collator
 }
 
 smoke() {
     echo "Running smoke tests.."
     # TODO[Optimisation]: loop through directory and test all
-	  # TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
+    # TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
     echo "::group::Zombienet tests..."
     time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_and_registered.feature
     echo "::endgroup::"
@@ -169,51 +166,12 @@ upgrade_local() {
 
     echo "Upgrade tests succeed!"
 }
-spawn_and_confirm_xtx() {
-    # Function to handle signals sent to the script
-    cleanup() {
-        # Send SIGINT signal to the zombienet process
-        kill -s SIGINT $zombienet_pid
-        # Send SIGINT signal to the executor process
-        kill -s SIGINT $executor_pid
-    }
+confirm_sfx() {
     echo "Spawning zombienet in the background..."
-    nohup zombienet --provider=${provider} spawn ./zombienet.toml > /dev/null 2>&1 &
-    zombienet_pid=$! # Save the PID of the zombienet process
-    echo "Zombienet PID: $zombienet_pid"
-    trap 'cleanup' INT TERM # Set up signal traps
-    # Wait for the zombienet process to start
-    for i in $(seq 1 10); do
-        if kill -0 $zombienet_pid >/dev/null 2>&1; then
-            break # Exit the loop if the zombienet process has started
-        else
-            sleep 1 # Wait for 1 second
-        fi
-    done
-    if ! kill -0 $zombienet_pid >/dev/null 2>&1; then
-        # The zombienet process failed to start
-        echo "zombienet.sh: zombienet failed to start ❌"
-        exit 1
-    fi
-    echo "Zombienet started ✅"
-    # Call the function that spawns the executor and runs the tests
+    zombienet --provider="$provider" test $working_dir/smoke/1000-confirm_sfx.feature
+
     spawn_executor_and_run_tests &
-    executor_pid=$! # Save the PID of the executor process
-    echo "Executor PID: $executor_pid"
-    # Wait for the executor process to start
-    for i in $(seq 1 10); do
-        if pgrep -P $executor_pid >/dev/null 2>&1; then
-            break # Exit the loop if the executor process has started
-        else
-            sleep 1 # Wait for 1 second
-        fi
-    done
-    if ! pgrep -P $executor_pid >/dev/null 2>&1; then
-        # The executor process failed to start
-        echo "zombienet.sh: start_executor failed ❌"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 1
-    fi
+
     echo "Executor started ✅"
     # Wait for the tests to complete or timeout
     end_time=$(($(date +%s) + 300)) # Set the end time for the loop to 300 seconds from now
@@ -235,46 +193,6 @@ spawn_and_confirm_xtx() {
     fi
 }
 
-spawn_executor_and_run_tests() {
-    echo "Installing client/packages with make all ⏳"
-    make all -C ../../client/packages
-    if [ $? -ne 0 ]; then
-        echo "zombienet.sh: make all failed ❌"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 1
-    fi
-    echo "client/packages:: make all done - client packages assumed to be installed ✅"
-    echo "Starting executor ⏳"
-    WS_CIRCUIT_ENDPOINT=ws://127.0.0.1:9940 make start_executor -C ../../client/packages &
-    executor_pid=$! # Save the PID of the executor process
-    # Wait for the executor process to start
-    for i in $(seq 1 10); do
-        if pgrep -P $executor_pid >/dev/null 2>&1; then
-            break # Exit the loop if the executor process has started
-        else
-            sleep 1 # Wait for 1 second
-        fi
-    done
-    if ! pgrep -P $executor_pid >/dev/null 2>&1; then
-        # The executor process failed to start
-        echo "zombienet.sh: start_executor failed ❌"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 1
-    fi
-    echo "Executor started ✅"
-    echo "Running make::test_confirm_xtx sending single SFX on top of Rococo header ranges ⏳"
-    WS_CIRCUIT_ENDPOINT=ws://127.0.0.1:9940 make test_confirm_xtx -C ../../client/packages
-    if [ $? -ne 0 ]; then
-        # The test failed
-        echo "zombienet.sh: test_confirm_xtx failed ❌"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 1
-    fi
-    echo "Test confirm SFX passed ✅"
-    # Call the cleanup function to send SIGINT signals to the processes
-    cleanup
-}
-
 spawn() {
     echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet.toml
@@ -288,9 +206,11 @@ case "$1" in
       setup
       smoke
       ;;
-  "spawn_and_confirm_xtx")
-      setup
-      spawn_and_confirm_xtx
+  "sfx")
+      make_bin_dir
+      fetch_zombienet
+      build_polkadot
+      confirm_sfx
       ;;
   "upgrade")
       make_bin_dir
