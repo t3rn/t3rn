@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import Web3, { Bytes } from "web3";
+import { Web3, Bytes } from "web3";
 import { Action as SfxAction } from './index'
 
 // DECLARE GAS AMOUNT
