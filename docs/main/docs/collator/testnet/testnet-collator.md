@@ -137,13 +137,13 @@ docker pull ghcr.io/t3rn/t0rn-collator:v1.48.5-rc.0
 #### Start the Collator
 
 ```sh
-docker run -p 33333:33333 -p 33334:33334 -p 9944:9944 -p 9933:9933 \
+docker run -p 33333:33333 -p 33334:33334 -p 9944:9944 -p 9933:9933 -p 7003:7003 \
   -v /node ghcr.io/t3rn/t0rn-collator:v1.48.5-rc.0 \
   --collator \
   --name=<collator-name> \
-  --base-path=data \
-  --keystore-path=keystore \
-  --chain=specs/t0rn.raw.json \
+  --base-path=/node/data \
+  --keystore-path=/node/keystore \
+  --chain=/node/specs/t0rn.raw.json \
   --bootnodes="/dns/bootnode.t0rn.io/tcp/33333/p2p/12D3KooWEepV69XCJB4Zi193cZcm5W22ZR62DEP84iLFTUKVPtwp" \
   --rpc-port=9944 \
   --port=33333 \
@@ -151,7 +151,7 @@ docker run -p 33333:33333 -p 33334:33334 -p 9944:9944 -p 9933:9933 \
   --telemetry-url='wss://telemetry.polkadot.io/submit 1' \
   --pruning=archive \
   -- \
-  --chain=specs/rococo.raw.json \
+  --chain=/node/specs/rococo.raw.json \
   --rpc-port=9933 \
   --port=33334 \
   --prometheus-port=7004 \
