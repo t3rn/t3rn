@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "docker-cli-js": "^2.10.0",
+    "docker-compose": "^0.24.2"
+  }
+}

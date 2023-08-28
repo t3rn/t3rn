@@ -1,0 +1,87 @@
+lockfileVersion: '6.0'
+
+dependencies:
+  docker-cli-js:
+    specifier: ^2.10.0
+    version: 2.10.0
+  docker-compose:
+    specifier: ^0.24.2
+    version: 0.24.2
+
+packages:
+
+  /@types/blue-tape@0.1.33:
+    resolution: {integrity: sha512-l5cQcLM3aPh55bBQ4geWQ8hZ4Ew+s4RvyhMaBpgW3aJ2HUfRgwd8ENKrk/utC4Hz1dJAiehyIa4vN6emxBMaog==}
+    dependencies:
+      '@types/node': 20.5.7
+      '@types/tape': 5.6.0
+    dev: false
+
+  /@types/lodash@4.14.119:
+    resolution: {integrity: sha512-Z3TNyBL8Vd/M9D9Ms2S3LmFq2sSMzahodD6rCS9V2N44HUMINb75jNkSuwAx7eo2ufqTdfOdtGQpNbieUjPQmw==}
+    dev: false
+
+  /@types/node@20.5.7:
+    resolution: {integrity: sha512-dP7f3LdZIysZnmvP3ANJYTSwg+wLLl8p7RqniVlV7j+oXSXAbt9h0WIBFmJy5inWZoX9wZN6eXx+YXd9Rh3RBA==}
+    dev: false
+
+  /@types/tape@5.6.0:
+    resolution: {integrity: sha512-yt27qxGg45IVJ0i2PdbYopND9d4eaXwne/jpi0saYb7PHYu8ZYaQB+cADjj+YZkZZjCM4rnhMPYFGd6+M8sWKg==}
+    dependencies:
+      '@types/node': 20.5.7
+      '@types/through': 0.0.30
+    dev: false
+
+  /@types/through@0.0.30:
+    resolution: {integrity: sha512-FvnCJljyxhPM3gkRgWmxmDZyAQSiBQQWLI0A0VFL0K7W1oRUrPJSqNO0NvTnLkBcotdlp3lKvaT0JrnyRDkzOg==}
+    dependencies:
+      '@types/node': 20.5.7
+    dev: false
+
+  /cli-table-2-json@1.0.13:
+    resolution: {integrity: sha512-CpUj9dubfuIZSEezwUPycAJqM2dlATyyRUyBkfGeK2KNfrqK3XrdaBohMt0XlkEvsZyDfUEmPWCNvUO+a/7Wsw==}
+    dependencies:
+      '@types/blue-tape': 0.1.33
+      '@types/lodash': 4.14.119
+      lodash: 4.17.21
+    dev: false
+
+  /docker-cli-js@2.10.0:
+    resolution: {integrity: sha512-p/Hf3igU69bIZ0WvHu0M0/VrKE3LojVWiKyh/4hfPkvCGaad3mWE51q0OyxYP+P26cEISAx0mImtsO6VJdKiZA==}
+    dependencies:
+      cli-table-2-json: 1.0.13
+      dockermachine-cli-js: 3.0.5
+      lodash.snakecase: 4.1.1
+      nodeify-ts: 1.0.6
+    dev: false
+
+  /docker-compose@0.24.2:
+    resolution: {integrity: sha512-2/WLvA7UZ6A2LDLQrYW0idKipmNBWhtfvrn2yzjC5PnHDzuFVj1zAZN6MJxVMKP0zZH8uzAK6OwVZYHGuyCmTw==}
+    engines: {node: '>= 6.0.0'}
+    dependencies:
+      yaml: 2.3.1
+    dev: false
+
+  /dockermachine-cli-js@3.0.5:
+    resolution: {integrity: sha512-oV9RRKGvWrvsGl8JW9TWKpjBJVGxn/1qMvhqwPJiOPfRES0+lrq/Q8Wzixb6qinuXPVBhlWqhXb/Oxrh6Vuf/g==}
+    dependencies:
+      cli-table-2-json: 1.0.13
+      nodeify-ts: 1.0.6
+    dev: false
+
+  /lodash.snakecase@4.1.1:
+    resolution: {integrity: sha512-QZ1d4xoBHYUeuouhEq3lk3Uq7ldgyFXGBhg04+oRLnIz8o9T65Eh+8YdroUwn846zchkA9yDsDl5CVVaV2nqYw==}
+    dev: false
+
+  /lodash@4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+    dev: false
+
+  /nodeify-ts@1.0.6:
+    resolution: {integrity: sha512-jq+8sqVG1aLqy5maMTceL8NUJ1CvarWztlxvrYh3G0aao9BsVeoVmVedUnrUSBLetP7oLIAJrPrw4+iIo7v3GA==}
+    dev: false
+
+  /yaml@2.3.1:
+    resolution: {integrity: sha512-2eHWfjaoXgTBC2jNM1LRef62VQa0umtvRiDSk6HSzW7RvS5YtkabJrwYLLEKWBc8a5U2PTSCs+dJjUTJdlHsWQ==}
+    engines: {node: '>= 14'}
+    dev: false
