@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.48.6-rc.0] - 2023-08-28
+### :bug: Bug Fixes
+- [`b87c183`](https://github.com/t3rn/t3rn/commit/b87c1830abd0ac53566e28bd233a344b37c88425) - docker image paths and docs *(PR [#1268](https://github.com/t3rn/t3rn/pull/1268) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.48.5-rc.0] - 2023-08-25
 ### :bug: Bug Fixes
 - [`e4ea788`](https://github.com/t3rn/t3rn/commit/e4ea788ab94b5939e5f782e4b8a327c73927700c) - **executor**: balance calculation and new metrics *(PR [#1260](https://github.com/t3rn/t3rn/pull/1260) by [@3h4x](https://github.com/3h4x))*
@@ -1529,3 +1534,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.48.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.2-rc.0...v1.48.3-rc.0
 [v1.48.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.3-rc.0...v1.48.4-rc.0
 [v1.48.5-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.4-rc.0...v1.48.5-rc.0
+[v1.48.6-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.5-rc.0...v1.48.6-rc.0

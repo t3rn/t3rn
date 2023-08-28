@@ -162,7 +162,6 @@ jobs:
           asset_name: ${{ env.WASM_RELEASE_ASSET }}.info.json
           asset_content_type: text/plain
 
-
   runtime-upgrade-zombienet-test:
     runs-on: [self-hosted, rust]
     concurrency: runtime-upgrade

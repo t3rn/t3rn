@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Run a t0rn Testnet Collator
 
-This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses latest `v1.48.5-rc.0` release.
+This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses latest `v1.48.6-rc.0` release.
 
 Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
 
@@ -49,11 +49,11 @@ To associate your node to the correct network we need to provide the t0rn chain 
 ```sh
 curl -sSfL \
   -o specs/rococo.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.48.5-rc.0/specs/rococo.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.48.6-rc.0/specs/rococo.raw.json
 
 curl -sSfL \
   -o specs/t0rn.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.48.5-rc.0/specs/t0rn.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.48.6-rc.0/specs/t0rn.raw.json
 ```
 
 ## Running Collator
@@ -92,7 +92,7 @@ We maintain collator binaries which we release alongside every runtime release. 
 
 ```sh
 curl -sSfL \
-  https://github.com/t3rn/t3rn/releases/download/v1.48.5-rc.0/t0rn-collator-v1.48.5-rc.0-x86_64-unknown-linux-gnu.gz \
+  https://github.com/t3rn/t3rn/releases/download/v1.48.6-rc.0/t0rn-collator-v1.48.6-rc.0-x86_64-unknown-linux-gnu.gz \
 | gunzip > t0rn-collator
 ```
 
@@ -131,19 +131,19 @@ chmod +x t0rn-collator
 #### Pull latest Docker image
 
 ```sh
-docker pull ghcr.io/t3rn/t0rn-collator:v1.48.5-rc.0
+docker pull ghcr.io/t3rn/t0rn-collator:v1.48.6-rc.0
 ```
 
 #### Start the Collator
 
 ```sh
-docker run -p 33333:33333 -p 33334:33334 -p 9944:9944 -p 9933:9933 \
-  -v /node ghcr.io/t3rn/t0rn-collator:v1.48.5-rc.0 \
+docker run -p 33333:33333 -p 33334:33334 -p 9944:9944 -p 9933:9933 -p 7003:7003 \
+  -v /node ghcr.io/t3rn/t0rn-collator:v1.48.6-rc.0 \
   --collator \
   --name=<collator-name> \
-  --base-path=data \
-  --keystore-path=keystore \
-  --chain=specs/t0rn.raw.json \
+  --base-path=/node/data \
+  --keystore-path=/node/keystore \
+  --chain=/node/specs/t0rn.raw.json \
   --bootnodes="/dns/bootnode.t0rn.io/tcp/33333/p2p/12D3KooWEepV69XCJB4Zi193cZcm5W22ZR62DEP84iLFTUKVPtwp" \
   --rpc-port=9944 \
   --port=33333 \
@@ -151,7 +151,7 @@ docker run -p 33333:33333 -p 33334:33334 -p 9944:9944 -p 9933:9933 \
   --telemetry-url='wss://telemetry.polkadot.io/submit 1' \
   --pruning=archive \
   -- \
-  --chain=specs/rococo.raw.json \
+  --chain=/node/specs/rococo.raw.json \
   --rpc-port=9933 \
   --port=33334 \
   --prometheus-port=7004 \
