@@ -1,5 +1,14 @@
 version: '3'
 services:
+  register-roco:
+    image: ghcr.io/t3rn/cli:latest
+    command: ["register", "-g", "roco"]
+    environment:
+      # CIRCUIT_SIGNER_KEY: <set to the key 'signer_key' in secret 'circuit'>
+      CIRCUIT_WS_ENDPOINT: ws://host.docker.internal:9944
+      RPC_CIRCUIT_ENDPOINT: http://host.docker.internal:9944
+      LOG_LEVEL: debug
+
   send-sfx-transfer:
     image: ghcr.io/t3rn/cli:latest
     command: ["submit", "-s", "transfer.json"]
@@ -16,7 +25,7 @@ services:
   grandpa-ranger:
     image: ghcr.io/t3rn/grandpa-ranger:latest
     environment:
-      PROFILE: local
+      PROFILE: docker
 
   executor:
     image: ghcr.io/t3rn/executor:latest

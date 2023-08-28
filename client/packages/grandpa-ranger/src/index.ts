@@ -4,6 +4,8 @@ require('dotenv').config()
 import { Connection } from './connection';
 import { cryptoWaitReady } from "@t3rn/sdk"
 import { Prometheus } from "./prometheus";
+import fs from 'fs';
+
 
 class GrandpaRanger {
 	circuit: Connection;
@@ -133,13 +135,15 @@ class GrandpaRanger {
 
 (async () => {
 	let config: any;
-	if(process.env.PROFILE === 'prod') {
-		config = require('../config/prod.ts').default;
-	} else if (process.env.PROFILE === 'roco') {
-		config = require('../config/roco.ts').default;
-	} else {
+	console.log(__dirname);
+
+	try {
+		config = require(`../config/${process.env.PROFILE}.ts`).default;
+	} catch {
+		console.log('Using local profile')
 		config = require('../config/local.ts').default;
 	}
+
 	const grandpaRanger = new GrandpaRanger(config);
 	await grandpaRanger.start();
 
