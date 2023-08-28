@@ -19,5 +19,4 @@ export default {
 	},
 	rangeInterval: 10, // time between range submissions in seconds
 	targetGatewayId: "roco",
-	circuitSigner: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561"
 }
