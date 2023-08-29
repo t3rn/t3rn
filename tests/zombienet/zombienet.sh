@@ -168,29 +168,7 @@ upgrade_local() {
 }
 confirm_sfx() {
     echo "Spawning zombienet in the background..."
-    zombienet --provider="$provider" test $working_dir/smoke/1000-confirm_sfx.feature
-
-    spawn_executor_and_run_tests &
-
-    echo "Executor started ✅"
-    # Wait for the tests to complete or timeout
-    end_time=$(($(date +%s) + 300)) # Set the end time for the loop to 300 seconds from now
-    while [ $(date +%s) -lt $end_time ] && kill -0 $executor_pid >/dev/null 2>&1; do
-        sleep 1
-    done
-    if [ $(date +%s) -ge $end_time ]; then
-        echo "zombienet.sh: tests timed out ❌"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 1
-    elif [ $? -eq 0 ]; then
-        echo "zombienet.sh: tests passed ✅"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 0
-    else
-        echo "zombienet.sh: tests failed ❌"
-        cleanup # Call the cleanup function to send SIGINT signals to the processes
-        exit 1
-    fi
+    zombienet --provider="$provider" test $working_dir/sfx/0000-confirm_sfx.zndsl
 }
 
 spawn() {

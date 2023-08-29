@@ -1,0 +1,17 @@
+Description: Confirm SFX
+Network: ../zombienet.toml
+Creds: config
+
+alice: is up
+alice: parachain 3333 is registered within 25 seconds
+
+#collator: reports block height is at least 3 within 225 seconds
+
+# This should emit an event xdns.GatewayRecordStored and we should check for it
+collator: js-script ./register_roco.js return is greater than 0 within 225 seconds
+
+# Run grandpa ranger and check for rococoBridge.HeadersAdded event
+# collator: js-script ./grandpa-ranger.js return is greater than 0 within 120 seconds
+
+# This should emit circuit.XTransactionReceivedForExec circuit.NewSideEffectsAvailable 
+# collator: js-script ./send-sfx.js within 120 seconds
