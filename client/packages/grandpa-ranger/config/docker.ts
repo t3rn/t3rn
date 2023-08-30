@@ -11,10 +11,10 @@ export default {
 	},
 	target: { // we dont need to specify the http endpoint for the target
 		rpc1: {
-			ws: "wss://rococo-rpc.polkadot.io",
+			ws: "ws://host.docker.internal:9933",
 		},
 		rpc2: {
-			ws: "wss://rococo-community-rpc.laminar.codes/ws"
+			ws: "ws://host.docker.internal:9933"
 		},
 	},
 	rangeInterval: 10, // time between range submissions in seconds

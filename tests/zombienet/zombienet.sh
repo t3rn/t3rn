@@ -166,9 +166,12 @@ upgrade_local() {
 
     echo "Upgrade tests succeed!"
 }
+
 confirm_sfx() {
+    docker-compose up -d grandpa-ranger
     echo "Spawning zombienet in the background..."
     zombienet --provider="$provider" test $working_dir/sfx/0000-confirm_sfx.zndsl
+    docker-compose down
 }
 
 spawn() {

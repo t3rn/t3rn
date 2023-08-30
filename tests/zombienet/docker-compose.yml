@@ -31,7 +31,7 @@ services:
     image: ghcr.io/t3rn/executor:latest
     environment:
       DEBUG: true
-      CIRCUIT_WS_ENDPOINT: ws://localhost:9944
+      CIRCUIT_WS_ENDPOINT: ws://host.docker.internal:9944
       # CIRCUIT_SIGNER_KEY: <set to the key 'signer_key' in secret 'circuit'>
       # RELAYCHAIN_SIGNER_KEY: <set to the key 'signer_key' in secret 'relaychain'>
       PROCESS_BATCHES: false
