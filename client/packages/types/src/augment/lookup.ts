@@ -180,7 +180,7 @@ export default {
     }
   },
   /**
-   * Lookup34: sp_consensus_grandpa::app::Public
+   * Lookup34: sp_finality_grandpa::app::Public
    **/
   SpFinalityGrandpaAppPublic: 'SpCoreEd25519Public',
   /**
@@ -1058,14 +1058,14 @@ export default {
     }
   },
   /**
-   * Lookup149: sp_consensus_grandpa::EquivocationProof<primitive_types::H256, N>
+   * Lookup149: sp_finality_grandpa::EquivocationProof<primitive_types::H256, N>
    **/
   SpFinalityGrandpaEquivocationProof: {
     setId: 'u64',
     equivocation: 'SpFinalityGrandpaEquivocation'
   },
   /**
-   * Lookup150: sp_consensus_grandpa::Equivocation<primitive_types::H256, N>
+   * Lookup150: sp_finality_grandpa::Equivocation<primitive_types::H256, N>
    **/
   SpFinalityGrandpaEquivocation: {
     _enum: {
@@ -1074,7 +1074,7 @@ export default {
     }
   },
   /**
-   * Lookup151: finality_grandpa::Equivocation<sp_consensus_grandpa::app::Public, finality_grandpa::Prevote<primitive_types::H256, N>, sp_consensus_grandpa::app::Signature>
+   * Lookup151: finality_grandpa::Equivocation<sp_finality_grandpa::app::Public, finality_grandpa::Prevote<primitive_types::H256, N>, sp_finality_grandpa::app::Signature>
    **/
   FinalityGrandpaEquivocationPrevote: {
     roundNumber: 'u64',
@@ -1090,7 +1090,7 @@ export default {
     targetNumber: 'u32'
   },
   /**
-   * Lookup153: sp_consensus_grandpa::app::Signature
+   * Lookup153: sp_finality_grandpa::app::Signature
    **/
   SpFinalityGrandpaAppSignature: 'SpCoreEd25519Signature',
   /**
@@ -1098,7 +1098,7 @@ export default {
    **/
   SpCoreEd25519Signature: '[u8;64]',
   /**
-   * Lookup157: finality_grandpa::Equivocation<sp_consensus_grandpa::app::Public, finality_grandpa::Precommit<primitive_types::H256, N>, sp_consensus_grandpa::app::Signature>
+   * Lookup157: finality_grandpa::Equivocation<sp_finality_grandpa::app::Public, finality_grandpa::Precommit<primitive_types::H256, N>, sp_finality_grandpa::app::Signature>
    **/
   FinalityGrandpaEquivocationPrecommit: {
     roundNumber: 'u64',
@@ -1911,7 +1911,7 @@ export default {
     votesAncestries: 'Vec<SpRuntimeHeader>'
   },
   /**
-   * Lookup261: finality_grandpa::Commit<primitive_types::H256, N, sp_consensus_grandpa::app::Signature, sp_consensus_grandpa::app::Public>
+   * Lookup261: finality_grandpa::Commit<primitive_types::H256, N, sp_finality_grandpa::app::Signature, sp_finality_grandpa::app::Public>
    **/
   FinalityGrandpaCommit: {
     targetHash: 'H256',
@@ -1919,7 +1919,7 @@ export default {
     precommits: 'Vec<FinalityGrandpaSignedPrecommit>'
   },
   /**
-   * Lookup263: finality_grandpa::SignedPrecommit<primitive_types::H256, N, sp_consensus_grandpa::app::Signature, sp_consensus_grandpa::app::Public>
+   * Lookup263: finality_grandpa::SignedPrecommit<primitive_types::H256, N, sp_finality_grandpa::app::Signature, sp_finality_grandpa::app::Public>
    **/
   FinalityGrandpaSignedPrecommit: {
     precommit: 'FinalityGrandpaPrecommit',

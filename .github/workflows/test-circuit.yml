@@ -9,6 +9,7 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
+      - "tests/zombienet/**"
       - ".github/workflows/test-circuit.yml"
   merge_group:
 

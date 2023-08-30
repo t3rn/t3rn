@@ -83,10 +83,8 @@ const registerGateway = async (
     // need to call xdns.rebootSelfGateway to add 0x03030303
     await sdk.circuit.tx.signAndSendSafe(
       sdk.circuit.tx.createSudo(
-        circuit.tx.xdns.rebootSelfGateway(
-          gatewayData.registrationData.verificationVendor as never,
-        ),
-      ),
+        circuit.tx.xdns.rebootSelfGateway(gatewayData.registrationData.verificationVendor as never)
+      )
     )
 
     if (!registrationData) {
