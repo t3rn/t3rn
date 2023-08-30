@@ -46,7 +46,6 @@ jobs:
             - "client/packages/cli/**/*.json"
             - ".github/workflows/cli.yml"
 
-
       - name: Detected changes
         run: |
           echo Detected changes: "${{ steps.changes.outputs.src }}"

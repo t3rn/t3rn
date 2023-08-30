@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/types",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "author": "t3rn <team@t3rn.io>",
   "license": "Apache-2.0",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
@@ -60,7 +60,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/t3rn/t3rn",
+    "url": "git+https://github.com/t3rn/t3rn.git",
     "directory": "client/packages/types"
   },
   "keywords": [
@@ -71,5 +71,8 @@
     "parachain",
     "types"
   ],
-  "homepage": "https://github.com/t3rn/t3rn"
+  "homepage": "https://github.com/t3rn/t3rn",
+  "bugs": {
+    "url": "https://github.com/t3rn/t3rn/issues"
+  }
 }
