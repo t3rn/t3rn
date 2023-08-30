@@ -77,7 +77,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/t3rn/${{ env.PARACHAIN_NAME }}-collator:v${{ env.PUSHED_TAG }}
+          tags: ghcr.io/t3rn/${{ env.PARACHAIN_NAME }}-collator:${{ env.PUSHED_TAG }}
           platforms: linux/amd64
           file: collator.${{ env.PARACHAIN_NAME }}.Dockerfile
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -161,7 +161,6 @@ jobs:
           asset_path: ${{ env.WASM_BINARY }}.info.json
           asset_name: ${{ env.WASM_RELEASE_ASSET }}.info.json
           asset_content_type: text/plain
-
 
   runtime-upgrade-zombienet-test:
     runs-on: [self-hosted, rust]
