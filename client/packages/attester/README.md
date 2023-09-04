@@ -19,13 +19,6 @@ Attester is a TypeScript application that performs attestation tasks.
    git clone https://github.com/t3rn/t3rn.git
    ```
 
-1. Build dependencies
-
-   ```bash
-   cd client/packages
-   make all
-   ```
-
 1. Install dependencies using pnpm:
 
    ```bash

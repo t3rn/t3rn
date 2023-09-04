@@ -33,16 +33,11 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          # TODO: can be removed when we have npm packages
-          # - "client/packages/**/*.ts"
-          # - "client/packages/**/*.json"
           filters: |
             src:
             - "client/cli.Dockerfile"
-            - "client/packages/**/*.ts"
-            - "client/packages/**/*.json"
             - "client/packages/cli/**/*.ts"
-            - "client/packages/helm/**"
+            - "client/packages/cli/helm/**"
             - "client/packages/cli/**/*.json"
             - ".github/workflows/cli.yml"
 
@@ -69,11 +64,11 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - run: cd .. && make all
+      - run: pnpm install
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
-        run: npm run lint:report
+        run: pnpm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
 
