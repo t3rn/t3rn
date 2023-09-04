@@ -10,7 +10,7 @@ on:
       - .github/workflows/npm-types.yml
 
 jobs:
-  build:
+  publish:
     runs-on: self-hosted
 
     defaults:
