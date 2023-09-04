@@ -309,16 +309,18 @@ export class ExecutionManager {
           break;
         case ListenerEvents.XtxCompleted:
           {
-            if(this.xtx[eventData.data[0].toString()])
-            this.xtx[eventData.data[0].toString()].completed();
-            else {
-              logger.warn({
-                index: eventData.data[0].toString(),
-                xtx: this.xtx
-              }, "SFX not found on the given index")
+            if (!this.xtx[eventData.data[0].toString()]) {
+              logger.warn(
+                {
+                  index: eventData.data[0].toString(),
+                  xtx: this.xtx,
+                },
+                "SFX not found on the given index",
+              );
+              break;
             }
+            this.xtx[eventData.data[0].toString()].completed();
           }
-          
           break;
         case ListenerEvents.DroppedAtBidding:
           this.droppedAtBidding(eventData.data[0].toString());
@@ -395,26 +397,26 @@ export class ExecutionManager {
     const bidder = bidData[1].toString();
     const amt = bidData[2].toNumber();
 
-   
-    if(this.sfxToXtx[sfxId]){ 
-      const conversionId = this.sfxToXtx[sfxId];
-      const sfxFromXtx = this.xtx[conversionId].sideEffects;
-      
-      const actualSfx = sfxFromXtx.get(sfxId);
-      if (actualSfx !== undefined) {
-        actualSfx.processBid(bidder, amt);
-      } else {
-        throw new Error(`Could not find SFX with id ${sfxId}`);
-      }
-    }  
-    else {
-      logger.warn({
-        sfxId: sfxId,
-        xtx: this.xtx
-      }, "Bad ConversionId for XTX");
+    // read chain state to fetch non-existent mapping
+    if (!this.sfxToXtx[sfxId]) {
+      logger.warn(
+        {
+          sfxId: sfxId,
+          xtx: this.xtx,
+        },
+        "Bad ConversionId for XTX",
+      );
       return;
     }
-    
+    const conversionId = this.sfxToXtx[sfxId];
+    const sfxFromXtx = this.xtx[conversionId].sideEffects;
+
+    const actualSfx = sfxFromXtx.get(sfxId);
+    if (actualSfx !== undefined) {
+      actualSfx.processBid(bidder, amt);
+    } else {
+      throw new Error(`Could not find SFX with id ${sfxId}`);
+    }
   }
 
   /**
