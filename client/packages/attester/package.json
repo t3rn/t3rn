@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@polkadot/util": "^10.4.2",
-    "@t3rn/sdk": "link:../sdk",
+    "@t3rn/sdk": "^0.2.0",
     "@t3rn/types": "^0.1.8",
     "async": "^3.2.4",
     "axios": "^1.4.0",
