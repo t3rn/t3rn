@@ -3,8 +3,8 @@ name: Publish @t3rn/types to npmjs
 
 on:
   push:
-    # branches:
-    #   - development
+    branches:
+      - development
     paths:
       - client/packages/types/**
       - .github/workflows/npm-types.yml
