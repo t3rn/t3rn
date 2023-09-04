@@ -404,7 +404,7 @@ export class ExecutionManager {
           sfxId: sfxId,
           xtx: this.xtx,
         },
-        "Bad ConversionId for XTX",
+        "Bad sfxId for XTX",
       );
       return;
     }
