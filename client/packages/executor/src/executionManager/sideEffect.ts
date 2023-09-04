@@ -13,7 +13,7 @@ import { Gateway } from "@t3rn/sdk/gateways";
 import { StrategyEngine } from "../strategy";
 import { BiddingEngine } from "../bidding";
 import { EventEmitter } from "events";
-import { floatToBn, toFloat } from "@t3rn/sdk/circuit";
+import { floatToBn } from "@t3rn/sdk/circuit";
 import { bnToFloat } from "@t3rn/sdk/converters/amounts";
 import { InclusionProof } from "../gateways/types";
 import { Logger } from "pino";

@@ -55,7 +55,7 @@ export class CircuitRelayer extends EventEmitter {
     if (txs.length > 1) {
       // only batch if more than one tx
       const batch = this.sdk.circuit.tx.createBatch(txs);
-      // @ts-ignore TODO: fix any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this.sdk.circuit.tx.signAndSendSafe(batch as any);
     } else {
       return this.sdk.circuit.tx.signAndSendSafe(txs[0] as never);
