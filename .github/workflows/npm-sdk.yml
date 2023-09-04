@@ -3,8 +3,8 @@ name: Publish @t3rn/sdk to npmjs
 
 on:
   push:
-    # branches:
-    #   - development
+    branches:
+      - development
     paths:
       - client/packages/sdk/**
       - .github/workflows/npm-sdk.yml
