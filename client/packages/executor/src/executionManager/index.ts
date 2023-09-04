@@ -308,7 +308,17 @@ export class ExecutionManager {
           }
           break;
         case ListenerEvents.XtxCompleted:
-          this.xtx[eventData.data[0].toString()].completed();
+          {
+            if(this.xtx[eventData.data[0].toString()])
+            this.xtx[eventData.data[0].toString()].completed();
+            else {
+              logger.warn({
+                index: eventData.data[0].toString(),
+                xtx: this.xtx
+              }, "SFX not found on the given index")
+            }
+          }
+          
           break;
         case ListenerEvents.DroppedAtBidding:
           this.droppedAtBidding(eventData.data[0].toString());
@@ -385,14 +395,26 @@ export class ExecutionManager {
     const bidder = bidData[1].toString();
     const amt = bidData[2].toNumber();
 
-    const conversionId = this.sfxToXtx[sfxId];
-    const sfxFromXtx = this.xtx[conversionId].sideEffects;
-    const actualSfx = sfxFromXtx.get(sfxId);
-    if (actualSfx !== undefined) {
-      actualSfx.processBid(bidder, amt);
-    } else {
-      throw new Error(`Could not find SFX with id ${sfxId}`);
+   
+    if(this.sfxToXtx[sfxId]){ 
+      const conversionId = this.sfxToXtx[sfxId];
+      const sfxFromXtx = this.xtx[conversionId].sideEffects;
+      
+      const actualSfx = sfxFromXtx.get(sfxId);
+      if (actualSfx !== undefined) {
+        actualSfx.processBid(bidder, amt);
+      } else {
+        throw new Error(`Could not find SFX with id ${sfxId}`);
+      }
+    }  
+    else {
+      logger.warn({
+        sfxId: sfxId,
+        xtx: this.xtx
+      }, "Bad ConversionId for XTX");
+      return;
     }
+    
   }
 
   /**
