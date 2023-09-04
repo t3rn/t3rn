@@ -99,13 +99,15 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 📦 Install dependencies
-        run: make all
-      
       # Attester
+      - name: 🎢 Install packages
+        run: pnpm install
+        working-directory: client/packages/attester
+
       - name: 🏗 Build Attester Docs
         run: pnpm run build-docs
         working-directory: client/packages/attester
+
       - name: 👾 Deploy Attester Docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -118,9 +120,14 @@ jobs:
             docs.attester.t3rn.io
 
       # Executor
-      - name: 🏗 Build Executor Docs
-        run: yarn build-docs
+      - name: 🎢 Install packages
+        run: pnpm install
         working-directory: client/packages/executor
+
+      - name: 🏗 Build Executor Docs
+        run: pnpm build-docs
+        working-directory: client/packages/executor
+
       - name: 👾 Deploy Executor Docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -133,9 +140,14 @@ jobs:
             docs.executor.t3rn.io
 
       # ts-sdk
+      - name: 🎢 Install packages
+        run: yarn ci
+        working-directory: client/packages/sdk
+
       - name: 🏗 Build SDK Docs
         run: yarn build:docs
         working-directory: client/packages/sdk
+
       - name: 👾 Deploy SDK docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
