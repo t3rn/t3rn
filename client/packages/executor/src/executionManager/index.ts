@@ -504,6 +504,7 @@ export class ExecutionManager {
           const events =
             await this.circuitClient.query.system.events.at(blockHash);
           // TODO: can batch fail in any different way?
+          // @ts-ignore - Property 'find' does not exist on type 'Codec'.
           const batchInterruptedEvent = events.find(
             (event) => event.event.method === "BatchInterrupted",
           );

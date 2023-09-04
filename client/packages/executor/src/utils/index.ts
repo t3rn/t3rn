@@ -96,6 +96,7 @@ export async function getBalanceWithDecimals(
   decimals: number = 12,
 ): Promise<number> {
   const balance = await client.query.system.account(address);
+  // @ts-ignore Property 'data' does not exist on type 'Codec | FrameSystemAccountInfo'.
   const balanceBN = new BN(balance.data.free.toString());
 
   // Assuming `balance.data.free` is the balance in the lowest unit (smallest decimal)
