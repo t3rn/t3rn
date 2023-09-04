@@ -59,6 +59,7 @@ export class CircuitListener extends EventEmitter {
   }
 
   async start() {
+    // @ts-ignore TODO: Type 'Codec' is not assignable to type '() => void'.
     this.stop = await this.client.query.system.events((notifications) => {
       // TODO: we should also monitor what events we are receiving here
       // TODO: refactor this to use event types in the same way ExecutionManager does
