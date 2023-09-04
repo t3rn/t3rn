@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/sdk",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "t3rn's client side SDK",
   "files": [
     "dist"
