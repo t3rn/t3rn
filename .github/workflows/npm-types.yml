@@ -6,7 +6,7 @@ on:
     # branches:
     #   - development
     paths:
-      - client/packages/types
+      - client/packages/types/**
       - .github/workflows/npm-types.yml
 
 jobs:
