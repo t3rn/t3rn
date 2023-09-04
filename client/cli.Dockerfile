@@ -4,12 +4,6 @@ RUN apt update -y
 RUN apt install -y python
 RUN npm install -g typescript ts-node pnpm
 
-ADD packages/sdk /app/sdk
-RUN cd /app/sdk && yarn install && yarn build
-
-ADD packages/types /app/types
-RUN cd /app/types && yarn install && yarn build
-
 ADD packages/cli /app/cli
 RUN cd /app/cli && pnpm i
 

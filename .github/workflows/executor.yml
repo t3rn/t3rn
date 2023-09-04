@@ -36,17 +36,12 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          # TODO: can be removed when we have npm packages
-          # - "client/packages/**/*.ts"
-          # - "client/packages/**/*.json"
-
           filters: |
             src:
             - "client/executor.Dockerfile"
-            - "client/packages/**/*.ts"
-            - "client/packages/**/*.json"
             - "client/packages/executor/**/*.ts"
             - "client/packages/executor/**/*.json"
+            - "client/packages/executor/helm/**"
             - ".github/workflows/executor.yml"
 
       - name: Detected changes
@@ -72,7 +67,6 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - run: cd .. && make all
       - run: pnpm install
       - run: pnpm run fmt:check
       - run: pnpm run build-docs
