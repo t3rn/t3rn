@@ -1,6 +1,6 @@
 import "@polkadot/api-augment";
 import * as dotenv from "dotenv";
-// @ts-ignore 
+// @ts-ignore
 import { Sdk } from "@t3rn/sdk";
 import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
