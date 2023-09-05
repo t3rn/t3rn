@@ -49,7 +49,7 @@ export class Connection {
 					this.prometheus.targetDisconnectsTotal.inc({target: this.target}, 1);
 
 				this.usingPrimaryRpc = !this.usingPrimaryRpc; // toggle connection
-				logger.info(`Retrying in 2 second with ${this.currentProvider().ws}`)
+				logger.warn(`Retrying in 2 second with ${this.currentProvider().ws}`)
 				await new Promise((resolve, _reject) => setTimeout(resolve, 2000));
 			}
 		}
@@ -81,7 +81,7 @@ export class Connection {
 			this.provider.on('disconnected', () => {
 				this.isActive = false;
 				this.isCircuit ? this.prometheus.circuitActive = false : this.prometheus.targetActive = false;
-				logger.info(`Disconnected from ${this.currentProvider().ws}`)
+				logger.warn(`Disconnected from ${this.currentProvider().ws}`)
 				this.provider.disconnect()
 				if(this.client) {
 					this.client.disconnect()
@@ -92,7 +92,7 @@ export class Connection {
 			this.provider.on('error',  () => {
 				this.isActive = false;
 				this.isCircuit ? this.prometheus.circuitActive = false : this.prometheus.targetActive = false;
-				logger.info(`Error from ${this.currentProvider().ws}`)
+				logger.warn(`Error from ${this.currentProvider().ws}`)
 				this.provider.disconnect()
 				if(this.client) {
 					this.client.disconnect()

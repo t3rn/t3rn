@@ -42,7 +42,7 @@ class GrandpaRanger {
 
 		let batches = await generateRange(this.config, this.circuit, this.target, this.prometheus, this.config.targetGatewayId)
 			.catch((e) => {
-				logger.info(e);
+				logger.error(e);
 				// potentially we want to introduce a retry logic here
 				return resolve()
 			})
@@ -67,13 +67,13 @@ class GrandpaRanger {
 					return resolve()
 				})
 				.catch((e) => {
-					logger.info(e);
+					logger.error(e);
 					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
 					this.prometheus.errorsTotal.inc({target: this.config.targetGatewayId}, 1)
 					return resolve() // resolve, as we don't want to stop the loop
 				})
 		} else {
-			logger.info({"status": "skipped", "range_size": 0, "circuit_block": 0})
+			logger.info({"status": "skipped", "range_size": 0, "circuit_block": 0}, "Skipped")
 		}
 	}
 
@@ -137,13 +137,13 @@ class GrandpaRanger {
 
 (async () => {
 	let config: any;
-	logger.info(__dirname);
 
 	try {
 		config = require(`../config/${process.env.PROFILE}.ts`).default;
+		logger.info(`Using ${process.env.PROFILE}.ts profile`)
 	} catch {
-		logger.info('Using local profile')
 		config = require('../config/local.ts').default;
+		logger.info('Using local profile')
 	}
 
 	const grandpaRanger = new GrandpaRanger(config);

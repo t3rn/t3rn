@@ -2,12 +2,21 @@ import {Connection} from "./connection";
 import {ApiPromise, Encodings} from "@t3rn/sdk";
 const axios = require('axios').default;
 import {Prometheus} from "./prometheus";
+import { logger } from "./logging";
 
 export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus, target: string): Promise<any[]> => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			const circuitHeight = await currentGatewayHeight(circuitConnection, config.targetGatewayId)
 			const targetHeight = await currentTargetHeight(targetConnection)
+
+			logger.debug(
+				{
+					circuitHeight,
+					targetHeight
+				},
+				"Current heights"
+			)
 
 			prometheus.circuitHeight.set({target}, circuitHeight)
 
@@ -62,6 +71,8 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 }
 
 const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
+	// client.rpc.portal.
+	logger.info([client.currentProvider().http, targetGatewayId])
 	return axios.post(client.currentProvider().http, {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
@@ -73,6 +84,7 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 		}
 	})
 	.then(response => {
+		logger.info(response.data)
 	  	return response.data.result;
 	})
 	.catch(error => {
