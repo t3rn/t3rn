@@ -327,6 +327,40 @@ fn should_register_token_and_populate_assets_storage_successfully() {
 }
 
 #[test]
+fn should_purge_token_and_destroy_asset_as_root_successfully() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::register_new_token(
+                &Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            let res = XDNS::purge_token_record(Origin::root(), u32::from_le_bytes(*b"test"));
+
+            assert_ok!(res);
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+        });
+}
+
+#[test]
 fn should_purge_token_and_destroy_asset_storage_successfully() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
