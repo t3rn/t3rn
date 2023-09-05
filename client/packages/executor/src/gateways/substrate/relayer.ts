@@ -11,7 +11,6 @@ import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
 import { logger } from "../../logging";
 import { Prometheus } from "../../prometheus";
-import { AccountInfo } from "@polkadot/types/interfaces";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -388,12 +387,6 @@ export class SubstrateRelayer extends EventEmitter {
       return parseInt(nextIndex.toNumber());
     });
   }
-}
-
-async function getBalance(client: ApiPromise, address) {
-  return (
-    (await client.query.system.account(address)) as AccountInfo
-  ).data.free.toNumber();
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };

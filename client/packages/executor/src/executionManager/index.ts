@@ -308,7 +308,19 @@ export class ExecutionManager {
           }
           break;
         case ListenerEvents.XtxCompleted:
-          this.xtx[eventData.data[0].toString()].completed();
+          {
+            if (!this.xtx[eventData.data[0].toString()]) {
+              logger.warn(
+                {
+                  index: eventData.data[0].toString(),
+                  xtx: this.xtx,
+                },
+                "SFX not found on the given index",
+              );
+              break;
+            }
+            this.xtx[eventData.data[0].toString()].completed();
+          }
           break;
         case ListenerEvents.DroppedAtBidding:
           this.droppedAtBidding(eventData.data[0].toString());
@@ -385,8 +397,20 @@ export class ExecutionManager {
     const bidder = bidData[1].toString();
     const amt = bidData[2].toNumber();
 
+    // read chain state to fetch non-existent mapping
+    if (!this.sfxToXtx[sfxId]) {
+      logger.warn(
+        {
+          sfxId: sfxId,
+          xtx: this.xtx,
+        },
+        "Bad sfxId for XTX",
+      );
+      return;
+    }
     const conversionId = this.sfxToXtx[sfxId];
     const sfxFromXtx = this.xtx[conversionId].sideEffects;
+
     const actualSfx = sfxFromXtx.get(sfxId);
     if (actualSfx !== undefined) {
       actualSfx.processBid(bidder, amt);
@@ -504,6 +528,7 @@ export class ExecutionManager {
           const events =
             await this.circuitClient.query.system.events.at(blockHash);
           // TODO: can batch fail in any different way?
+          // @ts-ignore - Property 'find' does not exist on type 'Codec'.
           const batchInterruptedEvent = events.find(
             (event) => event.event.method === "BatchInterrupted",
           );
