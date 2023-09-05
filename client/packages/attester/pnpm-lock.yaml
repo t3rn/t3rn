@@ -1,12 +1,16 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@polkadot/util':
     specifier: ^10.4.2
     version: 10.4.2
   '@t3rn/sdk':
-    specifier: ^0.2.2
-    version: 0.2.2
+    specifier: ^0.2.4
+    version: 0.2.4
   '@t3rn/types':
     specifier: ^0.1.8
     version: 0.1.8(@polkadot/util-crypto@9.7.2)(@polkadot/util@10.4.2)(@types/node@20.4.2)(typescript@5.1.6)
@@ -2469,8 +2473,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.2.2:
-    resolution: {integrity: sha512-HEKs4GSGai9j9aOcmV317ISBQGJCCxLhEmq08Fbk26xdav6sAmNO8HV736Av8niu/ILJS10G8Y2BLzynfGhfLQ==}
+  /@t3rn/sdk@0.2.4:
+    resolution: {integrity: sha512-1rnhKNyRoAO84MiDY8N+W2zwjRlKhuIo2iD0G75r+RLKMkmScu9HR/B+sjFq5Fazw8NZZPIUHUMs7L4XKavOig==}
     dependencies:
       '@polkadot/api': 8.14.1
       dotenv: 16.3.1
@@ -6336,7 +6340,3 @@ packages:
   /zod@3.22.2:
     resolution: {integrity: sha512-wvWkphh5WQsJbVk1tbx1l1Ly4yg+XecD+Mq280uBGt9wa5BKSWf4Mhp6GmrkPixhMxmabYY7RbzlwVP32pbGCg==}
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

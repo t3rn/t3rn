@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@polkadot/api':
     specifier: ^10.9.1
@@ -20,8 +24,8 @@ dependencies:
     specifier: ^12.4.1
     version: 12.4.1(@polkadot/util@12.4.1)
   '@t3rn/sdk':
-    specifier: ^0.2.2
-    version: 0.2.2
+    specifier: ^0.2.4
+    version: 0.2.4
   '@t3rn/types':
     specifier: ^0.1.8
     version: 0.1.8(@polkadot/util-crypto@12.4.1)(@polkadot/util@12.4.1)(@types/node@20.5.2)(typescript@5.1.6)
@@ -2058,8 +2062,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.2.2:
-    resolution: {integrity: sha512-HEKs4GSGai9j9aOcmV317ISBQGJCCxLhEmq08Fbk26xdav6sAmNO8HV736Av8niu/ILJS10G8Y2BLzynfGhfLQ==}
+  /@t3rn/sdk@0.2.4:
+    resolution: {integrity: sha512-1rnhKNyRoAO84MiDY8N+W2zwjRlKhuIo2iD0G75r+RLKMkmScu9HR/B+sjFq5Fazw8NZZPIUHUMs7L4XKavOig==}
     dependencies:
       '@polkadot/api': 8.14.1
       dotenv: 16.3.1
@@ -4283,6 +4287,7 @@ packages:
   /iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
+    requiresBuild: true
     dependencies:
       safer-buffer: 2.1.2
     dev: false
@@ -5434,6 +5439,7 @@ packages:
 
   /pako@2.1.0:
     resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
+    requiresBuild: true
     dev: false
     optional: true
 
@@ -5857,6 +5863,7 @@ packages:
 
   /safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
+    requiresBuild: true
     dev: false
     optional: true
 
@@ -5968,6 +5975,7 @@ packages:
 
   /smoldot@1.0.4:
     resolution: {integrity: sha512-N3TazI1C4GGrseFH/piWyZCCCRJTRx2QhDfrUKRT4SzILlW5m8ayZ3QTKICcz1C/536T9cbHHJyP7afxI6Mi1A==}
+    requiresBuild: true
     dependencies:
       pako: 2.1.0
       ws: 8.13.0
@@ -7047,7 +7055,3 @@ packages:
   /zod@3.22.2:
     resolution: {integrity: sha512-wvWkphh5WQsJbVk1tbx1l1Ly4yg+XecD+Mq280uBGt9wa5BKSWf4Mhp6GmrkPixhMxmabYY7RbzlwVP32pbGCg==}
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
