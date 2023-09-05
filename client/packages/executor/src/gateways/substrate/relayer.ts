@@ -11,6 +11,8 @@ import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
 import { logger } from "../../logging";
 import { Prometheus } from "../../prometheus";
+import { Hash } from "@polkadot/types/interfaces";
+import { Queue } from "src/utils/queue";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -33,6 +35,8 @@ export class SubstrateRelayer extends EventEmitter {
   name: string;
   nativeId: string;
   prometheus: Prometheus;
+  executionQueue: Queue<SideEffect>;
+  lastTx: Hash;
 
   async setup(config: Gateway, prometheus: Prometheus) {
     this.client = await ApiPromise.create({
@@ -94,6 +98,39 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
+    // this.executionQueue.enqueue(sfx)
+    // check the execution queue array
+    if (this.lastTx) {
+      const blockHash = await this.client.query.system.blockHash(this.lastTx);
+      if (!blockHash) {
+        this.nonce -= 1;
+      } else {
+        const block = await this.client.rpc.chain.getBlock(blockHash);
+        const lastFinalizedHead =
+          await this.client.rpc.chain.getFinalizedHead();
+        const lastFinalizedBlock = await this.client.rpc.chain.getBlock(
+          lastFinalizedHead.hash,
+        );
+        if (
+          block.block.header.number.toNumber() >
+          lastFinalizedBlock.block.header.number.toNumber()
+        ) {
+          this.executionQueue.enqueue(sfx);
+          logger.info(
+            {
+              lastTxInExecution: this.lastTx,
+              currentSFXAdded: sfx,
+            },
+            "INFO: Last transaction still in execution.",
+          );
+          return;
+        }
+      }
+    }
+    const currentSFX = this.executionQueue.dequeue();
+    if (currentSFX) {
+      sfx = currentSFX;
+    }
     logger.info(
       { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
       `SFX Execution started 🔮`,
@@ -113,87 +150,84 @@ export class SubstrateRelayer extends EventEmitter {
     const nonce = this.nonce;
     this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
     return new Promise<void>((resolve, reject) =>
-      tx.signAndSend(
-        this.signer,
-        { nonce },
-        async ({ dispatchError, status, events }) => {
-          if (dispatchError?.isModule) {
-            // something went wrong and we can decode the error
-            const err = this.client.registry.findMetaError(
-              dispatchError.asModule,
-            );
-            logger.info(
-              {
-                sfxId: sfx.id,
-                sfx: sfx,
-                error: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
-              },
-              `SFX Execution failed 🚨`,
-            );
-            this.emit("Event", <RelayerEventData>{
-              type: RelayerEvents.SfxExecutionError,
-              data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+      tx.signAndSend(this.signer, { nonce }, async (result) => {
+        console.log("TX Executing: ", result);
+        const { dispatchError, status, events, txHash } = result;
+        this.lastTx = txHash;
+        if (dispatchError?.isModule) {
+          // something went wrong and we can decode the error
+          const err = this.client.registry.findMetaError(
+            dispatchError.asModule,
+          );
+          logger.info(
+            {
               sfxId: sfx.id,
-            });
-            // we attempt to restore the correct nonce
-            this.nonce = await this.fetchNonce(
-              this.client,
-              this.signer.address,
-            );
-            reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
-          } else if (dispatchError) {
-            // something went wrong and we can't decode the error
-            this.emit("Event", <RelayerEventData>{
-              type: RelayerEvents.SfxExecutionError,
-              data: dispatchError.toString(),
+              sfx: sfx,
+              error: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+            },
+            `SFX Execution failed 🚨`,
+          );
+          this.emit("Event", <RelayerEventData>{
+            type: RelayerEvents.SfxExecutionError,
+            data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+            sfxId: sfx.id,
+          });
+          // we attempt to restore the correct nonce
+          this.nonce = await this.fetchNonce(this.client, this.signer.address);
+          reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
+        } else if (dispatchError) {
+          // something went wrong and we can't decode the error
+          this.emit("Event", <RelayerEventData>{
+            type: RelayerEvents.SfxExecutionError,
+            data: dispatchError.toString(),
+            sfxId: sfx.id,
+          });
+          // we attempt to restore the correct nonce
+          this.nonce = await this.fetchNonce(this.client, this.signer.address);
+          reject(Error(dispatchError.toString()));
+        } else if (status.isFinalized) {
+          const blockNumber = await this.generateSfxInclusionProof(
+            sfx,
+            status.asFinalized as never,
+            events,
+          );
+          logger.info(
+            {
               sfxId: sfx.id,
-            });
-            // we attempt to restore the correct nonce
-            this.nonce = await this.fetchNonce(
-              this.client,
-              this.signer.address,
-            );
-            reject(Error(dispatchError.toString()));
-          } else if (status.isFinalized) {
-            const blockNumber = await this.generateSfxInclusionProof(
-              sfx,
-              status.asFinalized as never,
-              events,
-            );
-            logger.info(
-              {
-                sfxId: sfx.id,
-                target: sfx.target,
-                blockNumber,
-                gatewayType: sfx.gateway.gatewayType,
-              },
-              `SFX Execution completed 🏁`,
-            );
-
-            if (sfx.gateway.gatewayType === "Substrate") {
-              this.prometheus.executorTargetBalance.set(
-                {
-                  signer: sfx.arguments[0],
-                  target: sfx.target,
-                },
-                await getBalanceWithDecimals(this.client, sfx.arguments[0]),
-              );
-            }
-            this.prometheus.executorExecutionCompleted.inc({
               target: sfx.target,
-            });
-
-            this.emit("Event", <RelayerEventData>{
-              type: RelayerEvents.SfxExecutedOnTarget,
-              sfxId: sfx.id,
-              target: this.name,
-              data: "",
               blockNumber,
-            });
-            resolve();
+              gatewayType: sfx.gateway.gatewayType,
+            },
+            `SFX Execution completed 🏁`,
+          );
+
+          if (sfx.gateway.gatewayType === "Substrate") {
+            this.prometheus.executorTargetBalance.set(
+              {
+                signer: sfx.arguments[0],
+                target: sfx.target,
+              },
+              await getBalanceWithDecimals(this.client, sfx.arguments[0]),
+            );
           }
-        },
-      ),
+          this.prometheus.executorExecutionCompleted.inc({
+            target: sfx.target,
+          });
+
+          this.emit("Event", <RelayerEventData>{
+            type: RelayerEvents.SfxExecutedOnTarget,
+            sfxId: sfx.id,
+            target: this.name,
+            data: "",
+            blockNumber,
+          });
+          resolve();
+        }
+        const nextSfx = this.executionQueue.dequeue();
+        if (nextSfx) {
+          this.executeTx(nextSfx);
+        }
+      }),
     );
   }
 
