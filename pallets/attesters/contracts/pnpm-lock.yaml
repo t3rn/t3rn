@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   ethereumjs-util:
     specifier: ^7.1.5
@@ -31,8 +35,8 @@ devDependencies:
     specifier: ^2.0.6
     version: 2.0.6(@nomiclabs/hardhat-ethers@2.2.3)(@types/sinon-chai@3.2.9)(ethereum-waffle@4.0.10)(ethers@5.7.2)(hardhat@2.17.0)
   '@openzeppelin/contracts':
-    specifier: ^4.9.2
-    version: 4.9.2
+    specifier: ^4.9.3
+    version: 4.9.3
   '@typechain/ethers-v5':
     specifier: ^10.2.1
     version: 10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2)(ethers@5.7.2)(typechain@8.3.0)(typescript@5.1.6)
@@ -1104,8 +1108,8 @@ packages:
       hardhat: 2.17.0(ts-node@10.9.1)(typescript@5.1.6)
     dev: true
 
-  /@openzeppelin/contracts@4.9.2:
-    resolution: {integrity: sha512-mO+y6JaqXjWeMh9glYVzVu8HYPGknAAnWyxTRhGeckOruyXQMNnlcW6w/Dx9ftLeIQk6N+ZJFuVmTwF7lEIFrg==}
+  /@openzeppelin/contracts@4.9.3:
+    resolution: {integrity: sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==}
     dev: true
 
   /@resolver-engine/core@0.3.3:
@@ -1583,6 +1587,7 @@ packages:
   /amdefine@1.0.1:
     resolution: {integrity: sha512-S2Hw0TtNkMJhIabBwIojKL9YHO5T0n5eNqWJ7Lrlel/zDbftQpxpapi8tZs3X1HWa+u+QeydGmzzNU0m09+Rcg==}
     engines: {node: '>=0.4.2'}
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -4321,6 +4326,7 @@ packages:
   /node-gyp-build@4.3.0:
     resolution: {integrity: sha512-iWjXZvmboq0ja1pUGULQBexmxq8CV4xBhX7VDOTbL7ZR4FOowwY/VOtRxBN/yKxmdGoIp4j5ysNT4u3S2pDQ3Q==}
     hasBin: true
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -6045,7 +6051,3 @@ packages:
   /yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

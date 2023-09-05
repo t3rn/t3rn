@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.50.0-rc.0] - 2023-09-05
+### :sparkles: New Features
+- [`cf3d8f8`](https://github.com/t3rn/t3rn/commit/cf3d8f817f633d7f7e7fc5dec746646e40d6ef56) - zombienet base test for executing SFX *(PR [#1269](https://github.com/t3rn/t3rn/pull/1269) by [@3h4x](https://github.com/3h4x))*
+- [`9b52dae`](https://github.com/t3rn/t3rn/commit/9b52dae6a3e6a44342fca83241e9271e2031b896) - add sdk to npmjs *(PR [#1273](https://github.com/t3rn/t3rn/pull/1273) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`d238dfd`](https://github.com/t3rn/t3rn/commit/d238dfd7a933f0f24866f66f8f3fc3f116aa399e) - sfx in xtx existence check *(PR [#1276](https://github.com/t3rn/t3rn/pull/1276) by [@Sj-001](https://github.com/Sj-001))*
+- [`6567047`](https://github.com/t3rn/t3rn/commit/6567047a86145383ddd41981e78214ed48f1a183) - npm packages have to be built before publishing *(PR [#1277](https://github.com/t3rn/t3rn/pull/1277) by [@3h4x](https://github.com/3h4x))*
+- [`abbdcd9`](https://github.com/t3rn/t3rn/commit/abbdcd983fbcb5e5d0ce1da65734564436662f33) - derive admin origin set to Escrow for Root token destroys *(PR [#1279](https://github.com/t3rn/t3rn/pull/1279) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.49.0-rc.0] - 2023-08-29
 ### :bug: Bug Fixes
 - [`3294ecc`](https://github.com/t3rn/t3rn/commit/3294eccd03ee10eb123a0503ee3d4f0e0205b581) - cli register gateway *(PR [#1270](https://github.com/t3rn/t3rn/pull/1270) by [@ahkohd](https://github.com/ahkohd))*
@@ -1544,3 +1555,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.48.5-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.4-rc.0...v1.48.5-rc.0
 [v1.48.6-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.5-rc.0...v1.48.6-rc.0
 [v1.49.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.6-rc.0...v1.49.0-rc.0
+[v1.50.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.49.0-rc.0...v1.50.0-rc.0
