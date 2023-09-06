@@ -336,7 +336,7 @@ pub mod pallet {
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
         // Attesters(AttestersEvent),
-        BatchingFactorRead(TargetId, Option<BatchingFactor>),
+        BatchingFactorRead(Vec<(TargetId, Option<BatchingFactor>)>),
         BatchCommitted(
             TargetId,
             BatchMessage<BlockNumberFor<T>>,
@@ -867,15 +867,13 @@ pub mod pallet {
         pub fn read_latest_batching_factor_overview(origin: OriginFor<T>) -> DispatchResult {
             ensure_signed(origin)?;
 
+            let mut batching_factor_overview = Vec::new();
             for target in AttestationTargets::<T>::get() {
-                let batching_factor = Self::read_latest_batching_factor(&target); //<Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
-                log::debug!(
-                    "Batching factor for target {:?} is {:?}",
-                    target,
-                    batching_factor
-                );
-                Self::deposit_event(Event::BatchingFactorRead(target, batching_factor));
+                let batching_factor = Self::read_latest_batching_factor(&target);
+                batching_factor_overview.push((target, batching_factor));
             }
+
+            Self::deposit_event(Event::BatchingFactorRead(batching_factor_overview));
 
             Ok(())
         }
@@ -1236,38 +1234,7 @@ pub mod pallet {
 
         /// Estimate the batching factor for a given target.
         fn estimate_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
-            // if target isn't active yet, return None early
-            if !AttestationTargets::<T>::get().contains(target) {
-                return None
-            }
-
-            let latest_signed = match Self::get_latest_batch_to_sign(*target) {
-                Some(batch) => batch.read_batching_factor(),
-                None => 0,
-            };
-
-            let current_next = match NextBatch::<T>::get(target) {
-                Some(batch) => batch.read_batching_factor(),
-                None => 0,
-            };
-
-            // Read amount of confirmed and reverted sfx out of last 10 confirmed batches, or fill with 0 if there aren't enough
-            let up_to_last_10_confirmed: Vec<u16> =
-                Self::get_batches(*target, BatchStatus::Committed)
-                    .iter()
-                    .rev()
-                    .take(10)
-                    .map(|batch| batch.read_batching_factor())
-                    .collect::<Vec<u16>>();
-
-            let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
-
-            Some(BatchingFactor {
-                latest_confirmed,
-                latest_signed,
-                current_next,
-                up_to_last_10_confirmed,
-            })
+            Self::read_latest_batching_factor(target)
         }
     }
 
@@ -2086,6 +2053,7 @@ pub mod attesters_test {
     };
     use std::ops::Index;
 
+    use crate::{TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
     use codec::Encode;
     use frame_support::{
         assert_err, assert_noop, assert_ok,
@@ -2095,8 +2063,6 @@ pub mod attesters_test {
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::{H160, H256};
     use sp_runtime::{traits::Keccak256, Percent};
-
-    use crate::{TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersAgreements, AttestersError,
@@ -2111,7 +2077,7 @@ pub mod attesters_test {
     use t3rn_primitives::{
         attesters::{
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            CommitteeRecoverable, CommitteeTransitionIndices,
+            BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
@@ -2460,6 +2426,48 @@ pub mod attesters_test {
     }
 
     #[test]
+    fn submitting_attestation_reads_updates_batching_factor_overview() {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
+            // Submit an attestation signed with the Ed25519 key
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
+            let (_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
+                attester,
+                vec![sfx_id_to_sign_on],
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                ETHEREUM_TARGET,
+                [1u8; 32],
+            );
+
+            assert_ok!(Attesters::read_latest_batching_factor_overview(
+                RuntimeOrigin::signed(AccountId::from([1u8; 32]))
+            ));
+
+            let current_batching_factor = expect_last_event_to_emit_batching_factor_overview();
+
+            assert_eq!(
+                current_batching_factor,
+                vec![(
+                    ETHEREUM_TARGET,
+                    Some(BatchingFactor {
+                        latest_confirmed: 0,
+                        latest_signed: 1,
+                        current_next: 0,
+                        up_to_last_10_confirmed: vec![]
+                    })
+                )]
+            );
+        });
+    }
+
+    #[test]
     fn register_and_submit_attestation_in_ecdsa() {
         let mut ext = ExtBuilder::default()
             .with_standard_sfx_abi()
@@ -2794,6 +2802,26 @@ pub mod attesters_test {
             assert_eq!(the_same_batch.status, BatchStatus::PendingAttestation);
             assert_eq!(the_same_batch.latency, LatencyStatus::Late(1, 0));
         });
+    }
+
+    fn expect_last_event_to_emit_batching_factor_overview(
+    ) -> Vec<(TargetId, Option<BatchingFactor>)> {
+        // Recover system event
+        let events = System::events();
+        let expect_desired_event = events.last();
+        assert!(expect_desired_event.clone().is_some());
+
+        match expect_desired_event {
+            Some(event) => match &event.event {
+                Event::Attesters(AttestersEvent::BatchingFactorRead(batching_factor_read)) =>
+                    batching_factor_read.clone(),
+                _ => panic!(
+                    "expect_last_event_to_emit_batching_factor_overview: unexpected event type"
+                ),
+            },
+            None =>
+                panic!("expect_last_event_to_emit_batching_factor_overview: no last event emitted"),
+        }
     }
 
     fn expect_last_event_to_emit_finality_fee_estimation() -> (TargetId, Balance) {
