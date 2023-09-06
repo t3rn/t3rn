@@ -15,6 +15,7 @@ parachains-common = { workspace = true }
 sp-core           = { workspace = true }
 sp-runtime        = { workspace = true }
 cumulus-primitives-core = { workspace = true }
+xcm               = { workspace = true }
 
 [features]
 default = [ "std" ]
