@@ -81,7 +81,9 @@ const registerGateway = async (
     const registrationData = await getRegistrationData(circuit, gatewayData)
 
     if (!registrationData) {
-      throw new Error(`${gatewayData.name} gateway registration data is not present!`)
+      throw new Error(
+        `${gatewayData.name} gateway registration data is not present!`,
+      )
     }
 
     spinner.succeed(colorLogMsg("SUCCESS", "Fetched registration data"))
@@ -136,7 +138,7 @@ const getRegistrationData = (
     case "Substrate":
       return registerSubstrateVerificationVendor(circuit, gatewayData)
     case "Ethereum":
-        return registerEthereumVerificationVendor(circuit)
+      return registerEthereumVerificationVendor(circuit)
     default:
       throw new Error("Registration for verification vendor not available!")
   }

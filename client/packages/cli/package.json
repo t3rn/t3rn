@@ -9,6 +9,8 @@
   },
   "scripts": {
     "preinstall": "npm exec -- only-allow pnpm",
+    "fmt": "prettier --write src",
+    "fmt:check": "prettier --check src",
     "cli": "yarn build && node dist/cli.js",
     "build": "tsup",
     "lint": "eslint --ext .ts src",

@@ -1,5 +1,7 @@
-const CIRCUIT_WS_ENDPOINT = process.env.CIRCUIT_WS_ENDPOINT || "ws://127.0.0.1:9944"
-const RPC_CIRCUIT_ENDPOINT = process.env.RPC_CIRCUIT_ENDPOINT || "http://127.0.0.1:9933"
+const CIRCUIT_WS_ENDPOINT =
+  process.env.CIRCUIT_WS_ENDPOINT || "ws://127.0.0.1:9944"
+const RPC_CIRCUIT_ENDPOINT =
+  process.env.RPC_CIRCUIT_ENDPOINT || "http://127.0.0.1:9933"
 
 export default {
   circuit: {

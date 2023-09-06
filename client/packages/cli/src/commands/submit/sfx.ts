@@ -5,8 +5,7 @@ import { colorLogMsg } from "@/utils/log.ts"
 import { ExtrinsicSchema } from "@/schemas/extrinsic.ts"
 import { readSfxFile, submitSfx } from "@/utils/sfx.ts"
 import { initTransferFile } from "@/commands/init.ts"
-import fs from 'fs'
-
+import fs from "fs"
 
 export const spinner = ora()
 

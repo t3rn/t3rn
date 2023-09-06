@@ -1,5 +1,5 @@
 import { beforeAll, describe } from "@jest/globals"
-import { spinner } from "../gateway.ts"
+import { spinner } from "../reboot.ts"
 import { fetchLatestAuthoritySetUpdateBlock } from "../vendors/substrate.ts"
 
 // @TODO: node fetch is an esm module. We need to update and other tests to support ESM module testing

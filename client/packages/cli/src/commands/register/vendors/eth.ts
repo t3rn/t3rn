@@ -81,7 +81,7 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
   if (response.status !== 200) {
     throw new Error(
       "Oops! Fetch debug beacon state faulted to error status: " +
-      response.status
+        response.status,
     )
   }
 
@@ -100,13 +100,14 @@ const fetchLastSyncCommitteeUpdateSlot = async () => {
   }
   const response = await fetch(
     RELAY_ENDPOINT + "/eth/v1/beacon/headers/head",
-    fetchOptions
+    fetchOptions,
   )
 
   if (response.status !== 200) {
     throw new Error(
-      `Failed to fetch the last sync committee update slot, STATUS: ${response.status
-      }, REASON: ${await response.text()}`
+      `Failed to fetch the last sync committee update slot, STATUS: ${
+        response.status
+      }, REASON: ${await response.text()}`,
     )
   }
 
@@ -154,7 +155,7 @@ async function fetchHeaderData(slot: number) {
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Fetch header data faulted to error status: " + response.status
+      "Oops! Fetch header data faulted to error status: " + response.status,
     )
   }
 
@@ -183,7 +184,7 @@ async function fetchCheckpointEntry(slot: number) {
 }
 
 async function fetchBeaconBlockHeaderAndRoot(
-  slot: number
+  slot: number,
 ): Promise<{ header: phase0.BeaconBlockHeader; root: string }> {
   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/headers?slot=${slot}`
   const fetchOptions = {
@@ -193,8 +194,9 @@ async function fetchBeaconBlockHeaderAndRoot(
 
   if (response.status !== 200) {
     throw new Error(
-      `Failed to fetch beacon header, STATUS: ${response.status
-      }, REASON: ${await response.text()}`
+      `Failed to fetch beacon header, STATUS: ${
+        response.status
+      }, REASON: ${await response.text()}`,
     )
   }
 
@@ -232,7 +234,7 @@ type InitData = Awaited<ReturnType<typeof fetchInitData>>
 
 const fetchInitData = async (
   finalizedSlot: number,
-  finalizedBeaconBlockRoot: string
+  finalizedBeaconBlockRoot: string,
 ) => {
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
   const fetchOptions = {
@@ -242,18 +244,19 @@ const fetchInitData = async (
 
   if (response.status !== 200) {
     throw new Error(
-      `Failed fetch init data, STATUS: ${response.status
-      }, REASON: ${await response.text()}`
+      `Failed fetch init data, STATUS: ${
+        response.status
+      }, REASON: ${await response.text()}`,
     )
   }
 
   const responseData = (await response.json()) as BootstrapResponse
   const finalized = await fetchCheckpointEntry(finalizedSlot)
   const justified = await fetchCheckpointEntry(
-    finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH
+    finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH,
   )
   const attested = await fetchCheckpointEntry(
-    finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH
+    finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH,
   )
   const currentSyncCommittee: SyncCommittee = {
     pubs: responseData.data.current_sync_committee.pubkeys,
@@ -279,7 +282,7 @@ const fetchInitData = async (
 
 const generateRegistrationData = (
   { data, checkpoint, currentSyncCommittee, nextSyncCommittee }: InitData,
-  circuit: ApiPromise
+  circuit: ApiPromise,
 ) => {
   return circuit
     .createType("EthereumInitializationData", {
@@ -294,18 +297,18 @@ const generateRegistrationData = (
       checkpoint: circuit.createType("Checkpoint", checkpoint),
       beacon_header: circuit.createType(
         "BeaconBlockHeader",
-        data.header.beacon
+        data.header.beacon,
       ),
       execution_header: circuit.createType(
         "ExecutionHeader",
-        data.header.execution
+        data.header.execution,
       ),
     })
     .toHex()
 }
 
 export const registerEthereumVerificationVendor = async (
-  circuit: ApiPromise
+  circuit: ApiPromise,
 ) => {
   try {
     const slot = await fetchLastSyncCommitteeUpdateSlot()
