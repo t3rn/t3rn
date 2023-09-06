@@ -1187,6 +1187,30 @@ pub mod tests {
             assert_ok!(initialize_parachain(Origin::root()));
         })
     }
+    use hex_literal::hex;
+    #[test]
+    fn can_register_again_after_reset_with_valid_data_and_signer() {
+        run_test(|| {
+            assert_ok!(initialize_relaychain(Origin::root()));
+            assert_ok!(initialize_parachain(Origin::root()));
+            assert_eq!(
+                InitialHash::<TestRuntime>::get(),
+                Some(
+                    hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
+                )
+            );
+            assert_ok!(Pallet::<TestRuntime>::reset(Origin::root()));
+            assert_eq!(InitialHash::<TestRuntime>::get(), None);
+            assert_ok!(initialize_relaychain(Origin::root()));
+            assert_ok!(initialize_parachain(Origin::root()));
+            assert_eq!(
+                InitialHash::<TestRuntime>::get(),
+                Some(
+                    hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
+                )
+            );
+        })
+    }
 
     #[test]
     fn cant_register_duplicate_gateway_ids() {
