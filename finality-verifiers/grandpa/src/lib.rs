@@ -434,7 +434,7 @@ pub mod pallet {
     pub(crate) fn initialize_relay_chain<T: Config<I>, I: 'static>(
         init_params: InitializationData<BridgedHeader<T, I>>,
         owner: T::AccountId,
-    ) -> Result<(), &'static str> {
+    ) -> DispatchResult {
         can_init_relay_chain::<T, I>()?;
 
         let InitializationData {
@@ -628,7 +628,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
-    ) -> Result<(), &'static str> {
+    ) -> DispatchResult {
         ensure_owner_or_root_single::<T, I>(origin)?;
 
         match <RelayChainId<T, I>>::get() {
@@ -898,11 +898,13 @@ fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
 }
 
 /// Ensure that no relaychain has been set so far. Relaychains are unique
-fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> {
-    match <BestFinalizedHash<T, I>>::exists() {
-        true => Err("Duplicate relaychain"), // we have a relaychain registered already
-        false => Ok(()),                     // is first relaychain
-    }
+fn can_init_relay_chain<T: Config<I>, I: 'static>() -> DispatchResult {
+    ensure!(
+        !<BestFinalizedHash<T, I>>::exists(),
+        "can_init_relay_chain -- chain_id already initialized"
+    );
+
+    Ok(())
 }
 
 /// Ensure that the SideEffect was executed after it was created.
