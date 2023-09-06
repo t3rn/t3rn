@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.52.0-rc.0] - 2023-09-06
+### :sparkles: New Features
+- [`0af5253`](https://github.com/t3rn/t3rn/commit/0af52539c1aa3ac5df212c26e982b75bdc0f7641) - **grandpa-ranger**: new sdk and types npm + logging for ranger *(PR [#1278](https://github.com/t3rn/t3rn/pull/1278) by [@3h4x](https://github.com/3h4x))*
+- [`f6b47af`](https://github.com/t3rn/t3rn/commit/f6b47afe57b7417e85543cb7fa2d89b898cfd8e6) - renaming CLI commands *(PR [#1285](https://github.com/t3rn/t3rn/pull/1285) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`727e0f2`](https://github.com/t3rn/t3rn/commit/727e0f218cfa00a5cabbf249bc6c8757ce072223) - change initialize grandpa light client to dispatch result *(PR [#1284](https://github.com/t3rn/t3rn/pull/1284) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.51.0-rc.0] - 2023-09-06
 ### :sparkles: New Features
 - [`fbb238f`](https://github.com/t3rn/t3rn/commit/fbb238f6dc1d77f211057564ffbe71b45b9810e3) - migrate attesters + circuit to include finality fee against v1.0.0 Polkadot dependencies  *(PR [#1245](https://github.com/t3rn/t3rn/pull/1245) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1577,3 +1586,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.50.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.0-rc.0...v1.50.1-rc.0
 [v1.50.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.1-rc.0...v1.50.2-rc.0
 [v1.51.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.2-rc.0...v1.51.0-rc.0
+[v1.52.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.51.0-rc.0...v1.52.0-rc.0
