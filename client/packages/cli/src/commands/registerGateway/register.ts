@@ -3,10 +3,9 @@ import { log } from "@/utils/log.ts"
 import { handleRegisterGateway } from "./gateway.ts"
 
 export const handleRegisterCmd = async (args: Args<"gateway" | "export">) => {
-  if (args.gateway) {
-    return await handleRegisterGateway(args.gateway, Boolean(args.export))
+  if (!args) {
+    log("ERROR", "No gateway ID provided!")
+    process.exit(1)
   }
-
-  log("ERROR", "No option provided!")
-  process.exit(1)
+  await handleRegisterGateway(args, false)
 }

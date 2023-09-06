@@ -13,7 +13,7 @@ yarn i
 
 ## Setup
 
-To start using the cli, you need to generate a `.t3rnrc.json` config file.
+To start using the cli, you need to generate a `config.json` config file.
 
 ```bash
 yarn cli init -c
