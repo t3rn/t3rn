@@ -5,6 +5,7 @@ export type CircuitContext = {
   circuit: ApiPromise
   sdk: Sdk
   signer: ReturnType<Keyring["addFromMnemonic"]>
+  endpoint: string
 }
 
 export const createCircuitContext = async (
@@ -18,16 +19,13 @@ export const createCircuitContext = async (
       ? keyring.addFromUri("//Alice")
       : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
   console.log(config.circuit.ws, signer.address)
-  const sdk = new Sdk(
-    config.circuit.ws,
-    signer,
-    exportMode,
-  )
+  const sdk = new Sdk(config.circuit.ws, signer, exportMode)
   const circuit = await sdk.init()
 
   return {
     circuit,
     sdk,
     signer,
+    endpoint: config.circuit.ws,
   }
 }

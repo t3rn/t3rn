@@ -5,6 +5,7 @@ import { Connection } from './connection';
 import { cryptoWaitReady } from "@t3rn/sdk"
 import { Prometheus } from "./prometheus";
 import fs from 'fs';
+import { logger } from "./logging";
 
 
 class GrandpaRanger {
@@ -41,11 +42,12 @@ class GrandpaRanger {
 
 		let batches = await generateRange(this.config, this.circuit, this.target, this.prometheus, this.config.targetGatewayId)
 			.catch((e) => {
-				console.log(e);
+				logger.error(e);
 				// potentially we want to introduce a retry logic here
 				return resolve()
 			})
 
+		logger.debug(batches)
 		if(batches.length > 0) {
 
 			if(batches.length > 10) {
@@ -57,7 +59,7 @@ class GrandpaRanger {
 
 			this.submitToCircuit(batches)
 				.then((res) => {
-					console.log({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
+					logger.info({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
 					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
 					this.prometheus.successesTotal.inc({target: this.config.targetGatewayId}, 1)
 					const latestHeight = parseInt(batches[batches.length - 1].signed_header.number)
@@ -65,13 +67,13 @@ class GrandpaRanger {
 					return resolve()
 				})
 				.catch((e) => {
-					console.log(e);
+					logger.error(e);
 					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
 					this.prometheus.errorsTotal.inc({target: this.config.targetGatewayId}, 1)
 					return resolve() // resolve, as we don't want to stop the loop
 				})
 		} else {
-			console.log({"status": "skipped", "range_size": 0, "circuit_block": 0})
+			logger.info({"status": "skipped", "range_size": 0, "circuit_block": 0}, "Skipped")
 		}
 	}
 
@@ -117,7 +119,7 @@ class GrandpaRanger {
 	async scheduleRangeSubmission() {
 		while(true) {
 			await new Promise((resolve, _reject) => {
-				console.log(`Starting new range submission loop: ${new Date().toISOString()}`)
+				logger.info(`Starting new range submission loop: ${new Date().toISOString()}`)
 				setTimeout(
 					() => {
 						this.collectAndSubmit(resolve)
@@ -135,13 +137,13 @@ class GrandpaRanger {
 
 (async () => {
 	let config: any;
-	console.log(__dirname);
 
 	try {
 		config = require(`../config/${process.env.PROFILE}.ts`).default;
+		logger.info(`Using ${process.env.PROFILE}.ts profile`)
 	} catch {
-		console.log('Using local profile')
 		config = require('../config/local.ts').default;
+		logger.info('Using local profile')
 	}
 
 	const grandpaRanger = new GrandpaRanger(config);

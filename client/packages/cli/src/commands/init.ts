@@ -35,7 +35,7 @@ export const initConfigFile = (filePath: string | true) => {
   } catch (e) {
     log(
       "ERROR",
-      `Unable to initialize t3rn CLI config. Reason: ${cleanStack(e.stack)}`
+      `Unable to initialize t3rn CLI config. Reason: ${cleanStack(e.stack)}`,
     )
   }
 }
@@ -50,7 +50,7 @@ export const initTransferFile = (filePath: string | true) => {
   } catch (e) {
     log(
       "ERROR",
-      `Unable to generate transfer template. Reason: ${cleanStack(e.stack)}`
+      `Unable to generate transfer template. Reason: ${cleanStack(e.stack)}`,
     )
   }
 }

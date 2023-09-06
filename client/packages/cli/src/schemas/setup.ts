@@ -8,7 +8,7 @@ const TransferData = z.object({
   fee: z.optional(
     z.number({
       invalid_type_error: "Fee must be a number",
-    })
+    }),
   ),
 })
 
@@ -25,14 +25,14 @@ const TokenInfo = z.record(
     id: z.optional(
       z.number({
         invalid_type_error: "Token ID must be a number",
-      })
+      }),
     ),
     address: z.optional(
       z.string({
         invalid_type_error: "Token address must be a string",
-      })
+      }),
     ),
-  })
+  }),
 )
 
 const RegistrationData = z.object({
@@ -50,7 +50,7 @@ const RegistrationData = z.object({
         required_error: "Parachain ID is required",
         invalid_type_error: "Parachain ID must be a number",
       }),
-    })
+    }),
   ),
   verificationVendor: z.string({
     required_error: "Verification vendor is required",
@@ -75,7 +75,7 @@ const RegistrationData = z.object({
         required_error: "Allowed side effect is required",
         invalid_type_error: "Allowed side effect must be a number",
       }),
-    ])
+    ]),
   ),
 })
 
@@ -91,12 +91,12 @@ const GatewaySchema = z.object({
   rpc: z.optional(
     z.string({
       invalid_type_error: "RPC endpoint must be a string",
-    })
+    }),
   ),
   subscan: z.optional(
     z.string({
       invalid_type_error: "Subscan URL must be a string",
-    })
+    }),
   ),
   tokenId: z.number({
     required_error: "Token ID is required",

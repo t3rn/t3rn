@@ -13,7 +13,7 @@ export const progressBar = new SingleBar({}, Presets.shades_classic)
 
 export const handleSubmitHeadersCmd = async (
   gatewayId: string,
-  exportMode: boolean
+  exportMode: boolean,
 ) => {
   const config = getConfig()
   if (!config) {
@@ -44,19 +44,22 @@ export const handleSubmitHeadersCmd = async (
         return bridge.submitHeaders(
           args.range,
           args.signed_header,
-          args.justification
+          args.justification,
         )
-      })
+      }),
     )
     await sdk.circuit.tx.signAndSendSafe(tx)
 
     spinner.succeed(
-      colorLogMsg("SUCCESS", `Header range submitted for ${gatewayId}!`)
+      colorLogMsg("SUCCESS", `Header range submitted for ${gatewayId}!`),
     )
     process.exit(0)
   } catch (e) {
     spinner.fail(
-      colorLogMsg("ERROR", `Failed to submit headers for ${gateway.name}: ${e}`)
+      colorLogMsg(
+        "ERROR",
+        `Failed to submit headers for ${gateway.name}: ${e}`,
+      ),
     )
     process.exit(1)
   }
@@ -73,7 +76,7 @@ export const getHeaders = async (circuit: Circuit, gateway: Gateway) => {
     }
     default:
       throw new Error(
-        `Verification vendor ${gateway.registrationData.verificationVendor} not supported`
+        `Verification vendor ${gateway.registrationData.verificationVendor} not supported`,
       )
   }
 }
@@ -103,7 +106,7 @@ export const getBridge = (circuit: Circuit, gatewayId: string) => {
 const getRelayChainHeaders = async (
   circuit: Circuit,
   target: ApiPromise,
-  gatewayId: string
+  gatewayId: string,
 ) => {
   const from = (await getGatewayHeight(gatewayId)) + 1
   const to = await getTargetCurrentHeight(target)
@@ -112,7 +115,7 @@ const getRelayChainHeaders = async (
     target,
     gatewayId,
     from,
-    to
+    to,
   )
 
   return transactionArguments.length > 10
@@ -129,11 +132,14 @@ const getGatewayHeight = async (gatewayId: string) => {
     id: 1,
   }
 
-  const response = await fetch(process.env.RPC_CIRCUIT_ENDPOINT || config.circuit.http, {
-    method: "post",
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
-  })
+  const response = await fetch(
+    process.env.RPC_CIRCUIT_ENDPOINT || config.circuit.http,
+    {
+      method: "post",
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+    },
+  )
   const responseData = (await response.json()) as {
     jsonrpc: string
     result: number
@@ -142,7 +148,7 @@ const getGatewayHeight = async (gatewayId: string) => {
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Get gateway height RPC response error, status: " + response.status
+      "Oops! Get gateway height RPC response error, status: " + response.status,
     )
   }
 
@@ -151,7 +157,7 @@ const getGatewayHeight = async (gatewayId: string) => {
 
 const getTargetCurrentHeight = async (target: ApiPromise) => {
   const header = await target.rpc.chain.getHeader(
-    await target.rpc.chain.getFinalizedHead()
+    await target.rpc.chain.getFinalizedHead(),
   )
   return header.number.toNumber()
 }
@@ -161,7 +167,7 @@ const generateBatchProof = async (
   target: ApiPromise,
   gatewayId: string,
   from: number,
-  to: number
+  to: number,
 ) => {
   const transactionArguments = []
   const logMsg = {
@@ -175,8 +181,8 @@ const generateBatchProof = async (
   spinner.info(
     colorLogMsg(
       "INFO",
-      `Obtaining batch proofs for ${gatewayId} from Block #${from} to #${to}`
-    )
+      `Obtaining batch proofs for ${gatewayId} from Block #${from} to #${to}`,
+    ),
   )
   progressBar.start(to - from, 0)
 
@@ -229,7 +235,7 @@ const generateBatchProof = async (
 const getTargetHeader = async (target: ApiPromise, height: number) => {
   return (
     await target.rpc.chain.getHeader(
-      await target.rpc.chain.getBlockHash(height)
+      await target.rpc.chain.getBlockHash(height),
     )
   ).toJSON()
 }

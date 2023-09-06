@@ -27,7 +27,7 @@ describe("colorLogMsg", () => {
 })
 
 const expectedOutput = `${chalk.black.bold.bgBlue("INFO")} ${chalk.blue(
-  "test"
+  "test",
 )}`
 
 describe("fmtLog", () => {

@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@polkadot/util": "^10.4.2",
-    "@t3rn/sdk": "^0.2.2",
-    "@t3rn/types": "^0.1.8",
+    "@t3rn/sdk": "^0.2.5",
+    "@t3rn/types": "^0.1.10",
     "async": "^3.2.4",
     "axios": "^1.4.0",
     "dotenv": "^16.3.1",
