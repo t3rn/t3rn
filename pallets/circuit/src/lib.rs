@@ -733,7 +733,7 @@ pub mod pallet {
             // Skip remote origin withdrawals - they are already handled by the remote origin
             let requester = match OrderOrigin::<T::AccountId>::new(&order_origin) {
                 OrderOrigin::Local(_) => return Err(Error::<T>::InvalidOrderOrigin.into()),
-                OrderOrigin::Remote(_) => order_origin.clone(),
+                OrderOrigin::Remote(_, _) => order_origin.clone(),
             };
 
             Self::do_on_extrinsic_trigger(

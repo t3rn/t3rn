@@ -502,7 +502,7 @@ pub struct OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost> {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum OrderOrigin<AccountId> {
     Local(AccountId),
-    Remote(u32),
+    Remote(u32, Vec<u8>),
 }
 
 impl<AccountId: Encode + Decode + Clone> OrderOrigin<AccountId> {
@@ -515,7 +515,7 @@ impl<AccountId: Encode + Decode + Clone> OrderOrigin<AccountId> {
 
     pub fn is_remote(&self) -> bool {
         match self {
-            OrderOrigin::Remote(_) => true,
+            OrderOrigin::Remote(_, _) => true,
             _ => false,
         }
     }
@@ -524,7 +524,7 @@ impl<AccountId: Encode + Decode + Clone> OrderOrigin<AccountId> {
         let maybe_remote = Self::new(source);
         match maybe_remote {
             OrderOrigin::Local(_) => Err("InvalidRemoteSource".into()),
-            OrderOrigin::Remote(_) => Ok(maybe_remote),
+            OrderOrigin::Remote(_, _) => Ok(maybe_remote),
         }
     }
 
@@ -536,20 +536,37 @@ impl<AccountId: Encode + Decode + Clone> OrderOrigin<AccountId> {
         }
         let mut remote_origin_nonce = [0u8; 4];
         remote_origin_nonce.copy_from_slice(&source_bytes[28..32]);
-        OrderOrigin::Remote(u32::from_be_bytes(remote_origin_nonce))
+        let mut remote_origin_address_len = &source_bytes[0];
+        if *remote_origin_address_len > 28 {
+            remote_origin_address_len = &28;
+        }
+        let mut remote_origin_address = vec![0u8; *remote_origin_address_len as usize];
+        remote_origin_address
+            .copy_from_slice(&source_bytes[1..1 + *remote_origin_address_len as usize]);
+
+        OrderOrigin::Remote(
+            u32::from_be_bytes(remote_origin_nonce),
+            remote_origin_address,
+        )
     }
 
     pub fn from_remote_nonce(remote_nonce: u32) -> OrderOrigin<AccountId> {
-        OrderOrigin::Remote(remote_nonce)
+        OrderOrigin::Remote(remote_nonce, vec![])
+    }
+
+    pub fn from_remote_nonce_and_address(
+        remote_nonce: u32,
+        remote_address: Vec<u8>,
+    ) -> OrderOrigin<AccountId> {
+        OrderOrigin::Remote(remote_nonce, remote_address)
     }
 
     pub fn to_account_id(&self) -> AccountId {
         match self {
             OrderOrigin::Local(a) => a.clone(),
-            OrderOrigin::Remote(nonce) => {
+            OrderOrigin::Remote(_nonce, remote_address) => {
                 let mut account_bytes = [0u8; 32];
-                let nonce_bytes = nonce.to_be_bytes();
-                account_bytes[28..32].copy_from_slice(&nonce_bytes);
+                account_bytes[0..28].copy_from_slice(&remote_address[0..28]);
                 AccountId::decode(&mut &account_bytes[..])
                     .expect("AccountId should always decode from [u8; 32]")
             },
