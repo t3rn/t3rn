@@ -1055,7 +1055,7 @@ pub mod tests {
 
     fn initialize_relaychain(
         origin: Origin,
-    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, DispatchError> {
         let genesis = test_header_with_correct_parent(0, None);
         let init_data = RelaychainRegistrationData::<AccountId> {
             authorities: authorities(),
@@ -1070,7 +1070,7 @@ pub mod tests {
     fn initialize_named_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, DispatchError> {
         let genesis = test_header(0);
         let init_data = RelaychainRegistrationData::<AccountId> {
             authorities: authorities(),
@@ -1086,11 +1086,11 @@ pub mod tests {
         origin: Origin,
         gateway_id: ChainId,
         init_data: RelaychainRegistrationData<AccountId>,
-    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, DispatchError> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, &'static str> {
+    fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, DispatchError> {
         let _genesis = test_header(0);
         let init_data = ParachainRegistrationData {
             relay_gateway_id: *b"pdot",
@@ -1103,7 +1103,7 @@ pub mod tests {
     fn initialize_named_parachain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<ParachainRegistrationData, &'static str> {
+    ) -> Result<ParachainRegistrationData, DispatchError> {
         let init_data = ParachainRegistrationData {
             relay_gateway_id: *b"pdot",
             id: 0,
@@ -1116,7 +1116,7 @@ pub mod tests {
         origin: Origin,
         gateway_id: ChainId,
         init_data: ParachainRegistrationData,
-    ) -> Result<ParachainRegistrationData, &'static str> {
+    ) -> Result<ParachainRegistrationData, DispatchError> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
