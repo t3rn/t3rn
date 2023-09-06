@@ -35,17 +35,17 @@ program
 
 withExportMode(
   program
-    .command("register")
-    .option("-g, --gateway <id>", "ID of the gateway to register")
-    .description("Register a gateway with the t3rn circuit")
+    .command("registerGateway")
+    .argument("gateway", "ID of the gateway to register")
+    .description("Register a gateway with the circuit")
     .action(wrapCryptoWaitReady(handleRegisterCmd)),
 )
 
 withExportMode(
   program
-    .command("reboot")
+    .command("rebootGateway")
     .argument("vendor")
-    .description("reboot a gateway")
+    .description("Reboot a gateway")
     .action(wrapCryptoWaitReady(handleRebootCommand)),
 )
 
