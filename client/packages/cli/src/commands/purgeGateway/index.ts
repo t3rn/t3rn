@@ -15,7 +15,7 @@ export const spinner = ora()
 export const handlePurgeGatewayCommand = async (
   args: Args<"gateway" | "export">,
 ) => {
-  log("INFO", `Rebooting ${args} gateway...`)
+  log("INFO", `Purging ${args} gateway...`)
 
   if (!args) {
     log("ERROR", "No vendor provided!")
@@ -40,10 +40,10 @@ export const handlePurgeGatewayCommand = async (
       ),
     )
 
-    spinner.succeed(colorLogMsg("SUCCESS", `Gateway rebooted`))
+    spinner.succeed(colorLogMsg("SUCCESS", `Gateway purged`))
     spinner.stopAndPersist({
       symbol: "🎉",
-      text: colorLogMsg("SUCCESS", `Gateway rebooted`),
+      text: colorLogMsg("SUCCESS", `Gateway purged`),
     })
     spinner.stop()
 
