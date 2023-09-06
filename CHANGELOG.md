@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.50.2-rc.0] - 2023-09-06
+### :wrench: Chores
+- [`c0e4b7b`](https://github.com/t3rn/t3rn/commit/c0e4b7bd73db7db030494fd32ee79913fd97375d) - add XDNS standard sfx abi to standalone chain specs *(PR [#1283](https://github.com/t3rn/t3rn/pull/1283) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.50.1-rc.0] - 2023-09-06
 ### :bug: Bug Fixes
 - [`dfe6984`](https://github.com/t3rn/t3rn/commit/dfe69845c2a3821193e557cc114c102aa2c53999) - sdk/types support sepolia gw *(PR [#1281](https://github.com/t3rn/t3rn/pull/1281) by [@3h4x](https://github.com/3h4x))*
@@ -1565,3 +1570,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.49.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.6-rc.0...v1.49.0-rc.0
 [v1.50.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.49.0-rc.0...v1.50.0-rc.0
 [v1.50.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.0-rc.0...v1.50.1-rc.0
+[v1.50.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.1-rc.0...v1.50.2-rc.0
