@@ -4,8 +4,8 @@ import { Command } from "commander"
 import { handleInitCmd, initConfigFile } from "./commands/init.ts"
 import { CONFIG_FILE } from "@/consts.ts"
 import { wrapCryptoWaitReady } from "./utils/fns.ts"
-import { handleRegisterCmd } from "./commands/register/register.ts"
-import { handleRebootCommand } from "./commands/reboot/index.ts"
+import { handleRegisterCmd } from "./commands/registerGateway/register.ts"
+import { handleRebootCommand } from "./commands/rebootGateway/index.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
@@ -35,17 +35,17 @@ program
 
 withExportMode(
   program
-    .command("register")
-    .option("-g, --gateway <id>", "ID of the gateway to register")
-    .description("Register a gateway with the t3rn circuit")
+    .command("registerGateway")
+    .argument("gateway", "ID of the gateway to register")
+    .description("Register a gateway with the circuit")
     .action(wrapCryptoWaitReady(handleRegisterCmd)),
 )
 
 withExportMode(
   program
-    .command("reboot")
+    .command("rebootGateway")
     .argument("vendor")
-    .description("reboot a gateway")
+    .description("Reboot a gateway")
     .action(wrapCryptoWaitReady(handleRebootCommand)),
 )
 
