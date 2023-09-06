@@ -1,7 +1,7 @@
 export default {
  circuit: {
   rpc1: {
-   ws: "wss://ws.t0rn.io",
+   ws: "wss://rpc.t0rn.io",
    http: "https://rpc.t0rn.io"
   },
  },
@@ -15,5 +15,4 @@ export default {
  },
  rangeInterval: 120, // time between range submissions in seconds
  targetGatewayId: "roco",
- circuitSigner: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561"
 }

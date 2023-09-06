@@ -7,7 +7,7 @@
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
-    "@openzeppelin/contracts": "^4.9.2",
+    "@openzeppelin/contracts": "^4.9.3",
     "@typechain/ethers-v5": "^10.2.1",
     "@typechain/hardhat": "^6.1.6",
     "@types/chai": "^4.3.5",
@@ -23,7 +23,7 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "preinstall": "npx -y only-allow pnpm",
+    "preinstall": "npm exec -- only-allow pnpm",
     "compile": "hardhat compile",
     "test": "hardhat test"
   },

@@ -11,9 +11,9 @@ count = 2
 name  = "bob"
 
 [[parachains]]
-chain         = "rococo-local"
+chain         = "local"
 cumulus_based = true
-id            = 3000
+id            = 3333
 
 # Arbitrary collator needs to be set based on param
 [[parachains.collators]]

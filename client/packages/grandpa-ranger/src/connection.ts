@@ -14,16 +14,20 @@ export class Connection {
 	prometheus: Prometheus;
 	target: string;
 
-	constructor(rpc1: any, rpc2: any, isCircuit: boolean, prometheus: Prometheus, target: string, signer?: string) {
+	constructor(rpc1: any, rpc2: any, isCircuit: boolean, prometheus: Prometheus, target: string) {
 		this.rpc1 = rpc1;
 		this.rpc2 = rpc2;
 		this.usingPrimaryRpc = true;
 		this.isCircuit = isCircuit;
 		this.prometheus = prometheus;
 		this.target = target;
-		if(signer) {
-			const keyring = new Keyring({ type: 'sr25519' });
-			this.signer = keyring.addFromMnemonic(signer);
+		const keyring = new Keyring({ type: 'sr25519' });
+		if (isCircuit) {
+			this.signer =
+				process.env.CIRCUIT_SIGNER_KEY === undefined
+				? keyring.addFromUri("//Alice")
+				: keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
+			console.log(`Using signer ${this.signer.address} for ${this.rpc1}`)
 		}
 	}
 

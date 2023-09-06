@@ -55,7 +55,8 @@ export class CircuitRelayer extends EventEmitter {
     if (txs.length > 1) {
       // only batch if more than one tx
       const batch = this.sdk.circuit.tx.createBatch(txs);
-      return this.sdk.circuit.tx.signAndSendSafe(batch);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this.sdk.circuit.tx.signAndSendSafe(batch as any);
     } else {
       return this.sdk.circuit.tx.signAndSendSafe(txs[0] as never);
     }
@@ -83,6 +84,14 @@ export class CircuitRelayer extends EventEmitter {
         relay_block_hash: sfx.inclusionProof.block_hash,
       });
     }
+    logger.debug(
+      {
+        inclusionData: inclusionData.toHex(),
+        target: sfx.target,
+        inclusionProof: sfx.inclusionProof,
+      },
+      "Inclusion data for SFX",
+    );
 
     const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType(
       "T3rnTypesSfxConfirmedSideEffect",

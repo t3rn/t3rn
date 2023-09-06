@@ -13,12 +13,14 @@ export class Prometheus {
   // Metrics
   events: Counter;
   circuitDisconnects: Counter;
-  executorBids: Counter;
   executorXtxStrategyRejects: Counter;
   executorBid: Counter;
   executorBidRejected: Counter;
   executorBalance: Gauge;
   executorClientBalance: Gauge;
+  executorTargetBalance: Gauge;
+  executorConfirmationErrors: Counter;
+  executorExecutionCompleted: Counter;
   attestationsBatchesPending: Gauge;
   attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
@@ -26,6 +28,7 @@ export class Prometheus {
   attestationVerifierCurrentCommitteeTransitionCount: Gauge;
   attestationBatchesProcessed: Counter;
   attestatonBatchesFailed: Counter;
+  gatewayHeight: Gauge;
 
   constructor() {
     const Registry = client.Registry;
@@ -36,16 +39,11 @@ export class Prometheus {
   createMetrics() {
     // Collects default metrics
     collectDefaultMetrics({ register: this.register });
-    this.executorBids = new Counter({
-      name: "executor_bids",
-      help: "Number of bids",
-      registers: [this.register],
-    });
-
     this.events = new Counter({
       name: "events",
       help: "Number of events",
       registers: [this.register],
+      labelNames: ["event"],
     });
 
     this.circuitDisconnects = new Counter({
@@ -87,6 +85,26 @@ export class Prometheus {
       help: "Executor client balance",
       registers: [this.register],
       labelNames: ["signer", "target"],
+    });
+
+    this.executorTargetBalance = new Gauge({
+      name: "executor_target_balance",
+      help: "Executor target balance",
+      registers: [this.register],
+      labelNames: ["signer", "target"],
+    });
+
+    this.executorConfirmationErrors = new Counter({
+      name: "executor_confirmation_errors_total",
+      help: "Number of times confirmation errors happened",
+      registers: [this.register],
+    });
+
+    this.executorExecutionCompleted = new Counter({
+      name: "executor_execution_completed_total",
+      help: "Number of times execution completed",
+      registers: [this.register],
+      labelNames: ["target"],
     });
 
     this.attestationsBatchesPending = new Gauge({
@@ -131,6 +149,13 @@ export class Prometheus {
       help: "Number of attestations batches failed",
       registers: [this.register],
       labelNames: ["error"],
+    });
+
+    this.gatewayHeight = new Gauge({
+      name: "gateway_height",
+      help: "Gateway height",
+      registers: [this.register],
+      labelNames: ["vendor"],
     });
 
     this.startServer();

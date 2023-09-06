@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { EventMapper, SideEffect } from "../../executionManager/sideEffect";
-import { getEventProofs } from "../../utils";
+import { getBalanceWithDecimals, getEventProofs } from "../../utils";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { SfxType } from "@t3rn/sdk/side-effects/types";
 import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
@@ -11,7 +11,6 @@ import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
 import { logger } from "../../logging";
 import { Prometheus } from "../../prometheus";
-import { AccountInfo } from "@polkadot/types/interfaces";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -50,17 +49,17 @@ export class SubstrateRelayer extends EventEmitter {
     if (config.nativeId) this.nativeId = config.nativeId;
 
     this.nonce = await this.fetchNonce(this.client, this.signer.address);
-    const balance = (
-      (await this.client.query.system.account(
-        this.signer.address,
-      )) as AccountInfo
-    ).data.free.toNumber();
+    const balance = await getBalanceWithDecimals(
+      this.client,
+      this.signer.address,
+    );
     logger.info(
       {
         signer: this.signer.address,
         nonce: this.nonce,
         target: this.name,
         balance: balance,
+        rpc: config.rpc,
       },
       "Relayer setup completed 🏁",
     );
@@ -101,12 +100,12 @@ export class SubstrateRelayer extends EventEmitter {
     );
 
     if (sfx.gateway.executionVendor === "Substrate") {
-      this.prometheus.executorClientBalance.set(
+      this.prometheus.executorTargetBalance.set(
         {
           signer: sfx.arguments[0],
           target: sfx.target,
         },
-        await getBalance(this.client, sfx.arguments[0]),
+        await getBalanceWithDecimals(this.client, sfx.arguments[0]),
       );
     }
 
@@ -162,19 +161,27 @@ export class SubstrateRelayer extends EventEmitter {
               events,
             );
             logger.info(
-              { sfxId: sfx.id, target: sfx.target, blockNumber },
+              {
+                sfxId: sfx.id,
+                target: sfx.target,
+                blockNumber,
+                gatewayType: sfx.gateway.gatewayType,
+              },
               `SFX Execution completed 🏁`,
             );
 
             if (sfx.gateway.gatewayType === "Substrate") {
-              this.prometheus.executorClientBalance.set(
+              this.prometheus.executorTargetBalance.set(
                 {
                   signer: sfx.arguments[0],
                   target: sfx.target,
                 },
-                await getBalance(this.client, sfx.arguments[0]),
+                await getBalanceWithDecimals(this.client, sfx.arguments[0]),
               );
             }
+            this.prometheus.executorExecutionCompleted.inc({
+              target: sfx.target,
+            });
 
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,
@@ -299,6 +306,21 @@ export class SubstrateRelayer extends EventEmitter {
     const blockHash = await this.client.rpc.chain.getBlockHash(
       relaychainBlockNumber,
     );
+    logger.debug(
+      {
+        blockHash,
+        relaychainBlockNumber,
+        parachainId,
+        inclusionProof: Utils.Substrate.getStorageProof(
+          this.client,
+          blockHash,
+          "Paras",
+          "Heads",
+          parachainId,
+        ),
+      },
+      "Generating header inclusion proof with Substrate.getStorageProof",
+    );
 
     return Utils.Substrate.getStorageProof(
       this.client,
@@ -362,15 +384,9 @@ export class SubstrateRelayer extends EventEmitter {
   async fetchNonce(api: ApiPromise, address: string): Promise<number> {
     return await api.rpc.system.accountNextIndex(address).then((nextIndex) => {
       // @ts-ignore - property does not exist on type
-      return parseInt(nextIndex.toHuman());
+      return parseInt(nextIndex.toNumber());
     });
   }
-}
-
-async function getBalance(client: ApiPromise, address) {
-  return (
-    (await client.query.system.account(address)) as AccountInfo
-  ).data.free.toNumber();
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };

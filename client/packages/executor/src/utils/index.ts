@@ -3,6 +3,7 @@ import { ApiPromise } from "@polkadot/api";
 import { u8aToHex } from "@polkadot/util";
 import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { BN } from "@polkadot/util";
+import { Sdk } from "@t3rn/sdk";
 import { default as pino, Logger } from "pino";
 
 export async function getStorage(
@@ -87,4 +88,23 @@ export function createLogger(name: string, logsDir?: string): Logger {
   }
 
   return logger;
+}
+
+export async function getBalanceWithDecimals(
+  client: Sdk["client"] | ApiPromise,
+  address: string,
+  decimals: number = 12,
+): Promise<number> {
+  const balance = await client.query.system.account(address);
+  // @ts-ignore Property 'data' does not exist on type 'Codec | FrameSystemAccountInfo'.
+  const balanceBN = new BN(balance.data.free.toString());
+
+  // Assuming `balance.data.free` is the balance in the lowest unit (smallest decimal)
+  // For example, if you have 123.456789 TKN, and decimals: 12, then `balance.data.free` might be 123456789000000
+  // We always want to display the balance with two numbers after decimal
+  const divisor = new BN(10).pow(new BN(decimals - 2));
+
+  const balanceNumber = balanceBN.div(divisor).toNumber() / 100;
+
+  return balanceNumber;
 }

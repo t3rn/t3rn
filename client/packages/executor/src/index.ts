@@ -34,7 +34,7 @@ import {
   ListenerEventData,
 } from "./circuit/listener";
 import { CircuitRelayer } from "./circuit/relayer";
-import { createLogger } from "./utils";
+import { createLogger, getBalanceWithDecimals } from "./utils";
 import { Logger } from "pino";
 import { Prometheus } from "./prometheus";
 import { logger } from "./logging";
@@ -98,9 +98,10 @@ class Instance {
     });
 
     // TODO: print wallet balance on available networks
-    const balance = (
-      await this.circuitClient.query.system.account(this.signer.address)
-    ).data.free.toNumber();
+    const balance = await getBalanceWithDecimals(
+      this.circuitClient,
+      this.signer.address,
+    );
 
     // Convert the balance to a human-readable format
     logger.info(

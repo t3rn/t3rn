@@ -1,9 +1,9 @@
 {
   "name": "@t3rn/sdk",
-  "version": "0.1.5",
+  "version": "0.2.5",
   "description": "t3rn's client side SDK",
   "files": [
-    "dist"
+    "dist/**/*"
   ],
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
+    "ci": "rm -rf node_modules && yarn",
     "clean:build": "rm -rf ./dist",
     "build": "yarn clean:build && tsup",
     "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk",

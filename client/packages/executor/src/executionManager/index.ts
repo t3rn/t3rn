@@ -22,6 +22,7 @@ import { Logger } from "pino";
 import BN from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
+import { getBalanceWithDecimals } from "../utils";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -251,7 +252,7 @@ export class ExecutionManager {
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-      this.prometheus.events.inc();
+      this.prometheus.events.inc({ event: ListenerEvents[eventData.type] });
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
@@ -275,6 +276,12 @@ export class ExecutionManager {
             if (!data.vendor || !data.height) break;
 
             this.updateGatewayHeight(data.vendor, data.height);
+            this.prometheus.gatewayHeight.set(
+              {
+                vendor: data.vendor,
+              },
+              data.height,
+            );
           }
           break;
         case ListenerEvents.SideEffectConfirmed:
@@ -282,6 +289,10 @@ export class ExecutionManager {
             const sfxId = eventData.data[0].toString();
             const xtxId = this.sfxToXtx[sfxId];
             const xtx = this.xtx[xtxId];
+
+            // TODO: We should check if this is our XTX
+            if (!xtx) break;
+
             const sfx = xtx.sideEffects.get(sfxId);
 
             if (!sfx) break;
@@ -297,7 +308,19 @@ export class ExecutionManager {
           }
           break;
         case ListenerEvents.XtxCompleted:
-          this.xtx[eventData.data[0].toString()].completed();
+          {
+            if (!this.xtx[eventData.data[0].toString()]) {
+              logger.warn(
+                {
+                  index: eventData.data[0].toString(),
+                  xtx: this.xtx,
+                },
+                "SFX not found on the given index",
+              );
+              break;
+            }
+            this.xtx[eventData.data[0].toString()].completed();
+          }
           break;
         case ListenerEvents.DroppedAtBidding:
           this.droppedAtBidding(eventData.data[0].toString());
@@ -324,6 +347,15 @@ export class ExecutionManager {
       this.strategyEngine,
       this.biddingEngine,
       this.prometheus,
+    );
+
+    const balance = await getBalanceWithDecimals(
+      this.circuitClient,
+      xtx.owner.toString(),
+    );
+    this.prometheus.executorClientBalance.set(
+      { signer: xtx.owner.toString() },
+      balance,
     );
 
     // Run the XTX strategy checks
@@ -365,8 +397,20 @@ export class ExecutionManager {
     const bidder = bidData[1].toString();
     const amt = bidData[2].toNumber();
 
+    // read chain state to fetch non-existent mapping
+    if (!this.sfxToXtx[sfxId]) {
+      logger.warn(
+        {
+          sfxId: sfxId,
+          xtx: this.xtx,
+        },
+        "Bad sfxId for XTX",
+      );
+      return;
+    }
     const conversionId = this.sfxToXtx[sfxId];
     const sfxFromXtx = this.xtx[conversionId].sideEffects;
+
     const actualSfx = sfxFromXtx.get(sfxId);
     if (actualSfx !== undefined) {
       actualSfx.processBid(bidder, amt);
@@ -469,30 +513,59 @@ export class ExecutionManager {
         {
           gatewayId: vendor,
           sfxIds: readyByStep.map((sfx) => sfx.id),
+          queuedBlocks,
+          batchBlocks,
+          readyByHeight,
+          blockHeight: this.queue[vendor].blockHeight,
         },
-        "Execute confirmation queue",
+        "SFXs ready for confirmation",
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(() => {
-          // remove from queue and update status
-          logger.info(
-            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`,
+        .then(async (blockHeight) => {
+          const blockHash =
+            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
+          const events =
+            await this.circuitClient.query.system.events.at(blockHash);
+          // TODO: can batch fail in any different way?
+          // @ts-ignore - Property 'find' does not exist on type 'Codec'.
+          const batchInterruptedEvent = events.find(
+            (event) => event.event.method === "BatchInterrupted",
           );
+
+          if (batchInterruptedEvent) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = batchInterruptedEvent.event.data[1] as any;
+            if (
+              // 108 is Circuit
+              data.toHuman().Module.index === "108" &&
+              // 0x05000000 is Confirmation Error
+              data.toHuman().Module.error === "0x05000000"
+            ) {
+              // TODO: this log should be not necessary as we throw already
+              throw new Error(
+                `Batch failed due to BatchInterrupted error in Circuit at block ${blockHash}`,
+              );
+            }
+          }
+          // remove from queue and update status
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
           logger.info(
             {
-              vendor: vendor,
+              sfxIds: readyByStep.map((sfx) => sfx.id),
+              blockHash,
+              vendor,
             },
-            "Confirmation batch successful",
+            `Confirmed SFXs 📜`,
           );
         })
         .catch((err) => {
-          logger.info(
+          this.prometheus.executorConfirmationErrors.inc(readyByStep.length);
+          logger.error(
             {
               vendor: vendor,
               sfxIds: readyByStep.map((sfx) => sfx.id),
-              error: err,
+              error: err.message,
             },
             "Error confirming side effects",
           );
@@ -565,9 +638,8 @@ export class ExecutionManager {
    */
   async addRiskRewardParameters(sfx: SideEffect) {
     // get txCost on target
-    const txCostSubject = await this.targetEstimator[
-      sfx.target
-    ].getNativeTxCostSubject(sfx);
+    const txCostSubject =
+      await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx);
     // get price of native token on target
     const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
       sfx.gateway.ticker,

@@ -366,6 +366,7 @@ pub mod pallet {
         AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
         CurrentPendingAttestationBatches(TargetId, Vec<(u32, H256)>),
         AttestationsRemovedFromLateBatches(Vec<u32>),
+        AttestationTargetRemoved(TargetId, Vec<TargetId>),
         // ShufflingCompleted(current committee, previous committee, next committee)
         ShufflingCompleted(Vec<T::AccountId>, Vec<T::AccountId>, Vec<T::AccountId>),
     }
@@ -503,14 +504,11 @@ pub mod pallet {
         pub fn remove_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
 
-            let mut targets = AttestationTargets::<T>::get();
-
-            // Remove target if exists
-            if !targets.contains(&target) {
-                targets.retain(|&x| x != target);
-            }
-
-            AttestationTargets::<T>::put(targets);
+            AttestationTargets::<T>::mutate(|targets| {
+                if let Some(index) = targets.iter().position(|x| x == &target) {
+                    targets.remove(index);
+                }
+            });
             PendingAttestationTargets::<T>::mutate(|pending| {
                 if let Some(index) = pending.iter().position(|x| x == &target) {
                     pending.remove(index);
@@ -521,6 +519,11 @@ pub mod pallet {
             Batches::<T>::remove(target);
             BatchesToSign::<T>::remove(target);
             NextBatch::<T>::remove(target);
+
+            Self::deposit_event(Event::AttestationTargetRemoved(
+                target,
+                AttestationTargets::<T>::get(),
+            ));
 
             Ok(())
         }
@@ -2509,6 +2512,30 @@ pub mod attesters_test {
                 latest_batch_some.signatures,
                 vec![(attester_info.index, signature.try_into().unwrap())]
             );
+        });
+    }
+
+    #[test]
+    fn remove_and_add_back_attestation_targets_with_sudo_access() {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_eth_gateway_record()
+            .build();
+        ext.execute_with(|| {
+            let target: TargetId = ETHEREUM_TARGET;
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
+
+            assert_eq!(Attesters::attestation_targets(), vec![target]);
+
+            Attesters::remove_attestation_target(RuntimeOrigin::root(), target);
+
+            assert_eq!(Attesters::attestation_targets(), Vec::<TargetId>::new());
+
+            System::set_block_number(current_block_1 + 1);
+
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
+
+            assert_eq!(Attesters::attestation_targets(), vec![target]);
         });
     }
 

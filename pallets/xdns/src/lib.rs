@@ -203,7 +203,7 @@ pub mod pallet {
                     }
                 }
             })
-            .unwrap_or_default()
+                .unwrap_or_default()
         }
     }
 
@@ -504,8 +504,17 @@ pub mod pallet {
             origin: OriginFor<T>,
             token_id: AssetId,
         ) -> DispatchResultWithPostInfo {
-            // AssetsOverlay ensures the admin / ownership rights
-            T::AssetsOverlay::destroy(origin, &token_id)?;
+            // Try destroying assets with associated to sudo origin of Escrow or admin / ownership rights
+            let is_root = ensure_signed_or_root(origin.clone())?.is_none();
+            let origin_admin: T::RuntimeOrigin = match is_root {
+                true => T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                )),
+                false => origin,
+            };
+
+            // Try destroying assets with
+            T::AssetsOverlay::destroy(origin_admin, &token_id)?;
 
             // Remove from all destinations
             let destinations = <Tokens<T>>::iter_prefix(token_id)

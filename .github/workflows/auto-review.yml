@@ -2,7 +2,7 @@ name: Automatic
 
 on:
   pull_request:
-    types: [opened, labeled, synchronize]
+    types: [closed, ready_for_review, assigned, review_requested, auto_merge_enabled]
 
 permissions:
   contents: read

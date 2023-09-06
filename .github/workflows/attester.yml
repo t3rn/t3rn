@@ -11,6 +11,15 @@ permissions:
   contents: read
   pull-requests: write
   checks: write
+  packages: write
+
+env:
+  APP: attester
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
 
 jobs:
   # This job checks if files has been modified.
@@ -27,24 +36,19 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          # TODO: can be removed when we have npm packages
-          # - "client/packages/**/*.ts"
-          # - "client/packages/**/*.json"
-
           filters: |
             src:
             - "client/attester.Dockerfile"
-            - "client/packages/**/*.ts"
-            - "client/packages/**/*.json"
             - "client/packages/attester/**/*.ts"
             - "client/packages/attester/**/*.json"
+            - "client/packages/attester/helm/**"
             - ".github/workflows/attester.yml"
 
       - name: Detected changes
         run: |
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
-  test-attester:
+  test:
     name: Test Attester
     needs: [changes]
     runs-on: self-hosted
@@ -63,7 +67,6 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - run: cd .. && make all
       - run: npm i -g pnpm
       - run: pnpm install
       - run: pnpm fmt
@@ -82,6 +85,9 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/attester/eslint_report.json
+          fail-on-error: true
+          fail-on-warning: false
+          only-pr-files: true
 
       - name: 🏗 Build Docs
         run: pnpm build-docs
@@ -122,13 +128,41 @@ jobs:
   deploy:
     name: Build & Deploy Attester
     runs-on: self-hosted
-    needs: test-attester
+    needs: test
     concurrency: attester
 
     if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-attester')
     steps:
+      - name: Export variables
+        run: echo IMAGE_URL="ghcr.io/t3rn/${{ env.APP }}" >> $GITHUB_ENV
+
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
+
+      - name: 🐋 Login to the GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🐳 Build and publish the Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: client
+          push: true
+          tags: ${{ env.IMAGE_URL }}:${{ github.sha }},${{ env.IMAGE_URL }}:latest
+          labels: |
+            org.opencontainers.image.title=t3rn
+            org.opencontainers.image.description=${{ env.APP }}
+          platforms: linux/amd64
+          file: client/${{ env.APP }}.Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -136,24 +170,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-  
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-  
-      - name: Build attester
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: test-t0rn-attester
-          IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./client
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f attester.Dockerfile
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: EKS
-        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
-
-      - name: Helm Upgrade
+      - name: Deployment on EKS
         working-directory: ./client/packages/attester
-        run: helm upgrade attester helm -n attester -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-attester"
+        run: |
+          aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
+          helm upgrade ${{ env.APP }} helm -n ${{ env.APP }} -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ env.IMAGE_URL }}" --install

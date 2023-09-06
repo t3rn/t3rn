@@ -5,8 +5,18 @@ on:
   merge_group:
 
 permissions:
+  contents: read
   pull-requests: read
   checks: write
+  packages: write
+
+env:
+  APP: cli
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
 
 jobs:
   # This job checks if files has been modified.
@@ -23,25 +33,19 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          # TODO: can be removed when we have npm packages
-          # - "client/packages/**/*.ts"
-          # - "client/packages/**/*.json"
           filters: |
             src:
             - "client/cli.Dockerfile"
-            - "client/packages/**/*.ts"
-            - "client/packages/**/*.json"
             - "client/packages/cli/**/*.ts"
-            - "client/packages/helm/**"
+            - "client/packages/cli/helm/**"
             - "client/packages/cli/**/*.json"
             - ".github/workflows/cli.yml"
-
 
       - name: Detected changes
         run: |
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
-  test-cli:
+  test:
     name: Test CLI
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
@@ -60,11 +64,11 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - run: cd .. && make all
+      - run: pnpm install
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
-        run: npm run lint:report
+        run: pnpm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
 
@@ -74,6 +78,9 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/cli/eslint_report.json
+          fail-on-error: true
+          fail-on-warning: false
+          only-pr-files: true
 
       - run: pnpm test
 
@@ -92,14 +99,43 @@ jobs:
           docker build . -f cli.Dockerfile
 
   deploy:
+    name: Build & Deploy CLI
     runs-on: self-hosted
-    needs: [test-cli]
+    needs: test
+    concurrency: cli
 
     if: github.ref == 'refs/heads/development' || contains(github.event.pull_request.labels.*.name, 'deploy-cli')
-
     steps:
+      - name: Export variables
+        run: echo IMAGE_URL="ghcr.io/t3rn/${{ env.APP }}" >> $GITHUB_ENV
+
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
+
+      - name: 🐋 Login to the GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🐳 Build and publish the Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: client
+          push: true
+          tags: ${{ env.IMAGE_URL }}:${{ github.sha }},${{ env.IMAGE_URL }}:latest
+          labels: |
+            org.opencontainers.image.title=t3rn
+            org.opencontainers.image.description=CLI
+          platforms: linux/amd64
+          file: client/${{ env.APP }}.Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -108,24 +144,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build CLI
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: test-t0rn-cli
-          IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./client
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f cli.Dockerfile
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: EKS
-        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
-
-      - name: Helm Upgrade
+      - name: Deployment on EKS
         working-directory: ./client/packages/cli
-        run: helm upgrade cli helm -n cli -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-cli"
+        run: |
+          aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
+          helm upgrade ${{ env.APP }} helm -n ${{ env.APP }} -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository="${{ env.IMAGE_URL }}" --install
 

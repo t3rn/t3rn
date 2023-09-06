@@ -6,8 +6,7 @@ permissions:
 
 on:
   pull_request:
-  pull_request_review_comment:
-    types: [created]
+    types: [closed, ready_for_review, assigned, review_requested, auto_merge_enabled]
 
 concurrency:
   group:

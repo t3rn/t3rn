@@ -1,9 +1,18 @@
 all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
+	cd cli; pnpm install;
+	cd executor; pnpm install; 
+	cd attester; pnpm install;
+	cd grandpa-ranger; pnpm install;
+
+dev:
+	cd types; yarn; yarn link; yarn build; yarn load:meta:t0rn; yarn generate:all;
+	cd sdk; yarn; yarn link; yarn build;
 	cd cli; pnpm add ../sdk; pnpm install;
 	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install; 
 	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
+	cd grandpa-ranger; pnpm add ../sdk; pnpm install;
 
 executor:
 	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install;

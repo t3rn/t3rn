@@ -4,6 +4,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.50.0-rc.0] - 2023-09-05
+### :sparkles: New Features
+- [`cf3d8f8`](https://github.com/t3rn/t3rn/commit/cf3d8f817f633d7f7e7fc5dec746646e40d6ef56) - zombienet base test for executing SFX *(PR [#1269](https://github.com/t3rn/t3rn/pull/1269) by [@3h4x](https://github.com/3h4x))*
+- [`9b52dae`](https://github.com/t3rn/t3rn/commit/9b52dae6a3e6a44342fca83241e9271e2031b896) - add sdk to npmjs *(PR [#1273](https://github.com/t3rn/t3rn/pull/1273) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`d238dfd`](https://github.com/t3rn/t3rn/commit/d238dfd7a933f0f24866f66f8f3fc3f116aa399e) - sfx in xtx existence check *(PR [#1276](https://github.com/t3rn/t3rn/pull/1276) by [@Sj-001](https://github.com/Sj-001))*
+- [`6567047`](https://github.com/t3rn/t3rn/commit/6567047a86145383ddd41981e78214ed48f1a183) - npm packages have to be built before publishing *(PR [#1277](https://github.com/t3rn/t3rn/pull/1277) by [@3h4x](https://github.com/3h4x))*
+- [`abbdcd9`](https://github.com/t3rn/t3rn/commit/abbdcd983fbcb5e5d0ce1da65734564436662f33) - derive admin origin set to Escrow for Root token destroys *(PR [#1279](https://github.com/t3rn/t3rn/pull/1279) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.49.0-rc.0] - 2023-08-29
+### :bug: Bug Fixes
+- [`3294ecc`](https://github.com/t3rn/t3rn/commit/3294eccd03ee10eb123a0503ee3d4f0e0205b581) - cli register gateway *(PR [#1270](https://github.com/t3rn/t3rn/pull/1270) by [@ahkohd](https://github.com/ahkohd))*
+
+### :recycle: Refactors
+- [`d2e7891`](https://github.com/t3rn/t3rn/commit/d2e7891b757122be44b7433f63eae61f6f5758fe) - revisit and test attestation targets removal *(PR [#1271](https://github.com/t3rn/t3rn/pull/1271) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.48.6-rc.0] - 2023-08-28
+### :bug: Bug Fixes
+- [`b87c183`](https://github.com/t3rn/t3rn/commit/b87c1830abd0ac53566e28bd233a344b37c88425) - docker image paths and docs *(PR [#1268](https://github.com/t3rn/t3rn/pull/1268) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.48.5-rc.0] - 2023-08-25
+### :bug: Bug Fixes
+- [`e4ea788`](https://github.com/t3rn/t3rn/commit/e4ea788ab94b5939e5f782e4b8a327c73927700c) - **executor**: balance calculation and new metrics *(PR [#1260](https://github.com/t3rn/t3rn/pull/1260) by [@3h4x](https://github.com/3h4x))*
+- [`b6bdfb6`](https://github.com/t3rn/t3rn/commit/b6bdfb64b44b0cc3724b9af48dd1d97faf2b8d9c) - docker image name aligned *(PR [#1263](https://github.com/t3rn/t3rn/pull/1263) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`8ca4111`](https://github.com/t3rn/t3rn/commit/8ca4111e68106bd5ecc513bd8eb99aaf88572df5) - move docker images from aws to ghcr *(PR [#1267](https://github.com/t3rn/t3rn/pull/1267) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.48.4-rc.0] - 2023-08-23
+### :bug: Bug Fixes
+- [`4f10ae4`](https://github.com/t3rn/t3rn/commit/4f10ae4752d20286cf868bb7c4dccea7b7b5d2c4) - inclusion_receipt.height should be lower than submission_target_height *(PR [#1262](https://github.com/t3rn/t3rn/pull/1262) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.48.3-rc.0] - 2023-08-23
+### :bug: Bug Fixes
+- [`0cbba7d`](https://github.com/t3rn/t3rn/commit/0cbba7d2c39df3a4dbee0ed01b73c8dc4f51871f) - **executor**: outdated transactions *(PR [#1256](https://github.com/t3rn/t3rn/pull/1256) by [@3h4x](https://github.com/3h4x))*
+- [`b59ff49`](https://github.com/t3rn/t3rn/commit/b59ff49029e88941e2b999e237a2debe37c61726) - **cli**: correctly define secret variables in cronjob.yaml *(PR [#1258](https://github.com/t3rn/t3rn/pull/1258) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`527f158`](https://github.com/t3rn/t3rn/commit/527f158a07bc5b1bb4d00a245f6bbd82dbe3ac1d) - add debug logs for inclusion proof *(PR [#1259](https://github.com/t3rn/t3rn/pull/1259) by [@3h4x](https://github.com/3h4x))*
+- [`ac97fa8`](https://github.com/t3rn/t3rn/commit/ac97fa888d950943c8588aa31047854a9995065e) - improve failed xtx logging *(PR [#1261](https://github.com/t3rn/t3rn/pull/1261) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.48.1-rc.0] - 2023-08-21
+### :bug: Bug Fixes
+- [`f38c65b`](https://github.com/t3rn/t3rn/commit/f38c65b4811ce7f533c7dca984d7f0b83ccf3936) - runtime upgrade script using sudo flag *(PR [#1252](https://github.com/t3rn/t3rn/pull/1252) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.48.0-rc.0] - 2023-08-21
+### :sparkles: New Features
+- [`1ffa9e3`](https://github.com/t3rn/t3rn/commit/1ffa9e3419fa6d66d005585a55671239c9bb232d) - **zombienet**: zombienet parachain id fix and upgrade ci *(PR [#1251](https://github.com/t3rn/t3rn/pull/1251) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.47.2-rc.0] - 2023-08-18
+### :bug: Bug Fixes
+- [`ee49da9`](https://github.com/t3rn/t3rn/commit/ee49da9ce4fd92ae788e6d2844eec5ddb520db3d) - zombienet and improve runtime upgrade pipeline *(PR [#1249](https://github.com/t3rn/t3rn/pull/1249) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.47.1-rc.0] - 2023-08-18
+### :wrench: Chores
+- [`06c7f1e`](https://github.com/t3rn/t3rn/commit/06c7f1e8293b0702c44d490be16239a3b731fd71) - add extra Xtx Status log for submission target height *(PR [#1244](https://github.com/t3rn/t3rn/pull/1244) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.47.0-rc.0] - 2023-08-16
 ### :sparkles: New Features
 - [`7680747`](https://github.com/t3rn/t3rn/commit/768074798abaca51d0c3b2107c22cd0058bb51fd) - **executor**: optimistic execution for roco *(PR [#1212](https://github.com/t3rn/t3rn/pull/1212) by [@3h4x](https://github.com/3h4x))*
@@ -1478,3 +1546,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.46.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.0-rc.0...v1.46.1-rc.0
 [v1.46.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.1-rc.0...v1.46.2-rc.0
 [v1.47.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.46.2-rc.0...v1.47.0-rc.0
+[v1.47.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.0-rc.0...v1.47.1-rc.0
+[v1.47.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.1-rc.0...v1.47.2-rc.0
+[v1.48.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.47.2-rc.0...v1.48.0-rc.0
+[v1.48.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.0-rc.0...v1.48.1-rc.0
+[v1.48.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.2-rc.0...v1.48.3-rc.0
+[v1.48.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.3-rc.0...v1.48.4-rc.0
+[v1.48.5-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.4-rc.0...v1.48.5-rc.0
+[v1.48.6-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.5-rc.0...v1.48.6-rc.0
+[v1.49.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.6-rc.0...v1.49.0-rc.0
+[v1.50.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.49.0-rc.0...v1.50.0-rc.0

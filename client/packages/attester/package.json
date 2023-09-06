@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "npm exec -- only-allow pnpm",
     "build-docs": "pnpm typedoc && cp -R docs ../../../docs/attester",
     "fmt": "prettier --check src config tests",
     "fmt:fix": "prettier --write src config tests",
@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@polkadot/util": "^10.4.2",
-    "@t3rn/sdk": "link:../sdk",
-    "@t3rn/types": "link:../types",
+    "@t3rn/sdk": "^0.2.2",
+    "@t3rn/types": "^0.1.8",
     "async": "^3.2.4",
     "axios": "^1.4.0",
     "dotenv": "^16.3.1",
