@@ -1134,6 +1134,7 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "pallet-xdns-rpc",
+ "parity-scale-codec",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
