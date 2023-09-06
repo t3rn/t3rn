@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.51.0-rc.0] - 2023-09-06
+### :sparkles: New Features
+- [`fbb238f`](https://github.com/t3rn/t3rn/commit/fbb238f6dc1d77f211057564ffbe71b45b9810e3) - migrate attesters + circuit to include finality fee against v1.0.0 Polkadot dependencies  *(PR [#1245](https://github.com/t3rn/t3rn/pull/1245) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.50.2-rc.0] - 2023-09-06
 ### :wrench: Chores
 - [`c0e4b7b`](https://github.com/t3rn/t3rn/commit/c0e4b7bd73db7db030494fd32ee79913fd97375d) - add XDNS standard sfx abi to standalone chain specs *(PR [#1283](https://github.com/t3rn/t3rn/pull/1283) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1571,3 +1576,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.50.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.49.0-rc.0...v1.50.0-rc.0
 [v1.50.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.0-rc.0...v1.50.1-rc.0
 [v1.50.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.1-rc.0...v1.50.2-rc.0
+[v1.51.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.2-rc.0...v1.51.0-rc.0
