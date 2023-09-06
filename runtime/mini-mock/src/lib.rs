@@ -7,10 +7,11 @@ use frame_support::{
 };
 use frame_system::EnsureSigned;
 pub use pallet_attesters::{
-    ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee, Error as AttestersError,
-    Event as AttestersEvent, LatencyStatus, NextBatch, NextCommitteeOnTarget, Nominations,
-    PendingUnnominations, PermanentSlashes, PreviousCommittee, SortedNominatedAttesters,
+    ActiveSet, AttestationTargets, Attesters as AttestersStore, AttestersAgreements, BatchMessage,
+    BatchStatus, Batches, CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee,
+    Error as AttestersError, Event as AttestersEvent, LatencyStatus, NextBatch,
+    NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
+    PreviousCommittee, SortedNominatedAttesters,
 };
 use sp_runtime::BuildStorage;
 use std::marker::PhantomData;

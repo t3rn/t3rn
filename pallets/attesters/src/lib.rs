@@ -29,7 +29,7 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, GenesisBuild, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::{BlockNumberFor, *};
-    use sp_core::{hexdisplay::AsBytesRef, H256};
+    use sp_core::{hexdisplay::AsBytesRef, H160, H256};
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
@@ -199,6 +199,8 @@ pub mod pallet {
     pub struct TargetBatchDispatchEvent {
         // Message hash as H256 (32b)
         pub hash: H256,
+        // Executor on target
+        pub executor_on_target: H160,
     }
 
     #[pallet::config]
@@ -748,6 +750,7 @@ pub mod pallet {
 
             let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
+                BeneficiaryOnTarget:Account20,\
             )"
             .to_vec();
 
@@ -826,20 +829,6 @@ pub mod pallet {
 
             let to_pay = Self::estimate_finality_reward(&target, delay);
 
-            if to_pay > Zero::zero() {
-                // ToDo: move to reward_submitter
-                T::Currency::transfer(
-                    // todo: source should be the fees treasury
-                    &T::TreasuryAccounts::get_treasury_account(
-                        t3rn_primitives::TreasuryAccount::Fee,
-                    ),
-                    &submitter,
-                    to_pay,
-                    ExistenceRequirement::KeepAlive,
-                )?;
-            }
-            // Append the fee to the PaidFinalityFees
-            PaidFinalityFees::<T>::append(target, to_pay);
             // Emit the event
             Self::deposit_event(Event::BatchCommitted(
                 target,
@@ -848,6 +837,16 @@ pub mod pallet {
                 batch.message_hash(),
                 to_pay,
             ));
+
+            if to_pay > Zero::zero() {
+                Self::reward_submitter(
+                    &submitter,
+                    &on_target_batch_event.executor_on_target,
+                    &target,
+                    to_pay,
+                )?;
+                PaidFinalityFees::<T>::append(target, to_pay);
+            }
 
             Ok(())
         }
@@ -1437,7 +1436,6 @@ pub mod pallet {
 
             // Calculate the amount to slash from the attester
             let slash_amount = percent_slash.mul_ceil(self_nomination_balance);
-
             // Update the nominations after slashing
             let nominators_after_slash = nominations
                 .into_iter()
@@ -1483,11 +1481,28 @@ pub mod pallet {
         }
 
         pub fn reward_submitter(
-            _submitter: &T::AccountId,
-            _target: &TargetId,
-            _batch_message: &BatchMessage<BlockNumberFor<T>>,
-        ) -> Result<BalanceOf<T>, DispatchError> {
-            todo!("reward_submitter")
+            submitter: &T::AccountId,
+            submitter_on_target: &H160,
+            target: &TargetId,
+            to_pay: BalanceOf<T>,
+        ) -> DispatchResult {
+            let attester_recoverable: Vec<u8> = AttestersAgreements::<T>::get(submitter, target)
+                .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
+
+            if attester_recoverable == submitter_on_target.encode() {
+                T::Currency::transfer(
+                    &T::TreasuryAccounts::get_treasury_account(
+                        t3rn_primitives::TreasuryAccount::Fee,
+                    ),
+                    &submitter,
+                    to_pay,
+                    ExistenceRequirement::KeepAlive,
+                )?;
+
+                Ok(())
+            } else {
+                Err(Error::<T>::AttesterDidNotAgreeToNewTarget.into())
+            }
         }
 
         pub fn try_activate_new_target(target: &TargetId) -> bool {
@@ -2145,19 +2160,20 @@ pub mod attesters_test {
         StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
-    use sp_core::H256;
+    use sp_core::{H160, H256};
     use sp_runtime::{traits::Keccak256, Percent};
 
-    use crate::{PaidFinalityFees, TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
+    use crate::{TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
-        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
+        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersAgreements, AttestersError,
+        AttestersEvent, AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
         CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee,
         ExistentialDeposit, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes,
-        PreviousCommittee, Rewards, RuntimeEvent as Event, RuntimeOrigin, SFX2XTXLinksMap,
-        SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
+        NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations,
+        PermanentSlashes, PreviousCommittee, Rewards, RuntimeEvent as Event, RuntimeOrigin,
+        SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET,
+        POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
@@ -3811,8 +3827,15 @@ pub mod attesters_test {
                 BatchStatus::ReadyForSubmissionFullyApproved
             );
 
+            let submitter = AccountId::from([1; 32]);
+            // Recover submitter's agreed target eth address
+            let submitter_eth_address =
+                AttestersAgreements::<MiniRuntime>::get(&submitter, &target)
+                    .expect("attester eth address should exist");
+
             let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
                 hash: first_batch_hash,
+                executor_on_target: H160::from_slice(&submitter_eth_address),
             };
 
             let delay = System::block_number() - first_batch.available_to_commit_at;
@@ -3827,9 +3850,11 @@ pub mod attesters_test {
 
             let balance_of_submitter_prior = Balances::free_balance(AccountId::from([1; 32]));
 
+            assert_eq!(PaidFinalityFees::<MiniRuntime>::get(&target), None);
+
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
-                RuntimeOrigin::signed(AccountId::from([1; 32])),
+                RuntimeOrigin::signed(submitter),
                 target,
                 mock_valid_batch_confirmation.encode(),
             ));
@@ -3842,6 +3867,11 @@ pub mod attesters_test {
             assert_eq!(
                 Balances::free_balance(AccountId::from([1; 32])),
                 balance_of_submitter_prior + estimated_finality_reward_payout
+            );
+
+            assert_eq!(
+                PaidFinalityFees::<MiniRuntime>::get(&target),
+                Some(vec![estimated_finality_reward_payout])
             );
         });
     }
@@ -3896,6 +3926,7 @@ pub mod attesters_test {
 
             let colluded_batch_confirmation = TargetBatchDispatchEvent {
                 hash: colluded_message.into(),
+                executor_on_target: H160::from([1; 20]),
             };
 
             assert_ok!(
@@ -3903,7 +3934,7 @@ pub mod attesters_test {
                     RuntimeOrigin::signed(AccountId::from([1; 32])),
                     target,
                     colluded_batch_confirmation.encode(),
-                ) // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
+                ) // errors are emitted, but the call must be successfull to enact slash. AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
             );
 
             // Check if the batch status has not been updated to Committed
