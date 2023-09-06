@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@t3rn/sdk':
-    specifier: ^0.2.4
-    version: 0.2.4
+    specifier: ^0.2.5
+    version: 0.2.5
   axios:
     specifier: ^1.4.0
     version: 1.5.0
@@ -643,8 +643,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.2.4:
-    resolution: {integrity: sha512-1rnhKNyRoAO84MiDY8N+W2zwjRlKhuIo2iD0G75r+RLKMkmScu9HR/B+sjFq5Fazw8NZZPIUHUMs7L4XKavOig==}
+  /@t3rn/sdk@0.2.5:
+    resolution: {integrity: sha512-fjqWqgm+L4j9U3fDh5RCtvG4ARlW7IIGRK0M3W2HI4YpTxNWzhB0RHNthqhhZgxN2l0nodKCeUP/Powyq5IQwA==}
     dependencies:
       '@polkadot/api': 8.14.1
       dotenv: 16.0.3

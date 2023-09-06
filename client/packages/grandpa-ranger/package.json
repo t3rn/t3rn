@@ -11,7 +11,7 @@
     "start": "ts-node src/index.ts"
   },
   "dependencies": {
-    "@t3rn/sdk": "^0.2.4",
+    "@t3rn/sdk": "^0.2.5",
     "axios": "^1.4.0",
     "dotenv": "^16.0.3",
     "http": "^0.0.1-security",
