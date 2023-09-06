@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/types",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "author": "t3rn <team@t3rn.io>",
   "license": "Apache-2.0",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
