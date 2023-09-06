@@ -162,11 +162,12 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 #[cfg(test)]
 pub mod test {
 
+    use circuit_mock_runtime::{test_utils::*, RuntimeEvent as Event, RuntimeOrigin as Origin, *};
+
     use frame_support::{assert_ok, traits::Currency};
     use frame_system::{EventRecord, Phase};
     use t3rn_primitives::SpeedMode;
-
-    use circuit_mock_runtime::{test_utils::*, RuntimeEvent as Event, RuntimeOrigin as Origin, *};
+    use t3rn_types::sfx::SecurityLvl;
 
     use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;
@@ -204,6 +205,7 @@ pub mod test {
                     origin,
                     side_effects,
                     speed_mode,
+                    SecurityLvl::Optimistic,
                 ));
 
                 let _xtx_id: sp_core::H256 =
@@ -279,6 +281,7 @@ pub mod test {
                     origin,
                     side_effects,
                     speed_mode,
+                    SecurityLvl::Optimistic,
                 ));
 
                 assert_ok!(Escrow::<Runtime>::exec(

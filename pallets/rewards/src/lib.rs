@@ -133,7 +133,7 @@ pub mod pallet {
             u32,
         >;
 
-        type Attesters: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
+        type Attesters: AttestersReadApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
     }
 
     #[pallet::pallet]

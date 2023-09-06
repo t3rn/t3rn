@@ -49,7 +49,6 @@ parameter_types! {
 impl pallet_attesters::Config for Runtime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
-    type CommitmentRewardSource = EscrowAccount;
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
@@ -64,7 +63,7 @@ impl pallet_attesters::Config for Runtime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = HourlyShufflingFrequency;
-    type SlashAccount = EscrowAccount;
+    type TreasuryAccounts = Runtime;
     type Xdns = XDNS;
 }
 
@@ -259,9 +258,8 @@ impl pallet_circuit::Config for Runtime {
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
+    type TreasuryAccounts = Runtime;
     type WeightInfo = ();
-    // type XBIPortal = XBIPortalRuntimeEntry;
-    // type XBIPromise = XBIPortal;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
     type XtxTimeoutDefault = ConstU32<400u32>;
