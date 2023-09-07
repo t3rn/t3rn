@@ -9,7 +9,7 @@ import type { ApiTypes, AugmentedEvent } from '@polkadot/api-base/types';
 import type { Bytes, Null, Option, Result, U256, U8aFixed, Vec, bool, u128, u32, u64, u8 } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H160, H256, Percent } from '@polkadot/types/interfaces/runtime';
-import type { EthereumLog, FrameSupportDispatchDispatchInfo, FrameSupportTokensMiscBalanceStatus, PalletAttestersBatchMessage, PalletCircuitVacuumOrderStatusRead, PalletContractsOrigin, PalletEth2FinalityVerifierEpochSubmitted, PalletSepoliaFinalityVerifierEpochSubmitted, SpRuntimeDispatchError, SpWeightsWeightV2Weight, T3rnPrimitivesContractMetadataContractType, T3rnPrimitivesExecutionVendor, T3rnPrimitivesGatewayVendor, T3rnSdkPrimitivesSignalSignalKind, T3rnTypesFsxFullSideEffect, T3rnTypesSfxSideEffect, XcmV3MultiLocation, XcmV3MultiassetMultiAssets, XcmV3Response, XcmV3TraitsError, XcmV3TraitsOutcome, XcmV3Xcm, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XpFormatXbiResult } from '@polkadot/types/lookup';
+import type { EthereumLog, FrameSupportDispatchDispatchInfo, FrameSupportTokensMiscBalanceStatus, PalletAttestersBatchMessage, PalletCircuitVacuumOrderStatusRead, PalletContractsOrigin, PalletEth2FinalityVerifierEpochSubmitted, PalletSepoliaFinalityVerifierEpochSubmitted, SpRuntimeDispatchError, SpWeightsWeightV2Weight, T3rnPrimitivesAttestersBatchingFactor, T3rnPrimitivesContractMetadataContractType, T3rnPrimitivesExecutionVendor, T3rnPrimitivesGatewayVendor, T3rnSdkPrimitivesSignalSignalKind, T3rnTypesFsxFullSideEffect, T3rnTypesSfxSideEffect, XcmV3MultiLocation, XcmV3MultiassetMultiAssets, XcmV3Response, XcmV3TraitsError, XcmV3TraitsOutcome, XcmV3Xcm, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XpFormatXbiResult } from '@polkadot/types/lookup';
 
 export type __AugmentedEvent<ApiType extends ApiTypes> = AugmentedEvent<ApiType>;
 
@@ -144,6 +144,10 @@ declare module '@polkadot/api-base/types/events' {
       AttesterDeregistered: AugmentedEvent<ApiType, [AccountId32]>;
       AttesterDeregistrationScheduled: AugmentedEvent<ApiType, [AccountId32, u32]>;
       AttesterRegistered: AugmentedEvent<ApiType, [AccountId32]>;
+      BatchCommitted: AugmentedEvent<ApiType, [U8aFixed, PalletAttestersBatchMessage, Bytes, H256, u128]>;
+      BatchingFactorRead: AugmentedEvent<ApiType, [Vec<ITuple<[U8aFixed, Option<T3rnPrimitivesAttestersBatchingFactor>]>>]>;
+      CollusionWithPermanentSlashDetected: AugmentedEvent<ApiType, [U8aFixed, H256]>;
+      ConfirmationRewardCalculated: AugmentedEvent<ApiType, [U8aFixed, u32, u128, Percent, Percent]>;
       CurrentPendingAttestationBatches: AugmentedEvent<ApiType, [U8aFixed, Vec<ITuple<[u32, H256]>>]>;
       NewAttestationBatch: AugmentedEvent<ApiType, [U8aFixed, PalletAttestersBatchMessage]>;
       NewAttestationMessageHash: AugmentedEvent<ApiType, [U8aFixed, H256, T3rnPrimitivesExecutionVendor]>;
@@ -152,6 +156,7 @@ declare module '@polkadot/api-base/types/events' {
       NewTargetProposed: AugmentedEvent<ApiType, [U8aFixed]>;
       Nominated: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128]>;
       ShufflingCompleted: AugmentedEvent<ApiType, [Vec<AccountId32>, Vec<AccountId32>, Vec<AccountId32>]>;
+      UserFinalityFeeEstimated: AugmentedEvent<ApiType, [U8aFixed, u128]>;
     };
     balances: {
       /**

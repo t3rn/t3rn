@@ -109,14 +109,6 @@ const GatewaySchema = z.object({
 export type Gateway = z.infer<typeof GatewaySchema>
 
 const Circuit = z.object({
-  ws: z.string({
-    required_error: "WS endpoint is required",
-    invalid_type_error: "WS endpoint must be a string",
-  }),
-  http: z.string({
-    required_error: "http endpoint is required",
-    invalid_type_error: "http endpoint must be a string",
-  }),
   decimals: z.number({
     required_error: "Decimals are required",
     invalid_type_error: "Decimals must be a number",

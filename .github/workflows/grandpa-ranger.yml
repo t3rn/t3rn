@@ -40,9 +40,7 @@ jobs:
           filters: |
             src:
             - "client/packages/grandpa-ranger.Dockerfile"
-            - "client/packages/grandpa-ranger/**/*.ts"
-            - "client/packages/grandpa-ranger/**/*.json"
-            - "client/packages/grandpa-ranger/helm/**"
+            - "client/packages/grandpa-ranger/**"
             - ".github/workflows/grandpa-ranger.yml"
 
       - name: Detected changes
