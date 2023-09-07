@@ -3,6 +3,9 @@ name: CLI
 on:
   pull_request:
   merge_group:
+  push:
+    branches:
+      - development
 
 permissions:
   contents: read
