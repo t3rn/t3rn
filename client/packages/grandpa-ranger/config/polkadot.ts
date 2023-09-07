@@ -7,12 +7,12 @@ export default {
  },
  target: { // we dont need to specify the http endpoint for the target
   rpc1: {
-   ws: "wss://polkadot-rpc.polkadot.io",
+   ws: "wss://rpc.polkadot.io",
   },
   rpc2: {
    ws: "wss://polkadot-rpc.dwellir.com"
   },
  },
  rangeInterval: 120, // time between range submissions in seconds
- targetGatewayId: "polkadot",
+ targetGatewayId: "pdot",
 }

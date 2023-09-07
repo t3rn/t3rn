@@ -72,7 +72,6 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 
 const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
 	// client.rpc.portal.
-	logger.info([client.currentProvider().http, targetGatewayId])
 	return axios.post(client.currentProvider().http, {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
@@ -85,6 +84,7 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 	})
 	.then(response => {
 		logger.info(response.data)
+		if (response.data.error) throw new Error(response.data.error.message)
 	  	return response.data.result;
 	})
 	.catch(error => {

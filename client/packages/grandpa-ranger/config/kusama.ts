@@ -14,5 +14,5 @@ export default {
   },
  },
  rangeInterval: 120, // time between range submissions in seconds
- targetGatewayId: "kusama",
+ targetGatewayId: "kusm",
 }

@@ -4,7 +4,6 @@ require('dotenv').config()
 import { Connection } from './connection';
 import { cryptoWaitReady } from "@t3rn/sdk"
 import { Prometheus } from "./prometheus";
-import fs from 'fs';
 import { logger } from "./logging";
 
 
@@ -47,7 +46,6 @@ class GrandpaRanger {
 				return resolve()
 			})
 
-		logger.debug(batches)
 		if(batches.length > 0) {
 
 			if(batches.length > 10) {
@@ -90,7 +88,7 @@ class GrandpaRanger {
 						// select the correct submit function based on the targetGatewayId
 						if(this.config.targetGatewayId === "roco") {
 							submit = this.circuit.client.tx.rococoBridge.submitHeaders
-						} else if (this.config.targetGatewayId === "ksma") {
+						} else if (this.config.targetGatewayId === "kusm") {
 							submit = this.circuit.client.tx.kusamaBridge.submitHeaders
 						} else if (this.config.targetGatewayId === "pdot") {
 							submit = this.circuit.client.tx.polkadotBridge.submitHeaders
@@ -119,7 +117,7 @@ class GrandpaRanger {
 	async scheduleRangeSubmission() {
 		while(true) {
 			await new Promise((resolve, _reject) => {
-				logger.info(`Starting new range submission loop: ${new Date().toISOString()}`)
+				logger.info(`Starting new range submission loop`)
 				setTimeout(
 					() => {
 						this.collectAndSubmit(resolve)
