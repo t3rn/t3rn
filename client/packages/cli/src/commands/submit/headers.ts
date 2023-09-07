@@ -135,7 +135,7 @@ const getGatewayHeight = async (gatewayId: string) => {
   }
 
   const response = await fetch(
-    process.env.RPC_CIRCUIT_ENDPOINT || "http://localhost:9944",
+    process.env.CIRCUIT_RPC_ENDPOINT || "http://localhost:9944",
     {
       method: "post",
       body: JSON.stringify(body),
