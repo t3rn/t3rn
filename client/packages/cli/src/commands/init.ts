@@ -3,9 +3,7 @@ import { writeFileSync } from "fs"
 import cleanStack from "clean-stack"
 import { greet } from "@/utils/fns.ts"
 import { log } from "@/utils/log.ts"
-import setupTemplate from "@/templates/setup.ts"
 import transferTemplate from "@/templates/transfer.ts"
-import { CONFIG_FILE } from "@/consts.ts"
 import { Args } from "@/types.ts"
 
 export const handleInitCmd = async (args: Args<"config" | "transfer">) => {
