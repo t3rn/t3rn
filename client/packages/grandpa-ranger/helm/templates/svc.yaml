@@ -5,6 +5,7 @@
 {{- $tag := .Values.tag }}
 
 {{- range $profile := .Values.rangers }}
+---
 apiVersion: v1
 kind: Service
 metadata:

@@ -5,6 +5,7 @@
 {{- $tag := .Values.tag }}
 
 {{- range $profile := .Values.rangers }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
