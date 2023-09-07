@@ -16,7 +16,7 @@ const spinner = ora()
 const submitedRegistry = new Map<string, Extrinsic>()
 
 export const handleDgfCmd = async (
-  args: Args<"sfx" | "timeout" | "export">
+  args: Args<"sfx" | "timeout" | "export">,
 ) => {
   const config = getConfig()
   const exportMode = Boolean(args.export)
@@ -26,7 +26,7 @@ export const handleDgfCmd = async (
   }
 
   spinner.start(
-    colorLogMsg("INFO", "Starting the unhappy path generation process...")
+    colorLogMsg("INFO", "Starting the unhappy path generation process..."),
   )
 
   try {
@@ -46,8 +46,8 @@ export const handleDgfCmd = async (
       spinner.info(
         colorLogMsg(
           "INFO",
-          `Received ${ListenerEvents[eventData.type]} event for processing!`
-        )
+          `Received ${ListenerEvents[eventData.type]} event for processing!`,
+        ),
       )
 
       processEvent(eventData)
@@ -57,15 +57,15 @@ export const handleDgfCmd = async (
         colorLogMsg(
           "INFO",
           `Waiting for events from the chain, ${secondsLeftTillTimeout.toFixed(
-            2
-          )}s till timeout...`
-        )
+            2,
+          )}s till timeout...`,
+        ),
       )
     })
     listener.start()
 
     spinner.start(
-      `🕑 Waiting for events from the chain, ${timeout}s till timeout...`
+      `🕑 Waiting for events from the chain, ${timeout}s till timeout...`,
     )
 
     await new Promise((resolve) => setTimeout(resolve, timeout * 1000))
@@ -86,7 +86,7 @@ const batchErrorCreation = async (filePath: string, exportMode = false) => {
     symbol: "🚧",
     text: colorLogMsg(
       "INFO",
-      "Generate and submit test SFXs that will result in various errors:"
+      "Generate and submit test SFXs that will result in various errors:",
     ),
   })
 
@@ -101,7 +101,7 @@ const batchErrorCreation = async (filePath: string, exportMode = false) => {
       symbol: " •",
       text: colorLogMsg(
         "SUCCESS",
-        `🔨 Generated SFX that will result in ${errorMode} error`
+        `🔨 Generated SFX that will result in ${errorMode} error`,
       ),
     })
     spinner.start(colorLogMsg("INFO", "📦 Submitting this SFX..."))
@@ -169,8 +169,9 @@ const validateExtrinsic = (eventData: {
       symbol: "✅",
       text: colorLogMsg(
         "SUCCESS",
-        `Event emited and created have matching error modes: ${ErrorMode[eventData.error]
-        }`
+        `Event emited and created have matching error modes: ${
+          ErrorMode[eventData.error]
+        }`,
       ),
     })
   } else {
@@ -178,8 +179,9 @@ const validateExtrinsic = (eventData: {
       symbol: "🚩",
       text: colorLogMsg(
         "ERROR",
-        `Event emited and created DO NOT match on the error mode.\n\tError mode received: \t${ErrorMode[eventData.error]
-        }\n\tError mode sent: \t${reg.sideEffects[0].signature}`
+        `Event emited and created DO NOT match on the error mode.\n\tError mode received: \t${
+          ErrorMode[eventData.error]
+        }\n\tError mode sent: \t${reg.sideEffects[0].signature}`,
       ),
     })
   }

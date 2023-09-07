@@ -14,6 +14,14 @@ dev:
 	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
 	cd grandpa-ranger; pnpm add ../sdk; pnpm install;
 
+update-lock:
+	cd types; yarn;
+	cd sdk; yarn;
+	cd cli; pnpm pnpm install;
+	cd executor; pnpm install;
+	cd attester; pnpm install;
+	cd grandpa-ranger; pnpm install;
+
 executor:
 	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install;
 
@@ -53,4 +61,4 @@ start_executor:
 
 test_confirm_xtx: register_roco submit_headers_roco submit_side_effects submit_headers_roco_x3
 
-.PHONY: all old sdk types attester executor
+.PHONY: all old sdk types attester executor update-lock

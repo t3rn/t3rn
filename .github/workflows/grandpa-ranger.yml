@@ -68,8 +68,8 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - run: yarn
-      - run: yarn fmt
+      - run: pnpm install
+      - run: pnpm fmt
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'

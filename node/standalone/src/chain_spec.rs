@@ -7,16 +7,16 @@ use circuit_standalone_runtime::{
     Signature,
     SudoConfig,
     SystemConfig,
-    WASM_BINARY,
     // SessionConfig,
     // CollatorSelectionConfig,
-    // XDNSConfig
-    // EvmConfig
+    XDNSConfig, // EvmConfig
+    WASM_BINARY,
 };
 
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
+use codec::Encode;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
@@ -229,7 +229,11 @@ fn testnet_genesis(
         transaction_payment: Default::default(),
         assets: Default::default(),
         rewards: Default::default(),
-        xdns: Default::default(),
+        xdns: XDNSConfig {
+            known_gateway_records: vec![],
+            standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi().encode(),
+            _marker: Default::default(),
+        },
         contracts_registry: Default::default(),
         account_manager: Default::default(),
         attesters: Default::default(),

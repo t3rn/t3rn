@@ -113,7 +113,7 @@ export class ErrorListener extends EventEmitter {
             emitEvent(
               this,
               ListenerEvents.NewSideEffectsAvailable,
-              notification
+              notification,
             )
             break
           }
@@ -125,7 +125,7 @@ export class ErrorListener extends EventEmitter {
             emitEvent(
               this,
               ListenerEvents.XTransactionReadyForExec,
-              notification
+              notification,
             )
             break
           }
@@ -158,7 +158,7 @@ export class ErrorListener extends EventEmitter {
               this,
               ListenerEvents.DroppedAtBidding,
               notification,
-              ErrorMode.NoBidders
+              ErrorMode.NoBidders,
             )
             break
           }
@@ -167,7 +167,7 @@ export class ErrorListener extends EventEmitter {
               this,
               ListenerEvents.RevertTimedOut,
               notification,
-              ErrorMode.ConfirmationTimeout
+              ErrorMode.ConfirmationTimeout,
             )
             break
           }
@@ -193,7 +193,7 @@ const emitEvent = (
   listener: ErrorListener,
   event: ListenerEvents,
   notification: unknown,
-  error = ErrorMode.None
+  error = ErrorMode.None,
 ) => {
   listener.emit("event", <ListenerEventData>{
     type: event,

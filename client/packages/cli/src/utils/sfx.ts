@@ -19,7 +19,7 @@ export const buildSfx = (
   circuitApi: Circuit,
   sideEffects: Extrinsic["sideEffects"],
   speedMode: SpeedMode,
-  sdk: Sdk
+  sdk: Sdk,
 ) => {
   return {
     // @ts-ignore - A weird error that I don't understand
@@ -28,20 +28,23 @@ export const buildSfx = (
       sideEffects.map((data) => {
         if (!isGatewayRegistered(data.target, sdk)) {
           throw new Error(
-            `${data.target} gateway is not registered, please run \`yarn cli register -g ${data.target}\` to register it!`
+            `${data.target} gateway is not registered, please run \`yarn cli register -g ${data.target}\` to register it!`,
           )
         }
 
-
-        const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[data.action]({
-            from: sdk.circuit.signer.address,
-            to: data.encodedArgs[0]['to'],
-            value: sdk.gateways[data.target].floatToBn(data.encodedArgs[0]['amount']), 
-            maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
-            insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
+        const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
+          data.action
+        ]({
+          from: sdk.circuit.signer.address,
+          to: data.encodedArgs[0]["to"],
+          value: sdk.gateways[data.target].floatToBn(
+            data.encodedArgs[0]["amount"],
+          ),
+          maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
+          insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
         })
         return obj
-      })
+      }),
       // @ts-ignore - TS doesn't know that we are creating a type here
     ).toJSON(),
     speed_mode: circuitApi.createType("T3rnPrimitivesSpeedMode", speedMode),
@@ -56,7 +59,7 @@ export enum SfxSendType {
 export const submitSfx = async (
   extrinsic: Extrinsic,
   exportMode: boolean,
-  sendType = SfxSendType.Safe
+  sendType = SfxSendType.Safe,
 ) => {
   const config = getConfig()
 
@@ -69,13 +72,13 @@ export const submitSfx = async (
     circuit,
     extrinsic.sideEffects,
     extrinsic.speed_mode,
-    sdk
+    sdk,
   )
   const transaction = circuit.tx.circuit.onExtrinsicTrigger(
     transactionArgs.sideEffects as Parameters<
       typeof circuit.tx.circuit.onExtrinsicTrigger
     >[0],
-    transactionArgs.speed_mode
+    transactionArgs.speed_mode,
   )
   const response = await sdk.circuit.tx[
     sendType === SfxSendType.Raw ? "signAndSendRaw" : "signAndSendSafe"
@@ -86,7 +89,7 @@ export const submitSfx = async (
 
 export const mapEncodedArgs = (
   action: SideEffectAction,
-  encodedArgs: EncodedArgs
+  encodedArgs: EncodedArgs,
 ) => {
   switch (action) {
     case SideEffectActions.Transfer: {

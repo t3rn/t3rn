@@ -1,6 +1,7 @@
-const client = require('prom-client');
-const http = require('http')
-const url = require('url')
+import client from 'prom-client';
+import { logger } from './logging';
+import http from 'http';
+
 export class Prometheus {
 	circuitActive: boolean
 	targetActive: boolean
@@ -149,7 +150,7 @@ export class Prometheus {
 
 		const port = 8080;
 		server.listen(port, () => {
-		  console.log(`Metrics server listening on port ${port}`);
+		  logger.info(`Metrics server listening on port ${port}`);
 		  this.up.inc({target: this.target}, 1)
 		});
 	}

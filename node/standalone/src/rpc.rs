@@ -14,6 +14,9 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
+use pallet_portal_rpc::{Portal, PortalApiServer};
+use pallet_xdns_rpc::{Xdns, XdnsApiServer};
+
 pub use sc_rpc_api::DenyUnsafe;
 
 /// Full client dependencies.
@@ -26,7 +29,6 @@ pub struct FullDeps<C, P> {
     pub deny_unsafe: DenyUnsafe,
 }
 
-/// Instantiate all full RPC extensions.
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
@@ -36,6 +38,8 @@ where
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
+    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {
@@ -50,12 +54,9 @@ where
     } = deps;
 
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
-    module.merge(TransactionPayment::new(client).into_rpc())?;
-
-    // Extend this RPC with a custom API by using the following syntax.
-    // `YourRpcStruct` should have a reference to a client, which is needed
-    // to call into the runtime.
-    // `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
+    module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+    module.merge(Xdns::new(client.clone()).into_rpc())?;
+    module.merge(Portal::new(client).into_rpc())?;
 
     Ok(module)
 }
