@@ -162,6 +162,7 @@ declare module '@polkadot/api-base/types/errors' {
       SfxAlreadyRequested: AugmentedError<ApiType>;
       TargetAlreadyActive: AugmentedError<ApiType>;
       TargetNotActive: AugmentedError<ApiType>;
+      UnexpectedBatchHashRecoveredFromCommitment: AugmentedError<ApiType>;
       XdnsGatewayDoesNotHaveEscrowAddressRegistered: AugmentedError<ApiType>;
       XdnsTargetNotActive: AugmentedError<ApiType>;
     };

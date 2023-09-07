@@ -1,23 +1,9 @@
 {
   "name": "@t3rn/types",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "author": "t3rn <team@t3rn.io>",
   "license": "Apache-2.0",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    }
-  },
-  "files": [
-    "dist/**/*"
-  ],
   "scripts": {
     "preinstall": "npm exec -- only-allow yarn",
     "prepublishOnly": "yarn clean && yarn build",
@@ -35,6 +21,20 @@
     "generate:meta": "yarn ts-node node_modules/.bin/polkadot-types-from-chain --package . --endpoint metadata-t3rn.json --output ./src/augment --strict",
     "generate:all": "yarn generate:interfaces && yarn generate:meta"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
   "dependencies": {
     "@types/lodash": "^4.14.157",
     "@polkadot/api": "^8.9.1",
