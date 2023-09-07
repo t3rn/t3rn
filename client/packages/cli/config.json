@@ -1,7 +1,7 @@
 {
   "circuit": {
     "ws": "ws://localhost:9944",
-    "http": "https://rpc.t0rn.io",
+    "http": "http://localhost:9944",
     "decimals": 12,
     "valueTypeSize": 16
   },
