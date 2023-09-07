@@ -2,8 +2,8 @@
 # Declare variables to be passed into your templates.
 rangers: 
   - rococo
-  - kusama
-  - polkadot
+  # - kusama
+  # - polkadot
 
 securityContext: 
   capabilities:
