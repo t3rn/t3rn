@@ -100,6 +100,8 @@ export const getBridge = (circuit: Circuit, gatewayId: string) => {
       return circuit.tx.rococoBridge
     case "Polkadot":
       return circuit.tx.polkadotBridge
+    case "Sepolia":
+      return circuit.tx.sepoliaBridge
   }
 }
 
@@ -124,7 +126,7 @@ const getRelayChainHeaders = async (
 }
 
 const getGatewayHeight = async (gatewayId: string) => {
-  const config = getConfig()
+  // TODO: replace with WS
   const body = {
     jsonrpc: "2.0",
     method: "portal_fetchHeadHeight",
@@ -133,7 +135,7 @@ const getGatewayHeight = async (gatewayId: string) => {
   }
 
   const response = await fetch(
-    process.env.RPC_CIRCUIT_ENDPOINT || config.circuit.http,
+    process.env.RPC_CIRCUIT_ENDPOINT || "http://localhost:9944",
     {
       method: "post",
       body: JSON.stringify(body),

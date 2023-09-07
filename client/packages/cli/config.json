@@ -1,7 +1,5 @@
 {
   "circuit": {
-    "ws": "ws://localhost:9944",
-    "http": "http://localhost:9944",
     "decimals": 12,
     "valueTypeSize": 16
   },
