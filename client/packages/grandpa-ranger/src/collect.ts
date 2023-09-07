@@ -83,7 +83,6 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 		}
 	})
 	.then(response => {
-		logger.info(response.data)
 		if (response.data.error) throw new Error(response.data.error.message)
 	  	return response.data.result;
 	})
