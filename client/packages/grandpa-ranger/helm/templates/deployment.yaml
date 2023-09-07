@@ -53,6 +53,11 @@ spec:
           env:
             - name: PROFILE
               value: "{{ $profile }}"
+            - name: CIRCUIT_SIGNER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: grandpa-ranger
+                  key: {{ $profile }}
           resources:
             {{- toYaml $resources | nindent 12 }}
       {{- with $nodeSelector }}
