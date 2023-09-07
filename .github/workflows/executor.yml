@@ -39,9 +39,7 @@ jobs:
           filters: |
             src:
             - "client/executor.Dockerfile"
-            - "client/packages/executor/**/*.ts"
-            - "client/packages/executor/**/*.json"
-            - "client/packages/executor/helm/**"
+            - "client/packages/executor/**"
             - ".github/workflows/executor.yml"
 
       - name: Detected changes
