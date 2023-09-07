@@ -181,6 +181,60 @@
           ]
         ]
       }
+    },
+    {
+      "name": "Sepolia",
+      "id": "sepl",
+      "tokenId": 200,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Sepolia",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "sepl",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Ethereum Mainnet",
+      "id": "eth2",
+      "tokenId": 100,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "",
+        "verificationVendor": "Ethereum",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth2",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ]
+        ]
+      }
     }
   ]
 }
