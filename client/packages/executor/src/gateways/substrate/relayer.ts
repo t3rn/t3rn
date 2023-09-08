@@ -28,7 +28,7 @@ export class SubstrateRelayer extends EventEmitter {
   /** Signer for target */
   signer: Sdk["signer"];
   /** Nonce of the signer, tracked locally to enable optimistic nonce increment */
-  nonce: number;
+  // nonce: number;
   /** Name of the target */
   name: string;
   nativeId: string;
@@ -48,7 +48,7 @@ export class SubstrateRelayer extends EventEmitter {
 
     if (config.nativeId) this.nativeId = config.nativeId;
 
-    this.nonce = await this.fetchNonce(this.client, this.signer.address);
+    // this.nonce = await this.fetchNonce(this.client, this.signer.address);
     const balance = await getBalanceWithDecimals(
       this.client,
       this.signer.address,
@@ -56,7 +56,7 @@ export class SubstrateRelayer extends EventEmitter {
     logger.info(
       {
         signer: this.signer.address,
-        nonce: this.nonce,
+        // nonce: this.nonce,
         target: this.name,
         balance: balance,
         rpc: config.rpc,
@@ -95,7 +95,7 @@ export class SubstrateRelayer extends EventEmitter {
    */
   async executeTx(sfx: SideEffect) {
     logger.info(
-      { sfxId: sfx.id, target: sfx.target, nonce: this.nonce },
+      { sfxId: sfx.id, target: sfx.target },
       `SFX Execution started 🔮`,
     );
 
@@ -110,8 +110,9 @@ export class SubstrateRelayer extends EventEmitter {
     }
 
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
-    const nonce = this.nonce;
-    this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
+    const nonce = await this.fetchNonce(this.client, this.signer.address);
+    // const nonce = this.nonce;
+    // this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
     return new Promise<void>((resolve, reject) =>
       tx.signAndSend(
         this.signer,
@@ -136,10 +137,10 @@ export class SubstrateRelayer extends EventEmitter {
               sfxId: sfx.id,
             });
             // we attempt to restore the correct nonce
-            this.nonce = await this.fetchNonce(
-              this.client,
-              this.signer.address,
-            );
+            // this.nonce = await this.fetchNonce(
+            //   this.client,
+            //   this.signer.address,
+            // );
             reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
           } else if (dispatchError) {
             // something went wrong and we can't decode the error
@@ -149,10 +150,10 @@ export class SubstrateRelayer extends EventEmitter {
               sfxId: sfx.id,
             });
             // we attempt to restore the correct nonce
-            this.nonce = await this.fetchNonce(
-              this.client,
-              this.signer.address,
-            );
+            // this.nonce = await this.fetchNonce(
+            //   this.client,
+            //   this.signer.address,
+            // );
             reject(Error(dispatchError.toString()));
           } else if (status.isFinalized) {
             const blockNumber = await this.generateSfxInclusionProof(
