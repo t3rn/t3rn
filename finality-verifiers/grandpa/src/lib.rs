@@ -1202,8 +1202,26 @@ pub mod tests {
                     hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
                 )
             );
+            assert_eq!(
+                ImportedHeaders::<TestRuntime>::iter_keys().collect::<Vec<H256>>(),
+                vec![
+                    hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
+                ]
+            );
+            assert_eq!(
+                ImportedHashes::<TestRuntime>::iter_keys().collect::<Vec<u32>>(),
+                Vec::<u32>::new()
+            );
             assert_ok!(Pallet::<TestRuntime>::reset(Origin::root()));
             assert_eq!(InitialHash::<TestRuntime>::get(), None);
+            assert_eq!(
+                ImportedHeaders::<TestRuntime>::iter_keys().collect::<Vec<H256>>(),
+                vec![]
+            );
+            assert_eq!(
+                ImportedHashes::<TestRuntime>::iter_keys().collect::<Vec<u32>>(),
+                Vec::<u32>::new()
+            );
             assert_ok!(initialize_relaychain(Origin::root()));
             assert_ok!(initialize_parachain(Origin::root()));
             assert_eq!(
