@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.52.4-rc.0] - 2023-09-08
+### :white_check_mark: Tests
+- [`a62119f`](https://github.com/t3rn/t3rn/commit/a62119f2b7969b74c6cba8a2981cc3778a430224) - check for drained ImportedHeaders at grandpa LC reset *(PR [#1291](https://github.com/t3rn/t3rn/pull/1291) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.52.3-rc.0] - 2023-09-08
 ### :bug: Bug Fixes
 - [`540674f`](https://github.com/t3rn/t3rn/commit/540674f010b91b492f81486974ac500b951ed53a) - drain imported hashes at light client reset *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1607,3 +1612,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.52.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.0-rc.0...v1.52.1-rc.0
 [v1.52.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.1-rc.0...v1.52.2-rc.0
 [v1.52.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.2-rc.0...v1.52.3-rc.0
+[v1.52.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.3-rc.0...v1.52.4-rc.0
