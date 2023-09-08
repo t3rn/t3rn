@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.52.2-rc.0] - 2023-09-08
+### :bug: Bug Fixes
+- [`da39864`](https://github.com/t3rn/t3rn/commit/da398646722cdb3ee24c662459c13f2a2301b694) - cli with config file *(PR [#1287](https://github.com/t3rn/t3rn/pull/1287) by [@3h4x](https://github.com/3h4x))*
+- [`e01a035`](https://github.com/t3rn/t3rn/commit/e01a035335af8b4ef1759b2a616d775fcb25ab4d) - gha for cli *(PR [#1288](https://github.com/t3rn/t3rn/pull/1288) by [@3h4x](https://github.com/3h4x))*
+- [`31760cc`](https://github.com/t3rn/t3rn/commit/31760ccfd6cb08cfd83c533b60fd17927d4612c0) - drain imported headers at grandpa reset *(PR [#1290](https://github.com/t3rn/t3rn/pull/1290) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.52.1-rc.0] - 2023-09-07
+### :bug: Bug Fixes
+- [`3b66878`](https://github.com/t3rn/t3rn/commit/3b6687890faa0ad2e051b5ad585ad010315377e1) - correct assignment for Polkadot and Kusama vendors and instances to runtimes *(PR [#1286](https://github.com/t3rn/t3rn/pull/1286) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.52.0-rc.0] - 2023-09-06
 ### :sparkles: New Features
 - [`0af5253`](https://github.com/t3rn/t3rn/commit/0af52539c1aa3ac5df212c26e982b75bdc0f7641) - **grandpa-ranger**: new sdk and types npm + logging for ranger *(PR [#1278](https://github.com/t3rn/t3rn/pull/1278) by [@3h4x](https://github.com/3h4x))*
@@ -1587,3 +1599,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.50.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.1-rc.0...v1.50.2-rc.0
 [v1.51.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.2-rc.0...v1.51.0-rc.0
 [v1.52.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.51.0-rc.0...v1.52.0-rc.0
+[v1.52.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.0-rc.0...v1.52.1-rc.0
+[v1.52.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.1-rc.0...v1.52.2-rc.0

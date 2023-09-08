@@ -74,11 +74,13 @@ export const submitSfx = async (
     extrinsic.speed_mode,
     sdk,
   )
+  // TODO: preferredSecurityLevel should not be constant Optimistic
   const transaction = circuit.tx.circuit.onExtrinsicTrigger(
     transactionArgs.sideEffects as Parameters<
       typeof circuit.tx.circuit.onExtrinsicTrigger
     >[0],
     transactionArgs.speed_mode,
+    "Optimistic"
   )
   const response = await sdk.circuit.tx[
     sendType === SfxSendType.Raw ? "signAndSendRaw" : "signAndSendSafe"

@@ -317,7 +317,7 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
-    type MyVendor = PolkadotVendor;
+    type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();

@@ -10,7 +10,7 @@ import type { Data } from '@polkadot/types';
 import type { Bytes, Compact, Option, U256, U8aFixed, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H160, H256, MultiAddress, Percent } from '@polkadot/types/interfaces/runtime';
-import type { CumulusPrimitivesParachainInherentParachainInherentData, PalletAssetRegistryAssetInfo, PalletContractsWasmDeterminism, PalletEth2FinalityVerifierBeaconBlockHeader, PalletEth2FinalityVerifierEthereumEventInclusionProof, PalletEth2FinalityVerifierEthereumReceiptInclusionProof, PalletEth2FinalityVerifierExecutionHeader, PalletEth2FinalityVerifierExecutionPayload, PalletEth2FinalityVerifierMerkleProof, PalletEth2FinalityVerifierSyncCommittee, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification, PalletIdentityBitFlags, PalletIdentityIdentityInfo, PalletIdentityJudgement, PalletSepoliaFinalityVerifierBeaconBlockHeader, PalletSepoliaFinalityVerifierEthereumEventInclusionProof, PalletSepoliaFinalityVerifierEthereumReceiptInclusionProof, PalletSepoliaFinalityVerifierExecutionHeader, PalletSepoliaFinalityVerifierExecutionPayload, PalletSepoliaFinalityVerifierMerkleProof, PalletSepoliaFinalityVerifierSyncCommittee, SpRuntimeHeader, SpWeightsWeightV2Weight, T0rnParachainRuntimeOriginCaller, T0rnParachainRuntimeParachainConfigSessionKeys, T3rnAbiRecodeCodec, T3rnPrimitivesAccountManagerOutcome, T3rnPrimitivesCircuitTypesOrderSFX, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesExecutionVendor, T3rnPrimitivesGatewayVendor, T3rnPrimitivesSpeedMode, T3rnPrimitivesTokenInfo, T3rnTypesSfxConfirmedSideEffect, T3rnTypesSfxSideEffect, XcmV3MultiLocation, XcmV3WeightLimit, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XcmVersionedXcm } from '@polkadot/types/lookup';
+import type { CumulusPrimitivesParachainInherentParachainInherentData, PalletAssetRegistryAssetInfo, PalletContractsWasmDeterminism, PalletEth2FinalityVerifierBeaconBlockHeader, PalletEth2FinalityVerifierEthereumEventInclusionProof, PalletEth2FinalityVerifierEthereumReceiptInclusionProof, PalletEth2FinalityVerifierExecutionHeader, PalletEth2FinalityVerifierExecutionPayload, PalletEth2FinalityVerifierMerkleProof, PalletEth2FinalityVerifierSyncCommittee, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification, PalletIdentityBitFlags, PalletIdentityIdentityInfo, PalletIdentityJudgement, PalletSepoliaFinalityVerifierBeaconBlockHeader, PalletSepoliaFinalityVerifierEthereumEventInclusionProof, PalletSepoliaFinalityVerifierEthereumReceiptInclusionProof, PalletSepoliaFinalityVerifierExecutionHeader, PalletSepoliaFinalityVerifierExecutionPayload, PalletSepoliaFinalityVerifierMerkleProof, PalletSepoliaFinalityVerifierSyncCommittee, SpRuntimeHeader, SpWeightsWeightV2Weight, T0rnParachainRuntimeOriginCaller, T0rnParachainRuntimeParachainConfigSessionKeys, T3rnAbiRecodeCodec, T3rnPrimitivesAccountManagerOutcome, T3rnPrimitivesCircuitTypesOrderSFX, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesExecutionVendor, T3rnPrimitivesGatewayVendor, T3rnPrimitivesSpeedMode, T3rnPrimitivesTokenInfo, T3rnTypesSfxConfirmedSideEffect, T3rnTypesSfxSecurityLvl, T3rnTypesSfxSideEffect, XcmV3MultiLocation, XcmV3WeightLimit, XcmVersionedMultiAssets, XcmVersionedMultiLocation, XcmVersionedXcm } from '@polkadot/types/lookup';
 
 export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
 export type __SubmittableExtrinsic<ApiType extends ApiTypes> = SubmittableExtrinsic<ApiType>;
@@ -186,6 +186,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       deregisterAttester: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
+       * See [`Pallet::estimate_user_finality_fee`].
+       **/
+      estimateUserFinalityFee: AugmentedSubmittable<(target: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed]>;
+      /**
        * See [`Pallet::force_activate_target`].
        **/
       forceActivateTarget: AugmentedSubmittable<(target: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed]>;
@@ -193,6 +197,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * See [`Pallet::nominate`].
        **/
       nominate: AugmentedSubmittable<(attester: AccountId32 | string | Uint8Array, amount: u128 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, u128]>;
+      /**
+       * See [`Pallet::read_latest_batching_factor_overview`].
+       **/
+      readLatestBatchingFactorOverview: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
        * See [`Pallet::read_pending_batches`].
        **/
@@ -205,10 +213,6 @@ declare module '@polkadot/api-base/types/submittable' {
        * See [`Pallet::remove_attestation_target`].
        **/
       removeAttestationTarget: AugmentedSubmittable<(target: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed]>;
-      /**
-       * See [`Pallet::set_confirmation_cost`].
-       **/
-      setConfirmationCost: AugmentedSubmittable<(target: U8aFixed | string | Uint8Array, cost: u128 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, u128]>;
       /**
        * See [`Pallet::submit_attestation`].
        **/
@@ -272,7 +276,7 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * See [`Pallet::on_extrinsic_trigger`].
        **/
-      onExtrinsicTrigger: AugmentedSubmittable<(sideEffects: Vec<T3rnTypesSfxSideEffect> | (T3rnTypesSfxSideEffect | { target?: any; maxReward?: any; insurance?: any; action?: any; encodedArgs?: any; signature?: any; enforceExecutor?: any; rewardAssetId?: any } | string | Uint8Array)[], speedMode: T3rnPrimitivesSpeedMode | 'Fast' | 'Rational' | 'Finalized' | number | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<T3rnTypesSfxSideEffect>, T3rnPrimitivesSpeedMode]>;
+      onExtrinsicTrigger: AugmentedSubmittable<(sideEffects: Vec<T3rnTypesSfxSideEffect> | (T3rnTypesSfxSideEffect | { target?: any; maxReward?: any; insurance?: any; action?: any; encodedArgs?: any; signature?: any; enforceExecutor?: any; rewardAssetId?: any } | string | Uint8Array)[], speedMode: T3rnPrimitivesSpeedMode | 'Fast' | 'Rational' | 'Finalized' | number | Uint8Array, preferredSecurityLevel: T3rnTypesSfxSecurityLvl | 'Optimistic' | 'Escrow' | number | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<T3rnTypesSfxSideEffect>, T3rnPrimitivesSpeedMode, T3rnTypesSfxSecurityLvl]>;
       /**
        * See [`Pallet::on_local_trigger`].
        **/

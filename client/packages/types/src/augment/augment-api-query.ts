@@ -58,11 +58,11 @@ declare module '@polkadot/api-base/types/storage' {
       currentCommittee: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
       currentRetributionPerSFXPercentage: AugmentedQuery<ApiType, () => Observable<Percent>, []>;
       currentSlashTreasuryBalance: AugmentedQuery<ApiType, () => Observable<Percent>, []>;
-      fastConfirmationCost: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<u128>>, [U8aFixed]>;
       nextBatch: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<PalletAttestersBatchMessage>>, [U8aFixed]>;
       nextCommittee: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
       nextCommitteeOnTarget: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<Vec<ITuple<[u32, Bytes]>>>>, [U8aFixed]>;
       nominations: AugmentedQuery<ApiType, (arg1: AccountId32 | string | Uint8Array, arg2: AccountId32 | string | Uint8Array) => Observable<Option<u128>>, [AccountId32, AccountId32]>;
+      paidFinalityFees: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<Vec<u128>>>, [U8aFixed]>;
       pendingAttestationTargets: AugmentedQuery<ApiType, () => Observable<Vec<U8aFixed>>, []>;
       pendingUnnominations: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<Vec<ITuple<[AccountId32, u128, u32]>>>>, [AccountId32]>;
       permanentSlashes: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;

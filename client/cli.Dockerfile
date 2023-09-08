@@ -7,8 +7,7 @@ RUN npm install -g typescript ts-node pnpm
 ADD packages/cli /app/cli
 RUN cd /app/cli && pnpm i
 
-ADD packages/cli/tsconfig.json /app/cli/
-ADD cli_entrypoint.sh /app/cli/entrypoint.sh
+ADD packages/cli/entrypoint.sh /app/cli/entrypoint.sh
 RUN chmod +x /app/cli/entrypoint.sh
 
 WORKDIR /app/cli

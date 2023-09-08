@@ -11,18 +11,6 @@ npm i -g pnpm
 pnpm i
 ```
 
-## Setup
-
-To start using the cli, you need to generate a `config.json` config file.
-
-```bash
-pnpm cli init -c
-```
-
-By using this command, you will create a configuration file that is already set up for you in your current working directory.
-
-Refer to the [configuration docs](./CONFIG.md) to learn how to configure a `.t3rnrc.json` file.
-
 ## Commands
 
 ### init
