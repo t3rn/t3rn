@@ -833,7 +833,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
             ));
 
             Attesters::force_activate_target(Origin::root(), [1, 1, 1, 1]).unwrap();
-            Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
+            Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1), None);
             Attesters::on_initialize(System::block_number());
 
             assert_eq!(XDNS::process_overview(System::block_number()), ());

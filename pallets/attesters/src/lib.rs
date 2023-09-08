@@ -957,6 +957,7 @@ pub mod pallet {
         fn request_sfx_attestation_commit(
             target: TargetId,
             sfx_id: H256,
+            maybe_gmp_payload: Option<Vec<u8>>,
         ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
@@ -2368,7 +2369,7 @@ pub mod attesters_test {
 
             for message in messages {
                 let sfx_id_a = H256::from(message);
-                let _ = Attesters::request_sfx_attestation_commit(target, sfx_id_a);
+                let _ = Attesters::request_sfx_attestation_commit(target, sfx_id_a, None);
             }
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
@@ -2574,7 +2575,9 @@ pub mod attesters_test {
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id_a, None
+            ));
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
@@ -2719,7 +2722,9 @@ pub mod attesters_test {
                 .input
                 .generate_id::<Keccak256>(mock_xtx_id.as_bytes(), 0u32);
 
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id, None
+            ));
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
@@ -2776,7 +2781,9 @@ pub mod attesters_test {
 
             let sfx_id = H256([3u8; 32]);
 
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id, None
+            ));
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
@@ -3066,7 +3073,9 @@ pub mod attesters_test {
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id_a, None
+            ));
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
@@ -3115,7 +3124,9 @@ pub mod attesters_test {
             Attesters::request_next_committee_attestation();
 
             let sfx_id_a = H256::repeat_byte(1);
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id_a, None
+            ));
 
             let ban_attester = AccountId::from([3; 32]);
             assert_ok!(Attesters::request_ban_attesters_attestation(&ban_attester));
@@ -3452,10 +3463,12 @@ pub mod attesters_test {
             NextBatch::<MiniRuntime>::insert(target, BatchMessage::default());
 
             let sfx_id_a = H256::repeat_byte(1);
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id_a, None
+            ));
 
             assert_noop!(
-                Attesters::request_sfx_attestation_commit(target, sfx_id_a),
+                Attesters::request_sfx_attestation_commit(target, sfx_id_a, None),
                 "SfxAlreadyRequested",
             );
         });
@@ -3475,7 +3488,9 @@ pub mod attesters_test {
             NextBatch::<MiniRuntime>::insert(target, BatchMessage::default());
 
             let sfx_id_a = H256::repeat_byte(1);
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id_a, None
+            ));
 
             // Verify that the attestation is added to the next batch
             let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
@@ -3483,7 +3498,9 @@ pub mod attesters_test {
 
             // Add another SFX to the next batch
             let sfx_id_b = H256::repeat_byte(2);
-            assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_b));
+            assert_ok!(Attesters::request_sfx_attestation_commit(
+                target, sfx_id_b, None
+            ));
             let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
             assert_eq!(next_batch.committed_sfx, Some(vec![sfx_id_a, sfx_id_b]));
 

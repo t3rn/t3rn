@@ -4,14 +4,18 @@ use frame_support::{
     dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
     weights::Weight,
 };
-use frame_system::{pallet_prelude::OriginFor, Config as ConfigSystem};
+use frame_system::{
+    pallet_prelude::{BlockNumberFor, OriginFor},
+    Config as ConfigSystem,
+};
+use sp_core::H256;
 use sp_std::{fmt::Debug, vec::Vec};
 
 use crate::circuit::AdaptiveTimeout;
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::{
     fsx::FullSideEffect,
-    sfx::{HardenedSideEffect, SecurityLvl, SideEffect},
+    sfx::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
 };
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
@@ -93,6 +97,20 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
         order_origin: T::AccountId,
         side_effects: Vec<SideEffect<T::AccountId, Balance>>,
         speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo;
+
+    fn store_gmp_payload(id: H256, payload: Vec<u8>) -> bool;
+
+    fn get_gmp_payload(id: H256) -> Option<Vec<u8>>;
+
+    fn confirm_side_effect(
+        origin: OriginFor<T>,
+        sfx_id: SideEffectId<T>,
+        confirmation: ConfirmedSideEffect<
+            <T as frame_system::Config>::AccountId,
+            BlockNumberFor<T>,
+            Balance,
+        >,
     ) -> DispatchResultWithPostInfo;
 }
 

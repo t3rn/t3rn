@@ -237,7 +237,11 @@ pub type AttestersChange = Vec<([u8; 33], u32)>;
 pub type BatchConfirmedSfxId = Vec<H256>;
 
 pub trait AttestersWriteApi<Account, Error> {
-    fn request_sfx_attestation_commit(target: TargetId, sfx_id: H256) -> Result<(), Error>;
+    fn request_sfx_attestation_commit(
+        target: TargetId,
+        sfx_id: H256,
+        maybe_gmp_payload: Option<Vec<u8>>,
+    ) -> Result<(), Error>;
     fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error>;
     fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
     fn request_next_committee_attestation() -> Vec<(TargetId, u32)>;
@@ -335,7 +339,11 @@ impl<Account, Balance: Zero, Error, BlockNumber> AttestersReadApi<Account, Balan
 impl<Account, Balance, Error> AttestersWriteApi<Account, Error>
     for AttestersReadApiEmptyMock<Account, Balance, Error>
 {
-    fn request_sfx_attestation_commit(_target: TargetId, _sfx_id: H256) -> Result<(), Error> {
+    fn request_sfx_attestation_commit(
+        _target: TargetId,
+        _sfx_id: H256,
+        _maybe_gmp_payload: Option<Vec<u8>>,
+    ) -> Result<(), Error> {
         Ok(())
     }
 
@@ -371,7 +379,7 @@ pub mod test {
             <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
                 AccountId32,
                 DispatchError,
-            >>::request_sfx_attestation_commit([0u8; 4], sp_core::H256([0u8; 32]))
+            >>::request_sfx_attestation_commit([0u8; 4], sp_core::H256([0u8; 32]), None)
         );
 
         assert_ok!(
