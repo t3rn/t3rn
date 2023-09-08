@@ -52,6 +52,8 @@ export type Queue = {
     dropped: string[];
     /** SFXs that are reverted */
     reverted: string[];
+    /** sj@: Nonce tracker */
+    nonce: number;
   };
 };
 
@@ -176,13 +178,14 @@ export class ExecutionManager {
         const relayer = new SubstrateRelayer();
 
         await relayer.setup(config, this.prometheus);
-
+        const nonce  = await relayer.getNonce();
         this.relayers[entry.id] = relayer;
 
         // initialize gateway estimator
         this.targetEstimator[entry.id] = new Estimator(relayer);
 
         relayer.on("Event", async (eventData: RelayerEventData) => {
+          this.queue[entry.executionVendor].nonce = nonce;
           switch (eventData.type) {
             case RelayerEvents.SfxExecutedOnTarget:
               {
@@ -240,6 +243,9 @@ export class ExecutionManager {
               break;
             case RelayerEvents.SfxExecutionError:
               // @todo - figure out how to handle this
+              // eslint-disable-next-line no-case-declarations
+              const nonce = await relayer.getNonce();
+              this.queue[entry.executionVendor] = nonce+1;
               break;
           }
         });
@@ -438,8 +444,10 @@ export class ExecutionManager {
         // move on the queue
         this.removeFromQueue("isBidding", sfx.id, sfx.vendor);
         this.queue[sfx.vendor].isExecuting.push(sfx.id);
+        const nonce = this.queue[sfx.vendor].nonce;
+        this.queue[sfx.vendor].nonce += 1;
         // execute
-        this.relayers[sfx.target].executeTx(sfx).then();
+        this.relayers[sfx.target].executeTx(sfx, nonce+1).then();
       }
     }
   }

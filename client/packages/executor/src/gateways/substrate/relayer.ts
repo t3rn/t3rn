@@ -93,7 +93,7 @@ export class SubstrateRelayer extends EventEmitter {
    *
    * @param sfx Object to execute
    */
-  async executeTx(sfx: SideEffect) {
+  async executeTx(sfx: SideEffect, nonce: number) {
     logger.info(
       { sfxId: sfx.id, target: sfx.target },
       `SFX Execution started 🔮`,
@@ -110,7 +110,7 @@ export class SubstrateRelayer extends EventEmitter {
     }
 
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
-    const nonce = await this.fetchNonce(this.client, this.signer.address);
+    // const nonce = await this.fetchNonce(this.client, this.signer.address);
     // const nonce = this.nonce;
     // this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
     return new Promise<void>((resolve, reject) =>
@@ -387,6 +387,10 @@ export class SubstrateRelayer extends EventEmitter {
       // @ts-ignore - property does not exist on type
       return parseInt(nextIndex.toNumber());
     });
+  }
+
+  async getNonce() {
+    return await this.fetchNonce(this.client, this.signer.address);
   }
 }
 
