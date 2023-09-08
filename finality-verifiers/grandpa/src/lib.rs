@@ -229,7 +229,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_imported_hashes)]
     pub(super) type ImportedHashes<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, u32, BridgedBlockHash<T, I>>;
+        StorageMap<_, Identity, u32, BridgedBlockHash<T, I>>;
 
     /// Count successful submissions.
     #[pallet::storage]
@@ -343,8 +343,9 @@ pub mod pallet {
             ensure_root(origin)?;
             <EverInitialized<T, I>>::kill();
             <BestFinalizedHash<T, I>>::kill();
-            <ParachainIdMap<T, I>>::drain();
-            <ImportedHeaders<T, I>>::drain();
+            for _ in <ParachainIdMap<T, I>>::drain() {}
+            for _ in <ImportedHashes<T, I>>::drain() {}
+            for _ in <ImportedHeaders<T, I>>::drain() {}
             <InitialHash<T, I>>::kill();
             <ImportedHashesPointer<T, I>>::kill(); // one ahead of first value
             <RelayChainId<T, I>>::kill();
