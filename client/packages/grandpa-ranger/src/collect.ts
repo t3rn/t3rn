@@ -3,7 +3,6 @@ import {ApiPromise, Encodings} from "@t3rn/sdk";
 const axios = require('axios').default;
 import {Prometheus} from "./prometheus";
 import { logger } from "./logging";
-import { head } from "lodash";
 
 export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus, target: string): Promise<any[]> => {
 	return new Promise(async (resolve, reject) => {
