@@ -530,16 +530,13 @@ pub mod pallet {
             <GMP<T>>::get(id)
         }
 
-        fn confirm_side_effect(
-            origin: OriginFor<T>,
-            sfx_id: SideEffectId<T>,
-            confirmation: ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                BlockNumberFor<T>,
-                BalanceOf<T>,
-            >,
-        ) -> DispatchResultWithPostInfo {
-            Self::confirm_side_effect(origin, sfx_id, confirmation)
+        fn verify_sfx_proof(
+            target: TargetId,
+            speed_mode: SpeedMode,
+            source: Option<ExecutionSource>,
+            encoded_proof: Vec<u8>,
+        ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
+            <T as Config>::Portal::verify_event_inclusion(target, speed_mode, source, encoded_proof)
         }
     }
 
@@ -1361,6 +1358,7 @@ impl<T: Config> Pallet<T> {
                     "Unable to find matching Side Effect in given Xtx to confirm",
                 )),
         };
+
         log::debug!("Order confirmed!");
 
         #[cfg(not(feature = "test-skip-verification"))]
@@ -1377,14 +1375,13 @@ impl<T: Config> Pallet<T> {
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
-        log::debug!("Inclusion confirmed!");
-
-        // ToDo: handle misbehavior
         #[cfg(not(feature = "test-skip-verification"))]
         log::debug!(
             "SFX confirmation inclusion receipt: {:?}",
             inclusion_receipt
         );
+
+        log::debug!("Inclusion confirmed!");
 
         let sfx_abi =
             <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action).ok_or({

@@ -1,5 +1,6 @@
 use codec::{Decode, Encode};
 use frame_support::{
+    assert_ok,
     dispatch::DispatchResultWithPostInfo,
     log,
     traits::{fungibles::Destroy, AsEnsureOriginWithArg, FindAuthor},
@@ -13,6 +14,7 @@ pub use pallet_attesters::{
     NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
     PreviousCommittee, SortedNominatedAttesters,
 };
+pub use pallet_eth2_finality_verifier::ExecutionHeaderMap as Eth2ExecutionHeaderMap;
 use sp_runtime::BuildStorage;
 use std::marker::PhantomData;
 
@@ -852,7 +854,7 @@ pub fn get_asset_usdt_with_sepl_info() -> (u32, TokenInfo) {
         TokenInfo::Ethereum(EthereumToken {
             symbol: b"USDT".to_vec(),
             decimals: 6,
-            address: Some(hex!("dAC17F958D2ee523a2206206994597C13D831ec7")),
+            address: Some(hex!("7169D38820dfd117C3FA1f22a697dBA58d90BA06")),
         }),
     )
 }
@@ -1039,7 +1041,10 @@ impl ExtBuilder {
         ext
     }
 }
-use pallet_eth2_finality_verifier::LightClientAsyncAPI;
+use pallet_eth2_finality_verifier::{
+    mock::{generate_epoch_update, generate_initialization},
+    LightClientAsyncAPI,
+};
 
 pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
     use t3rn_primitives::portal::Portal as PortalT;
@@ -1098,6 +1103,56 @@ pub fn prepare_ext_builder_playground() -> TestExternalities {
     reboot_and_link_assets(&mut ext);
 
     ext
+}
+
+pub fn hotswap_latest_receipt_header_root(hotswap_receipt_root: [u8; 32]) -> bool {
+    if Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values().count() == 0 {
+        return false
+    }
+
+    let mut last_header = Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values()
+        .last()
+        .unwrap();
+
+    last_header.receipts_root = hotswap_receipt_root;
+
+    Eth2ExecutionHeaderMap::<MiniRuntime>::insert(last_header.number, last_header.clone());
+
+    println!(
+        "Hotswap latest receipt header root to {:?} -- {:?}",
+        hotswap_receipt_root, last_header.number
+    );
+
+    true
+}
+pub fn initialize_eth2_with_3rd_epoch() {
+    use t3rn_primitives::portal::Portal as PortalT;
+
+    let init = generate_initialization(None, None);
+
+    assert_ok!(Portal::initialize(
+        RuntimeOrigin::root(),
+        ETHEREUM_TARGET,
+        init.encode()
+    ));
+
+    let submission_data = generate_epoch_update(
+        0,
+        3,
+        Some(
+            init.checkpoint
+                .attested_beacon
+                .hash_tree_root::<MiniRuntime>()
+                .unwrap(),
+        ),
+        None,
+        None,
+    );
+
+    assert_ok!(Portal::submit_encoded_headers(
+        ETHEREUM_TARGET,
+        submission_data.encode()
+    ));
 }
 
 pub fn reboot_and_link_assets(ext: &mut TestExternalities) {

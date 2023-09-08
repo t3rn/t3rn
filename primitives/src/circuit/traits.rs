@@ -1,4 +1,6 @@
-use crate::{circuit::CircuitStatus, xtx::LocalState, GatewayVendor, SpeedMode, TargetId};
+use crate::{
+    circuit::CircuitStatus, xtx::LocalState, ExecutionSource, GatewayVendor, SpeedMode, TargetId,
+};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
@@ -11,7 +13,7 @@ use frame_system::{
 use sp_core::H256;
 use sp_std::{fmt::Debug, vec::Vec};
 
-use crate::circuit::AdaptiveTimeout;
+use crate::{circuit::AdaptiveTimeout, light_client::InclusionReceipt};
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::{
     fsx::FullSideEffect,
@@ -103,15 +105,12 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
 
     fn get_gmp_payload(id: H256) -> Option<Vec<u8>>;
 
-    fn confirm_side_effect(
-        origin: OriginFor<T>,
-        sfx_id: SideEffectId<T>,
-        confirmation: ConfirmedSideEffect<
-            <T as frame_system::Config>::AccountId,
-            BlockNumberFor<T>,
-            Balance,
-        >,
-    ) -> DispatchResultWithPostInfo;
+    fn verify_sfx_proof(
+        target: TargetId,
+        speed_mode: SpeedMode,
+        source: Option<ExecutionSource>,
+        encoded_proof: Vec<u8>,
+    ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError>;
 }
 
 pub trait CircuitDLQ<T: ConfigSystem> {
