@@ -64,7 +64,7 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp:
-                b"Assets:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
+                b"Transfer:Log(to+:Account20,amount+:Value128)"
                     .to_vec(),
             for_scale:
                 b"Assets:Struct(Transferred:Event(asset_id:Value32,from:Account32,to:Account32,amount:Value128))"
@@ -72,7 +72,7 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Assets:Struct(asset_id:Account20,to:Account20,amount:Value128)".to_vec(),
+            for_rlp: b"Transfer:Struct(to+:Account20,amount+:Value128)".to_vec(),
             for_scale: b"Assets:Struct(asset_id:Value32,to:Account32,amount:Value128)".to_vec(),
         },
         maybe_prefix_memo: None,
