@@ -51,6 +51,8 @@ spec:
           resources:
             {{- toYaml $resources | nindent 12 }}
           env:
+            - name: LOG_LEVEL
+              value: "{{ $profile == "polkadot" | ternary "debug", "info" }}"
             - name: PROFILE
               value: "{{ $profile }}"
             - name: CIRCUIT_SIGNER_KEY
