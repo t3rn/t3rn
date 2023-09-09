@@ -111,7 +111,8 @@ impl SFXAbi {
 
         // Check prefix memo if it's set - it's optional since not required for any Event decoding besides Substrate Events
         // At the same time imposes security risk by attacker faking events sent out of unauthorized pallets
-        if self.maybe_prefix_memo.is_some()
+        if payload_codec != &Codec::Rlp
+            && self.maybe_prefix_memo.is_some()
             && filled_named_abi.get_prefix_memo() != self.maybe_prefix_memo
         {
             log::error!(
@@ -149,12 +150,12 @@ impl SFXAbi {
 
             // Check if arguments are equal after recoding to ordered_args_codec
             let recoded_payload: Data =
-                filled_abi_matched_by_name.recode_as(payload_codec, ordered_args_codec)?;
+                filled_abi_matched_by_name.recode_as(payload_codec, ordered_args_codec, true)?;
 
             match recoded_payload == *ordered_arg {
                 true => continue,
                 false => {
-                    log::error!(
+                    println!(
                         "SFXAbi::invalid payload argument for: '{:?}'; expected: {:?}; received and recoded: {:?}", current_arg_name_str, ordered_arg, recoded_payload
                     );
                     return Err(DispatchError::Other(

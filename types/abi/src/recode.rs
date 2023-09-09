@@ -91,11 +91,16 @@ pub fn recode_bytes_with_descriptor(
 ) -> Result<Vec<u8>, DispatchError> {
     let abi: Abi = abi_descriptor.try_into()?;
     let filled_abi = FilledAbi::try_fill_abi(abi, encoded_bytes, in_codec.clone())?;
-    filled_abi.recode_as(&in_codec, &out_codec)
+    filled_abi.recode_as(&in_codec, &out_codec, false)
 }
 
 impl FilledAbi {
-    pub fn recode_as(&self, in_codec: &Codec, out_codec: &Codec) -> Result<Data, DispatchError> {
+    pub fn recode_as(
+        &self,
+        in_codec: &Codec,
+        out_codec: &Codec,
+        recode_rlp_to_u128_values_and_32b_accounts: bool,
+    ) -> Result<Data, DispatchError> {
         match self {
             FilledAbi::Struct(_name, fields, struct_prefix_memo)
             | FilledAbi::Event(_name, fields, struct_prefix_memo)
@@ -104,7 +109,13 @@ impl FilledAbi {
                 // Remove and re-add the struct prefix at the end
                 let mut encoded_fields: Vec<u8> = vec![];
                 for field in fields {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                    encoded_fields.extend_from_slice(
+                        &field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )?[..],
+                    );
                 }
 
                 match (in_codec, out_codec) {
@@ -125,7 +136,13 @@ impl FilledAbi {
             FilledAbi::Option(_name, field) => {
                 // Option Prefix
                 let mut encoded_fields: Vec<u8> = vec![];
-                encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                encoded_fields.extend_from_slice(
+                    &field.recode_as(
+                        in_codec,
+                        out_codec,
+                        recode_rlp_to_u128_values_and_32b_accounts,
+                    )?[..],
+                );
                 match (in_codec, out_codec) {
                     (_, Codec::Scale) => Ok({
                         let mut scale_encoded_option = match encoded_fields.is_empty() {
@@ -145,7 +162,13 @@ impl FilledAbi {
             FilledAbi::Tuple(_name, (field1, field2)) => {
                 let mut encoded_fields: Vec<u8> = vec![];
                 for field in &[field1, field2] {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                    encoded_fields.extend_from_slice(
+                        &field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )?[..],
+                    );
                 }
                 match (in_codec, out_codec) {
                     (_, Codec::Scale) => Ok(encoded_fields),
@@ -155,7 +178,13 @@ impl FilledAbi {
             FilledAbi::Triple(_name, (field1, field2, field3)) => {
                 let mut encoded_fields: Vec<u8> = vec![];
                 for field in &[field1, field2, field3] {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                    encoded_fields.extend_from_slice(
+                        &field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )?[..],
+                    );
                 }
                 match (in_codec, out_codec) {
                     (_, Codec::Scale) => Ok(encoded_fields),
@@ -165,7 +194,13 @@ impl FilledAbi {
             FilledAbi::Quadruple(_name, (field1, field2, field3, field4)) => {
                 let mut encoded_fields: Vec<u8> = vec![];
                 for field in &[field1, field2, field3, field4] {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                    encoded_fields.extend_from_slice(
+                        &field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )?[..],
+                    );
                 }
                 match (in_codec, out_codec) {
                     (_, Codec::Scale) => Ok(encoded_fields),
@@ -175,7 +210,13 @@ impl FilledAbi {
             FilledAbi::Quintuple(_name, (field1, field2, field3, field4, field5)) => {
                 let mut encoded_fields: Vec<u8> = vec![];
                 for field in &[field1, field2, field3, field4, field5] {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                    encoded_fields.extend_from_slice(
+                        &field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )?[..],
+                    );
                 }
                 match (in_codec, out_codec) {
                     (_, Codec::Scale) => Ok(encoded_fields),
@@ -185,7 +226,13 @@ impl FilledAbi {
             FilledAbi::Sextuple(_name, (field1, field2, field3, field4, field5, field6)) => {
                 let mut encoded_fields: Vec<u8> = vec![];
                 for field in &[field1, field2, field3, field4, field5, field6] {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                    encoded_fields.extend_from_slice(
+                        &field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )?[..],
+                    );
                 }
                 match (in_codec, out_codec) {
                     (_, Codec::Scale) => Ok(encoded_fields),
@@ -198,7 +245,13 @@ impl FilledAbi {
                 let mut encoded_fields: Vec<u8> = vec![];
                 let encoded_data: Data = fields
                     .iter()
-                    .map(|field| field.recode_as(in_codec, out_codec))
+                    .map(|field| {
+                        field.recode_as(
+                            in_codec,
+                            out_codec,
+                            recode_rlp_to_u128_values_and_32b_accounts,
+                        )
+                    })
                     .collect::<Result<Vec<Data>, DispatchError>>()?
                     .concat();
                 encoded_fields.extend_from_slice(&encoded_data);
@@ -243,6 +296,16 @@ impl FilledAbi {
                         "RLP encoded account should be 20 bytes long"
                     );
                     let account_id_20: H160 = H160::from_slice(&data[0..20]);
+
+                    if recode_rlp_to_u128_values_and_32b_accounts {
+                        let mut account_id_32_with_prefix_zeros: [u8; 32] = [0u8; 32];
+                        account_id_32_with_prefix_zeros[12..32].copy_from_slice(&account_id_20[..]);
+
+                        let account_id_32: AccountId32 =
+                            AccountId32::from(account_id_32_with_prefix_zeros);
+                        return Ok(account_id_32.encode())
+                    }
+
                     Ok(account_id_20.encode())
                 },
             },
@@ -262,6 +325,10 @@ impl FilledAbi {
                             "Recode::recode_as failed to decode Value32 from Scale",
                         )
                     })?;
+                    if recode_rlp_to_u128_values_and_32b_accounts {
+                        let value_128: u128 = value as u128;
+                        return Ok(value_128.encode())
+                    }
                     Ok(value.encode())
                 },
             },
@@ -279,6 +346,10 @@ impl FilledAbi {
                     let value: u64 = rlp::decode(&data[..]).map_err(|_| {
                         DispatchError::Other("Recode::recode_as failed to decode Value64 from Rlp")
                     })?;
+                    if recode_rlp_to_u128_values_and_32b_accounts {
+                        let value_128: u128 = value as u128;
+                        return Ok(value_128.encode())
+                    }
                     Ok(value.encode())
                 },
             },
@@ -313,6 +384,10 @@ impl FilledAbi {
                 (Codec::Rlp, Codec::Scale) => {
                     let value_256: U256 = U256::from_big_endian(encoded_value);
                     let mut little_endian_value_32b: [u8; 32] = [0; 32];
+                    if recode_rlp_to_u128_values_and_32b_accounts {
+                        let value_128: u128 = value_256.as_u128();
+                        return Ok(value_128.encode())
+                    }
                     value_256.to_little_endian(&mut little_endian_value_32b);
                     Ok(little_endian_value_32b.to_vec())
                 },
@@ -350,7 +425,9 @@ mod test_recode {
             FilledAbi::Account20(None, rlp_encoded[1..].to_vec())
         );
 
-        let scale_recoded = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale).unwrap();
+        let scale_recoded = filled_abi
+            .recode_as(&Codec::Rlp, &Codec::Scale, false)
+            .unwrap();
 
         assert_eq!(scale_recoded, val.encode());
     }
@@ -365,7 +442,9 @@ mod test_recode {
 
         assert_eq!(filled_abi, FilledAbi::Account20(None, scale_encoded));
 
-        let rlp_encoded = filled_abi.recode_as(&Codec::Scale, &Codec::Rlp).unwrap();
+        let rlp_encoded = filled_abi
+            .recode_as(&Codec::Scale, &Codec::Rlp, false)
+            .unwrap();
 
         assert_eq!(rlp_encoded, rlp::encode(&val.0.as_slice()).to_vec());
     }
@@ -382,7 +461,9 @@ mod test_recode {
 
         assert_eq!(filled_abi, FilledAbi::Account32(None, scale_encoded));
 
-        let rlp_encoded = filled_abi.recode_as(&Codec::Scale, &Codec::Rlp).unwrap();
+        let rlp_encoded = filled_abi
+            .recode_as(&Codec::Scale, &Codec::Rlp, false)
+            .unwrap();
 
         assert_eq!(rlp_encoded, rlp::encode(&val.to_raw_vec()).to_vec());
     }
@@ -402,7 +483,9 @@ mod test_recode {
             FilledAbi::Account32(None, rlp_encoded[1..].to_vec())
         );
 
-        let scale_encoded = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale).unwrap();
+        let scale_encoded = filled_abi
+            .recode_as(&Codec::Rlp, &Codec::Scale, false)
+            .unwrap();
 
         assert_eq!(scale_encoded, val.encode());
     }
@@ -418,7 +501,9 @@ mod test_recode {
 
         assert_eq!(filled_abi, FilledAbi::Value32(None, rlp_encoded));
 
-        let scale_encoded = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale).unwrap();
+        let scale_encoded = filled_abi
+            .recode_as(&Codec::Rlp, &Codec::Scale, false)
+            .unwrap();
 
         assert_eq!(scale_encoded, val.encode());
     }
