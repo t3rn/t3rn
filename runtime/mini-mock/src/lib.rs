@@ -14,7 +14,9 @@ pub use pallet_attesters::{
     NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
     PreviousCommittee, SortedNominatedAttesters,
 };
-pub use pallet_eth2_finality_verifier::ExecutionHeaderMap as Eth2ExecutionHeaderMap;
+pub use pallet_eth2_finality_verifier::{
+    types::EthereumEventInclusionProof, ExecutionHeaderMap as Eth2ExecutionHeaderMap,
+};
 use sp_runtime::BuildStorage;
 use std::marker::PhantomData;
 

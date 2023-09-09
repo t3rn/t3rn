@@ -6910,7 +6910,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes#c76a0e4cd359af17661a75e668eaf569020c3627"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes#651bba026fa30d9edc264679d5bfc2909c00e8cf"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -12886,7 +12886,7 @@ dependencies = [
  "sp-maybe-compressed-blob",
  "strum",
  "tempfile",
- "toml 0.7.7",
+ "toml 0.7.8",
  "walkdir",
  "wasm-opt",
 ]
@@ -13697,9 +13697,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.7.7"
+version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de0a3ab2091e52d7299a39d098e200114a972df0a7724add02a273aa9aada592"
+checksum = "dd79e69d3b627db300ff956027cc6c3798cef26d22526befdfcd12feeb6d2257"
 dependencies = [
  "serde",
  "serde_spanned",
