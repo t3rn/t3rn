@@ -155,7 +155,7 @@ impl SFXAbi {
             match recoded_payload == *ordered_arg {
                 true => continue,
                 false => {
-                    println!(
+                    log::error!(
                         "SFXAbi::invalid payload argument for: '{:?}'; expected: {:?}; received and recoded: {:?}", current_arg_name_str, ordered_arg, recoded_payload
                     );
                     return Err(DispatchError::Other(
