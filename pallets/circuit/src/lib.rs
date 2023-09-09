@@ -1408,12 +1408,14 @@ impl<T: Config> Pallet<T> {
             ))
         }
 
+        let payload_codec = <T as Config>::Xdns::get_target_codec(&fsx.input.target)?;
+
         fsx.input.confirm(
             sfx_abi,
             inclusion_receipt.message,
             // todo: store the codec info in gateway's records and use it here
             &Codec::Scale,
-            &Codec::Scale,
+            &payload_codec,
         )?;
 
         log::debug!("Confirmation success");

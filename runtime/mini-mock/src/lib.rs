@@ -939,9 +939,9 @@ impl ExtBuilder {
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![
-                (*b"tran", Some(2)),
-                (*b"tass", Some(4)),
-                (*b"cevm", Some(88)),
+                (*b"tran", Some(132)),
+                (*b"tass", Some(132)),
+                (*b"cevm", Some(132)),
             ],
         });
         self
@@ -960,9 +960,9 @@ impl ExtBuilder {
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![
-                (*b"tran", Some(2)),
-                (*b"tass", Some(4)),
-                (*b"cevm", Some(88)),
+                (*b"tran", Some(133)),
+                (*b"tass", Some(133)),
+                (*b"cevm", Some(133)),
             ],
         });
         self

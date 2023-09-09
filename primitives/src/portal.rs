@@ -359,7 +359,7 @@ impl PrecompileArgs {
                             portal_selector
                         );
 
-                        abi.recode_as(&in_codec.clone(), &t3rn_abi::Codec::Scale)
+                        abi.recode_as(&in_codec.clone(), &t3rn_abi::Codec::Scale, true)
                     })
             },
             t3rn_abi::Codec::Scale => Ok(input.to_vec()),

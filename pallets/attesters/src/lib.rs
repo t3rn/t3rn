@@ -768,7 +768,7 @@ pub mod pallet {
                 escrow_inclusion_receipt.message,
                 target_codec.clone(),
             )?
-            .recode_as(&target_codec, &Codec::Scale)?;
+            .recode_as(&target_codec, &Codec::Scale, true)?;
 
             #[cfg(feature = "test-skip-verification")]
             let recoded_batch_event_bytes = escrow_inclusion_receipt.message;
