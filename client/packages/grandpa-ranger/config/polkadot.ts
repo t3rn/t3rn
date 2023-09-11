@@ -13,8 +13,8 @@ export default {
    ws: "wss://polkadot-rpc.dwellir.com"
   },
  },
- rangeInterval: 12, // time between range submissions in seconds
+ rangeInterval: 30, // time between range submissions in seconds
  targetGatewayId: "pdot",
  batches_max: 1,
- batching: false,
+ batching: true,
 }
