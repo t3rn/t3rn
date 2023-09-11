@@ -19,10 +19,6 @@ class GrandpaRanger {
       { target: this.target },
       this.config.rangeInterval
     )
-    this.prometheus.nextSubmission.set(
-      { target: this.target },
-      Date.now() + this.config.rangeInterval * 1000
-    )
   }
 
   async start() {
@@ -80,17 +76,17 @@ class GrandpaRanger {
 
       await this.submitToCircuit(batches)
         .then(res => {
-          logger.info({
-            status: "Submitted",
-            range_size: totalElements,
-            circuit_block: res,
-          })
-          this.prometheus.nextSubmission.set(
-            { target: this.config.targetGatewayId },
-            Date.now() + this.config.rangeInterval * 1000
+          logger.info(
+            {
+              status: "Submitted",
+              range_size: totalElements,
+              circuit_block: res,
+            },
+            "Submitted range tx"
           )
-          this.prometheus.successesTotal.inc(
-            { target: this.config.targetGatewayId },
+
+          this.prometheus.submissions.inc(
+            { target: this.config.targetGatewayId, status: "success" },
             1
           )
           const latestHeight = parseInt(
@@ -101,12 +97,8 @@ class GrandpaRanger {
         })
         .catch(e => {
           logger.error(e)
-          this.prometheus.nextSubmission.set(
-            { target: this.config.targetGatewayId },
-            Date.now() + this.config.rangeInterval * 1000
-          )
-          this.prometheus.errorsTotal.inc(
-            { target: this.config.targetGatewayId },
+          this.prometheus.submissions.inc(
+            { target: this.config.targetGatewayId, status: "error" },
             1
           )
           return resolve() // resolve, as we don't want to stop the loop
@@ -209,7 +201,6 @@ class GrandpaRanger {
             logger.warn(`Tx size is big: ${txSize}kB`)
           }
           let res = await this.circuit.sdk.circuit.tx.signAndSendSafe(tx)
-          logger.info({ res }, "Tx sent")
           resolve(res)
         } else {
           // we should prob have some retry logic here instead

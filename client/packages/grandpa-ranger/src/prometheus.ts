@@ -8,9 +8,7 @@ export class Prometheus {
   disconnects: any
   register: any
   height: any
-  nextSubmission: any
-  successesTotal: any
-  errorsTotal: any
+  submissions: any
   rangeInterval: any
   up: any
   target: string
@@ -32,25 +30,11 @@ export class Prometheus {
       labelNames: ["target"],
     })
 
-    this.nextSubmission = new client.Gauge({
-      name: "next_submission",
-      help: "Unix timestamp of the next scheduled submission",
-      registers: [this.register],
-      labelNames: ["target"],
-    })
-
-    this.successesTotal = new client.Counter({
+    this.submissions = new client.Counter({
       name: "successes_total",
       help: "Number of successful submissions",
       registers: [this.register],
-      labelNames: ["target"],
-    })
-
-    this.errorsTotal = new client.Counter({
-      name: "errors_total",
-      help: "Number of errored submissions",
-      registers: [this.register],
-      labelNames: ["target"],
+      labelNames: ["target", "status"],
     })
 
     this.disconnects = new client.Counter({

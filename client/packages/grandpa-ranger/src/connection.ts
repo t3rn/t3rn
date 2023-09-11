@@ -77,7 +77,9 @@ export class Connection {
 
         const sdk = new Sdk(this.provider, this.signer)
         this.sdk = sdk
-        this.client = await sdk.init()
+        this.isCircuit
+          ? (this.client = await sdk.init())
+          : (this.client = await ApiPromise.create({ provider: this.provider }))
 
         this.client.derive.chain.subscribeNewHeads(header => {
           this.prometheus.height.set(header.number.toNumber())
