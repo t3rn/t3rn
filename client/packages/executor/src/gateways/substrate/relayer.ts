@@ -11,6 +11,7 @@ import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
 import { logger } from "../../logging";
 import { Prometheus } from "../../prometheus";
+import { SingletonComponent } from "src/singleton";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -31,10 +32,13 @@ export class SubstrateRelayer extends EventEmitter {
   // nonce: number;
   /** Name of the target */
   name: string;
+  id: string;
   nativeId: string;
   prometheus: Prometheus;
+  singleton: SingletonComponent;
 
-  async setup(config: Gateway, prometheus: Prometheus) {
+  async setup(config: Gateway, prometheus: Prometheus, singleton: SingletonComponent) {
+    this.singleton = singleton
     this.client = await ApiPromise.create({
       provider: new WsProvider(config.rpc),
     });
@@ -45,7 +49,7 @@ export class SubstrateRelayer extends EventEmitter {
     this.signer = config.signerKey
       ? keyring.addFromMnemonic(config.signerKey)
       : keyring.addFromUri("//Executor//default");
-
+    this.id = config.id
     if (config.nativeId) this.nativeId = config.nativeId;
 
     // this.nonce = await this.fetchNonce(this.client, this.signer.address);
@@ -93,7 +97,8 @@ export class SubstrateRelayer extends EventEmitter {
    *
    * @param sfx Object to execute
    */
-  async executeTx(sfx: SideEffect, nonce: number) {
+  async executeTx(sfx: SideEffect) {
+    await new Promise(f => setTimeout(f, 5000));
     logger.info(
       { sfxId: sfx.id, target: sfx.target },
       `SFX Execution started 🔮`,
@@ -110,7 +115,13 @@ export class SubstrateRelayer extends EventEmitter {
     }
 
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
-    // const nonce = await this.fetchNonce(this.client, this.signer.address);
+    const singletonNonce = this.singleton.getNonce(this.id);
+    const fetchedNonce = await this.singleton.fetchNonce(this.client, this.signer.address);
+    if(singletonNonce != fetchedNonce){
+      this.singleton.setNonce(this.id, fetchedNonce);
+    }
+    const nonce = this.singleton.getNonce(this.id) + 1;
+    this.singleton.setNonce(this.id, nonce);
     // const nonce = this.nonce;
     // this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
     return new Promise<void>((resolve, reject) =>

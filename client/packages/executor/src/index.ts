@@ -39,6 +39,7 @@ import { Logger } from "pino";
 import { Prometheus } from "./prometheus";
 import { logger } from "./logging";
 import { homedir } from "os";
+import { SingletonComponent } from "./singleton";
 
 dotenv.config();
 
@@ -77,7 +78,7 @@ class Instance {
   /**
    * Sets up and configures an executor instance.
    */
-  async setup(): Promise<Instance> {
+  async setup(singleton: SingletonComponent): Promise<Instance> {
     await this.configureLogging();
     await cryptoWaitReady();
 
@@ -125,6 +126,7 @@ class Instance {
       this.logger,
       this.config,
       this.prometheus,
+      singleton
     );
     await this.executionManager.setup(
       this.config.gateways,

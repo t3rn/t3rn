@@ -23,6 +23,7 @@ import BN from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
 import { getBalanceWithDecimals } from "../utils";
+import { SingletonComponent } from "src/singleton";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -52,8 +53,6 @@ export type Queue = {
     dropped: string[];
     /** SFXs that are reverted */
     reverted: string[];
-    /** sj@: Nonce tracker */
-    nonce: number;
   };
 };
 
@@ -90,6 +89,7 @@ export class ExecutionManager {
   circuitListener: CircuitListener;
   circuitRelayer: CircuitRelayer;
   prometheus: Prometheus;
+  singleton: SingletonComponent;
 
   constructor(
     public circuitClient: Sdk["client"],
@@ -97,6 +97,7 @@ export class ExecutionManager {
     public logger: Logger,
     public config: Config,
     prometheus: Prometheus,
+    singleton: SingletonComponent
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
@@ -104,6 +105,7 @@ export class ExecutionManager {
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.prometheus = prometheus;
+    this.singleton = singleton;
   }
 
   /** Setup all instances and listeners for the execution manager */
@@ -177,15 +179,15 @@ export class ExecutionManager {
         // initialize gateway relayer
         const relayer = new SubstrateRelayer();
 
-        await relayer.setup(config, this.prometheus);
-        const nonce  = await relayer.getNonce();
+        await relayer.setup(config, this.prometheus, this.singleton);
+      
         this.relayers[entry.id] = relayer;
 
         // initialize gateway estimator
         this.targetEstimator[entry.id] = new Estimator(relayer);
 
         relayer.on("Event", async (eventData: RelayerEventData) => {
-          this.queue[entry.executionVendor].nonce = nonce;
+ 
           switch (eventData.type) {
             case RelayerEvents.SfxExecutedOnTarget:
               {
@@ -243,9 +245,14 @@ export class ExecutionManager {
               break;
             case RelayerEvents.SfxExecutionError:
               // @todo - figure out how to handle this
-              // eslint-disable-next-line no-case-declarations
-              const nonce = await relayer.getNonce();
-              this.queue[entry.executionVendor] = nonce+1;
+              // updating the nonce
+              {
+                const singletonNonce = this.singleton.getNonce(entry.id)
+                const fetchedNonce = await this.singleton.fetchNonce(relayer.client, relayer.signer)
+                if(singletonNonce !== fetchedNonce) {
+                  this.singleton.setNonce(relayer.id, fetchedNonce)
+                }
+              }
               break;
           }
         });
@@ -444,10 +451,9 @@ export class ExecutionManager {
         // move on the queue
         this.removeFromQueue("isBidding", sfx.id, sfx.vendor);
         this.queue[sfx.vendor].isExecuting.push(sfx.id);
-        const nonce = this.queue[sfx.vendor].nonce;
-        this.queue[sfx.vendor].nonce += 1;
+
         // execute
-        this.relayers[sfx.target].executeTx(sfx, nonce+1).then();
+        this.relayers[sfx.target].executeTx(sfx).then();
       }
     }
   }
