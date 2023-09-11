@@ -62,7 +62,7 @@ export class Connection {
 				logger.info(`Connected to ${this.currentProvider().ws}`)
 				if(this.isCircuit) {
 					this.prometheus.circuitActive = true;
-					const sdk = new Sdk(this.provider, this.signer);
+					const sdk = new Sdk(this.provider, this.signer, true);
 					this.sdk = sdk;
 					this.client = await sdk.init();
 				} else {

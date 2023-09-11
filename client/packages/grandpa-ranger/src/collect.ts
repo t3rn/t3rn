@@ -8,7 +8,7 @@ export const generateRange = async (config: any, circuitConnection: Connection, 
 	return new Promise(async (resolve, reject) => {
 		try {
 			const circuitHeight = await currentGatewayHeight(circuitConnection, config.targetGatewayId)
-			const targetHeight = await currentTargetHeight(targetConnection)
+			let targetHeight = await currentTargetHeight(targetConnection)
 
 			logger.debug(
 				{
@@ -43,6 +43,12 @@ const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPr
 		// decode finality proof
 		let { justification, headers } = Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
 
+		const justificationSize = Math.floor(Buffer.from(JSON.stringify(justification)).length / 1024)
+		const headersSize = Math.floor(Buffer.from(JSON.stringify(headers)).length / 1024)
+		logger.debug("Fetched finality proof from target chain")
+		logger.debug(`Justification size: ${justificationSize}kb`);
+		logger.debug(`Headers size: ${headersSize}kb`)
+
 		let signed_header;
 		if(headers.length == 0) { // Only one block in epoch missing
 			signed_header = await getHeader(targetClient, from)
@@ -72,7 +78,6 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 
 const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
 	// client.rpc.portal.
-	logger.info([client.currentProvider().http, targetGatewayId])
 	return axios.post(client.currentProvider().http, {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
@@ -84,7 +89,7 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 		}
 	})
 	.then(response => {
-		logger.info(response.data)
+		if (response.data.error) throw new Error(response.data.error.message)
 	  	return response.data.result;
 	})
 	.catch(error => {
