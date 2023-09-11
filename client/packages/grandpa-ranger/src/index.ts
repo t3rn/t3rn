@@ -94,13 +94,6 @@ class GrandpaRanger {
             { target: this.config.targetGatewayId, status: "success" },
             1
           )
-          const latestHeight = parseInt(
-            batches[batches.length - 1].signed_header.number
-          )
-          this.prometheus.height.set(
-            { target: this.target.target },
-            latestHeight
-          )
           return resolve()
         })
         .catch(e => {

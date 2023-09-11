@@ -76,17 +76,20 @@ export class Connection {
 
         const sdk = new Sdk(this.provider, this.signer)
         this.sdk = sdk
+
         if (this.isCircuit) {
           this.client = await sdk.init()
         } else {
           this.client = await ApiPromise.create({ provider: this.provider })
-          this.client.derive.chain.subscribeNewHeads(header => {
-            this.prometheus.height.set(
-              { target: this.target },
-              header.number.toNumber()
-            )
-          })
         }
+
+        // Subscribe to new blocks and push the height to Prometheus
+        this.client.derive.chain.subscribeNewHeads(header => {
+          this.prometheus.height.set(
+            { target: this.target },
+            header.number.toNumber()
+          )
+        })
       } catch (error) {
         // Handle connection error
         this.isActive = false
