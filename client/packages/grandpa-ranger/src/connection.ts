@@ -81,7 +81,10 @@ export class Connection {
         } else {
           this.client = await ApiPromise.create({ provider: this.provider })
           this.client.derive.chain.subscribeNewHeads(header => {
-            this.prometheus.height.set(header.number.toNumber())
+            this.prometheus.height.set(
+              { target: this.target },
+              header.number.toNumber()
+            )
           })
         }
       } catch (error) {

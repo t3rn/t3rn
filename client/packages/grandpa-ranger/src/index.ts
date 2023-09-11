@@ -97,7 +97,7 @@ class GrandpaRanger {
           const latestHeight = parseInt(
             batches[batches.length - 1].signed_header.number
           )
-          this.prometheus.height.set(latestHeight, { target: this.target })
+          this.prometheus.height.set({ target: this.target }, latestHeight)
           return resolve()
         })
         .catch(e => {
