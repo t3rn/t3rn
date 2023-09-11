@@ -5,16 +5,12 @@ import http from "http"
 export class Prometheus {
   circuitActive: boolean
   targetActive: boolean
-  targetDisconnectsTotal: any
-  circuitDisconnectsTotal: any
+  disconnects: any
   register: any
-  circuitHeight: any
-  targetHeight: any
+  height: any
   nextSubmission: any
   successesTotal: any
   errorsTotal: any
-  circuitDisconnected: any
-  targetDisconnected: any
   rangeInterval: any
   up: any
   target: string
@@ -29,16 +25,9 @@ export class Prometheus {
   createMetrics() {
     const collectDefaultMetrics = client.collectDefaultMetrics
     collectDefaultMetrics({ register: this.register })
-    this.circuitHeight = new client.Gauge({
-      name: "circuit_height",
-      help: "The header height stored on circuit",
-      registers: [this.register],
-      labelNames: ["target"],
-    })
-
-    this.targetHeight = new client.Gauge({
-      name: "target_height",
-      help: "The current header height on the target",
+    this.height = new client.Gauge({
+      name: "height",
+      help: "The current header height",
       registers: [this.register],
       labelNames: ["target"],
     })
@@ -64,44 +53,16 @@ export class Prometheus {
       labelNames: ["target"],
     })
 
-    this.circuitDisconnected = new client.Counter({
-      name: "circuit_disconnect",
-      help: "Information on circuit disconnections",
+    this.disconnects = new client.Counter({
+      name: "disconnects_total",
+      help: "Information on disconnections",
       registers: [this.register],
       labelNames: ["endpoint", "target"],
-    })
-
-    this.circuitDisconnectsTotal = new client.Counter({
-      name: "circuit_disconnects_total",
-      help: "Number of times circuit rpc server has disconnected",
-      registers: [this.register],
-      labelNames: ["target"],
-    })
-
-    this.targetDisconnected = new client.Counter({
-      name: "target_disconnect",
-      help: "Information on target disconnections",
-      registers: [this.register],
-      labelNames: ["endpoint", "target"],
-    })
-
-    this.targetDisconnectsTotal = new client.Counter({
-      name: "target_disconnects_total",
-      help: "Number of times target rpc server has disconnected",
-      registers: [this.register],
-      labelNames: ["target"],
     })
 
     this.rangeInterval = new client.Counter({
       name: "range_interval",
       help: "The number of seconds between each range submission",
-      registers: [this.register],
-      labelNames: ["target"],
-    })
-
-    this.up = new client.Counter({
-      name: "server_up",
-      help: "If the server initialized successfully",
       registers: [this.register],
       labelNames: ["target"],
     })
@@ -138,7 +99,6 @@ export class Prometheus {
     const port = 8080
     server.listen(port, () => {
       logger.info(`Metrics server listening on port ${port}`)
-      this.up.inc({ target: this.target }, 1)
     })
   }
 }
