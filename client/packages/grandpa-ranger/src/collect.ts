@@ -26,8 +26,7 @@ export const generateRange = async (
         },
         "Current heights"
       )
-
-      prometheus.height.set({ target }, circuitHeight)
+      prometheus.height.set({ target: "circuit" }, circuitHeight)
 
       if (targetHeight > circuitHeight) {
         let batches = await generateBatchProof(

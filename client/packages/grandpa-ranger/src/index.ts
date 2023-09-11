@@ -90,10 +90,15 @@ class GrandpaRanger {
             "Submitted range tx"
           )
 
-          this.prometheus.submissions.inc(
-            { target: this.config.targetGatewayId, status: "success" },
-            1
+          this.prometheus.submissions.inc({
+            target: this.config.targetGatewayId,
+            status: "success",
+          })
+          // Update latest circuit height
+          const latestHeight = parseInt(
+            batches[batches.length - 1].signed_header.number
           )
+          this.prometheus.height.set(latestHeight)
           return resolve()
         })
         .catch(e => {
