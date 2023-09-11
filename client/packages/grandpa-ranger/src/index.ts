@@ -97,7 +97,10 @@ class GrandpaRanger {
           const latestHeight = parseInt(
             batches[batches.length - 1].signed_header.number
           )
-          this.prometheus.height.set({ target: this.target }, latestHeight)
+          this.prometheus.height.set(
+            { target: this.target.target },
+            latestHeight
+          )
           return resolve()
         })
         .catch(e => {
@@ -198,9 +201,9 @@ class GrandpaRanger {
           }
 
           const txSize = Math.floor(tx.encodedLength / 1024)
-          logger.debug(`Tx size: ${txSize}kB`)
+          logger.info(`Range tx size: ${txSize}kB`)
           if (tx.encodedLength > 4000000) {
-            logger.error(`Tx size is too big: ${txSize}kB`)
+            logger.error(`TX size is too big: ${txSize}kB`)
             throw new Error(`Tx size is too big: ${txSize}kB`)
           } else if (tx.encodedLength > 1000000) {
             logger.warn(`Tx size is big: ${txSize}kB`)
