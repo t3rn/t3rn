@@ -63,6 +63,11 @@ class GrandpaRanger {
       return resolve()
     })
 
+    if (!batches) {
+      logger.warn("Failed to generate batches")
+      return resolve()
+    }
+
     if (batches.length > 0) {
       if (batches.length > this.config.batches_max) {
         batches.slice(0, this.config.batches_max)

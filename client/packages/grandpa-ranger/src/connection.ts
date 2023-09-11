@@ -43,15 +43,14 @@ export class Connection {
 
   async connect() {
     this.provider = this.createProvider()
-    await this.setListeners()
-
-    logger.error(1)
+    this.setListeners()
 
     const keepAlive = async () => {
       try {
         await this.client.rpc.system.health()
-      } catch (error) {
-        logger.error({ error }, "Connection error")
+        logger.debug({ endpoint: this.endpoint }, "Connection Alive")
+      } catch (err) {
+        logger.error({ error: err.message }, "Connection error")
         this.usingPrimaryRpc = !this.usingPrimaryRpc
         this.prometheus.disconnects.inc({
           target: this.target,
@@ -59,7 +58,7 @@ export class Connection {
         })
       }
 
-      setTimeout(keepAlive, 2000)
+      setTimeout(keepAlive, 5000)
     }
 
     // Start the keep-alive mechanism
@@ -67,8 +66,8 @@ export class Connection {
   }
 
   async setListeners() {
-    return new Promise((resolve, reject) => {
-      this.provider.on("connected", async () => {
+    const connect = async () => {
+      try {
         this.isActive = true
         this.isCircuit
           ? (this.prometheus.circuitActive = true)
@@ -77,26 +76,44 @@ export class Connection {
 
         const sdk = new Sdk(this.provider, this.signer)
         this.sdk = sdk
+        if (this.isCircuit) {
+          this.client = await sdk.init()
+        } else {
+          this.client = await ApiPromise.create({ provider: this.provider })
+          this.client.derive.chain.subscribeNewHeads(header => {
+            this.prometheus.height.set(header.number.toNumber())
+          })
+        }
+      } catch (error) {
+        // Handle connection error
+        this.isActive = false
         this.isCircuit
-          ? (this.client = await sdk.init())
-          : (this.client = await ApiPromise.create({ provider: this.provider }))
+          ? (this.prometheus.circuitActive = false)
+          : (this.prometheus.targetActive = false)
+        logger.warn(`Error from ${this.currentProvider().ws}: ${error}`)
 
-        this.client.derive.chain.subscribeNewHeads(header => {
-          this.prometheus.height.set(header.number.toNumber())
-        })
-      })
+        // Add a delay before attempting to reconnect (adjust as needed)
+        await new Promise(resolve => setTimeout(resolve, 5000))
+
+        // Attempt reconnection
+        connect()
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      this.provider.on("connected", connect)
 
       this.provider.on("disconnected", () => {
         this.isActive = false
         this.isCircuit
           ? (this.prometheus.circuitActive = false)
           : (this.prometheus.targetActive = false)
-        logger.warn(`Disconnected from ${this.currentProvider().ws}`)
-        this.provider.disconnect()
-        if (this.client) {
-          this.client.disconnect()
-        }
-        reject()
+        logger.warn(`Disconnected from provider ${this.currentProvider().ws}`)
+
+        // Add a delay before attempting to reconnect (adjust as needed)
+        setTimeout(() => {
+          connect()
+        }, 5000)
       })
 
       this.provider.on("error", () => {
@@ -104,21 +121,27 @@ export class Connection {
         this.isCircuit
           ? (this.prometheus.circuitActive = false)
           : (this.prometheus.targetActive = false)
-        logger.warn(`Error from ${this.currentProvider().ws}`)
-        this.provider.disconnect()
-        if (this.client) {
-          this.client.disconnect()
-        }
-        reject()
+        logger.warn(`Error from provider ${this.currentProvider().ws}`)
+
+        // Add a delay before attempting to reconnect (adjust as needed)
+        setTimeout(() => {
+          connect()
+        }, 5000)
       })
     })
   }
 
   currentProvider(): any {
+    // logger.debug(this.usingPrimaryRpc ? this.rpc1 : this.rpc2)
+    // logger.debug(this.usingPrimaryRpc)
+    // logger.debug(this.rpc2)
     return this.usingPrimaryRpc ? this.rpc1 : this.rpc2
   }
 
   createProvider() {
+    logger.debug(
+      `Current provider ${this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws}`
+    )
     return new WsProvider(this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws)
   }
 }
