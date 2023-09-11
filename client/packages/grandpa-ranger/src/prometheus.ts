@@ -10,7 +10,6 @@ export class Prometheus {
   height: any
   submissions: any
   rangeInterval: any
-  up: any
   target: string
 
   constructor(target: string) {
@@ -31,7 +30,7 @@ export class Prometheus {
     })
 
     this.submissions = new client.Counter({
-      name: "successes_total",
+      name: "submissions_total",
       help: "Number of successful submissions",
       registers: [this.register],
       labelNames: ["target", "status"],
