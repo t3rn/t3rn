@@ -35,7 +35,7 @@ class GrandpaRanger {
       this.config.circuit.rpc2,
       true,
       this.prometheus,
-      this.config.targetGatewayId
+      "circuit"
     )
     this.circuit.connect()
     this.target = new Connection(
