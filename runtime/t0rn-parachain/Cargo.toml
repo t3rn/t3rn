@@ -264,6 +264,7 @@ runtime-benchmarks = [
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
+  "assets-common/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
