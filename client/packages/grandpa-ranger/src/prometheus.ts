@@ -10,6 +10,7 @@ export class Prometheus {
   height: any
   submissions: any
   rangeInterval: any
+  txSize: any
   target: string
 
   constructor(target: string) {
@@ -46,6 +47,13 @@ export class Prometheus {
     this.rangeInterval = new client.Counter({
       name: "range_interval",
       help: "The number of seconds between each range submission",
+      registers: [this.register],
+      labelNames: ["target"],
+    })
+
+    this.txSize = new client.Gauge({
+      name: "tx_size",
+      help: "The number of elements in the tx",
       registers: [this.register],
       labelNames: ["target"],
     })

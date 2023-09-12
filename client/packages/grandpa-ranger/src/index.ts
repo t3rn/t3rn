@@ -127,7 +127,6 @@ class GrandpaRanger {
           logger.info(`Creating tx for ${this.config.targetGatewayId}`)
           let tx
           if (this.config.batching) {
-            logger.debug("Batching ranges")
             // create a single tx with all the batches
             tx = this.circuit.sdk.circuit.tx.createBatch(
               range.map(args => {
@@ -198,12 +197,11 @@ class GrandpaRanger {
 
           const txSize = Math.floor(tx.encodedLength / 1024)
           logger.info(`Range tx size: ${txSize}kB`)
-          if (tx.encodedLength > 4000000) {
-            logger.error(`TX size is too big: ${txSize}kB`)
-            throw new Error(`Tx size is too big: ${txSize}kB`)
-          } else if (tx.encodedLength > 1000000) {
-            logger.warn(`Tx size is big: ${txSize}kB`)
-          }
+          this.prometheus.txSize.set(
+            { target: this.config.targetGatewayId },
+            tx.encodedLength
+          )
+
           let res = await this.circuit.sdk.circuit.tx.signAndSendSafe(tx)
           resolve(res)
         } else {
