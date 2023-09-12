@@ -83,11 +83,9 @@ class GrandpaRanger {
         .then(res => {
           logger.info(
             {
-              status: "Submitted",
-              range_size: totalElements,
-              circuit_block: res,
+              size: totalElements,
             },
-            "Submitted range tx"
+            `Submitted range tx on block ${res}`
           )
 
           this.prometheus.submissions.inc({
