@@ -17,7 +17,7 @@ export default {
    ws: "wss://kusama-rpc.dwellir.com"
   },
  },
- rangeInterval: 30, // time between range submissions in seconds
+ rangeInterval: 0, // time between range submissions in seconds
  targetGatewayId: "kusm",
  batches_max: 10,
  batching: true,

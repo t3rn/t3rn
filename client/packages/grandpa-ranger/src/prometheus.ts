@@ -10,7 +10,9 @@ export class Prometheus {
   height: any
   submissions: any
   rangeInterval: any
+  txSize: any
   target: string
+  heightDiff: number = 0
 
   constructor(target: string) {
     this.target = target
@@ -50,6 +52,13 @@ export class Prometheus {
       labelNames: ["target"],
     })
 
+    this.txSize = new client.Gauge({
+      name: "tx_size",
+      help: "Size of the tx",
+      registers: [this.register],
+      labelNames: ["target"],
+    })
+
     this.startServer()
   }
 
@@ -63,6 +72,7 @@ export class Prometheus {
         } else if (req.url === "/status") {
           res.setHeader("Content-Type", "text/plain")
           res.statusCode = this.circuitActive && this.targetActive ? 200 : 500
+          res.statusCode = this.heightDiff > 250 ? 500 : res.statusCode
           res.end(
             JSON.stringify({
               circuitActive: this.circuitActive,

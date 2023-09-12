@@ -26,6 +26,7 @@ export const generateRange = async (
         },
         "Current heights"
       )
+      prometheus.heightDiff = targetHeight - circuitHeight
       prometheus.height.set({ target: "circuit" }, circuitHeight)
 
       if (targetHeight > circuitHeight) {

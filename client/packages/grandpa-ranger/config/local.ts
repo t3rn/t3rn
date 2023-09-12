@@ -17,7 +17,7 @@ export default {
 			ws: "wss://rococo-community-rpc.laminar.codes/ws"
 		},
 	},
-	rangeInterval: 10, // time between range submissions in seconds
+	rangeInterval: 0, // time between range submissions in seconds
 	targetGatewayId: "roco",
 	batches_max: 10,
 }
