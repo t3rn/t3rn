@@ -12,6 +12,7 @@ export class Prometheus {
   rangeInterval: any
   txSize: any
   target: string
+  heightDiff: number = 0
 
   constructor(target: string) {
     this.target = target
@@ -70,7 +71,7 @@ export class Prometheus {
           res.end(metrics)
         } else if (req.url === "/status") {
           res.setHeader("Content-Type", "text/plain")
-          res.statusCode = this.circuitActive && this.targetActive ? 200 : 500
+          res.statusCode = this.circuitActive && this.targetActive ? 200 : (this.heightDiff > 250 ? 500 : res.statusCode);
           res.end(
             JSON.stringify({
               circuitActive: this.circuitActive,
