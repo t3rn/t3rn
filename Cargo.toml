@@ -158,7 +158,7 @@ cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cum
 pallet-collator-selection           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
-#assets-common                       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
+assets-common                       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
 ## TODO: t3rn dependencies
 pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
