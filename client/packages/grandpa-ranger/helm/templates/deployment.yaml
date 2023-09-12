@@ -61,8 +61,14 @@ spec:
                 secretKeyRef:
                   name: grandpa-ranger
                   key: {{ $profile }}
-          resources:
-            {{- toYaml $resources | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
 
       {{- with $nodeSelector }}
       nodeSelector:

@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     heritage: Helm
   name: grandpa-ranger-{{ $profile }}.rules
-  namespace: monitoring
+  namespace: grandpa-ranger
 spec:
   groups:
   - name: grandpa-ranger-{{ $profile }}.rules
