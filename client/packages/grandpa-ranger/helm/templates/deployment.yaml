@@ -10,6 +10,7 @@
 {{- $nodeSelector := .Values.nodeSelector }}
 {{- $affinity := .Values.affinity }}
 {{- $tolerations := .Values.tolerations }}
+{{- $logLevel := .Values.logLevel }}
 
 
 {{- range $profile := .Values.rangers }}
@@ -52,7 +53,7 @@ spec:
             {{- toYaml $resources | nindent 12 }}
           env:
             - name: LOG_LEVEL
-              value: debug
+              value: {{ $logLevel }}
             - name: PROFILE
               value: "{{ $profile }}"
             - name: CIRCUIT_SIGNER_KEY
