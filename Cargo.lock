@@ -1138,6 +1138,7 @@ dependencies = [
  "parachains-common",
  "sp-core",
  "sp-runtime",
+ "xcm",
 ]
 
 [[package]]
