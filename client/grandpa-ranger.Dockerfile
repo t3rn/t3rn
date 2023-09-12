@@ -1,9 +1,9 @@
 FROM node:20.1
 
-RUN npm install -g typescript ts-node
+RUN npm install -g typescript ts-node pnpm
 
 ADD packages/grandpa-ranger /app/grandpa-ranger
-RUN cd /app/grandpa-ranger && yarn 
+RUN cd /app/grandpa-ranger && pnpm install
 
 WORKDIR /app/grandpa-ranger
 
@@ -11,4 +11,4 @@ WORKDIR /app/grandpa-ranger
 RUN chown -R node /app
 USER node
 
-CMD ["yarn", "start"]
+CMD ["pnpm", "start"]

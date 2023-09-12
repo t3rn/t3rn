@@ -4,7 +4,7 @@ import { handleSubmitSfxCmd } from "./sfx.ts"
 import { handleSubmitHeadersCmd } from "./headers.ts"
 
 export const handleSubmitCmd = async (
-  args: Args<"sfx" | "headers" | "export">
+  args: Args<"sfx" | "headers" | "export">,
 ) => {
   if (args.sfx) {
     return handleSubmitSfxCmd(args.sfx, Boolean(args.export))

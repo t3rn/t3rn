@@ -4,7 +4,7 @@ require('dotenv').config()
 import { Connection } from './connection';
 import { cryptoWaitReady } from "@t3rn/sdk"
 import { Prometheus } from "./prometheus";
-import fs from 'fs';
+import { logger } from "./logging";
 
 
 class GrandpaRanger {
@@ -23,7 +23,7 @@ class GrandpaRanger {
 	async start() {
 		await this.connectClients();
 		await new Promise((resolve, _reject) => setTimeout(resolve, 2000)); // wait for the clients to connect
-		this.collectAndSubmit(() => {})
+		await this.collectAndSubmit(() => {})
 		this.scheduleRangeSubmission();
 
 	}
@@ -41,23 +41,22 @@ class GrandpaRanger {
 
 		let batches = await generateRange(this.config, this.circuit, this.target, this.prometheus, this.config.targetGatewayId)
 			.catch((e) => {
-				console.log(e);
+				logger.error(e);
 				// potentially we want to introduce a retry logic here
 				return resolve()
 			})
 
 		if(batches.length > 0) {
-
-			if(batches.length > 10) {
-				batches.slice(0, 10)
+			if(batches.length > this.config.batches_max) {
+				batches.slice(0, this.config.batches_max)
 			}
 
 			// calculate the total number of elements in the batches elements
 			const totalElements = batches.reduce((acc, curr) => acc + curr.range.length, 0)
 
-			this.submitToCircuit(batches)
+			await this.submitToCircuit(batches)
 				.then((res) => {
-					console.log({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
+					logger.info({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
 					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
 					this.prometheus.successesTotal.inc({target: this.config.targetGatewayId}, 1)
 					const latestHeight = parseInt(batches[batches.length - 1].signed_header.number)
@@ -65,44 +64,92 @@ class GrandpaRanger {
 					return resolve()
 				})
 				.catch((e) => {
-					console.log(e);
+					logger.error(e);
 					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
 					this.prometheus.errorsTotal.inc({target: this.config.targetGatewayId}, 1)
 					return resolve() // resolve, as we don't want to stop the loop
 				})
 		} else {
-			console.log({"status": "skipped", "range_size": 0, "circuit_block": 0})
+			logger.info({"status": "skipped", "range_size": 0, "circuit_block": 0}, "Skipped")
 		}
 	}
 
 	async submitToCircuit(range: any[]) {
-		// limit to 10 batches per tx
+		// limit batches per tx
 		if(range.length > 10) {
 			range = range.slice(0, 10);
 		}
+
 		return new Promise(async (resolve, reject) => {
 			try {
 				if(this.circuit.sdk && this.circuit.isActive) {
-					let tx = this.circuit.sdk.circuit.tx.createBatch(range.map(args => {
-						let submit;
-						// select the correct submit function based on the targetGatewayId
-						if(this.config.targetGatewayId === "roco") {
-							submit = this.circuit.client.tx.rococoBridge.submitHeaders
-						} else if (this.config.targetGatewayId === "ksma") {
-							submit = this.circuit.client.tx.kusamaBridge.submitHeaders
-						} else if (this.config.targetGatewayId === "pdot") {
-							submit = this.circuit.client.tx.polkadotBridge.submitHeaders
-						} else {
-							throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
-						}
-						return submit(
-							args.range,
-							args.signed_header,
-							args.justification
-						)
-					}))
+					logger.info(`Creating tx for ${this.config.targetGatewayId}`)
+					let tx
+					if (this.config.batching) {
+						logger.debug("Batching ranges")
+						// create a single tx with all the batches
+						tx = this.circuit.sdk.circuit.tx.createBatch(range.map(args => {
+							let submit;
+							// select the correct submit function based on the targetGatewayId
+							if(this.config.targetGatewayId === "roco") {
+								submit = this.circuit.client.tx.rococoBridge.submitHeaders
+							} else if (this.config.targetGatewayId === "kusm") {
+								submit = this.circuit.client.tx.kusamaBridge.submitHeaders
+							} else if (this.config.targetGatewayId === "pdot") {
+								submit = this.circuit.client.tx.polkadotBridge.submitHeaders
+							} else {
+								throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
+							}
 
+							return submit(
+								args.range,
+								args.signed_header,
+								args.justification
+							)
+						}))
+					} else {
+						logger.debug("Batches disabled")
+						logger.debug(`Size of range: ${Math.floor(Buffer.from(JSON.stringify(range[0].range)).length/1024)}kB`)
+						logger.debug(`Size of signed_header: ${Math.floor(Buffer.from(JSON.stringify(range[0].signed_header)).length/1024)}kB`)
+						logger.debug(`Size of justification: ${Math.floor(Buffer.from(JSON.stringify(range[0].justification)).length/1024)}kB`)
+							if(this.config.targetGatewayId === "roco") {
+								tx = this.circuit.client.tx.rococoBridge.submitHeaders(
+									range[0].range,
+									range[0].signed_header,
+									range[0].justification
+
+								)
+							} else if (this.config.targetGatewayId === "kusm") {
+								tx = this.circuit.client.tx.kusamaBridge.submitHeaders(
+
+									range[0].range,
+									range[0].signed_header,
+									range[0].justification
+
+								)
+							} else if (this.config.targetGatewayId === "pdot") {
+								tx = this.circuit.client.tx.polkadotBridge.submitHeaders(
+
+									range[0].range,
+									range[0].signed_header,
+									range[0].justification
+
+								)
+							} else {
+								throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
+							}
+					}
+
+					const txSize = Math.floor(tx.encodedLength/1024)
+					logger.debug(`Tx size: ${txSize}kB`)
+					if (tx.encodedLength > 4000000) {
+						logger.error(`Tx size is too big: ${txSize}kB`)
+						throw new Error(`Tx size is too big: ${txSize}kB`)
+					} else if (tx.encodedLength > 1000000) {
+						logger.warn(`Tx size is big: ${txSize}kB`)
+					}
 					let res = await this.circuit.sdk.circuit.tx.signAndSendSafe(tx)
+					logger.info({res}, "Tx sent")
 					resolve(res)
 				} else {
 					// we should prob have some retry logic here instead
@@ -117,7 +164,7 @@ class GrandpaRanger {
 	async scheduleRangeSubmission() {
 		while(true) {
 			await new Promise((resolve, _reject) => {
-				console.log(`Starting new range submission loop: ${new Date().toISOString()}`)
+				logger.info(`Starting new range submission loop`)
 				setTimeout(
 					() => {
 						this.collectAndSubmit(resolve)
@@ -135,13 +182,13 @@ class GrandpaRanger {
 
 (async () => {
 	let config: any;
-	console.log(__dirname);
 
 	try {
 		config = require(`../config/${process.env.PROFILE}.ts`).default;
+		logger.info(`Using ${process.env.PROFILE}.ts profile`)
 	} catch {
-		console.log('Using local profile')
 		config = require('../config/local.ts').default;
+		logger.info('Using local profile')
 	}
 
 	const grandpaRanger = new GrandpaRanger(config);

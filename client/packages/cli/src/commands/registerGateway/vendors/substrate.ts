@@ -6,7 +6,7 @@ import { colorLogMsg } from "@/utils/log.ts"
 
 export const registerSubstrateVerificationVendor = async (
   circuit: ApiPromise,
-  gatewayData: Required<Gateway>
+  gatewayData: Required<Gateway>,
 ) => {
   if (!gatewayData.registrationData.parachain) {
     const target = await ApiPromise.create({
@@ -21,12 +21,12 @@ export const registerSubstrateVerificationVendor = async (
 const registerRelaychain = async (
   circuit: ApiPromise,
   target: ApiPromise,
-  gatewayData: Required<Gateway>
+  gatewayData: Required<Gateway>,
 ) => {
   const portalConsensusData = await fetchPortalConsensusData(
     circuit,
     target,
-    gatewayData
+    gatewayData,
   )
 
   if (!portalConsensusData) {
@@ -39,8 +39,8 @@ const registerRelaychain = async (
   spinner.info(
     colorLogMsg(
       "INFO",
-      `Registering Block #${registrationHeader.number.toNumber()}`
-    )
+      `Registering Block #${registrationHeader.number.toNumber()}`,
+    ),
   )
   spinner.start()
 
@@ -56,7 +56,7 @@ const registerRelaychain = async (
 
 const registerParachain = async (
   circuit: ApiPromise,
-  gatewayData: Required<Gateway>
+  gatewayData: Required<Gateway>,
 ) =>
   circuit
     .createType("ParachainRegistrationData", [
@@ -68,10 +68,10 @@ const registerParachain = async (
 const fetchPortalConsensusData = async (
   circuit: ApiPromise,
   target: ApiPromise,
-  gatewayData: Required<Gateway>
+  gatewayData: Required<Gateway>,
 ) => {
   const registrationHeight = await fetchLatestAuthoritySetUpdateBlock(
-    gatewayData.subscan
+    gatewayData.subscan,
   )
 
   if (!registrationHeight) {
@@ -79,17 +79,17 @@ const fetchPortalConsensusData = async (
   }
 
   const registrationHeader = await target.rpc.chain.getHeader(
-    await target.rpc.chain.getBlockHash(registrationHeight)
+    await target.rpc.chain.getBlockHash(registrationHeight),
   )
   const finalityProof = await target.rpc.grandpa.proveFinality(
-    registrationHeight
+    registrationHeight,
   )
   const authorities =
     Encodings.Substrate.Decoders.extractAuthoritySetFromFinalityProof(
-      finalityProof
+      finalityProof,
     )
   const registratationHeaderHash = await target.rpc.chain.getBlockHash(
-    registrationHeight
+    registrationHeight,
   )
   const targetAt = await target.at(registratationHeaderHash)
   const authoritySetId = await targetAt.query.grandpa.currentSetId()
@@ -101,7 +101,7 @@ const fetchPortalConsensusData = async (
 }
 
 export const fetchLatestAuthoritySetUpdateBlock = async (
-  subscanIndexerApiEndpoint: string
+  subscanIndexerApiEndpoint: string,
 ) => {
   try {
     const response = await fetch(
@@ -117,7 +117,7 @@ export const fetchLatestAuthoritySetUpdateBlock = async (
           module: "grandpa",
           call: "newauthorities",
         }),
-      }
+      },
     )
     const responseData = (await response.json()) as {
       data: {

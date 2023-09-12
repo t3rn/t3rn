@@ -2,12 +2,21 @@ import {Connection} from "./connection";
 import {ApiPromise, Encodings} from "@t3rn/sdk";
 const axios = require('axios').default;
 import {Prometheus} from "./prometheus";
+import { logger } from "./logging";
 
 export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus, target: string): Promise<any[]> => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			const circuitHeight = await currentGatewayHeight(circuitConnection, config.targetGatewayId)
-			const targetHeight = await currentTargetHeight(targetConnection)
+			let targetHeight = await currentTargetHeight(targetConnection)
+
+			logger.debug(
+				{
+					circuitHeight,
+					targetHeight
+				},
+				"Current heights"
+			)
 
 			prometheus.circuitHeight.set({target}, circuitHeight)
 
@@ -33,6 +42,12 @@ const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPr
 		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from)
 		// decode finality proof
 		let { justification, headers } = Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
+
+		const justificationSize = Math.floor(Buffer.from(JSON.stringify(justification)).length / 1024)
+		const headersSize = Math.floor(Buffer.from(JSON.stringify(headers)).length / 1024)
+		logger.debug("Fetched finality proof from target chain")
+		logger.debug(`Justification size: ${justificationSize}kb`);
+		logger.debug(`Headers size: ${headersSize}kb`)
 
 		let signed_header;
 		if(headers.length == 0) { // Only one block in epoch missing
@@ -62,6 +77,7 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 }
 
 const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
+	// client.rpc.portal.
 	return axios.post(client.currentProvider().http, {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
@@ -73,6 +89,7 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 		}
 	})
 	.then(response => {
+		if (response.data.error) throw new Error(response.data.error.message)
 	  	return response.data.result;
 	})
 	.catch(error => {

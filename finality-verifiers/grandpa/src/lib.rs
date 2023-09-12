@@ -229,7 +229,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_imported_hashes)]
     pub(super) type ImportedHashes<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, u32, BridgedBlockHash<T, I>>;
+        StorageMap<_, Identity, u32, BridgedBlockHash<T, I>>;
 
     /// Count successful submissions.
     #[pallet::storage]
@@ -247,7 +247,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_imported_headers)]
     pub(super) type ImportedHeaders<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, BridgedBlockHash<T, I>, BridgedHeader<T, I>>;
+        StorageMap<_, Identity, BridgedBlockHash<T, I>, BridgedHeader<T, I>>;
 
     #[pallet::storage]
     pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
@@ -261,7 +261,7 @@ pub mod pallet {
     /// Maps a parachain chain_id to the corresponding chain ID.
     #[pallet::storage]
     pub(super) type ParachainIdMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, ParachainRegistrationData>;
+        StorageMap<_, Identity, ChainId, ParachainRegistrationData>;
 
     /// Optional pallet owner.
     ///
@@ -343,6 +343,9 @@ pub mod pallet {
             ensure_root(origin)?;
             <EverInitialized<T, I>>::kill();
             <BestFinalizedHash<T, I>>::kill();
+            for _ in <ParachainIdMap<T, I>>::drain() {}
+            for _ in <ImportedHashes<T, I>>::drain() {}
+            for _ in <ImportedHeaders<T, I>>::drain() {}
             <InitialHash<T, I>>::kill();
             <ImportedHashesPointer<T, I>>::kill(); // one ahead of first value
             <RelayChainId<T, I>>::kill();
@@ -434,7 +437,7 @@ pub mod pallet {
     pub(crate) fn initialize_relay_chain<T: Config<I>, I: 'static>(
         init_params: InitializationData<BridgedHeader<T, I>>,
         owner: T::AccountId,
-    ) -> Result<(), &'static str> {
+    ) -> DispatchResult {
         can_init_relay_chain::<T, I>()?;
 
         let InitializationData {
@@ -628,7 +631,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
-    ) -> Result<(), &'static str> {
+    ) -> DispatchResult {
         ensure_owner_or_root_single::<T, I>(origin)?;
 
         match <RelayChainId<T, I>>::get() {
@@ -898,11 +901,13 @@ fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
 }
 
 /// Ensure that no relaychain has been set so far. Relaychains are unique
-fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> {
-    match <BestFinalizedHash<T, I>>::exists() {
-        true => Err("Duplicate relaychain"), // we have a relaychain registered already
-        false => Ok(()),                     // is first relaychain
-    }
+fn can_init_relay_chain<T: Config<I>, I: 'static>() -> DispatchResult {
+    ensure!(
+        !<BestFinalizedHash<T, I>>::exists(),
+        "can_init_relay_chain -- chain_id already initialized"
+    );
+
+    Ok(())
 }
 
 /// Ensure that the SideEffect was executed after it was created.
@@ -1053,7 +1058,7 @@ pub mod tests {
 
     fn initialize_relaychain(
         origin: Origin,
-    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, DispatchError> {
         let genesis = test_header_with_correct_parent(0, None);
         let init_data = RelaychainRegistrationData::<AccountId> {
             authorities: authorities(),
@@ -1068,7 +1073,7 @@ pub mod tests {
     fn initialize_named_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, DispatchError> {
         let genesis = test_header(0);
         let init_data = RelaychainRegistrationData::<AccountId> {
             authorities: authorities(),
@@ -1084,11 +1089,11 @@ pub mod tests {
         origin: Origin,
         gateway_id: ChainId,
         init_data: RelaychainRegistrationData<AccountId>,
-    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, DispatchError> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, &'static str> {
+    fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, DispatchError> {
         let _genesis = test_header(0);
         let init_data = ParachainRegistrationData {
             relay_gateway_id: *b"pdot",
@@ -1101,7 +1106,7 @@ pub mod tests {
     fn initialize_named_parachain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<ParachainRegistrationData, &'static str> {
+    ) -> Result<ParachainRegistrationData, DispatchError> {
         let init_data = ParachainRegistrationData {
             relay_gateway_id: *b"pdot",
             id: 0,
@@ -1114,7 +1119,7 @@ pub mod tests {
         origin: Origin,
         gateway_id: ChainId,
         init_data: ParachainRegistrationData,
-    ) -> Result<ParachainRegistrationData, &'static str> {
+    ) -> Result<ParachainRegistrationData, DispatchError> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
@@ -1183,6 +1188,48 @@ pub mod tests {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
             assert_ok!(initialize_parachain(Origin::root()));
+        })
+    }
+    use hex_literal::hex;
+    #[test]
+    fn can_register_again_after_reset_with_valid_data_and_signer() {
+        run_test(|| {
+            assert_ok!(initialize_relaychain(Origin::root()));
+            assert_ok!(initialize_parachain(Origin::root()));
+            assert_eq!(
+                InitialHash::<TestRuntime>::get(),
+                Some(
+                    hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
+                )
+            );
+            assert_eq!(
+                ImportedHeaders::<TestRuntime>::iter_keys().collect::<Vec<H256>>(),
+                vec![
+                    hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
+                ]
+            );
+            assert_eq!(
+                ImportedHashes::<TestRuntime>::iter_keys().collect::<Vec<u32>>(),
+                Vec::<u32>::new()
+            );
+            assert_ok!(Pallet::<TestRuntime>::reset(Origin::root()));
+            assert_eq!(InitialHash::<TestRuntime>::get(), None);
+            assert_eq!(
+                ImportedHeaders::<TestRuntime>::iter_keys().collect::<Vec<H256>>(),
+                vec![]
+            );
+            assert_eq!(
+                ImportedHashes::<TestRuntime>::iter_keys().collect::<Vec<u32>>(),
+                Vec::<u32>::new()
+            );
+            assert_ok!(initialize_relaychain(Origin::root()));
+            assert_ok!(initialize_parachain(Origin::root()));
+            assert_eq!(
+                InitialHash::<TestRuntime>::get(),
+                Some(
+                    hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
+                )
+            );
         })
     }
 

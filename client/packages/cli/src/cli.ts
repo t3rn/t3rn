@@ -1,18 +1,16 @@
 #!/bin/env node
-import fs from 'fs'
 import { Command } from "commander"
-import { handleInitCmd, initConfigFile } from "./commands/init.ts"
-import { CONFIG_FILE } from "@/consts.ts"
+import { handleInitCmd } from "./commands/init.ts"
 import { wrapCryptoWaitReady } from "./utils/fns.ts"
-import { handleRegisterCmd } from "./commands/register/register.ts"
+import { handleRegisterCmd } from "./commands/registerGateway/register.ts"
+import { handleRebootCommand } from "./commands/rebootGateway/index.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
 import { handleEstimateMaxReward } from "./commands/estimate.ts"
+import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
+import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 
-if (!fs.existsSync(CONFIG_FILE)) {
-    initConfigFile(CONFIG_FILE)
-}
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
 
@@ -20,22 +18,45 @@ const program = new Command()
 
 program
   .name("t3rn CLI")
-  .description("CLI for interacting with the t3rn circuit")
+  .description("CLI for interacting with the t3rn blockchain")
   .version("0.1.0")
 
 program
   .command("init")
-  .option("-c, --config [file-path]", "Generate a config template")
   .option("-t, --transfer [file-path]", "Generate a transfer template")
   .description("Generate a config or transfer template")
   .action(handleInitCmd)
 
 withExportMode(
   program
-    .command("register")
-    .option("-g, --gateway <id>", "ID of the gateway to register")
-    .description("Register a gateway with the t3rn circuit")
+    .command("registerGateway")
+    .argument("gateway", "ID of the gateway to register")
+    .description("Register a gateway with the circuit")
     .action(wrapCryptoWaitReady(handleRegisterCmd)),
+)
+
+withExportMode(
+  program
+    .command("rebootGateway")
+    .argument("vendor")
+    .description("Reboot a gateway")
+    .action(wrapCryptoWaitReady(handleRebootCommand)),
+)
+
+withExportMode(
+  program
+    .command("purgeGateway")
+    .argument("gateway")
+    .description("Purge a gateway")
+    .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
+)
+
+withExportMode(
+  program
+    .command("purgeToken")
+    .argument("token")
+    .description("Purge a token")
+    .action(wrapCryptoWaitReady(handlePurgeTokenCommand)),
 )
 
 withExportMode(
@@ -46,7 +67,7 @@ withExportMode(
       "-h, --headers <gateway_id>",
       "Submit the latest headers of a gateway to portal. All available finalized headers will be added.",
     )
-    .description("Submit an extrinic to the t3rn circuit")
+    .description("Submit an extrinic to the t3rn blockchain")
     .action(wrapCryptoWaitReady(handleSubmitCmd)),
 )
 

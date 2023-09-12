@@ -1,47 +1,78 @@
+{{- $chart_name := .Chart.Name }}
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $app_version := .Chart.AppVersion | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $repository := .Values.repository }}
+{{- $tag := .Values.tag }}
+{{- $pod_annotations := .Values.podAnnotations }}
+{{- $podSecurityContext := .Values.podSecurityContext }}
+{{- $resources := .Values.resources }}
+{{- $nodeSelector := .Values.nodeSelector }}
+{{- $affinity := .Values.affinity }}
+{{- $tolerations := .Values.tolerations }}
+
+
+{{- range $profile := .Values.rangers }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "grandpa-ranger.fullname" . }}
+  name: {{ $release_name }}-{{ $profile }}
   labels:
-    {{- include "grandpa-ranger.labels" . | nindent 4 }}
+    helm.sh/chart: {{ $release_name }}-{{ $chart_version }}
+    app.kubernetes.io/name: {{ $release_name }}-{{ $profile }}
+    app.kubernetes.io/instance: {{ $release_name }}-{{ $profile }}
+    app.kubernetes.io/version: {{ $app_version }}
+    app.kubernetes.io/managed-by: Helm      
 spec:
   strategy:
     type: Recreate
   replicas: 1
   selector:
     matchLabels:
-      {{- include "grandpa-ranger.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ $release_name }}-{{ $profile }}
+      app.kubernetes.io/instance: {{ $release_name }}-{{ $profile }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with $pod_annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "grandpa-ranger.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ $release_name }}-{{ $profile }}
+        app.kubernetes.io/instance: {{ $release_name }}-{{ $profile }}
     spec:
-      serviceAccountName: {{ include "grandpa-ranger.name" . }}
+      serviceAccountName: {{ $release_name }}-{{ $profile }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $podSecurityContext | nindent 8 }}
       containers:
-        - name: grandpa-ranger
-          image: "{{ .Values.repository }}:{{ .Values.tag }}"
+        - name: {{ $release_name }}
+          image: "{{ $repository }}:{{ $tag }}"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml $resources | nindent 12 }}
           env:
+            - name: LOG_LEVEL
+              value: debug
             - name: PROFILE
-              value: "{{ .Values.profile }}"
+              value: "{{ $profile }}"
+            - name: CIRCUIT_SIGNER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: grandpa-ranger
+                  key: {{ $profile }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+            {{- toYaml $resources | nindent 12 }}
+      {{- with $nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with $affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with $tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
+{{- end }}

@@ -10,7 +10,7 @@ const spinner = ora()
 export const handleBidCmd = async (
   sfxId: string,
   amount: number,
-  options: Args<"export">
+  options: Args<"export">,
 ) => {
   const config = getConfig()
   if (!config) {
@@ -25,14 +25,14 @@ export const handleBidCmd = async (
   try {
     const transaction = circuit.tx.circuit.bidSfx(
       bidArgs.sfxId,
-      bidArgs.bidAmount
+      bidArgs.bidAmount,
     )
     await sdk.circuit.tx.signAndSendSafe(transaction)
     spinner.stopAndPersist({
       symbol: "🚩",
       text: colorLogMsg(
         "SUCCESS",
-        `Bid successfully placed on side effect ${sfxId} for ${amount}`
+        `Bid successfully placed on side effect ${sfxId} for ${amount}`,
       ),
     })
     process.exit(0)
@@ -46,9 +46,8 @@ const bid = (
   circuit: Awaited<ReturnType<typeof createCircuitContext>>["circuit"],
   sdk: Awaited<ReturnType<typeof createCircuitContext>>["sdk"],
   sfxId: string,
-  amount: number
+  amount: number,
 ) => {
-   
   return {
     sfxId: circuit.createType("SideEffectId", sfxId),
     // @ts-ignore - augmeneted type from @polkadot/types

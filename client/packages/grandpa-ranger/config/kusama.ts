@@ -7,12 +7,14 @@ export default {
  },
  target: { // we dont need to specify the http endpoint for the target
   rpc1: {
-   ws: "wss://rococo-rpc.polkadot.io",
+   ws: "wss://kusama-rpc.polkadot.io",
   },
   rpc2: {
-   ws: "wss://rococo-community-rpc.laminar.codes/ws"
+   ws: "wss://kusama-rpc.dwellir.com"
   },
  },
- rangeInterval: 120, // time between range submissions in seconds
- targetGatewayId: "roco",
+ rangeInterval: 30, // time between range submissions in seconds
+ targetGatewayId: "kusm",
+ batches_max: 10,
+ batching: true,
 }
