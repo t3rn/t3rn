@@ -87,6 +87,7 @@ cumulus-primitives-utility          = { workspace = true }
 pallet-collator-selection           = { workspace = true }
 parachain-info                      = { workspace = true }
 parachains-common                   = { workspace = true }
+assets-common                      = { workspace = true }
 
 # t3rn Deps
 t3rn-primitives = { default-features = false, path = "../../primitives" }
@@ -133,6 +134,7 @@ std = [
   "scale-info/std",
   "serde/std",
   "num-traits/std",
+  "assets-common/std",
   "cumulus-pallet-aura-ext/std",
   "cumulus-pallet-dmp-queue/std",
   "cumulus-pallet-parachain-system/std",

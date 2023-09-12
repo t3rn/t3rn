@@ -19,7 +19,7 @@ use xcm::latest::prelude::*;
 
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
-    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
     FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
@@ -127,12 +127,16 @@ pub type LocalAssetTransactor = CurrencyAdapter<
     (),
 >;
 
+pub type TrusBackedAssetsConvertedConcreteId = 
+    assets_common::TrusBackedAssetsConvertedConcreteId<AssetsPalletLocation, Balance>;
+
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use the asset registry for lookups
-    ConvertedConcreteAssetId<AssetIdForTrustBackedAssets, Balance, AssetRegistry, JustTry>,
+    TrusBackedAssetsConvertedConcreteId,
+    //ConvertedConcreteAssetId<AssetIdForTrustBackedAssets, Balance, AssetRegistry, JustTry>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -144,8 +148,8 @@ pub type FungiblesTransactor = FungiblesAdapter<
     CheckingAccount,
 >;
 
-// pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
-pub type AssetTransactors = LocalAssetTransactor;
+pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
+//pub type AssetTransactors = LocalAssetTransactor;
 
 match_types! {
     pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
@@ -157,8 +161,11 @@ match_types! {
 // FIXME: should be using asset_registry
 pub type Barrier = (
     TakeWeightCredit,
+    // Expected responses are OK
+    AllowKnownQueryResponses<PolkadotXcm>,
     AllowTopLevelPaidExecutionFrom<Everything>,
     AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+    AllowSubscriptionsFrom<ParentOrSiblings>,
     // ^^^ Parent and its exec plurality get free execution
     AssetRegistry,
 );
