@@ -9,7 +9,8 @@ contract RemoteOrder is ReentrancyGuard  {
 
     using SafeERC20 for IERC20;
 
-    event OrderCreated(bytes32 indexed id, bytes4 indexed destination, bytes4 asset, address targetAccount, uint256 amount, address rewardAsset, uint256 insurance, uint256 maxReward, uint32 nonce);
+    event OrderCreated(bytes32 indexed id, bytes4 indexed destination, bytes4 indexed asset, bytes32 indexed targetAccount, uint256 indexed amount, address indexed rewardAsset, uint256 indexed insurance, uint256 indexed maxReward, uint32 indexed nonce);
+
     event OrderCommitted(bytes32 indexed id);
     event OrderReverted(bytes32 indexed id);
     event OrderRefundedInERC20(bytes32 indexed id, address indexed asset, uint256 amount);
@@ -18,7 +19,7 @@ contract RemoteOrder is ReentrancyGuard  {
         bool exists;
         bytes4 destination;
         bytes4 asset;
-        address targetAccount;
+        bytes32 targetAccount;
         address sender;
         uint256 amount;
         Reward reward;
@@ -57,7 +58,7 @@ contract RemoteOrder is ReentrancyGuard  {
     function order(
         bytes4 destination,
         bytes4 asset,
-        address targetAccount,
+        bytes32 targetAccount,
         uint256 amount,
         address rewardAsset,
         uint256 insurance,
@@ -88,10 +89,10 @@ contract RemoteOrder is ReentrancyGuard  {
             sender: msg.sender,
             amount: amount,
             reward: Reward({
-            asset: rewardAsset,
-            insurance: insurance,
-            maxReward: maxReward
-        }),
+                asset: rewardAsset,
+                insurance: insurance,
+                maxReward: maxReward
+            }),
             status: OrderStatus.Accepted
         });
 
