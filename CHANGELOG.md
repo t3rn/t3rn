@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.53.0-rc.0] - 2023-09-12
+### :sparkles: New Features
+- [`1f2faba`](https://github.com/t3rn/t3rn/commit/1f2fababa6a560002becbe7a269f2b9cda0adbcb) - deployment kusama and polkadot ranger *(PR [#1289](https://github.com/t3rn/t3rn/pull/1289) by [@3h4x](https://github.com/3h4x))*
+- [`9f923cc`](https://github.com/t3rn/t3rn/commit/9f923cc6240df58622b48dedd996d33a55e1a7bd) - t0rn XCM config update *(PR [#1298](https://github.com/t3rn/t3rn/pull/1298) by [@chexware](https://github.com/chexware))*
+
+### :recycle: Refactors
+- [`ebacf3e`](https://github.com/t3rn/t3rn/commit/ebacf3e22ad5eb20cbd9440b358cc6ebad668621) - **grandpa-ranger**: submissions without interval *(PR [#1296](https://github.com/t3rn/t3rn/pull/1296) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`2e86869`](https://github.com/t3rn/t3rn/commit/2e86869aa3ba52211f8e017dc819559c1054fcd0) - grandpa ranger healthcheck *(PR [#1294](https://github.com/t3rn/t3rn/pull/1294) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.52.4-rc.0] - 2023-09-08
 ### :white_check_mark: Tests
 - [`a62119f`](https://github.com/t3rn/t3rn/commit/a62119f2b7969b74c6cba8a2981cc3778a430224) - check for drained ImportedHeaders at grandpa LC reset *(PR [#1291](https://github.com/t3rn/t3rn/pull/1291) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1613,3 +1625,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.52.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.1-rc.0...v1.52.2-rc.0
 [v1.52.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.2-rc.0...v1.52.3-rc.0
 [v1.52.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.3-rc.0...v1.52.4-rc.0
+[v1.53.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.4-rc.0...v1.53.0-rc.0
