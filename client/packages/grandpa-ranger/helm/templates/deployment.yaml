@@ -69,6 +69,7 @@ spec:
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 6
 
       {{- with $nodeSelector }}
       nodeSelector:
