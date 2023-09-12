@@ -53,7 +53,7 @@ export class Prometheus {
 
     this.txSize = new client.Gauge({
       name: "tx_size",
-      help: "The number of elements in the tx",
+      help: "Size of the tx",
       registers: [this.register],
       labelNames: ["target"],
     })
