@@ -189,6 +189,14 @@ export const config: Config = {
       accountPrefix: 42,
     },
     {
+      name: "Polkadot",
+      id: "pdot",
+      rpc: "wss://rpc.polkadot.io",
+      type: "Substrate",
+      signerKey: process.env.RELAYCHAIN_SIGNER_KEY,
+      accountPrefix: 42,
+    },
+    {
       name: "Basilisk",
       id: "bslk",
       rpc: "wss://rococo-basilisk-rpc.hydration.dev",
@@ -218,6 +226,12 @@ export const config: Config = {
         id: "polkadot",
       },
     ],
+    DOT: [
+      {
+        priceSource: "coingecko",
+        id: "polkadot",
+      },
+    ],
     TRN: [
       {
         priceSource: "coingecko",
@@ -228,6 +242,17 @@ export const config: Config = {
   strategies: {
     roco: {
       supportedAssets: ["ROC"],
+      sfx: {
+        minProfitUsd: 3,
+        minYield: 0.05,
+      },
+      xtx: {
+        minInsuranceAmountUsd: 1,
+        minInsuranceShare: 0.1,
+      },
+    },
+    pdot: {
+      supportedAssets: ["DOT"],
       sfx: {
         minProfitUsd: 3,
         minYield: 0.05,
