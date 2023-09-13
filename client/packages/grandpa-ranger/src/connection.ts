@@ -69,9 +69,6 @@ export class Connection {
     const connect = async () => {
       try {
         this.isActive = true
-        this.isCircuit
-          ? (this.prometheus.circuitActive = true)
-          : (this.prometheus.targetActive = true)
         logger.info(`Connected to ${this.currentProvider().ws}`)
 
         const sdk = new Sdk(this.provider, this.signer)
@@ -91,9 +88,6 @@ export class Connection {
       } catch (error) {
         // Handle connection error
         this.isActive = false
-        this.isCircuit
-          ? (this.prometheus.circuitActive = false)
-          : (this.prometheus.targetActive = false)
         logger.warn(`Error from ${this.currentProvider().ws}: ${error}`)
 
         // Add a delay before attempting to reconnect (adjust as needed)
@@ -109,9 +103,6 @@ export class Connection {
 
       this.provider.on("disconnected", () => {
         this.isActive = false
-        this.isCircuit
-          ? (this.prometheus.circuitActive = false)
-          : (this.prometheus.targetActive = false)
         logger.warn(`Disconnected from provider ${this.currentProvider().ws}`)
 
         // Add a delay before attempting to reconnect (adjust as needed)
@@ -122,9 +113,6 @@ export class Connection {
 
       this.provider.on("error", () => {
         this.isActive = false
-        this.isCircuit
-          ? (this.prometheus.circuitActive = false)
-          : (this.prometheus.targetActive = false)
         logger.warn(`Error from provider ${this.currentProvider().ws}`)
 
         // Add a delay before attempting to reconnect (adjust as needed)

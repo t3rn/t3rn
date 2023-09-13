@@ -3,8 +3,6 @@ import { logger } from "./logging"
 import http from "http"
 
 export class Prometheus {
-  circuitActive: boolean
-  targetActive: boolean
   disconnects: any
   register: any
   height: any
@@ -71,12 +69,10 @@ export class Prometheus {
           res.end(metrics)
         } else if (req.url === "/status") {
           res.setHeader("Content-Type", "text/plain")
-          res.statusCode = this.circuitActive && this.targetActive ? 200 : 500
           res.statusCode = this.heightDiff > 250 ? 500 : res.statusCode
           res.end(
             JSON.stringify({
-              circuitActive: this.circuitActive,
-              targetActive: this.targetActive,
+              heightDiff: this.heightDiff,
             })
           )
         } else {
