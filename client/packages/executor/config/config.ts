@@ -178,7 +178,7 @@ export const config: Config = {
     decimals: 12,
     signerKey: process.env.CIRCUIT_SIGNER_KEY,
   },
-  vendors: ["Rococo"],
+  vendors: ["Polkadot"],
   gateways: [
     {
       name: "Rococo",
@@ -254,7 +254,7 @@ export const config: Config = {
     pdot: {
       supportedAssets: ["DOT"],
       sfx: {
-        minProfitUsd: 3,
+        minProfitUsd: 1,
         minYield: 0.05,
       },
       xtx: {

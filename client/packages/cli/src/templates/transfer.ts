@@ -3,7 +3,7 @@ const SFX_TRAN_TO =
 const SFX_TRAN_TARGET = process.env.SFX_TRAN_TARGET || "roco"
 const SFX_TRAN_AMOUNT = Number(process.env.SFX_TRAN_AMOUNT) || 1
 const SFX_TRAN_INSURANCE = process.env.SFX_TRAN_INSURANCE || "0.1"
-const SFX_TRAN_MAX_REWARD = process.env.SFX_TRAN_MAX_REWARD || "40"
+const SFX_TRAN_MAX_REWARD = process.env.SFX_TRAN_MAX_REWARD || "60"
 const SFX_TRAN_SIGNATURE = process.env.SFX_TRAN_SIGNATURE || "0x"
 const SFX_TRAN_SPEED_MODE = process.env.SFX_TRAN_SPEED_MODE || "Fast"
 

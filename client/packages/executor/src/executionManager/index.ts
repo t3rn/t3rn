@@ -256,6 +256,7 @@ export class ExecutionManager {
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
+          logger.debug('New matching NewSideEffectsAvailable event received')
           this.addXtx(eventData.data, this.sdk);
           break;
         case ListenerEvents.SFXNewBidReceived:

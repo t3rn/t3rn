@@ -65,7 +65,11 @@ export class CircuitListener extends EventEmitter {
       // TODO: refactor this to use event types in the same way ExecutionManager does
       for (let i = 0; i < notifications.length; i++) {
         if (notifications[i].event.method === "NewSideEffectsAvailable") {
-          // receives new side effects
+          if (!this.isMatchingVendor(notifications[i].event.data)) {
+            logger.debug("NewSideEffectsAvailable not matching vendor")
+            continue
+          }
+
           this.emit("Event", <ListenerEventData>{
             type: ListenerEvents.NewSideEffectsAvailable,
             data: notifications[i].event.data,
@@ -83,13 +87,12 @@ export class CircuitListener extends EventEmitter {
             data: notifications[i].event.data,
           });
         } else if (notifications[i].event.method === "HeadersAdded") {
-          logger.debug(
-            { event: notifications[i].toHuman() },
-            "Received new headers with HeadersAdded event",
-          );
           let vendor = "";
-          if (notifications[i].event.section === "rococoBridge") {
-            vendor = "Rococo";
+          // if (notifications[i].event.section === "rococoBridge") {
+          //   vendor = "Rococo";
+          // }
+          if (notifications[i].event.section === "polkadotBridge") {
+            vendor = "Polkadot";
           }
           const data = {
             vendor,
@@ -130,5 +133,17 @@ export class CircuitListener extends EventEmitter {
         }
       }
     });
+  }
+
+  private isMatchingVendor(data: any) {
+    logger.debug(data[2][0].target);
+    // TODO: this should be nice done to filter all enabled vendors
+    // PDOT
+    if (data[2][0].target == "0x70646f74") {
+    // ROCO
+    // if (data[2][0].target == "0x726f636f") {
+      return true
+    }
+    return false
   }
 }
