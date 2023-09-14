@@ -18,17 +18,18 @@ pub type Asset = u32;
 pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
 use scale_info::TypeInfo;
-
-use t3rn_primitives::circuit::{AdaptiveTimeout, CircuitStatus, ReadSFX, SecurityLvl, SideEffect};
+use t3rn_primitives::circuit::{
+    AdaptiveTimeout, CircuitStatus, ReadSFX, SFXAction, SecurityLvl, SideEffect,
+};
 use t3rn_types::sfx::TargetId;
 
 t3rn_primitives::reexport_currency_types!();
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
-pub struct OrderStatusRead<Hash, BlockNumber> {
+pub struct OrderStatusRead<Hash, BlockNumber, Account> {
     pub xtx_id: Hash,
     pub status: CircuitStatus,
-    pub all_included_sfx: Vec<(Hash, CircuitStatus)>,
+    pub all_included_sfx: Vec<(Hash, CircuitStatus, Option<Account>)>,
     pub timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
 }
 
@@ -51,7 +52,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        OrderStatusRead(OrderStatusRead<T::Hash, BlockNumberFor<T>>),
+        OrderStatusRead(OrderStatusRead<T::Hash, BlockNumberFor<T>, T::AccountId>),
     }
 
     #[pallet::error]
@@ -88,6 +89,39 @@ pub mod pallet {
         }
 
         #[pallet::weight(100_000)]
+        pub fn single_order(
+            origin: OriginFor<T>,
+            destination: TargetId,
+            asset: Asset,
+            amount: BalanceOf<T>,
+            reward_asset: Asset,
+            max_reward: BalanceOf<T>,
+            insurance: BalanceOf<T>,
+            target_account: T::AccountId,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            let sfx_order =
+                OrderSFX::<T::AccountId, Asset, BalanceOf<T>, TargetId, Vec<u8>, BalanceOf<T>> {
+                    sfx_action: SFXAction::Transfer(destination, asset, target_account, amount),
+                    max_reward,
+                    insurance,
+                    reward_asset,
+                    remote_origin_nonce: None,
+                };
+
+            let side_effect: SideEffect<T::AccountId, BalanceOf<T>> = sfx_order.try_into()?;
+
+            T::CircuitSubmitAPI::on_extrinsic_trigger(
+                origin,
+                vec![side_effect],
+                speed_mode,
+                SecurityLvl::Optimistic,
+            )?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000)]
         pub fn read_order_status(
             _origin: OriginFor<T>,
             xtx_id: T::Hash,
@@ -98,9 +132,10 @@ pub mod pallet {
                 .into_iter()
                 .map(|sfx| {
                     let fsx_status = T::ReadSFX::get_fsx_status(sfx)?;
-                    Ok((sfx, fsx_status))
+                    let fsx_executor = T::ReadSFX::get_fsx_executor(sfx)?;
+                    Ok((sfx, fsx_status, fsx_executor))
                 })
-                .collect::<Result<Vec<(T::Hash, CircuitStatus)>, DispatchError>>()?;
+                .collect::<Result<Vec<(T::Hash, CircuitStatus, Option<T::AccountId>)>, DispatchError>>()?;
 
             Self::deposit_event(Event::OrderStatusRead(OrderStatusRead {
                 xtx_id,
@@ -202,7 +237,7 @@ mod tests {
         }
     }
 
-    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash, BlockNumber> {
+    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash, BlockNumber, AccountId32> {
         // Recover system event
         let events = System::events();
         let expect_order_status_read = events.last();
@@ -374,7 +409,11 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
                         estimated_height_here: 817,
                         estimated_height_there: 824,
@@ -449,7 +488,11 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::FinishedAllSteps,
+                        Some(AccountId32::new([1u8; 32]))
+                    ),],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
                         estimated_height_here: 817,
                         estimated_height_there: 824,
@@ -546,7 +589,11 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
                     timeouts_at: AdaptiveTimeout {
                         estimated_height_here: 817,
                         estimated_height_there: 824,
@@ -626,7 +673,11 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::Ready,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::Ready),],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::Ready,
+                        Some(AccountId32::new([1u8; 32]))
+                    ),],
                     timeouts_at: AdaptiveTimeout {
                         estimated_height_here: 817,
                         estimated_height_there: 824,

@@ -429,6 +429,33 @@ pub mod pallet {
             Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
+        fn get_fsx_executor(fsx_id: T::Hash) -> Result<Option<T::AccountId>, DispatchError> {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            // Early return on empty vector
+            if full_side_effects.is_empty() {
+                return Err(Error::<T>::XtxNotFound.into())
+            }
+
+            // Return the the executor of matching FSX by its ID
+            for fsx_vec in full_side_effects {
+                for (index, fsx) in fsx_vec.iter().enumerate() {
+                    if fsx
+                        .input
+                        .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                        == fsx_id
+                    {
+                        return Ok(fsx.input.enforce_executor.clone())
+                    }
+                }
+            }
+            Ok(None)
+        }
+
         // Look up the FSX by its ID and return the FSX if it exists
         fn get_fsx(
             fsx_id: T::Hash,
