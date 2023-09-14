@@ -504,6 +504,13 @@ pub mod pallet {
             Ok(xtx.requester)
         }
 
+        fn get_pending_xtx_ids() -> Vec<T::Hash> {
+            XExecSignals::<T>::iter()
+                .filter(|(_, xtx)| xtx.status < CircuitStatus::Finished)
+                .map(|(xtx_id, _)| xtx_id)
+                .collect::<Vec<T::Hash>>()
+        }
+
         fn get_xtx_status(
             xtx_id: T::Hash,
         ) -> Result<

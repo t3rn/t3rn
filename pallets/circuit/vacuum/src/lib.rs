@@ -126,6 +126,20 @@ pub mod pallet {
             _origin: OriginFor<T>,
             xtx_id: T::Hash,
         ) -> DispatchResultWithPostInfo {
+            Self::emit_order_status(xtx_id)
+        }
+
+        #[pallet::weight(100_000)]
+        pub fn read_all_pending_orders_status(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            for xtx_id in T::ReadSFX::get_pending_xtx_ids() {
+                Self::emit_order_status(xtx_id)?;
+            }
+            Ok(().into())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        pub fn emit_order_status(xtx_id: T::Hash) -> DispatchResultWithPostInfo {
             let (status, timeouts_at) = T::ReadSFX::get_xtx_status(xtx_id)?;
             let sfx_of_xtx = T::ReadSFX::get_fsx_of_xtx(xtx_id)?;
             let all_included_sfx = sfx_of_xtx
@@ -403,6 +417,36 @@ mod tests {
             let expected_sfx_hash = Hash::from(hex!(
                 "6fd0ce38a35bcc001dc78cbe7b258dd71cca7dff301891e13b73598572908744"
             ));
+
+            assert_eq!(
+                order_status,
+                OrderStatusRead {
+                    xtx_id,
+                    status: CircuitStatus::PendingBidding,
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
+                }
+            );
+
+            System::reset_events();
+
+            assert_ok!(Vacuum::read_all_pending_orders_status(
+                RuntimeOrigin::signed(requester.clone()),
+            ));
+
+            let order_status = expect_last_event_to_read_order_status();
 
             assert_eq!(
                 order_status,
