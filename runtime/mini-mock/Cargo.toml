@@ -59,7 +59,7 @@ pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }
 pallet-rewards                   = { path = "../../pallets/rewards" }
 pallet-xdns                      = { path = "../../pallets/xdns" }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v1.0.0" }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v1.0.0" }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth2-1.1" }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
