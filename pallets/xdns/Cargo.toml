@@ -24,6 +24,7 @@ frame-support      = { workspace = true }
 frame-system       = { workspace = true }
 
 sp-io      = { workspace = true }
+sp-core      = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std     = { workspace = true }
 sp-version = { workspace = true }
@@ -66,10 +67,12 @@ std = [
   "sp-io/std",
   "sp-version/std",
   "sp-runtime/std",
+  "sp-core/std",
   "sp-std/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
   "t3rn-abi/std",
   "circuit-runtime-types/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime"  ]
+

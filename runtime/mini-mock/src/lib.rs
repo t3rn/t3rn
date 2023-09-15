@@ -474,6 +474,7 @@ impl pallet_circuit_vacuum::Config for MiniRuntime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type Xdns = XDNS;
 }
 
 impl pallet_portal::Config for MiniRuntime {
@@ -884,7 +885,7 @@ impl ExtBuilder {
             gateway_id: ASTAR_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
-            codec: t3rn_abi::Codec::Rlp,
+            codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![
@@ -904,7 +905,7 @@ impl ExtBuilder {
             gateway_id: KUSAMA_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
-            codec: t3rn_abi::Codec::Rlp,
+            codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
@@ -918,7 +919,7 @@ impl ExtBuilder {
             gateway_id: POLKADOT_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
-            codec: t3rn_abi::Codec::Rlp,
+            codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],

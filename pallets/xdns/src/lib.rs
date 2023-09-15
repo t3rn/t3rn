@@ -446,6 +446,38 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn add_supported_bridging_asset(
+            origin: OriginFor<T>,
+            asset_id: AssetId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            if !<AuthorizedMintAssets<T>>::get().contains(&asset_id) {
+                <AuthorizedMintAssets<T>>::append(asset_id);
+            }
+
+            Ok(().into())
+        }
+
+        /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn purge_supported_bridging_asset(
+            origin: OriginFor<T>,
+            asset_id: AssetId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            if <AuthorizedMintAssets<T>>::get().contains(&asset_id) {
+                <AuthorizedMintAssets<T>>::mutate(|all_token_ids| {
+                    all_token_ids.retain(|&id| id != asset_id);
+                });
+            }
+
+            Ok(().into())
+        }
+
         /// Removes a gateway from the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
         pub fn purge_gateway_record(
@@ -562,6 +594,8 @@ pub mod pallet {
         TokenRecordAlreadyExists,
         /// XDNS Token not found in assets overlay
         TokenRecordNotFoundInAssetsOverlay,
+        /// XDNS Token not found in on that gateway
+        TokenRecordNotFoundInGateway,
         /// Gateway Record not found
         GatewayRecordNotFound,
         /// SideEffectABI already exists
@@ -619,6 +653,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn all_token_ids)]
     pub type AllTokenIds<T: Config> = StorageValue<_, Vec<AssetId>, ValueQuery>;
+
+    // All known TokenIds to t3rn
+    #[pallet::storage]
+    #[pallet::getter(fn supported_bridging_assets)]
+    pub type AuthorizedMintAssets<T: Config> = StorageValue<_, Vec<AssetId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn all_gateway_ids)]
@@ -948,6 +987,35 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::NewTokenLinkedToGateway(token_id, gateway_id));
             Ok(())
+        }
+
+        fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord> {
+            let mut available_assets = Vec::new();
+            for asset in <AuthorizedMintAssets<T>>::get() {
+                if let Some(linked_asset) = <Tokens<T>>::get(asset, gateway_id) {
+                    available_assets.push(linked_asset);
+                }
+            }
+            available_assets
+        }
+
+        fn get_token_by_eth_address(
+            gateway_id: TargetId,
+            eth_address: sp_core::H160,
+        ) -> Result<TokenRecord, DispatchError> {
+            for token in <GatewayTokens<T>>::get(gateway_id) {
+                let token_record = <Tokens<T>>::get(token, gateway_id)
+                    .ok_or(Error::<T>::TokenRecordNotFoundInGateway)?;
+                match token_record.token_props {
+                    TokenInfo::Ethereum(ref eth_token) =>
+                        if eth_token.address == Some(eth_address.into()) {
+                            return Ok(token_record.clone())
+                        },
+                    TokenInfo::Substrate(_) =>
+                        return Err(Error::<T>::TokenRecordNotFoundInGateway.into()),
+                }
+            }
+            Err(Error::<T>::TokenRecordNotFoundInGateway.into())
         }
 
         fn add_new_gateway(

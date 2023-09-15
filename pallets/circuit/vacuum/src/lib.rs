@@ -18,8 +18,16 @@ pub type Asset = u32;
 pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
 use scale_info::TypeInfo;
-
-use t3rn_primitives::circuit::{AdaptiveTimeout, CircuitStatus, ReadSFX, SecurityLvl, SideEffect};
+use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, H160, U256};
+use t3rn_abi::{
+    recode::recode_bytes_with_descriptor, sfx_abi::PerCodecAbiDescriptors, Codec, FilledAbi, SFXAbi,
+};
+use t3rn_primitives::{
+    circuit::{
+        AdaptiveTimeout, CircuitStatus, OrderOrigin, ReadSFX, SFXAction, SecurityLvl, SideEffect,
+    },
+    xdns::Xdns,
+};
 use t3rn_types::sfx::TargetId;
 
 t3rn_primitives::reexport_currency_types!();
@@ -32,15 +40,86 @@ pub struct OrderStatusRead<Hash, BlockNumber> {
     pub timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
 }
 
+// emit OrderCreated(id, destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward, nonce);
+// event RemoteOrderIndexedCreated(bytes32 indexed id, uint32 indexed nonce, address indexed sender, bytes input);
+// where input = abi.encode(destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward)
+pub fn get_remote_order_abi_descriptor() -> Vec<u8> {
+    b"RemoteOrderIndexed:Log(sfxId+:Bytes32,nonce:Value32,sender+:Account20,destination:Bytes4,asset:Bytes4,targetAccount:Account32,amount:Value256,rewardAsset:Account20,insurance:Value256,maxReward:Value256)".to_vec()
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+pub struct RemoteEVMOrderLocalized<T: Config> {
+    pub from: H160,
+    pub destination: TargetId,
+    pub asset: u32,
+    pub target_account: AccountId32,
+    pub reward_asset: H160,
+    pub amount: U256,
+    pub insurance: U256,
+    pub max_reward: U256,
+    pub nonce: u32,
+    phantom: PhantomData<T>,
+}
+
+impl<AccountId, Balance, T: Config> TryInto<SideEffect<AccountId, Balance>>
+    for RemoteEVMOrderLocalized<T>
+where
+    u32: From<Asset>,
+    Balance: Encode + Decode,
+    AccountId: Encode,
+    Input: AsBytesRef,
+    Destination: From<[u8; 4]>,
+    [u8; 4]: From<Destination>,
+{
+    type Error = DispatchError;
+
+    fn try_into(self) -> Result<SideEffect<AccountId, Balance>, Self::Error> {
+        let mut encoded_args: Vec<Vec<u8>> = vec![];
+
+        encoded_args.push(
+            <Asset as Into<u32>>::into(self.asset)
+                .to_le_bytes()
+                .to_vec(),
+        );
+        encoded_args.push(self.target_account.encode());
+        encoded_args.push(self.amount.as_u128().encode());
+
+        let max_reward = Balance::decode(&mut &self.max_reward.as_u128().encode()[..])
+            .map_err(|_| DispatchError::Other("Failed to decode max_reward from remote order"))?;
+
+        let insurance = Balance::decode(&mut &self.insurance.as_u128().encode()[..])
+            .map_err(|_| DispatchError::Other("Failed to decode insurance from remote order"))?;
+
+        let side_effect = SideEffect {
+            target: self.destination,
+            max_reward,
+            insurance,
+            action: *b"tass",
+            encoded_args,
+            signature: vec![],
+            enforce_executor: None,
+            reward_asset_id: Some(
+                T::Xdns::get_token_by_eth_address(self.destination, self.reward_asset)?.token_id,
+            ),
+        };
+
+        Ok(side_effect)
+    }
+}
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use t3rn_primitives::{
+        xdns::{TokenRecord, Xdns},
+        TokenInfo,
+    };
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
         type CircuitSubmitAPI: CircuitSubmitAPI<Self, BalanceOf<Self>>;
+        type Xdns: Xdns<Self, BalanceOf<Self>>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
     }
 
@@ -85,6 +164,78 @@ pub mod pallet {
             )?;
 
             Ok(().into())
+        }
+
+        #[pallet::weight(100_000)]
+        pub fn remote_order(
+            origin: OriginFor<T>,
+            order_remote_proof: Vec<u8>,
+            remote_target_id: TargetId,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin.clone())?;
+            // Assume finalized speed mode to remote order operations to avoid disputes in events of chain reorgs.
+            let speed_mode = SpeedMode::Finalized;
+
+            let verified_event_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                remote_target_id,
+                speed_mode.clone(),
+                Some([
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 113, 105, 211, 136, 32, 223, 209, 23, 195,
+                    250, 31, 34, 166, 151, 219, 165, 141, 144, 186, 6,
+                ]), // replace with proper mapper to remoteOrder contract's address
+                order_remote_proof,
+            )?
+            .message;
+
+            let recoded_message = recode_bytes_with_descriptor(
+                verified_event_bytes,
+                get_remote_order_abi_descriptor(),
+                Codec::Rlp,
+                Codec::Scale,
+            )?;
+
+            let decoded_remote_order: RemoteEVMOrderLocalized<T> =
+                RemoteEVMOrderLocalized::decode(&mut recoded_message.as_slice()).map_err(|e| {
+                    log::error!(
+                        "Vecuum::remote_order -- error decoding remote order: {:?}",
+                        e
+                    );
+                    DispatchError::Other("Vecuum::remote_order -- error decoding remote order")
+                })?;
+
+            let mut side_effect: SideEffect<T::AccountId, BalanceOf<T>> =
+                decoded_remote_order.clone().try_into()?;
+
+            let remote_origin: OrderOrigin<T::AccountId> =
+                OrderOrigin::from_remote_nonce(decoded_remote_order.nonce);
+
+            // Based on target and asset, derive the intent of the order.
+            // If the target is a remote chain, then the intent is to transfer funds to the remote chain. We don't need to go into details of assets order transfers or swaps.
+            // If target is a local chain (t3rn) && asset used for reward payout equals the asset transferred on remote chain - assume bridge operation of wrapped assets.
+            if &decoded_remote_order.destination == &[3, 3, 3, 3]
+                && T::Xdns::list_available_mint_assets(remote_target_id)
+                    .iter()
+                    .any(|asset: &TokenRecord| {
+                        &asset.token_id == &decoded_remote_order.asset
+                            && match &asset.token_props {
+                                TokenInfo::Ethereum(info) =>
+                                    info.address == Some(decoded_remote_order.reward_asset.into()),
+                                _ => false,
+                            }
+                    })
+            {
+                side_effect.enforce_executor = Some(who.clone());
+
+                // Try bridge wrap assets.
+                //  T::CircuitSubmitAPI::confirm()
+            }
+
+            T::CircuitSubmitAPI::on_remote_origin_trigger(
+                origin.clone(),
+                remote_origin.to_account_id(),
+                vec![side_effect],
+                speed_mode,
+            )
         }
 
         #[pallet::weight(100_000)]

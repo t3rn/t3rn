@@ -91,6 +91,7 @@ impl pallet_vacuum::Config for Runtime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type Xdns = XDNS;
 }
 
 use t3rn_primitives::{monetary::TRN, xdns::PalletAssetsOverlay};

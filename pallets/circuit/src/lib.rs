@@ -845,7 +845,7 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, __status, _requester| {
                     Self::confirm(xtx_id, current_fsx, &sfx_id, &confirmation).map_err(|e| {
-                        log::error!("Self::confirm hit an error -- {:?}", e);
+                        println!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
                     Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
@@ -1410,6 +1410,7 @@ impl<T: Config> Pallet<T> {
 
         let payload_codec = <T as Config>::Xdns::get_target_codec(&fsx.input.target)?;
 
+        println!("payload_codec: {:?}", payload_codec);
         fsx.input.confirm(
             sfx_abi,
             inclusion_receipt.message,

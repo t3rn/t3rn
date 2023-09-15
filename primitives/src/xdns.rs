@@ -6,6 +6,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::{BlockNumberFor, OriginFor};
 use scale_info::TypeInfo;
+use sp_core::H160;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
@@ -260,6 +261,13 @@ pub trait Xdns<T: frame_system::Config, Balance> {
         gateway_id: [u8; 4],
         token_props: TokenInfo,
     ) -> DispatchResult;
+
+    fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord>;
+
+    fn get_token_by_eth_address(
+        gateway_id: TargetId,
+        eth_address: H160,
+    ) -> Result<TokenRecord, DispatchError>;
 
     fn add_new_gateway(
         gateway_id: [u8; 4],
