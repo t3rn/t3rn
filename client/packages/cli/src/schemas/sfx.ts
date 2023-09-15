@@ -93,6 +93,7 @@ export const SideEffectActions = {
   Data: "data",
   Transfer: "tran",
   TransferAsset: "tass",
+  XcmTransfer: "xtran",
   Swap: "swap",
   AddLiquidity: "aliq",
   RemoveLiquidity: "rliq",

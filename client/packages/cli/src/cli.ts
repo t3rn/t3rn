@@ -23,8 +23,9 @@ program
 
 program
   .command("init")
-  .option("-t, --transfer [file-path]", "Generate a transfer template")
   .description("Generate a config or transfer template")
+  .option("-t, --transfer [file-path]", "Generate a transfer template")
+  .option("-x, --xtransfer [file-path]", "Generate a cross-chain transfer template")
   .action(handleInitCmd)
 
 withExportMode(
