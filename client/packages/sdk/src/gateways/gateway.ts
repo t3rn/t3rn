@@ -205,7 +205,7 @@ export class Gateway {
   getType(vendor: string) {
     if (["Rococo", "Kusama", "Polkadot"].includes(vendor)) {
       return GatewayType.Substrate;
-    } else if (["Ethereum", "Sepolia"].includes(vendor)) {
+    } else if (vendor === "Ethereum") {
       return GatewayType.Evm;
     }
   }
