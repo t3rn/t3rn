@@ -100,12 +100,6 @@ where
             .map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
-        // match result {
-        //     Some() => Ok(height),
-        //     None => Err(runtime_error_into_rpc_err(
-        //         "fetch_all_active_xtx failed exist",
-        //     )),
-        // }
     }
 }
 
