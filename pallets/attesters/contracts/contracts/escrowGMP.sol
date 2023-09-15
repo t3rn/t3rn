@@ -16,6 +16,7 @@ contract EscrowGMP {
     using SafeERC20 for IERC20;
 
     It3rnVault private vault;
+    address private attesters;
 
     event ExecutedLocally(bytes32 id, address sender);
     enum ActionType { LocalPayment, RemotePayment, EscrowCall }
@@ -29,7 +30,7 @@ contract EscrowGMP {
         uint256 rewardAmount;
     }
 
-    struct RemotePayment { bool executed; }
+    struct RemotePayment { address payable executor; bytes32 payloadHash; }
 
     struct Call {
         bytes callData;
@@ -41,14 +42,21 @@ contract EscrowGMP {
         Call onRevert;
     }
 
-    // Note: RemotePayment only stores a bool so we might not need a full struct
-
     mapping(bytes32 => uint256) public localPayments;
     mapping(bytes32 => EscrowCall) public escrowCalls;
     mapping(bytes32 => bool) public remotePayments;
+    mapping(bytes32 => RemotePayment) public remotePaymentsPayload;
+    mapping(bytes32 => bytes32) public remotePaymentsPayloadHash;
+    mapping(bytes32 => address) public remotePaymentsPayloadExecutor;
 
-    constructor(address _vault) {
+    constructor(address _vault, address _attesters) {
         vault = It3rnVault(_vault);
+        attesters = _attesters;
+    }
+
+    modifier onlyAttesters() {
+        require(msg.sender == attesters, "Only Attesters can call this function");
+        _;
     }
 
     function storeLocalOrderPayload(bytes calldata data) external returns (bytes32, LocalPayment memory) {
@@ -58,6 +66,30 @@ contract EscrowGMP {
         // Store the payment if it hasn't been stored already
         localPayments[id] = block.number;
         return (id, payment);
+    }
+
+    function storeRemoteOrderPayload(bytes32 sfxId, bytes32 payloadHash) external returns (bool) {
+        // Store the payment payload (hash of the payload)
+        remotePaymentsPayloadHash[sfxId] = payloadHash;
+        return (true);
+    }
+
+    function commitRemoteExecutorPayload(bytes32 sfxId, address executor) onlyAttesters external returns (bool) {
+        // Update the payment payload (hash of the payload)
+        bytes32 currentHash = remotePaymentsPayloadHash[sfxId];
+        require(currentHash != 0, "Payload not found");
+        bytes32 newHash = keccak256(abi.encode(currentHash, executor));
+        remotePaymentsPayloadHash[sfxId] = newHash;
+        return (true);
+    }
+
+    function withdrawFromVault(bytes32 sfxId, address rewardAsset, uint256 maxReward) payable external {
+        bytes32 paymentPayloadHash = keccak256(abi.encode(rewardAsset, maxReward));
+        bytes32 calculatedWithdrawHash = keccak256(abi.encode(paymentPayloadHash, msg.sender));
+        bytes32 paymentHash = remotePaymentsPayloadHash[sfxId];
+        require(paymentHash == calculatedWithdrawHash, "Payload for payment not matching");
+        remotePaymentsPayloadHash[sfxId] = bytes32(0);
+        vault.withdraw{value: msg.value}(rewardAsset, maxReward, msg.sender);
     }
 
     function storeLocalOrderPayloadCallData(address payable sender, uint32 nonce, bytes calldata data) external returns (bytes32, LocalPayment memory) {
@@ -98,46 +130,37 @@ contract EscrowGMP {
         // Recover local payment
         uint256 recoveredBlockForId = localPayments[id];
         require(recoveredBlockForId != 0, "Local payment not found");
+        require(recoveredBlockForId != 1, "Local payment already executed");
         // Check if the payment has been executed
         require(recoveredBlockForId < block.number + 128, "Local order has timed out");
         // Execute the payment
-        if (payment.rewardAsset == address(0)) {
-            msg.sender.call{value: payment.amount}("");
+        if (payment.asset == address(0)) {
+            require(msg.value == payment.amount, "Mismatched deposit amount");
+            payable(payment.sender).transfer(payment.amount);
         } else {
-            IERC20(payment.rewardAsset).safeTransferFrom(msg.sender, address(payment.sender), payment.amount);
+            IERC20(payment.asset).safeTransferFrom(msg.sender, address(payment.sender), payment.amount);
         }
-        // Execute the reward
-        if (payment.rewardAsset == address(0)) {
-            msg.sender.call{value: payment.rewardAmount}("");
-        } else {
-            IERC20(payment.rewardAsset).safeTransferFrom(msg.sender, address(payment.sender), payment.rewardAmount);
-        }
+
+        vault.withdraw{value: msg.value}(payment.rewardAsset, payment.rewardAmount, msg.sender);
+
         localPayments[id] = 1;
 
         emit ExecutedLocally(id, msg.sender);
     }
 
-    function commit(bytes32 id, ActionType actionType) external {
-        if (actionType == ActionType.LocalPayment) {
-            // Handle LocalPayment commit
-            // Withdraw from vault and transfer assets
-        } else if (actionType == ActionType.RemotePayment) {
-            // Handle RemotePayment commit
-        } else if (actionType == ActionType.EscrowCall) {
-            // Handle Call commit
-            // Extract callData and destination, then delegateCall
-        }
+    function commitEscrowCall(bytes32 id) external onlyAttesters returns (bool) {
+        // Handle Call commit
+        // Extract callData and destination, then delegateCall
+        Call memory call = escrowCalls[id].onCommit;
+        (bool success, ) = call.destination.delegatecall(call.callData);
+        return success;
     }
 
-    function xRevert(bytes32 id, ActionType actionType) external {
-        if (actionType == ActionType.LocalPayment) {
-            // Handle LocalPayment revert
-            // Withdraw from vault and transfer assets back
-        } else if (actionType == ActionType.RemotePayment) {
-            // Handle RemotePayment revert
-        } else if (actionType == ActionType.EscrowCall) {
-            // Handle Call revert
-            // Extract revert callData and destination, then delegateCall
-        }
+    function revertEscrowCall(bytes32 id) onlyAttesters external {
+        // Handle Call revert
+        // Extract callData and destination, then delegateCall
+        Call memory call = escrowCalls[id].onRevert;
+        (bool success, ) = call.destination.delegatecall(call.callData);
+        require(success, "Revert failed");
     }
 }

@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
-
-contract AttestationsVerifier {
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+contract AttestationsVerifierProofs {
+    using MerkleProof for bytes[];
 
     event SignerEmitted(address indexed signer);
     event BatchApplied(bytes32 indexed batchHash, address indexed executor);
     event SignerNotInCommittee(address indexed signer);
 
     struct Batch {
-        address[] nextCommittee;
+        bytes32 currentCommitteeHash;
+        bytes32 nextCommitteeHash;
         address[] bannedCommittee;
         bytes32[] committedSfx;
         bytes32[] revertedSfx;
@@ -22,13 +24,17 @@ contract AttestationsVerifier {
     address public owner;
     address public escrowGMP;
     uint256 public committeeSize;
+    uint256 public quorum;
     uint256 public currentCommitteeTransitionCount;
     uint256 public currentBatchIndex;
     uint256 public totalAttesters; // added a counter to track total attestors.
+    bytes32 public currentCommitteeHash;
+    bytes32 public nextCommitteeHash;
 
     function batchEncodePacked(Batch memory batch) public pure returns (bytes memory) {
         return abi.encodePacked(
-            batch.nextCommittee,
+            batch.currentCommitteeHash,
+            batch.nextCommitteeHash,
             batch.bannedCommittee,
             batch.committedSfx,
             batch.revertedSfx,
@@ -49,49 +55,52 @@ contract AttestationsVerifier {
         currentBatchIndex = startingIndex;
         owner = msg.sender;
         committeeSize = initialCommittee.length;
+        quorum = committeeSize * 2 / 3;
+
     }
 
     function updateCommitteeSize(uint256 newCommitteeSize) public {
         require(msg.sender == owner, "Only owner can update committee size");
         committeeSize = newCommitteeSize;
+        quorum = committeeSize * 2 / 3;
     }
 
     function receiveAttestationBatch(
-        address[] memory nextCommittee,
+        bytes32 _currentCommitteeHash,
+        bytes32 nextCommitteeHash,
         address[] memory bannedCommittee,
         bytes32[] memory committedSfx,
         bytes32[] memory revertedSfx,
         uint32 index,
         bytes32 expectedBatchHash,
-        bytes[] memory signatures
+        bytes[] memory signatures,
+        bytes32[][] calldata merkleProofs  // This is the Merkle proof for each signer
     ) public {
-        Batch memory batch = Batch(nextCommittee, bannedCommittee, committedSfx, revertedSfx, index);
+        Batch memory batch = Batch(_currentCommitteeHash, nextCommitteeHash, bannedCommittee, committedSfx, revertedSfx, index);
         bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
         require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
-
+        require(batch.currentCommitteeHash == currentCommitteeHash || batch.currentCommitteeHash == nextCommitteeHash, "Current / Next committee hash mismatch");
         require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
 
-        require(verifySignedByActiveCommittee(expectedBatchHash, signatures), "Signatures verification failed");
+        // Verifying the attesters using Merkle proof
+        uint256 validSignatures = 0;
 
-        if (batch.nextCommittee.length > 0) {
-            currentCommitteeTransitionCount += 1;
-            // Add new attesters to the attestersIndices mapping
-            for(uint i = 0; i < batch.nextCommittee.length; i++) {
-                uint256 attesterIndex = attestersIndices[batch.nextCommittee[i]];
-                if (attesterIndex == 0) {
-                    totalAttesters += 1;
-                }
-                if (attesterIndex != type(uint256).max) {
-                    attestersIndices[batch.nextCommittee[i]] = currentCommitteeTransitionCount;
-                }
+        require(merkleProofs.length == signatures.length, "Mismatched proofs and signatures");
+        for (uint256 i = 0; i < signatures.length; i++) {
+            if (validSignatures == quorum) {
+                break;
+            }
+            bytes32 leafHash = keccak256(abi.encodePacked(recoverSigner(expectedBatchHash, signatures[i])));
+            if (MerkleProof.verifyCalldata(merkleProofs[i], batch.currentCommitteeHash, leafHash)) {
+                validSignatures += 1;
             }
         }
+        require(validSignatures == quorum, "Quorum not reached");
 
-        // Preserve the list of banned committee indices
-        for(uint i = 0; i < batch.bannedCommittee.length; i++) {
-            if (attestersIndices[batch.bannedCommittee[i]] != type(uint256).max) {
-                attestersIndices[batch.bannedCommittee[i]] = type(uint256).max;
-            }
+        // Setting new committee root for the next round
+        if (batch.currentCommitteeHash == nextCommitteeHash) {
+            currentCommitteeHash = nextCommitteeHash;
+            nextCommitteeHash = batch.nextCommitteeHash;
         }
 
         for (uint i = 0; i < batch.committedSfx.length; i++) {
