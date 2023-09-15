@@ -72,8 +72,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1, // 0 = old, 1 = new; see above for details
 };
 use frame_system::EnsureRoot;
-use t3rn_primitives::monetary::MILLIT3RN;
-
+use t3rn_primitives::{circuit::ReadSFX, monetary::MILLIT3RN};
 pub const TRN: Balance = UNIT;
 
 /// The version information used to identify this runtime when compiled natively.

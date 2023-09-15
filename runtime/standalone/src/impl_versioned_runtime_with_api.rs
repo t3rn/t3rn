@@ -15,10 +15,9 @@ pub use frame_support::{
     StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
+use pallet_circuit::ChainId;
 use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
-
-use pallet_circuit::ChainId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -31,6 +30,7 @@ use sp_runtime::{
 };
 pub use sp_runtime::{Perbill, Permill};
 use t3rn_primitives::{
+    circuit::ReadSFX,
     portal::HeightResult,
     xdns::{FullGatewayRecord, GatewayRecord},
     TreasuryAccountProvider,
