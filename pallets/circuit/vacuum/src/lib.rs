@@ -113,7 +113,7 @@ pub mod pallet {
 
             T::CircuitSubmitAPI::on_extrinsic_trigger(
                 origin,
-                vec![side_effect],
+                sp_std::vec![side_effect],
                 speed_mode,
                 SecurityLvl::Optimistic,
             )?;
