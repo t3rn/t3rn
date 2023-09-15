@@ -22,3 +22,4 @@ sp-blockchain                 = { git = "https://github.com/paritytech/substrate
 sp-core                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-rpc                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-runtime                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+t3rn-types                    = { path = "../../../types" }
