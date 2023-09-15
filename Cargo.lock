@@ -7306,6 +7306,7 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
+ "sp-std 8.0.0",
  "t3rn-types",
 ]
 
