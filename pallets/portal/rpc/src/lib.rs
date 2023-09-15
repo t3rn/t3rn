@@ -7,6 +7,8 @@ use jsonrpsee::{
     core::{Error as JsonRpseeError, RpcResult},
     proc_macros::rpc,
 };
+use sp_std::vec::Vec;
+
 use pallet_portal_rpc_runtime_api::ChainId;
 pub use pallet_portal_rpc_runtime_api::PortalRuntimeApi;
 use sp_api::ProvideRuntimeApi;

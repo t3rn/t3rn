@@ -8,6 +8,7 @@
 
 use codec::Codec;
 
+use sp_std::vec::Vec;
 pub use t3rn_primitives::ChainId;
 use t3rn_types::sfx::SideEffect;
 
