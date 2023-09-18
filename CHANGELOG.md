@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.54.1-rc.0] - 2023-09-18
+### :wrench: Chores
+- [`93b3c26`](https://github.com/t3rn/t3rn/commit/93b3c263b5bbdebaff65b3def899b7a12ae9f724) - upgrade sepolia pallet version *(PR [#1306](https://github.com/t3rn/t3rn/pull/1306) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.54.0-rc.0] - 2023-09-16
 ### :sparkles: New Features
 - [`f1af8c4`](https://github.com/t3rn/t3rn/commit/f1af8c4211d23449e93f59f277e1a1130932038f) - sdk align for ethereum ranger *(PR [#1304](https://github.com/t3rn/t3rn/pull/1304) by [@3h4x](https://github.com/3h4x))*
@@ -1636,3 +1641,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.52.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.3-rc.0...v1.52.4-rc.0
 [v1.53.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.4-rc.0...v1.53.0-rc.0
 [v1.54.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.53.0-rc.0...v1.54.0-rc.0
+[v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
