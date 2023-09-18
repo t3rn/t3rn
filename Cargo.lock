@@ -7414,7 +7414,7 @@ dependencies = [
 [[package]]
 name = "pallet-sepolia-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.1#a950e8e2c3ad5202e48c3e162993cc07e587b69a"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.2#08b3a8636afd58535eb0342ee35c20bb4cbc3f92"
 dependencies = [
  "eth_trie",
  "ethereum-types",
