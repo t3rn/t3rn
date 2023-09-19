@@ -40,6 +40,7 @@
   "dependencies": {
     "@polkadot/api": "^8.9.1",
     "dotenv": "^16.0.3",
+    "interfaces": "link:@polkadot/types/interfaces",
     "node-fetch": "2",
     "web3": "^4.0.3"
   },
