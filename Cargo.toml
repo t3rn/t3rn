@@ -200,6 +200,9 @@ substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrat
 substrate-wasm-builder         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
+# Temproary Asset Registry
+pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", branch = "polkadot-v1.0.0", default-features = false }
+
 jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 
 t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = false }

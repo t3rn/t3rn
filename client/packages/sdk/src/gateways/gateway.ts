@@ -113,6 +113,58 @@ export class Gateway {
     });
   };
 
+   /**
+   * Create a cross-chain transfer side effect, taking care of target specific encodings
+   * @param args - The arguments to create the side effect
+   * @param args.from - The address of the sender
+   * @param args.beneficiary - The address of the receiver
+   * @param args.destChainId - The destiantion chain ID
+   * @param args.asset - The MultiAsset value of the asset
+   * @param args.value - The value to transfer
+   * @param args.maxReward - The maximum reward for the side effect
+   * @param args.insurance - The insurance for the side effect
+   * @param args.nonce - The nonce of the side effect
+   * @param args.signature - The signature of the side effect
+   * @param args.enforceExecutioner - The address of the executioner
+   */
+
+   createXTransferSfx = (args: {
+    from: string;
+    beneficiary: string;
+    destChainId: string;
+    asset: string;
+    value: number | BN | string;
+    maxReward: number | BN | string;
+    insurance: number | BN | string;
+    nonce: number;
+    signature?: string;
+    enforceExecutioner?: string;
+  }): T3rnTypesSideEffect => {
+    const encodedArgs: string[] = this.encodeXTransferArgs(
+      args.from,
+      args.beneficiary,
+      args.destChainId,
+      args.asset,
+      args.value,
+      args.insurance,
+      args.maxReward
+    );
+
+    const maxReward = new AmountConverter({ value: args.maxReward }).toBn();
+    const insurance = new AmountConverter({ value: args.insurance }).toBn();
+
+    return createSfx({
+      target: toU8aId(this.id),
+      nonce: args.nonce,
+      maxReward,
+      insurance,
+      encodedArgs,
+      action: "tran",
+      signature: args.signature,
+      enforceExecutioner: args.enforceExecutioner,
+    });
+  };
+
   /**
    * Encode transfer arguments
    * @param from - The address of the sender
@@ -142,6 +194,40 @@ export class Gateway {
     }).toLeHex();
 
     return [to, encodedAmount];
+  }
+
+   /**
+   * Encode xtransfer arguments
+   * @param from - The address of the sender
+   * @param beneficiary - The address of the receiver
+   * @param destChainId - The destination chain
+   * @param asset - The asset to transfer
+   * @param value - The value to transfer
+   * @param insurance - The insurance for the side effect
+   * @param reward - The reward for the side effect
+   */
+  encodeXTransferArgs(
+    from: string,
+    beneficiary: string,
+    destChainId: number | BN | string,
+    asset: string,
+    value: number | BN | string,
+    insurance: number | BN | string,
+    reward: number | BN | string
+  ): string[] {
+    if (!this.allowedSideEffects.includes("xtran"))
+      throw new Error(`XTransfer Sfx not supported for ${this.id}`);
+    // ensure we pass the correct address encoding (e.g. pub key for substrate)
+    beneficiary = this.validateAddress(beneficiary);
+
+    // convert value to LittleEndian
+    const encodedAmount = new AmountConverter({
+      value,
+      decimals: this.decimals,
+      valueTypeSize: this.valueTypeSize,
+    }).toLeHex();
+
+    return [beneficiary, destChainId, asset, encodedAmount];
   }
 
   /**

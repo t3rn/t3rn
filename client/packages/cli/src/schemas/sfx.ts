@@ -37,6 +37,7 @@ export type EncodedArgs = z.infer<typeof EncodedArgsSchema>
 export const SideEffectActionSchema = z.enum([
   "data",
   "tran",
+  "xtran",
   "tass",
   "swap",
   "aliq",
