@@ -38,3 +38,8 @@ export const getStorageProof = async (client: any, blockHash: any, module: strin
     // @ts-ignore
     return client.rpc.state.getReadProof([key], blockHash)
 }
+
+export const getStorage = async (client: any, blockHash: any, module: string, variableName: string, arg?: number | string | Uint8Array | Buffer) =>{
+	const key = generateArgumentKey(module, variableName, arg)
+    return client.rpc.state.getStorage(key)
+}
