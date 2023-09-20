@@ -11,6 +11,16 @@ count = 1
 name  = "bob"
 
 [[parachains]]
+chain         = "asseh-hub-local"
+cumulus_based = true
+id            = 1000
+
+[parachains.collator]
+command  = "asset-hub-collator-v1.0.0"
+name     = "asset-hub-collator"
+ws_port  = 9944
+
+[[parachains]]
 chain         = "local"
 cumulus_based = true
 id            = 3333
@@ -18,7 +28,20 @@ id            = 3333
 [parachains.collator]
 command  = "t0rn-collator"
 name     = "collator"
-ws_port  = 9944
+ws_port  = 9955
+
+
+[[hrmp_channels]]
+sender = 1000
+recipient = 3333
+max_capacity = 128
+max_message_size = 10000000
+
+[[hrmp_channels]]
+sender = 3333
+recipient = 1000
+max_capacity = 128
+max_message_size = 10000000
 
 [types.Header]
 number = "u64"
