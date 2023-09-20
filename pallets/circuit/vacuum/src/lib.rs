@@ -172,10 +172,11 @@ mod tests {
     use t3rn_primitives::{clock::OnHookQueues, light_client::LightClientAsyncAPI};
 
     use t3rn_mini_mock_runtime::{
-        prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, BlockNumber, Circuit,
-        CircuitError, CircuitEvent, Clock, GlobalOnInitQueues, Hash, MiniRuntime, MockedAssetEvent,
-        OrderStatusRead, Portal, Rewards, RuntimeEvent as Event, RuntimeOrigin, System, Vacuum,
-        VacuumEvent, ASSET_DOT, POLKADOT_TARGET, XDNS,
+        activate_all_light_clients, prepare_ext_builder_playground, AccountId, Assets, Balance,
+        Balances, BlockNumber, Circuit, CircuitError, CircuitEvent, Clock, GlobalOnInitQueues,
+        Hash, MiniRuntime, MockedAssetEvent, OrderStatusRead, Portal, Rewards,
+        RuntimeEvent as Event, RuntimeOrigin, System, Vacuum, VacuumEvent, ASSET_DOT,
+        POLKADOT_TARGET, XDNS,
     };
     use t3rn_primitives::portal::Portal as PortalT;
 
@@ -194,14 +195,6 @@ mod tests {
         monetary::EXISTENTIAL_DEPOSIT,
     };
     use t3rn_types::fsx::TargetId;
-
-    fn activate_all_light_clients() {
-        for &gateway in XDNS::all_gateway_ids().iter() {
-            Portal::turn_on(RuntimeOrigin::root(), gateway).unwrap();
-        }
-        XDNS::process_all_verifier_overviews(System::block_number());
-        XDNS::process_overview(System::block_number());
-    }
 
     fn mint_required_assets_for_optimistic_actors(
         requester: AccountId,
@@ -475,11 +468,11 @@ mod tests {
                         None
                     )],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -505,11 +498,11 @@ mod tests {
                         None
                     )],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -584,11 +577,11 @@ mod tests {
                         Some(AccountId32::new([1u8; 32]))
                     ),],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -685,11 +678,11 @@ mod tests {
                         None
                     )],
                     timeouts_at: AdaptiveTimeout {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -733,8 +726,9 @@ mod tests {
                 CircuitError::<MiniRuntime>::ConfirmationFailed
             );
 
-            // Wait for after XTX timeout
+            // Wait for after XTX emergency timeout
             System::set_block_number(System::block_number() + 401);
+
             // Trigger XTX revert queue and expect move to DLQ
             Circuit::process_emergency_revert_xtx_queue(
                 System::block_number(),
@@ -769,19 +763,20 @@ mod tests {
                         Some(AccountId32::new([1u8; 32]))
                     ),],
                     timeouts_at: AdaptiveTimeout {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
-                        dlq: Some(453)
+                        dlq: Some(469)
                     },
                 }
             );
 
             // Now activate the LightClient again and expect the DLQ to be processed
             mock_signal_unhalt(POLKADOT_TARGET, GatewayVendor::Polkadot);
+            activate_all_light_clients();
 
             // Advance 1 block
             System::set_block_number(System::block_number() + 1);
