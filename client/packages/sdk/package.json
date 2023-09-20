@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/sdk",
-  "version": "0.2.6",
+  "version": "0.3.1",
   "description": "t3rn's client side SDK",
   "files": [
     "dist/**/*"
@@ -82,6 +82,12 @@
       "default": "./dist/gateways/index.cjs",
       "require": "./dist/gateways/index.cjs",
       "import": "./dist/gateways/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.cjs",
+      "require": "./dist/utils/index.cjs",
+      "import": "./dist/utils/index.js"
     },
     "./": "./"
   },

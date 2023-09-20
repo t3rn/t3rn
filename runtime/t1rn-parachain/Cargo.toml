@@ -100,8 +100,8 @@ t3rn-abi        = { default-features = false, path = "../../types/abi", features
 pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v1.0.0", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v1.0.0", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.1", default-features = false }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.2", default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }

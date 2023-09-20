@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.54.2-rc.0] - 2023-09-20
+### :bug: Bug Fixes
+- [`90cda7e`](https://github.com/t3rn/t3rn/commit/90cda7e7a29b486ea8d280ca5ba211de0031e24d) - check for above-zero target height increase before setting isActive *(PR [#1307](https://github.com/t3rn/t3rn/pull/1307) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.54.1-rc.0] - 2023-09-18
+### :wrench: Chores
+- [`93b3c26`](https://github.com/t3rn/t3rn/commit/93b3c263b5bbdebaff65b3def899b7a12ae9f724) - upgrade sepolia pallet version *(PR [#1306](https://github.com/t3rn/t3rn/pull/1306) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.54.0-rc.0] - 2023-09-16
+### :sparkles: New Features
+- [`f1af8c4`](https://github.com/t3rn/t3rn/commit/f1af8c4211d23449e93f59f277e1a1130932038f) - sdk align for ethereum ranger *(PR [#1304](https://github.com/t3rn/t3rn/pull/1304) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`723f330`](https://github.com/t3rn/t3rn/commit/723f330a64a15f5f9676d16d44638c4ae06d36a6) - grandpa-ranger should not escape submission loop *(PR [#1299](https://github.com/t3rn/t3rn/pull/1299) by [@3h4x](https://github.com/3h4x))*
+- [`7e14090`](https://github.com/t3rn/t3rn/commit/7e140907fa4ea2de7bf48c0880209fa236577072) - sdk have utils exported *(PR [#1305](https://github.com/t3rn/t3rn/pull/1305) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.53.0-rc.0] - 2023-09-12
 ### :sparkles: New Features
 - [`1f2faba`](https://github.com/t3rn/t3rn/commit/1f2fababa6a560002becbe7a269f2b9cda0adbcb) - deployment kusama and polkadot ranger *(PR [#1289](https://github.com/t3rn/t3rn/pull/1289) by [@3h4x](https://github.com/3h4x))*
@@ -1626,3 +1645,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.52.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.2-rc.0...v1.52.3-rc.0
 [v1.52.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.3-rc.0...v1.52.4-rc.0
 [v1.53.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.4-rc.0...v1.53.0-rc.0
+[v1.54.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.53.0-rc.0...v1.54.0-rc.0
+[v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
+[v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
