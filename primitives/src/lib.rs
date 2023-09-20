@@ -637,6 +637,17 @@ mod tests_finality_verifier_activity {
     }
 
     #[test]
+    fn test_determines_none_for_two_non_increasing_elements() {
+        let activity1 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(50u32, 100u32);
+        let activity2 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(100u32, 100u32);
+        let activities = vec![activity1, activity2];
+
+        let result =
+            FinalityVerifierActivity::<u32>::determine_finalized_reports_increase(&activities);
+        assert_eq!(result, Some((0u32, 50u32)));
+    }
+
+    #[test]
     fn test_determines_increase_for_three_elements() {
         let activity1 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(50u32, 100u32);
         let activity2 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(75u32, 150u32);

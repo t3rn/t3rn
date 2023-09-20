@@ -1081,7 +1081,6 @@ pub fn activate_all_light_clients() {
     XDNS::process_overview(System::block_number());
 
     make_all_light_clients_move_2_times_by(8);
-    XDNS::process_overview(System::block_number());
 }
 
 pub fn prepare_ext_builder_playground() -> TestExternalities {

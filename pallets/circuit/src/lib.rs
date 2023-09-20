@@ -429,6 +429,33 @@ pub mod pallet {
             Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
+        fn get_fsx_executor(fsx_id: T::Hash) -> Result<Option<T::AccountId>, DispatchError> {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            // Early return on empty vector
+            if full_side_effects.is_empty() {
+                return Err(Error::<T>::XtxNotFound.into())
+            }
+
+            // Return the the executor of matching FSX by its ID
+            for fsx_vec in full_side_effects {
+                for (index, fsx) in fsx_vec.iter().enumerate() {
+                    if fsx
+                        .input
+                        .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                        == fsx_id
+                    {
+                        return Ok(fsx.input.enforce_executor.clone())
+                    }
+                }
+            }
+            Ok(None)
+        }
+
         // Look up the FSX by its ID and return the FSX if it exists
         fn get_fsx(
             fsx_id: T::Hash,
@@ -475,6 +502,42 @@ pub mod pallet {
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 
             Ok(xtx.requester)
+        }
+
+        fn get_pending_xtx_ids() -> Vec<T::Hash> {
+            XExecSignals::<T>::iter()
+                .filter(|(_, xtx)| xtx.status < CircuitStatus::Finished)
+                .map(|(xtx_id, _)| xtx_id)
+                .collect::<Vec<T::Hash>>()
+        }
+
+        fn get_pending_xtx_for(
+            for_executor: T::AccountId,
+        ) -> Vec<(
+            T::Hash,                                     // xtx_id
+            Vec<SideEffect<T::AccountId, BalanceOf<T>>>, // side_effects
+            Vec<T::Hash>,                                // sfx_ids
+        )> {
+            let mut active_xtx = Vec::new();
+            for active_xtx_id in Self::get_pending_xtx_ids() {
+                let fsx_ids = Self::get_fsx_of_xtx(active_xtx_id).unwrap_or_default();
+                let mut executors_of_fsx = Vec::new();
+                let mut side_effects_of_executor = Vec::new();
+                for fsx_id in fsx_ids {
+                    match Self::get_fsx(fsx_id.clone()) {
+                        Ok(fsx) =>
+                            if fsx.input.enforce_executor == Some(for_executor.clone()) {
+                                side_effects_of_executor.push(fsx.input);
+                                executors_of_fsx.push(fsx_id);
+                            },
+                        Err(_) => {},
+                    }
+                }
+                if !side_effects_of_executor.is_empty() {
+                    active_xtx.push((active_xtx_id, side_effects_of_executor, executors_of_fsx));
+                }
+            }
+            active_xtx
         }
 
         fn get_xtx_status(

@@ -35,6 +35,8 @@ use t3rn_primitives::{
     TreasuryAccountProvider,
 };
 
+use t3rn_types::sfx::SideEffect;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -270,7 +272,7 @@ mod benches {
 
 use frame_system::EventRecord;
 use sp_core::H256;
-
+use t3rn_primitives::circuit::ReadSFX;
 impl_runtime_apis! {
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
@@ -484,7 +486,7 @@ impl_runtime_apis! {
         }
     }
 
-     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
+     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId, Balance, Hash> for Runtime {
         fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
             let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
 
@@ -492,6 +494,14 @@ impl_runtime_apis! {
                 Ok(HeightResult::Height(height)) => Some(height.into()),
                 _ => None,
             }
+        }
+
+        fn fetch_all_active_xtx(for_executor: AccountId) -> Vec<(
+            Hash,                              // xtx_id
+            Vec<SideEffect<AccountId, Balance>>, // side_effects
+            Vec<Hash>,                         // sfx_ids
+        )> {
+            Circuit::get_pending_xtx_for(for_executor)
         }
     }
 

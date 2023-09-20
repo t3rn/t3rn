@@ -7328,6 +7328,8 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
+ "sp-std 8.0.0",
+ "t3rn-types",
 ]
 
 [[package]]
@@ -7338,7 +7340,9 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
+ "sp-std 8.0.0",
  "t3rn-primitives",
+ "t3rn-types",
 ]
 
 [[package]]
