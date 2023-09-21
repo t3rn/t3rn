@@ -468,11 +468,11 @@ mod tests {
                         None
                     )],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
