@@ -431,6 +431,8 @@ impl<
         .expect(
             "System::Index decoding try to u32 should always succeed since set in Runtime Config",
         );
+        frame_system::Pallet::<T>::inc_account_nonce(requester);
+
         let signal = XExecSignal::new(
             requester,
             requester_nonce,
