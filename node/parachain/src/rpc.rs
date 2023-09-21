@@ -30,10 +30,10 @@ use t1rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
     not(feature = "default"),
     not(feature = "runtime-benchmarks")
 ))]
-use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
+use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 #[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
-use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Nonce};
+use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 #[cfg(not(feature = "t3rn"))]
 use pallet_portal_rpc::{Portal, PortalApiServer};
@@ -64,7 +64,7 @@ where
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
-    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
+    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId, Balance, Hash>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {

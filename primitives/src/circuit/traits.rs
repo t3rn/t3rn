@@ -122,9 +122,21 @@ pub type XExecSignalId<T> = <T as ConfigSystem>::Hash;
 pub type XExecStepSideEffectId<T> = <T as ConfigSystem>::Hash;
 
 pub trait ReadSFX<Hash, Account, Balance, BlockNumber> {
+    fn get_pending_xtx_ids() -> Vec<Hash>;
+
+    fn get_pending_xtx_for(
+        for_executor: Account,
+    ) -> Vec<(
+        Hash,                              // xtx_id
+        Vec<SideEffect<Account, Balance>>, // side_effects
+        Vec<Hash>,                         // sfx_ids
+    )>;
+
     fn get_fsx_of_xtx(xtx_id: Hash) -> Result<Vec<Hash>, DispatchError>;
 
     fn get_fsx_status(fsx_id: Hash) -> Result<CircuitStatus, DispatchError>;
+
+    fn get_fsx_executor(fsx_id: Hash) -> Result<Option<Account>, DispatchError>;
 
     fn get_fsx(
         fsx_id: Hash,
