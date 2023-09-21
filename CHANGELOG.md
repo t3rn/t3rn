@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.54.3-rc.0] - 2023-09-21
+### :wrench: Chores
+- [`a47e434`](https://github.com/t3rn/t3rn/commit/a47e4345920b6bcf49161d3c2d320464403bf5d9) - update sepolia pallet version to tag 1.1.3 *(PR [#1309](https://github.com/t3rn/t3rn/pull/1309) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.54.2-rc.0] - 2023-09-20
 ### :bug: Bug Fixes
 - [`90cda7e`](https://github.com/t3rn/t3rn/commit/90cda7e7a29b486ea8d280ca5ba211de0031e24d) - check for above-zero target height increase before setting isActive *(PR [#1307](https://github.com/t3rn/t3rn/pull/1307) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1648,3 +1653,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.54.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.53.0-rc.0...v1.54.0-rc.0
 [v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
 [v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
+[v1.54.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.2-rc.0...v1.54.3-rc.0
