@@ -60,6 +60,6 @@ pallet-portal                    = { path = "../../pallets/portal" }
 pallet-rewards                   = { path = "../../pallets/rewards" }
 pallet-xdns                      = { path = "../../pallets/xdns" }
 pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.1" }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.2" }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.3" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
