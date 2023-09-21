@@ -509,6 +509,36 @@ mod tests {
                 }
             );
 
+            System::reset_events();
+
+            assert_ok!(Vacuum::read_all_pending_orders_status(
+                RuntimeOrigin::signed(requester.clone()),
+            ));
+
+            let order_status = expect_last_event_to_read_order_status();
+
+            assert_eq!(
+                order_status,
+                OrderStatusRead {
+                    xtx_id,
+                    status: CircuitStatus::PendingBidding,
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
+                }
+            );
+
             assert_ok!(Circuit::bid_sfx(
                 RuntimeOrigin::signed(executor.clone()),
                 expected_sfx_hash,
