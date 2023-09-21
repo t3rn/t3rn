@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.55.0-rc.0] - 2023-09-21
+### :sparkles: New Features
+- [`3bcdf54`](https://github.com/t3rn/t3rn/commit/3bcdf54c856fbc1b67e49a4c7d82854e735dbdf2) - recover executor for each Vacuum::read_xtx_status *(PR [#1303](https://github.com/t3rn/t3rn/pull/1303) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.54.3-rc.0] - 2023-09-21
 ### :wrench: Chores
 - [`a47e434`](https://github.com/t3rn/t3rn/commit/a47e4345920b6bcf49161d3c2d320464403bf5d9) - update sepolia pallet version to tag 1.1.3 *(PR [#1309](https://github.com/t3rn/t3rn/pull/1309) by [@gvko](https://github.com/gvko))*
@@ -1654,3 +1659,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
 [v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
 [v1.54.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.2-rc.0...v1.54.3-rc.0
+[v1.55.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.3-rc.0...v1.55.0-rc.0
