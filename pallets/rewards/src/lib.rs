@@ -307,9 +307,9 @@ pub mod pallet {
 
                 // Filter by the specified role if provided
                 let claims_to_process = match role_to_claim {
-                    Some(role) => pending_claims
+                    Some(ref role) => pending_claims
                         .iter()
-                        .filter(|claim| claim.role == role)
+                        .filter(|claim| &claim.role == role)
                         .cloned()
                         .collect::<Vec<_>>(),
                     None => pending_claims.clone(),
@@ -342,6 +342,11 @@ pub mod pallet {
                 // remove processed claims
                 pending_claims.retain(|claim| !claims_to_process.contains(claim));
                 *maybe_pending_claims = Some(pending_claims);
+
+                // reset the subjects to future inflation distribution of accumulated claims for executors
+                if role_to_claim == Some(CircuitRole::Executor) || None == role_to_claim {
+                    AccumulatedSettlements::<T>::remove_prefix(&who, None);
+                }
 
                 Self::deposit_event(Event::Claimed(who, total_claimed_assets));
 
@@ -609,70 +614,42 @@ pub mod pallet {
             // Get the total accumulated settlements
             let executions_this_round = Self::executions_this_round();
 
-            let mut appended_assets_this_round = Vec::new();
+            // Now process the claims
+            for (executor, settlement) in executions_this_round {
+                // Update the pending claims for the executor
+                Self::add_to_pending_claims(
+                    &executor,
+                    CircuitRole::Executor,
+                    settlement.settlement_amount,
+                    BenefitSource::TrafficRewards,
+                    settlement.maybe_asset_id,
+                );
 
-            for (executor, settlement) in &executions_this_round {
                 let asset_type = match settlement.maybe_asset_id {
                     Some(asset_id) => AssetType::<u32>::NonNative(asset_id),
                     None => AssetType::<u32>::Native,
                 };
 
-                // Get the existing accumulated settlement for the executor and asset id
-                let accumulated_settlement =
-                    AccumulatedSettlements::<T>::get(executor, &asset_type).unwrap_or_else(|| {
+                // Add the executor and asset id to the list of accumulated settlements for this round
+                let mut accumulated_settlement =
+                    AccumulatedSettlements::<T>::get(&executor, &asset_type);
+                match accumulated_settlement {
+                    Some(accumulated_settlement) => {
+                        // Add the settlement amount to the existing accumulated settlement
+                        AccumulatedSettlements::<T>::insert(
+                            &executor,
+                            &asset_type,
+                            accumulated_settlement.saturating_add(settlement.settlement_amount),
+                        );
+                    },
+                    None => {
                         // If there is no existing accumulated settlement, then add the executor and
-                        appended_assets_this_round.push((executor.clone(), asset_type.clone()));
-                        Zero::zero()
-                    });
-
-                // Add the settlement amount to the existing accumulated settlement
-                let new_accumulated_settlement =
-                    accumulated_settlement.saturating_add(settlement.settlement_amount);
-
-                // Update the AccumulatedSettlements storage
-                AccumulatedSettlements::<T>::insert(
-                    executor,
-                    &asset_type,
-                    new_accumulated_settlement,
-                );
-
-                // Update the weight accounting for the reads and writes
-                weight += T::DbWeight::get().reads_writes(1, 1);
-            }
-
-            // Now process the claims
-            for (executor, asset_type, accumulated_settlement) in
-                AccumulatedSettlements::<T>::iter()
-            {
-                let maybe_asset_id = match asset_type {
-                    AssetType::<u32>::Native => None,
-                    AssetType::<u32>::NonNative(asset_id) => Some(asset_id),
-                };
-
-                // Append to existing records for the time being of distribution period to avoid assigning rewards for past rounds.
-                // Assume AccumulatedSettlements are cleaned up after each distribution period within rewards::distribute_executor_rewards
-                if appended_assets_this_round
-                    .iter()
-                    .any(|(acc_executor, acc_asset_type)| {
-                        acc_executor == &executor && acc_asset_type == &asset_type
-                    })
-                {
-                    // Update the pending claims for the executor
-                    Self::update_pending_claims(
-                        &executor,
-                        CircuitRole::Executor,
-                        accumulated_settlement,
-                        BenefitSource::TrafficRewards,
-                        maybe_asset_id,
-                    );
-                } else {
-                    Self::mutate_pending_claims(
-                        &executor,
-                        CircuitRole::Executor,
-                        accumulated_settlement,
-                        BenefitSource::TrafficRewards,
-                        maybe_asset_id,
-                    );
+                        AccumulatedSettlements::<T>::insert(
+                            &executor,
+                            &asset_type,
+                            settlement.settlement_amount,
+                        );
+                    },
                 }
 
                 weight += T::DbWeight::get().reads_writes(1, 1);
@@ -780,7 +757,7 @@ pub mod pallet {
                 )
         }
 
-        fn mutate_pending_claims(
+        fn add_to_pending_claims(
             account: &T::AccountId,
             role: CircuitRole,
             reward: BalanceOf<T>,
@@ -796,7 +773,7 @@ pub mod pallet {
                         && c.benefit_source == benefit_source
                         && c.non_native_asset_id == non_native_asset_id
                 }) {
-                    claim.total_round_claim = reward;
+                    claim.total_round_claim = reward.saturating_add(claim.total_round_claim);
                 } else {
                     // If there is no claim for this role, benefit source and asset id, add a new claim
                     pending_claims.push(ClaimableArtifacts {
