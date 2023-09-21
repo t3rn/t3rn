@@ -169,7 +169,7 @@ mod tests {
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
     use sp_runtime::AccountId32;
-    use std::convert::TryInto;
+    use sp_std::convert::TryInto;
     use t3rn_primitives::{clock::OnHookQueues, light_client::LightClientAsyncAPI};
 
     use sp_runtime::traits::Keccak256;
