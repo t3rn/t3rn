@@ -2318,16 +2318,12 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 SecurityLvl::Optimistic,
             ));
 
-            // manually increment nonce to simulate production environment
-            frame_system::Pallet::<Runtime>::inc_account_nonce(ALICE);
-
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects.clone(),
                 SpeedMode::Finalized,
                 SecurityLvl::Optimistic,
             ));
-
 
             let next_events = System::events();
 
