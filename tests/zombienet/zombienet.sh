@@ -77,24 +77,24 @@ build_polkadot() {
 }
 
 build_asset_hub() {
-    if [ -f "$bin_dir/asset_hub" ]; then
-        echo "✅ asset_hub-$pdot_branch"
+    if [ -f "$bin_dir/asset-hub" ]; then
+        echo "✅ asset-hub-$pdot_branch"
         return
     fi
 
-    if [ ! -f "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
+    if [ ! -f "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" ]; then
         echo "::group::Install AssetHub."
         echo "Cloning AssetHub into $asset_hub_tmp_dir"
         mkdir -p "$asset_hub_tmp_dir"
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/cumulus "$asset_hub_tmp_dir/$pdot_branch" || true
         echo "Building AssetHub..."
-        cargo build --manifest-path "$asset_hub_tmp_dir/$pdot_branch/Cargo.toml" --features polkadot-parachain --release --locked --bin
-        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/cumulus" "$bin_dir/asset_hub"
+        cargo build --release --locked --bin polkadot-parachain 
+        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
         echo "::endgroup::"
-        echo "✅ asset_hub-$pdot_branch"
+        echo "✅ asset-hub-$pdot_branch"
     else
-        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/sset_hub"
-        echo "✅ asset_hub-$pdot_branch"
+        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
+        echo "✅ asset-hub-$pdot_branch"
     fi
 }
 
