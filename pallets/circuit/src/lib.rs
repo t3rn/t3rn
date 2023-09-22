@@ -1205,6 +1205,9 @@ impl<T: Config> Pallet<T> {
             },
         )?;
 
+        #[cfg(feature = "test-skip-verification")]
+        frame_system::Pallet::<T>::inc_account_nonce(requester);
+
         Ok(().into())
     }
 

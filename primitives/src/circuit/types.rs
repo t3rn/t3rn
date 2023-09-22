@@ -431,6 +431,7 @@ impl<
         .expect(
             "System::Index decoding try to u32 should always succeed since set in Runtime Config",
         );
+
         let signal = XExecSignal::new(
             requester,
             requester_nonce,
