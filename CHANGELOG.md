@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.55.1-rc.0] - 2023-09-22
+### :wrench: Chores
+- [`bf9af27`](https://github.com/t3rn/t3rn/commit/bf9af274dc4d8bdd5e1966c5e8bb260a7ec6b77e) - disable inactive t0rn collators once per 6h session *(PR [#1311](https://github.com/t3rn/t3rn/pull/1311) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.55.0-rc.0] - 2023-09-21
 ### :sparkles: New Features
 - [`3bcdf54`](https://github.com/t3rn/t3rn/commit/3bcdf54c856fbc1b67e49a4c7d82854e735dbdf2) - recover executor for each Vacuum::read_xtx_status *(PR [#1303](https://github.com/t3rn/t3rn/pull/1303) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1660,3 +1665,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
 [v1.54.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.2-rc.0...v1.54.3-rc.0
 [v1.55.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.3-rc.0...v1.55.0-rc.0
+[v1.55.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.0-rc.0...v1.55.1-rc.0
