@@ -15,7 +15,7 @@ name    = "charlie"
 ws_port = 9935
 
 [[relaychain.nodes]]
-name    = "dean"
+name    = "dave"
 ws_port = 9936
 
 [[relaychain.node_groups]]

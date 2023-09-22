@@ -161,7 +161,7 @@ parachains-common                   = { git = 'https://github.com/paritytech/cum
 assets-common                       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
 ## TODO: t3rn dependencies
-pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 substrate-abi         = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 xp-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
@@ -209,6 +209,7 @@ fp-account                        = { path = "./pallets/evm/account" }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support" }
 
 # New Asset Registry
+pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", branch = "polkadot-v1.0.0", default-features = false }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0.2.8", features = [ "js" ] }
