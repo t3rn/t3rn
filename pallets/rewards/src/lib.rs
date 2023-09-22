@@ -718,6 +718,16 @@ pub mod pallet {
             }
         }
 
+        pub fn find_inactive_authors(
+            current_session_validators: Vec<T::AccountId>,
+        ) -> Vec<T::AccountId> {
+            AuthorsThisPeriod::<T>::get()
+                .iter()
+                .filter(|(a, _)| !current_session_validators.contains(a))
+                .map(|(a, _)| a.clone())
+                .collect::<Vec<T::AccountId>>()
+        }
+
         pub fn process_update_estimated_treasury_balance() -> Weight {
             let treasury_balance = TreasuryBalanceSheet {
                 escrow: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
@@ -1201,6 +1211,43 @@ pub mod test {
                     &expected_blocks_produced_round_robin
                 );
             }
+        });
+    }
+
+    #[test]
+    fn test_inactive_block_authors_after_512_blocks_getter() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            for counter in 1..512 + 1 {
+                System::set_block_number(counter);
+                Clock::on_initialize(counter);
+            }
+            let authors_this_period_tree_map = AuthorsThisPeriod::<MiniRuntime>::get();
+            let authors_this_period: Vec<AccountId> = authors_this_period_tree_map
+                .iter()
+                .map(|(a, _c)| a.clone())
+                .collect();
+            let authors_this_period_size = authors_this_period.len();
+            assert_eq!(authors_this_period_size, 32);
+            // passing empty array should return all authors
+            assert_eq!(Rewards::find_inactive_authors(vec![]), authors_this_period);
+            assert_eq!(
+                Rewards::find_inactive_authors(authors_this_period.clone()),
+                vec![]
+            );
+            assert_eq!(
+                Rewards::find_inactive_authors(
+                    authors_this_period[..authors_this_period_size - 1].to_vec()
+                ),
+                vec![authors_this_period[authors_this_period_size - 1].clone()]
+            );
+            assert_eq!(
+                Rewards::find_inactive_authors(
+                    authors_this_period[..authors_this_period_size - 4].to_vec()
+                ),
+                authors_this_period[authors_this_period_size - 4..authors_this_period_size]
+                    .to_vec()
+            );
         });
     }
 
