@@ -156,10 +156,12 @@ match_types! {
 // FIXME: should be using asset_registry
 pub type Barrier = (
     TakeWeightCredit,
+    xcm_builder::AllowKnownQueryResponses<PolkadotXcm>,
     AllowTopLevelPaidExecutionFrom<Everything>,
     AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+    xcm_builder::AllowSubscriptionsFrom<ParentOrSiblings>,
     // ^^^ Parent and its exec plurality get free execution
-    AssetRegistry,
+    // AssetRegistry,
 );
 
 parameter_types! {
