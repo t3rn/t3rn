@@ -20,11 +20,11 @@ use xcm::latest::prelude::*;
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, 
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, LocalMint,
-    NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
@@ -137,22 +137,22 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a registered fungible asset matching the given location or name
-	// Assets not found in AssetRegistry will not be used
+    // Assets not found in AssetRegistry will not be used
     ConvertedRegisteredAssetId<
-		AssetIdForTrustBackedAssets,
-		Balance,
-		AsAssetMultiLocation<AssetIdForTrustBackedAssets, AssetRegistry>,
-		JustTry,
-	>,
+        AssetIdForTrustBackedAssets,
+        Balance,
+        AsAssetMultiLocation<AssetIdForTrustBackedAssets, AssetRegistry>,
+        JustTry,
+    >,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
     // We don't track any teleports of `Assets`.
-	NoChecking,
-	// We don't track any teleports of `Assets`, but a placeholder account is provided due to trait
-	// bounds.
-	PlaceholderAccount,
+    NoChecking,
+    // We don't track any teleports of `Assets`, but a placeholder account is provided due to trait
+    // bounds.
+    PlaceholderAccount,
 >;
 */
 
