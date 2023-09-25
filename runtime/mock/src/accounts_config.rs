@@ -61,26 +61,26 @@ impl pallet_assets::Config for Runtime {
 pub struct AssetRegistryBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_asset_registry::BenchmarkHelper<AssetIdForTrustBackedAssets>
-	for AssetRegistryBenchmarkHelper
+    for AssetRegistryBenchmarkHelper
 {
-	fn get_registered_asset() -> AssetIdForTrustBackedAssets {
-		use sp_runtime::traits::StaticLookup;
+    fn get_registered_asset() -> AssetIdForTrustBackedAssets {
+        use sp_runtime::traits::StaticLookup;
 
-		let root = frame_system::RawOrigin::Root.into();
-		let asset_id = 1;
-		let caller = frame_benchmarking::whitelisted_caller();
-		let caller_lookup = <Runtime as frame_system::Config>::Lookup::unlookup(caller);
-		Assets::force_create(root, asset_id.into(), caller_lookup, true, 1)
-			.expect("Should have been able to force create asset");
-		asset_id
-	}
+        let root = frame_system::RawOrigin::Root.into();
+        let asset_id = 1;
+        let caller = frame_benchmarking::whitelisted_caller();
+        let caller_lookup = <Runtime as frame_system::Config>::Lookup::unlookup(caller);
+        Assets::force_create(root, asset_id.into(), caller_lookup, true, 1)
+            .expect("Should have been able to force create asset");
+        asset_id
+    }
 }
 
 impl pallet_asset_registry::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
-	type Assets = Assets;
-	type WeightInfo = pallet_asset_registry::weights::SubstrateWeight<Runtime>;
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = AssetRegistryBenchmarkHelper;
+    type Assets = Assets;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = AssetRegistryBenchmarkHelper;
+    type ReserveAssetModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_asset_registry::weights::SubstrateWeight<Runtime>;
 }
