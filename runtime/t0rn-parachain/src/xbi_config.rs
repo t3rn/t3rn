@@ -132,6 +132,7 @@ pub type TrustBackedAssetsConvertedConcreteId =
     assets_common::TrustBackedAssetsConvertedConcreteId<AssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
+/*
 pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
@@ -153,9 +154,10 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// bounds.
 	PlaceholderAccount,
 >;
+*/
 
-pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
-// pub type AssetTransactors = LocalAssetTransactor;
+//pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
+pub type AssetTransactors = LocalAssetTransactor;
 
 match_types! {
     pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
