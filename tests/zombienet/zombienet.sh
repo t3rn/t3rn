@@ -88,7 +88,7 @@ build_asset_hub() {
         mkdir -p "$asset_hub_tmp_dir"
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/cumulus "$asset_hub_tmp_dir/$pdot_branch" || true
         echo "Building AssetHub..."
-        cargo build --release --locked --bin polkadot-parachain 
+        cargo build --manifest-path "$asset_hub_tmp_dir/$pdot_branch/Cargo.toml" --release --locked --bin polkadot-parachain
         cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
         echo "::endgroup::"
         echo "✅ asset-hub-$pdot_branch"
