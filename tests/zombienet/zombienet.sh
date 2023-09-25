@@ -10,6 +10,7 @@ provider=native
 zombienet_version=v1.3.64
 pdot_branch=release-v1.0.0
 polkadot_tmp_dir=/tmp/polkadot
+asset_hub_tmp_dir=/tmp/asset_hub
 
 
 arch=$(uname -s 2>/dev/null || echo not)
@@ -75,6 +76,28 @@ build_polkadot() {
     fi
 }
 
+build_asset_hub() {
+    if [ -f "$bin_dir/asset-hub" ]; then
+        echo "✅ asset-hub-$pdot_branch"
+        return
+    fi
+
+    if [ ! -f "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" ]; then
+        echo "::group::Install AssetHub."
+        echo "Cloning AssetHub into $asset_hub_tmp_dir"
+        mkdir -p "$asset_hub_tmp_dir"
+        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/cumulus "$asset_hub_tmp_dir/$pdot_branch" || true
+        echo "Building AssetHub..."
+        cargo build --manifest-path "$asset_hub_tmp_dir/$pdot_branch/Cargo.toml" --release --locked --bin polkadot-parachain
+        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
+        echo "::endgroup::"
+        echo "✅ asset-hub-$pdot_branch"
+    else
+        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
+        echo "✅ asset-hub-$pdot_branch"
+    fi
+}
+
 NODE_ARG=t3rn
 
 build_collator() {
@@ -102,6 +125,7 @@ setup() {
     make_bin_dir
     fetch_zombienet
     build_polkadot
+    build_asset_hub
 
     NODE_ARG=t0rn
     build_collator
