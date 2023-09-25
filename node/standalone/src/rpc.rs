@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use circuit_standalone_runtime::{opaque::Block, AccountId, Balance, Nonce};
+use circuit_standalone_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -39,7 +39,7 @@ where
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
-    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
+    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId, Balance, Hash>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {

@@ -18,7 +18,9 @@ jsonrpsee = { workspace = true, features = [ "client-core", "server", "macros" ]
 
 pallet-portal-rpc-runtime-api = { path = "runtime-api" }
 sp-api                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+sp-std                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-blockchain                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-core                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-rpc                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-runtime                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+t3rn-types                    = { path = "../../../types" }
