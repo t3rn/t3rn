@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.55.2-rc.0] - 2023-09-22
+### :bug: Bug Fixes
+- [`4013a46`](https://github.com/t3rn/t3rn/commit/4013a4611ab0c1a21bb9573f7e9f8db6bfd644ed) - disregard past accumulated settlements from current round calculation *(PR [#1310](https://github.com/t3rn/t3rn/pull/1310) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.55.1-rc.0] - 2023-09-22
+### :wrench: Chores
+- [`bf9af27`](https://github.com/t3rn/t3rn/commit/bf9af274dc4d8bdd5e1966c5e8bb260a7ec6b77e) - disable inactive t0rn collators once per 6h session *(PR [#1311](https://github.com/t3rn/t3rn/pull/1311) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.55.0-rc.0] - 2023-09-21
+### :sparkles: New Features
+- [`3bcdf54`](https://github.com/t3rn/t3rn/commit/3bcdf54c856fbc1b67e49a4c7d82854e735dbdf2) - recover executor for each Vacuum::read_xtx_status *(PR [#1303](https://github.com/t3rn/t3rn/pull/1303) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.54.3-rc.0] - 2023-09-21
+### :wrench: Chores
+- [`a47e434`](https://github.com/t3rn/t3rn/commit/a47e4345920b6bcf49161d3c2d320464403bf5d9) - update sepolia pallet version to tag 1.1.3 *(PR [#1309](https://github.com/t3rn/t3rn/pull/1309) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.54.2-rc.0] - 2023-09-20
 ### :bug: Bug Fixes
 - [`90cda7e`](https://github.com/t3rn/t3rn/commit/90cda7e7a29b486ea8d280ca5ba211de0031e24d) - check for above-zero target height increase before setting isActive *(PR [#1307](https://github.com/t3rn/t3rn/pull/1307) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1648,3 +1668,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.54.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.53.0-rc.0...v1.54.0-rc.0
 [v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
 [v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
+[v1.54.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.2-rc.0...v1.54.3-rc.0
+[v1.55.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.3-rc.0...v1.55.0-rc.0
+[v1.55.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.0-rc.0...v1.55.1-rc.0
+[v1.55.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.1-rc.0...v1.55.2-rc.0
