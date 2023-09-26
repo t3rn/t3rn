@@ -4,7 +4,8 @@
          "Polkadot",
          "Kusama",
          "Rococo",
-         "Ethereum"
+         "Ethereum",
+         "Sepolia"
       ]
    },
    "ExecutionVendor":{
@@ -385,20 +386,62 @@
       "execution_header":"ExecutionHeader"
    },
    "ExecutionHeader":{
-      "parent_hash":"Root",
-      "fee_recipient":"[u8; 20]",
-      "state_root":"Root",
-      "receipts_root":"Root",
-      "logs_bloom":"Bloom",
-      "prev_randao":"Root",
-      "block_number":"u64",
-      "gas_limit":"u64",
-      "gas_used":"u64",
-      "timestamp":"u64",
-      "extra_data":"Vec<u8>",
-      "base_fee_per_gas":"U256",
-      "block_hash":"Root",
-      "transactions_root":"Root",
-      "withdrawals_root":"Root"
+      "parent_hash": "Root",
+      "ommers_hash": "Root",
+      "beneficiary": "Address",
+      "state_root": "Root",
+      "transactions_root": "Root",
+      "receipts_root": "Root",
+      "logs_bloom": "Bloom",
+      "difficulty": "U256",
+      "number": "u64",
+      "gas_limit": "u64",
+      "gas_used": "u64",
+      "timestamp": "u64",
+      "extra_data": "Vec<u8>",
+      "mix_hash": "Root",
+      "nonce": "u64",
+      "base_fee_per_gas": "u64",
+      "withdrawals_root": "Root"
+   },
+   "ExecutionPayload": {
+      "parent_hash": "Root",
+      "fee_recipient": "[u8;20]",
+      "state_root": "Root",
+      "receipts_root": "Root",
+      "logs_bloom": "Bloom",
+      "prev_randao": "Root",
+      "block_number": "u64",
+      "gas_limit": "u64",
+      "gas_used": "u64",
+      "timestamp": "u64",
+      "extra_data": "Vec<u8>",
+      "base_fee_per_gas": "U256",
+      "block_hash": "Root",
+      "transactions_root": "Root",
+      "withdrawals_root": "Root"
+   },
+   "EpochUpdate": {
+      "attested_beacon_header": "BeaconBlockHeader",
+      "signature": "BLSSignature",
+      "signer_bits": "Vec<bool>",
+      "justified_proof": "MerkleProof",
+      "execution_payload": "ExecutionPayload",
+      "payload_proof": "MerkleProof",
+      "execution_range": "Vec<ExecutionHeader>"
+   },
+   "EpochUpdateSkippedSlot": {
+      "attested_beacon_header": "BeaconBlockHeader",
+      "checkpoint_beacon_header": "BeaconBlockHeader",
+      "signature": "BLSSignature",
+      "signer_bits": "Vec<bool>",
+      "justified_proof": "MerkleProof",
+      "execution_payload": "ExecutionPayload",
+      "payload_proof": "MerkleProof",
+      "execution_range": "Vec<ExecutionHeader>"
+   },
+   "MerkleProof": {
+      "g_index": "u64",
+      "witness": "Vec<Root>"
    }
 }

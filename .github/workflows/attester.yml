@@ -39,9 +39,7 @@ jobs:
           filters: |
             src:
             - "client/attester.Dockerfile"
-            - "client/packages/attester/**/*.ts"
-            - "client/packages/attester/**/*.json"
-            - "client/packages/attester/helm/**"
+            - "client/packages/attester/**"
             - ".github/workflows/attester.yml"
 
       - name: Detected changes

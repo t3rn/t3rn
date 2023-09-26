@@ -54,6 +54,7 @@ pub use t3rn_types::{
 
 pub use t3rn_primitives::{
     account_manager::{AccountManager, Outcome},
+    attesters::AttestersReadApi,
     circuit::{XExecSignalId, XExecStepSideEffectId},
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
@@ -287,7 +288,8 @@ pub mod pallet {
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self, BalanceOf<Self>>;
 
-        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>;
+        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>
+            + AttestersReadApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
 
@@ -318,6 +320,9 @@ pub mod pallet {
         ///		limit the amount of items that can be deleted per block.
         #[pallet::constant]
         type SignalQueueDepth: Get<u32>;
+
+        // Needed in square_up mod
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -424,6 +429,33 @@ pub mod pallet {
             Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
+        fn get_fsx_executor(fsx_id: T::Hash) -> Result<Option<T::AccountId>, DispatchError> {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            // Early return on empty vector
+            if full_side_effects.is_empty() {
+                return Err(Error::<T>::XtxNotFound.into())
+            }
+
+            // Return the the executor of matching FSX by its ID
+            for fsx_vec in full_side_effects {
+                for (index, fsx) in fsx_vec.iter().enumerate() {
+                    if fsx
+                        .input
+                        .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                        == fsx_id
+                    {
+                        return Ok(fsx.input.enforce_executor.clone())
+                    }
+                }
+            }
+            Ok(None)
+        }
+
         // Look up the FSX by its ID and return the FSX if it exists
         fn get_fsx(
             fsx_id: T::Hash,
@@ -472,6 +504,42 @@ pub mod pallet {
             Ok(xtx.requester)
         }
 
+        fn get_pending_xtx_ids() -> Vec<T::Hash> {
+            XExecSignals::<T>::iter()
+                .filter(|(_, xtx)| xtx.status < CircuitStatus::Finished)
+                .map(|(xtx_id, _)| xtx_id)
+                .collect::<Vec<T::Hash>>()
+        }
+
+        fn get_pending_xtx_for(
+            for_executor: T::AccountId,
+        ) -> Vec<(
+            T::Hash,                                     // xtx_id
+            Vec<SideEffect<T::AccountId, BalanceOf<T>>>, // side_effects
+            Vec<T::Hash>,                                // sfx_ids
+        )> {
+            let mut active_xtx = Vec::new();
+            for active_xtx_id in Self::get_pending_xtx_ids() {
+                let fsx_ids = Self::get_fsx_of_xtx(active_xtx_id).unwrap_or_default();
+                let mut executors_of_fsx = Vec::new();
+                let mut side_effects_of_executor = Vec::new();
+                for fsx_id in fsx_ids {
+                    match Self::get_fsx(fsx_id.clone()) {
+                        Ok(fsx) =>
+                            if fsx.input.enforce_executor == Some(for_executor.clone()) {
+                                side_effects_of_executor.push(fsx.input);
+                                executors_of_fsx.push(fsx_id);
+                            },
+                        Err(_) => {},
+                    }
+                }
+                if !side_effects_of_executor.is_empty() {
+                    active_xtx.push((active_xtx_id, side_effects_of_executor, executors_of_fsx));
+                }
+            }
+            active_xtx
+        }
+
         fn get_xtx_status(
             xtx_id: T::Hash,
         ) -> Result<
@@ -492,8 +560,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
+            preferred_security_level: SecurityLvl,
         ) -> DispatchResultWithPostInfo {
-            Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
+            Self::on_extrinsic_trigger(origin, side_effects, speed_mode, preferred_security_level)
         }
 
         fn on_remote_origin_trigger(
@@ -517,7 +586,8 @@ pub mod pallet {
             let local_ctx = match maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
+                    let mut local_ctx =
+                        Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -601,7 +671,8 @@ pub mod pallet {
             let mut local_ctx = match trigger.maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
+                    let mut local_ctx =
+                        Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -728,7 +799,12 @@ pub mod pallet {
                 OrderOrigin::Remote(_) => order_origin.clone(),
             };
 
-            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+            Self::do_on_extrinsic_trigger(
+                requester,
+                side_effects,
+                speed_mode,
+                &SecurityLvl::Optimistic,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
@@ -736,11 +812,17 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
+            preferred_security_level: SecurityLvl,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
-            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+            Self::do_on_extrinsic_trigger(
+                requester,
+                side_effects,
+                speed_mode,
+                &preferred_security_level,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
@@ -1094,6 +1176,7 @@ impl<T: Config> Pallet<T> {
         requester: T::AccountId,
         side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
         speed_mode: SpeedMode,
+        preferred_security_level: &SecurityLvl,
     ) -> DispatchResultWithPostInfo {
         // Setup: new xtx context with SFX validation
         let mut fresh_xtx = Machine::<T>::setup(
@@ -1107,6 +1190,7 @@ impl<T: Config> Pallet<T> {
                 &speed_mode,
                 T::XtxTimeoutDefault::get(),
             )),
+            preferred_security_level,
         )?;
 
         fresh_xtx.xtx.set_speed_mode(speed_mode);
@@ -1120,6 +1204,9 @@ impl<T: Config> Pallet<T> {
                 Ok(())
             },
         )?;
+
+        #[cfg(feature = "test-skip-verification")]
+        frame_system::Pallet::<T>::inc_account_nonce(requester);
 
         Ok(().into())
     }
@@ -1142,6 +1229,7 @@ impl<T: Config> Pallet<T> {
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
+        preferred_security_lvl: &SecurityLvl,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<
             FullSideEffect<
@@ -1151,7 +1239,14 @@ impl<T: Config> Pallet<T> {
             >,
         > = vec![];
 
-        pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
+        pub fn determine_security_lvl(
+            gateway_type: GatewayType,
+            sfx_len: usize,
+            preferred_security_lvl: &SecurityLvl,
+        ) -> SecurityLvl {
+            if sfx_len < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
+                return SecurityLvl::Optimistic
+            }
             if gateway_type == GatewayType::ProgrammableInternal(0)
                 || gateway_type == GatewayType::OnCircuit(0)
             {
@@ -1180,7 +1275,8 @@ impl<T: Config> Pallet<T> {
 
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
-            let security_lvl = determine_security_lvl(gateway_type);
+            let security_lvl =
+                determine_security_lvl(gateway_type, side_effects.len(), preferred_security_lvl);
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
@@ -1576,14 +1672,14 @@ impl<T: Config> Pallet<T> {
         <DLQ<T>>::insert(
             xtx_id,
             (
-                <frame_system::Module<T>>::block_number(),
+                <frame_system::Pallet<T>>::block_number(),
                 targets,
                 speed_mode,
             ),
         );
         <XExecSignals<T>>::mutate(xtx_id, |xtx| {
             if let Some(xtx) = xtx {
-                xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
+                xtx.timeouts_at.dlq = Some(<frame_system::Pallet<T>>::block_number());
             } else {
                 log::error!(
                     "Xtx not found in XExecSignals for xtx_id when add_xtx_to_dlq: {:?}",

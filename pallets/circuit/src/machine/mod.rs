@@ -16,6 +16,7 @@ pub mod test_extra_stress;
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_std::marker::PhantomData;
 use t3rn_primitives::SpeedMode;
+
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
 }
@@ -60,9 +61,8 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
-        maybe_adaptive_timeout: Option<
-            AdaptiveTimeout<frame_system::pallet_prelude::BlockNumberFor<T>, TargetId>,
-        >,
+        maybe_adaptive_timeout: Option<AdaptiveTimeout<BlockNumberFor<T>, TargetId>>,
+        preferred_security_lvl: &SecurityLvl,
     ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (
@@ -99,10 +99,11 @@ impl<T: Config> Machine<T> {
             full_side_effects: vec![],
         };
 
-        pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx).map_err(|e| {
-            log::error!("Self::validate hit an error -- {e:?}");
-            Error::<T>::SideEffectsValidationFailed
-        })?;
+        pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx, preferred_security_lvl)
+            .map_err(|e| {
+                log::error!("Self::validate hit an error -- {e:?}");
+                Error::<T>::SideEffectsValidationFailed
+            })?;
 
         Ok(local_xtx_ctx)
     }

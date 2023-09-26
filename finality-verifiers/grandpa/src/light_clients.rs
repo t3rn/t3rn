@@ -16,8 +16,8 @@ use t3rn_primitives::{
 };
 
 pub type RococoInstance = ();
-pub type KusamaInstance = crate::pallet::Instance1;
-pub type PolkadotInstance = crate::pallet::Instance2;
+pub type PolkadotInstance = crate::pallet::Instance1;
+pub type KusamaInstance = crate::pallet::Instance2;
 
 pub type RococoPallet<T> = Pallet<T, RococoInstance>;
 pub type KusamaPallet<T> = Pallet<T, KusamaInstance>;

@@ -1,15 +1,19 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@polkadot/util':
     specifier: ^10.4.2
     version: 10.4.2
   '@t3rn/sdk':
-    specifier: ^0.2.2
-    version: 0.2.2
+    specifier: ^0.2.5
+    version: 0.2.5
   '@t3rn/types':
-    specifier: ^0.1.8
-    version: 0.1.8(@polkadot/util-crypto@9.7.2)(@polkadot/util@10.4.2)(@types/node@20.4.2)(typescript@5.1.6)
+    specifier: ^0.1.10
+    version: 0.1.10(@polkadot/util-crypto@9.7.2)(@polkadot/util@10.4.2)(@types/node@20.4.2)(typescript@5.1.6)
   async:
     specifier: ^3.2.4
     version: 3.2.4
@@ -2469,8 +2473,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.2.2:
-    resolution: {integrity: sha512-HEKs4GSGai9j9aOcmV317ISBQGJCCxLhEmq08Fbk26xdav6sAmNO8HV736Av8niu/ILJS10G8Y2BLzynfGhfLQ==}
+  /@t3rn/sdk@0.2.5:
+    resolution: {integrity: sha512-fjqWqgm+L4j9U3fDh5RCtvG4ARlW7IIGRK0M3W2HI4YpTxNWzhB0RHNthqhhZgxN2l0nodKCeUP/Powyq5IQwA==}
     dependencies:
       '@polkadot/api': 8.14.1
       dotenv: 16.3.1
@@ -2483,8 +2487,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@t3rn/types@0.1.8(@polkadot/util-crypto@9.7.2)(@polkadot/util@10.4.2)(@types/node@20.4.2)(typescript@5.1.6):
-    resolution: {integrity: sha512-EG1J1l7Z8Qn1Y92/yuuS0KW5EeMcO6MTUtXrgBLnlngJZwyStCqPZXfNXZYZaGtB5mBmjM/LJeNxTTEZmAbj5A==}
+  /@t3rn/types@0.1.10(@polkadot/util-crypto@9.7.2)(@polkadot/util@10.4.2)(@types/node@20.4.2)(typescript@5.1.6):
+    resolution: {integrity: sha512-715cQABksuVAjUpOr2edulO0PH27Lvavw9nqXVMTdhdG55Jfc0vBHULg8ZZvwQh2PnsF6yhx/TQrbIUqbWY1vg==}
     engines: {node: '>=14.0.0', yarn: ^1.22.0}
     requiresBuild: true
     dependencies:
@@ -6336,7 +6340,3 @@ packages:
   /zod@3.22.2:
     resolution: {integrity: sha512-wvWkphh5WQsJbVk1tbx1l1Ly4yg+XecD+Mq280uBGt9wa5BKSWf4Mhp6GmrkPixhMxmabYY7RbzlwVP32pbGCg==}
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

@@ -26,7 +26,7 @@ describe("wrapCryptoWaitReady", () => {
 
   test("should invoke callback function when crypto is ready", async () => {
     mockedCryptoWaitReady.mockImplementationOnce(() =>
-      Promise.reject(new Error("Crypto is not ready"))
+      Promise.reject(new Error("Crypto is not ready")),
     )
 
     const callback = jest.fn()

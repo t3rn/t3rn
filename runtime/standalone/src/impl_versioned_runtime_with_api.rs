@@ -14,11 +14,10 @@ pub use frame_support::{
     },
     StorageValue,
 };
-
 pub use pallet_balances::Call as BalancesCall;
+use pallet_circuit::ChainId;
 use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
-
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -30,8 +29,15 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 pub use sp_runtime::{Perbill, Permill};
+use t3rn_primitives::{
+    circuit::ReadSFX,
+    portal::HeightResult,
+    xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
+};
 
 pub use crate::consensus_aura_config::*;
+use pallet_xdns_rpc_runtime_api::GatewayABIConfig;
 
 use sp_runtime::create_runtime_str;
 
@@ -83,6 +89,8 @@ pub type Executive = frame_executive::Executive<
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
+
+use t3rn_types::sfx::SideEffect;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -290,6 +298,44 @@ impl_runtime_apis! {
             add_benchmarks!(params, batches);
 
             Ok(batches)
+        }
+    }
+
+     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
+        fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime, Balance>>::fetch_gateways()
+        }
+
+        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<AccountId>> {
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime, Balance>>::fetch_full_gateway_records()
+        }
+
+        fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
+            // deprecated
+            None
+        }
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
+            Runtime::get_treasury_account(treasury_account)
+        }
+    }
+
+     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId, Balance, Hash> for Runtime {
+        fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
+            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
+
+            match res {
+                Ok(HeightResult::Height(height)) => Some(height.into()),
+                _ => None,
+            }
+        }
+
+       fn fetch_all_active_xtx(for_executor: AccountId) -> Vec<(
+            Hash,                              // xtx_id
+            Vec<SideEffect<AccountId, Balance>>, // side_effects
+            Vec<Hash>,                         // sfx_ids
+        )> {
+            Circuit::get_pending_xtx_for(for_executor)
         }
     }
 

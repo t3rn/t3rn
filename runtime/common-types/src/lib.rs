@@ -12,6 +12,12 @@ use sp_runtime::{
     MultiSignature, Perbill,
 };
 
+use xcm::v3::{
+    Junction::{GeneralIndex, PalletInstance, Parachain},
+    Junctions::{X1, X3},
+    MultiLocation,
+};
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -114,6 +120,19 @@ parameter_types! {
         .build_or_panic();
     // Allows for t3 prefix in addresses
     pub const SS58Prefix: u16 = 9935;
+
+    // TO DO: Abstract these values in the future (e.g. using assset registry)
+    // AssetHub Parachain ID - 1000
+    pub AssetHubLocationROC: MultiLocation = MultiLocation::new(
+        1u8,
+        X1(Parachain(1000))
+    );
+
+    // AssetHub Parachain ID - 1000; AssetHub pallet_assets Index - 50; AssetHub USDT index - 140
+    pub AssetHubLocationUSDT: MultiLocation = MultiLocation::new(
+        1,
+        X3(Parachain(1000), PalletInstance(50), GeneralIndex(140))
+    );
 }
 
 /// The address format for describing accounts.

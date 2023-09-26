@@ -63,7 +63,12 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
             "onExtrinsicTrigger" => {
                 let sfxs = decode_side_effect(&param.args[0].encoded)?;
                 let speed_mode = decode_speed_mode(&param.args[1].encoded)?;
-                match Circuit::on_extrinsic_trigger(get_signer(&param.signer), sfxs, speed_mode) {
+                match Circuit::on_extrinsic_trigger(
+                    get_signer(&param.signer),
+                    sfxs,
+                    speed_mode,
+                    SecurityLvl::Optimistic,
+                ) {
                     Ok(_) => verify_extrinsic_success::<Runtime>(param)?,
                     Err(err) =>
                         { verify_extrinsic_error(ErrorWrapper::DispatchPostInfo(err), param) }?,

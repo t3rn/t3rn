@@ -10,12 +10,13 @@ provider=native
 zombienet_version=v1.3.64
 pdot_branch=release-v1.0.0
 polkadot_tmp_dir=/tmp/polkadot
+asset_hub_tmp_dir=/tmp/asset_hub
 
 
 arch=$(uname -s 2>/dev/null || echo not)
 if [[ $arch == "Darwin" ]]; then
     machine=macos
-elif [[ $arch == "Linux" ]]; then
+    elif [[ $arch == "Linux" ]]; then
     machine=linux-x64
 fi
 
@@ -38,12 +39,12 @@ fetch_zombienet() {
         echo "✅ zombienet-$zombienet_version"
         return
     fi
-
+    
     if [ ! -f "$bin_dir/zombienet" ]; then
         echo "::group::Install zombienet"
         echo "Fetching zombienet..."
         curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
-
+        
         echo "Making zombienet executable"
         chmod +x "$bin_dir/zombienet"
         echo "::endgroup::"
@@ -58,7 +59,7 @@ build_polkadot() {
         echo "✅ polkadot-$pdot_branch"
         return
     fi
-
+    
     if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
         echo "::group::Install polkadot."
         echo "Cloning polkadot into $polkadot_tmp_dir"
@@ -75,6 +76,28 @@ build_polkadot() {
     fi
 }
 
+build_asset_hub() {
+    if [ -f "$bin_dir/asset-hub" ]; then
+        echo "✅ asset-hub-$pdot_branch"
+        return
+    fi
+    
+    if [ ! -f "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" ]; then
+        echo "::group::Install AssetHub."
+        echo "Cloning AssetHub into $asset_hub_tmp_dir"
+        mkdir -p "$asset_hub_tmp_dir"
+        git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/cumulus "$asset_hub_tmp_dir/$pdot_branch" || true
+        echo "Building AssetHub..."
+        cargo build --manifest-path "$asset_hub_tmp_dir/$pdot_branch/Cargo.toml" --release --locked --bin polkadot-parachain
+        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
+        echo "::endgroup::"
+        echo "✅ asset-hub-$pdot_branch"
+    else
+        cp "$asset_hub_tmp_dir/$pdot_branch/target/release/polkadot-parachain" "$bin_dir/asset-hub"
+        echo "✅ asset-hub-$pdot_branch"
+    fi
+}
+
 NODE_ARG=t3rn
 
 build_collator() {
@@ -82,7 +105,7 @@ build_collator() {
         echo "::group::Building $NODE_ARG..."
         time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
         echo "::endgroup::"
-
+        
         echo "Copying $NODE_ARG to bin dir"
         cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
     else
@@ -102,7 +125,7 @@ setup() {
     make_bin_dir
     fetch_zombienet
     build_polkadot
-
+    
     NODE_ARG=t0rn
     build_collator
 }
@@ -125,9 +148,9 @@ upgrade() {
     fi
     
     parachain=$2
-
+    
     [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
-
+    
     echo "Testing real upgrade for parachain: ${parachain}"
     
     # Fetch latest release binary from Github
@@ -137,7 +160,7 @@ upgrade() {
     
     # Run collator and upgrade with built WASM binary
     zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
-
+    
     echo "Upgrade tests succeed!"
 }
 
@@ -151,9 +174,9 @@ upgrade_local() {
     fi
     
     parachain=$2
-
+    
     [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
-
+    
     echo "Testing real upgrade for parachain: ${parachain}"
     
     # Fetch latest release binary from Github
@@ -163,7 +186,7 @@ upgrade_local() {
     
     # Run collator and upgrade with built WASM binary
     zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
-
+    
     echo "Upgrade tests succeed!"
 }
 
@@ -175,43 +198,44 @@ confirm_sfx() {
 }
 
 spawn() {
+    build_asset_hub
     echo "Spawning zombienet using provider: $provider..."
-    zombienet --provider="$provider" spawn ./zombienet.toml
+    zombienet --provider="$provider" spawn ./zombienet-xcm.toml
 }
 
 case "$1" in
-  "setup")
-      setup
-      ;;
-  "smoke")
-      setup
-      smoke
-      ;;
-  "sfx")
-      make_bin_dir
-      fetch_zombienet
-      build_polkadot
-      confirm_sfx
-      ;;
-  "upgrade")
-      make_bin_dir
-      fetch_zombienet
-      build_polkadot
-      upgrade $@
-      ;;
-  "upgrade_local")
-      setup
-      upgrade_local $@
-      ;;
-  "spawn")
-      setup
-      spawn
-      ;;
-  "force_build_collator")
-      force_build_collator
-      ;;
-  *)
-      echo "Enter an appropriate command"
-      exit 1
-      ;;
+    "setup")
+        setup
+    ;;
+    "smoke")
+        setup
+        smoke
+    ;;
+    "sfx")
+        make_bin_dir
+        fetch_zombienet
+        build_polkadot
+        confirm_sfx
+    ;;
+    "upgrade")
+        make_bin_dir
+        fetch_zombienet
+        build_polkadot
+        upgrade $@
+    ;;
+    "upgrade_local")
+        setup
+        upgrade_local $@
+    ;;
+    "spawn")
+        setup
+        spawn
+    ;;
+    "force_build_collator")
+        force_build_collator
+    ;;
+    *)
+        echo "Enter an appropriate command"
+        exit 1
+    ;;
 esac

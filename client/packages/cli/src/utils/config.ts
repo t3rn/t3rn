@@ -12,7 +12,7 @@ export const checkForConfigFile = () => {
 
     if (!exists) {
       throw new Error(
-        `${CONFIG_FILE} file does not exist, run the 'init' command to generate it`
+        `${CONFIG_FILE} file does not exist, run the 'init' command to generate it`,
       )
     }
 
@@ -25,7 +25,7 @@ export const checkForConfigFile = () => {
 }
 
 export const parseConfigFile = (
-  path: string
+  path: string,
 ): Record<string, unknown> | undefined => {
   try {
     const config = readFileSync(path, "utf-8")
@@ -34,7 +34,7 @@ export const parseConfigFile = (
     if (error instanceof SyntaxError) {
       log(
         "ERROR",
-        `Unable to read ${CONFIG_FILE} file, please check what you have`
+        `Unable to read ${CONFIG_FILE} file, please check what you have`,
       )
     } else {
       log("ERROR", cleanStack(error.message))

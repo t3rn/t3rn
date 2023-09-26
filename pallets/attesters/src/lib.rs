@@ -9,6 +9,15 @@ pub type TargetId = [u8; 4];
 
 #[frame_support::pallet]
 pub mod pallet {
+
+    // Overcharge factor as a constant.
+    const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
+    const SIX_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 6 * 32;
+    // const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 32;
+    const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 32;
+    const ONE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 32;
+    pub const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
+
     use super::*;
     t3rn_primitives::reexport_currency_types!();
     use tiny_keccak::{Hasher, Keccak};
@@ -17,23 +26,25 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
+        traits::{Currency, ExistenceRequirement, GenesisBuild, Randomness, ReservableCurrency},
     };
-    use frame_system::pallet_prelude::*;
-    use sp_core::{hexdisplay::AsBytesRef, H256};
-    use t3rn_abi::{recode::Codec, FilledAbi};
+    use frame_system::pallet_prelude::{BlockNumberFor, *};
+    use sp_core::{hexdisplay::AsBytesRef, H160, H256};
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
-        traits::{CheckedAdd, CheckedMul, Saturating, Zero},
+        traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
         Percent,
     };
     use sp_std::{convert::TryInto, prelude::*};
 
+    use t3rn_abi::{Codec, FilledAbi};
+
     pub use t3rn_primitives::attesters::{
         AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
-        CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
-        ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
+        BatchingFactor, CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b,
+        COMMITTEE_SIZE, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
+        SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use t3rn_primitives::{
         attesters::{CommitteeRecoverable, CommitteeTransition},
@@ -41,7 +52,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        ExecutionVendor, GatewayVendor, SpeedMode,
+        ExecutionVendor, GatewayVendor, SpeedMode, TreasuryAccountProvider,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -57,6 +68,7 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct BatchMessage<BlockNumber> {
+        pub available_to_commit_at: BlockNumber,
         pub committed_sfx: Option<BatchConfirmedSfxId>,
         pub reverted_sfx: Option<BatchConfirmedSfxId>,
         pub next_committee: Option<CommitteeRecoverable>,
@@ -72,6 +84,7 @@ pub mod pallet {
     impl<BlockNumber: Zero> Default for BatchMessage<BlockNumber> {
         fn default() -> Self {
             BatchMessage {
+                available_to_commit_at: Zero::zero(),
                 committed_sfx: None,
                 reverted_sfx: None,
                 next_committee: None,
@@ -150,6 +163,18 @@ pub mod pallet {
         pub fn has_no_sfx(&self) -> bool {
             self.committed_sfx.is_none() && self.reverted_sfx.is_none()
         }
+
+        pub fn read_batching_factor(&self) -> u16 {
+            let mut batching_factor = 0u16;
+            if let Some(ref sfx) = self.committed_sfx {
+                batching_factor = sfx.len() as u16;
+            }
+            if let Some(ref sfx) = self.reverted_sfx {
+                batching_factor = batching_factor.saturating_add(sfx.len() as u16)
+            }
+
+            batching_factor
+        }
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -172,12 +197,10 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct TargetBatchDispatchEvent {
-        // Signatures received on target
-        pub signatures: Vec<(u32, Signature65b)>,
         // Message hash as H256 (32b)
         pub hash: H256,
-        // The batch message that was included in the block
-        pub message: Vec<u8>,
+        // Executor on target
+        pub executor_on_target: H160,
     }
 
     #[pallet::config]
@@ -190,8 +213,7 @@ pub mod pallet {
         type ShufflingFrequency: Get<BlockNumberFor<Self>>;
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
-        type CommitmentRewardSource: Get<Self::AccountId>;
-        type SlashAccount: Get<Self::AccountId>;
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
         type RandomnessSource: Randomness<Self::Hash, BlockNumberFor<Self>>;
         type DefaultCommission: Get<Percent>;
@@ -287,11 +309,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         T::AccountId,
-        Vec<(
-            T::AccountId,
-            BalanceOf<T>,
-            frame_system::pallet_prelude::BlockNumberFor<T>,
-        )>,
+        Vec<(T::AccountId, BalanceOf<T>, BlockNumberFor<T>)>,
     >;
 
     #[pallet::storage]
@@ -306,20 +324,35 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
-    #[pallet::getter(fn fast_confirmation_cost)]
-    pub type FastConfirmationCost<T: Config> =
-        StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
+    #[pallet::getter(fn paid_finality_fees)]
+    pub type PaidFinalityFees<T: Config> =
+        StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         AttesterRegistered(T::AccountId),
-        AttesterDeregistrationScheduled(
-            T::AccountId,
-            frame_system::pallet_prelude::BlockNumberFor<T>,
-        ),
+        AttesterDeregistrationScheduled(T::AccountId, BlockNumberFor<T>),
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
+        // Attesters(AttestersEvent),
+        BatchingFactorRead(Vec<(TargetId, Option<BatchingFactor>)>),
+        BatchCommitted(
+            TargetId,
+            BatchMessage<BlockNumberFor<T>>,
+            Vec<u8>,
+            H256,
+            BalanceOf<T>,
+        ),
+        ConfirmationRewardCalculated(
+            TargetId,
+            u32,          // batch index
+            BalanceOf<T>, // current reward
+            Percent,      // auto regression param before
+            Percent,      // auto regression param after
+        ),
+        CollusionWithPermanentSlashDetected(TargetId, H256),
+        UserFinalityFeeEstimated(TargetId, BalanceOf<T>),
         NewAttestationBatch(TargetId, BatchMessage<BlockNumberFor<T>>),
         NewAttestationMessageHash(TargetId, H256, ExecutionVendor),
         NewConfirmationBatch(TargetId, BatchMessage<BlockNumberFor<T>>, Vec<u8>, H256),
@@ -341,6 +374,7 @@ pub mod pallet {
         InvalidSignature,
         InvalidMessage,
         InvalidTargetInclusionProof,
+        UnexpectedBatchHashRecoveredFromCommitment,
         AlreadyRegistered,
         PublicKeyMissing,
         AttestationSignatureInvalid,
@@ -443,9 +477,7 @@ pub mod pallet {
             let unlock_block = frame_system::Pallet::<T>::block_number()
                 .checked_add(
                     &T::ShufflingFrequency::get()
-                        .checked_mul(&frame_system::pallet_prelude::BlockNumberFor::<T>::from(
-                            2u32,
-                        ))
+                        .checked_mul(&BlockNumberFor::<T>::from(2u32))
                         .ok_or(Error::<T>::ArithmeticOverflow)?,
                 )
                 .ok_or(Error::<T>::ArithmeticOverflow)?;
@@ -614,7 +646,7 @@ pub mod pallet {
             let vendor = <T as Config>::Xdns::get_verification_vendor(&target)
                 .map_err(|_| Error::<T>::XdnsTargetNotActive)?;
 
-            // ToDo: Generalize attesters to work with multiple ExecutionVendor architecture.
+            // TODO: Generalize attesters to work with multiple ExecutionVendor architecture.
             //  For now, assume Ethereum.
             //  let _target_verification_vendor = T::Xdns::get_verification_vendor(&target)?;
             let is_verified = attester
@@ -704,6 +736,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let submitter = ensure_signed(origin)?;
 
+            #[cfg(not(feature = "test-skip-verification"))]
             let target_codec = T::Xdns::get_target_codec(&target)?;
 
             // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
@@ -711,6 +744,7 @@ pub mod pallet {
 
             let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
+                BeneficiaryOnTarget:Account20,\
             )"
             .to_vec();
 
@@ -743,30 +777,72 @@ pub mod pallet {
                 TargetBatchDispatchEvent::decode(&mut &recoded_batch_event_bytes[..])
                     .map_err(|_| Error::<T>::InvalidTargetInclusionProof)?;
 
-            let message = on_target_batch_event.message.clone();
+            // Assume that the event is emitted by the escrow contract is H256
+            let recovered_enacted_batch_hash: H256 =
+                H256::decode(&mut &on_target_batch_event.hash[..])
+                    .map_err(|_| Error::<T>::UnexpectedBatchHashRecoveredFromCommitment)?;
 
-            match Self::find_and_update_batch(target, &message) {
-                Err(_e) => {
+            let batches = Self::get_batches_to_commit(target);
+
+            let batch = match batches
+                .iter()
+                .find(|batch| batch.message_hash() == recovered_enacted_batch_hash)
+            {
+                Some(batch) => batch,
+                None => {
                     // At this point we know the valid message has been recorded on target Escrow Smart Contract
                     // If we can't find the corresponding batch by the message - we have a problem - attesters are colluding.
                     log::error!(
-                        "Collusion detected on target: {:?} for message: {:?} with hash {:?}",
-                        target,
-                        &message,
-                        on_target_batch_event.hash
+                        "CollusionWithPermanentSlashDetected detected on target: {target:?} for message hash {recovered_enacted_batch_hash:?}"
                     );
-                    Self::apply_permanent_attesters_slash(
-                        on_target_batch_event
-                            .signatures
-                            .iter()
-                            .map(|(attester_index, _)| *attester_index)
-                            .collect(),
-                    );
+                    // fixme: must synchronize remote block height and local block height and fetch committee responsible for attesting false batch.
+                    Self::apply_permanent_attesters_slash(CurrentCommittee::<T>::get());
 
-                    Err(Error::<T>::CollusionWithPermanentSlashDetected.into())
+                    Self::deposit_event(Event::CollusionWithPermanentSlashDetected(
+                        target,
+                        recovered_enacted_batch_hash,
+                    ));
+                    // must return success here to apply permanent slash
+                    return Ok(())
                 },
-                Ok(()) => Self::reward_submitter(submitter, target),
+            };
+
+            ensure!(
+                batch.status == BatchStatus::ReadyForSubmissionFullyApproved
+                    || batch.status == BatchStatus::ReadyForSubmissionByMajority,
+                Error::<T>::BatchNotFound
+            );
+
+            // Update the status of the batch to Committed
+            Self::find_and_set_batch_as_committed(target, &recovered_enacted_batch_hash)?;
+
+            // Follow with infallible reward payment
+            let delay = <frame_system::Pallet<T>>::block_number()
+                .saturating_sub(batch.available_to_commit_at)
+                .saturating_sub(BlockNumberFor::<T>::from(TWO_EPOCHS_IN_LOCAL_BLOCKS_U8));
+
+            let to_pay = Self::estimate_finality_reward(&target, delay);
+
+            // Emit the event
+            Self::deposit_event(Event::BatchCommitted(
+                target,
+                batch.clone(),
+                batch.message(),
+                batch.message_hash(),
+                to_pay,
+            ));
+
+            if to_pay > Zero::zero() {
+                Self::reward_submitter(
+                    &submitter,
+                    &on_target_batch_event.executor_on_target,
+                    &target,
+                    to_pay,
+                )?;
+                PaidFinalityFees::<T>::append(target, to_pay);
             }
+
+            Ok(())
         }
 
         #[pallet::weight(10_000)]
@@ -788,14 +864,40 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
-        pub fn set_confirmation_cost(
+        pub fn read_latest_batching_factor_overview(origin: OriginFor<T>) -> DispatchResult {
+            ensure_signed(origin)?;
+
+            let mut batching_factor_overview = Vec::new();
+            for target in AttestationTargets::<T>::get() {
+                let batching_factor = Self::read_latest_batching_factor(&target);
+                batching_factor_overview.push((target, batching_factor));
+            }
+
+            Self::deposit_event(Event::BatchingFactorRead(batching_factor_overview));
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn estimate_user_finality_fee(
             origin: OriginFor<T>,
             target: TargetId,
-            cost: BalanceOf<T>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            ensure_signed(origin)?;
 
-            FastConfirmationCost::<T>::insert(target, cost);
+            // Ensure target is active
+            ensure!(
+                AttestationTargets::<T>::get().contains(&target),
+                Error::<T>::TargetNotActive
+            );
+
+            let finality_fee = <Pallet<T> as AttestersReadApi<
+                T::AccountId,
+                BalanceOf<T>,
+                BlockNumberFor<T>,
+            >>::estimate_finality_fee(&target);
+
+            Self::deposit_event(Event::UserFinalityFeeEstimated(target, finality_fee));
 
             Ok(())
         }
@@ -962,27 +1064,57 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
+    /// Finality Fee Estimation and User Base Projection
+    ///
+    /// This module provides functionalities for estimating future finality fees and user base in a decentralized system, drawing inspiration from the concept of a pension scheme.
+    ///
+    /// ## Overview
+    ///
+    /// The aim of this module is to estimate future fees and user base in a way that balances the interests of all participants. This is achieved by employing methods similar to those used in pension systems, where fees paid by current participants are used to support earlier generations.
+    ///
+    /// Two primary functions provided by this module are:
+    ///
+    /// 1. `estimate_user_finality_fee`
+    /// 2. `estimate_future_user_base`
+    ///
+    /// ## Functionality
+    ///
+    /// ### estimate_user_finality_fee
+    ///
+    /// This function estimates the finality fee for an individual user.
+    /// The function considers the total fee paid in the most recent epoch and divides it by the number of users in that epoch to calculate a base user fee.
+    /// An overcharge factor is then added to this base fee to account for fluctuations and provide a buffer.
+    /// This calculation mirrors the process in pension systems where individual contributions are calculated based on total liabilities and the number of current contributors.
+    ///
+    /// ### estimate_future_user_base
+    ///
+    /// The estimate_future_user_base function forecasts the user base size for a future epoch.
+    /// The function calculates the average growth rate of the user base over the past few epochs and applies this rate iteratively to project future growth.
+    /// This function is similar to population projections in pension systems, which are critical in determining future contribution rates.
+    ///
+    /// ## Concluding Remarks
+    ///
+    /// The functions in this module draw inspiration from pension systems, projecting future conditions based on past data and current trends.
+    /// While the context is different – a decentralized system instead of a pension scheme – the fundamental concepts are the same.
+    /// The ability to estimate future fees and user base size contributes to system sustainability and fairness, much like in a well-managed pension scheme.
+    impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>, BlockNumberFor<T>> for Pallet<T> {
+        /// Getter for the current committee. Returns a Vec of AccountIds.
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
         }
 
+        /// Getter for the current committee. Returns a Vec of AccountIds.
         fn current_committee() -> Vec<T::AccountId> {
             CurrentCommittee::<T>::get()
         }
 
-        // Select the oldest batch with PendingAttestation and return the LatencyStatus
-        fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
-            let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
-            batches.sort_by(|a, b| a.created.cmp(&b.created));
-            let oldest_batch = batches.first();
-            oldest_batch.map(|batch| batch.latency.clone())
-        }
-
+        /// Getter for the active set. Returns a Vec of AccountIds.
         fn active_set() -> Vec<T::AccountId> {
             ActiveSet::<T>::get()
         }
 
+        /// Getter for the active set of ONLY those who haven't been permanently slashed.
+        /// Returns a Vec of AccountIds.
         fn honest_active_set() -> Vec<T::AccountId> {
             let active_set = ActiveSet::<T>::get();
             active_set
@@ -991,28 +1123,172 @@ pub mod pallet {
                 .collect()
         }
 
+        /// Getter for the info of the attester provided.
         fn read_attester_info(attester: &T::AccountId) -> Option<AttesterInfo> {
             Attesters::<T>::get(attester)
         }
 
+        /// Getter for the nominations of the given attester.
+        /// Returns the nominator and the balance of the nomination as a tuple (account id, balance).
         fn read_nominations(for_attester: &T::AccountId) -> Vec<(T::AccountId, BalanceOf<T>)> {
             Nominations::<T>::iter_prefix(for_attester)
                 .map(|(nominator, balance)| (nominator, balance))
                 .collect()
         }
 
+        /// Getter for the attestation targets.
         fn get_activated_targets() -> Vec<TargetId> {
             AttestationTargets::<T>::get()
+        }
+
+        /// Getter for the latency status of the given target.
+        /// Selects the oldest batch with PendingAttestation and return its LatencyStatus.
+        fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+            let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| a.created.cmp(&b.created));
+            let oldest_batch = batches.first();
+            oldest_batch.map(|batch| batch.latency.clone())
+        }
+
+        /// Estimation of the finality fee for the given target.
+        ///
+        /// For this first version, we don't take into account the number of users, i.e., there's
+        /// no batching factor.
+        fn estimate_finality_fee(target: &TargetId) -> BalanceOf<T> {
+            let base_user_fee_for_single_user: BalanceOf<T> =
+                10_000_000_000_000u128.try_into().unwrap_or_default();
+
+            let number_of_users = Self::estimate_batching_factor(target)
+                .unwrap_or(BatchingFactor {
+                    latest_confirmed: 0,
+                    latest_signed: 1,
+                    current_next: 0,
+                    up_to_last_10_confirmed: vec![],
+                })
+                .latest_signed as u32;
+
+            // Retrieve the (finality) fees that were paid to the target
+            let paid_finality_fees =
+                PaidFinalityFees::<T>::get(target).unwrap_or(vec![base_user_fee_for_single_user]);
+
+            // Get the LATEST paid finality fee
+            let latest_fee = *paid_finality_fees
+                .last()
+                .unwrap_or(&base_user_fee_for_single_user);
+
+            // Compute the base-user fee.
+            // It is the latest fee, divided by the number of users.
+            let base_user_fee = latest_fee
+                .checked_div(&BalanceOf::<T>::from(number_of_users))
+                .unwrap_or(base_user_fee_for_single_user);
+
+            // The user fee is the (1 + overcharge-factor) * base-user-fee
+            OVERCHARGE_FACTOR
+                .mul_ceil(base_user_fee)
+                .saturating_add(base_user_fee)
+        }
+
+        /// Compute, for a given target, the finality reward as a Balance
+        fn estimate_finality_reward(
+            target: &TargetId,
+            blocks_delay: BlockNumberFor<T>,
+        ) -> BalanceOf<T> {
+            // ToDo: Move this to storage and make available to sudo only updates
+            let base_user_fee_for_single_user: BalanceOf<T> =
+                10_000_000_000_000u128.try_into().unwrap_or_default();
+
+            // Retrieve the (finality) fees that were paid to the target
+            let finality_fee_opt = PaidFinalityFees::<T>::get(target);
+
+            // Get the last finality fee
+            let finality_reward = finality_fee_opt
+                .as_ref()
+                .and_then(|fees| fees.last())
+                .unwrap_or(&base_user_fee_for_single_user);
+
+            // Create a mutable copy of finality_reward to work with
+            let mut finality_reward = *finality_reward;
+
+            let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
+
+            // safe division since ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
+            let epochs_delayed =
+                capped_delay_in_blocks / BlockNumberFor::<T>::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8);
+            // Convert to usize for range
+            let epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0);
+
+            for _ in 0..epochs_delayed {
+                finality_reward = REWARD_ADJUSTMENT
+                    .mul_ceil(finality_reward)
+                    .saturating_add(finality_reward);
+            }
+
+            // If finality fee was received within the first epoch, decrease the reward by 25%
+            if capped_delay_in_blocks < BlockNumberFor::<T>::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8) {
+                finality_reward =
+                    finality_reward.saturating_sub(REWARD_ADJUSTMENT.mul_ceil(finality_reward));
+            }
+
+            finality_reward
+        }
+
+        /// Estimate the batching factor for a given target.
+        fn estimate_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
+            Self::read_latest_batching_factor(target)
         }
     }
 
     impl<T: Config> Pallet<T> {
+        fn find_batches(
+            target: TargetId,
+            message: &Vec<u8>,
+        ) -> Vec<BatchMessage<BlockNumberFor<T>>> {
+            Batches::<T>::get(target)
+                .iter()
+                .find(|batches| batches.iter().any(|batch| &batch.message() == message))
+                .unwrap()
+                .clone()
+        }
+
+        fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
+            // If target isn't active yet, return None
+            if !AttestationTargets::<T>::get().contains(target) {
+                return None
+            }
+
+            // Read amount of confirmed and reverted sfx out of last 10 confirmed batches, or fill with 0 if there aren't enough
+            let up_to_last_10_confirmed: Vec<u16> =
+                Self::get_batches(*target, BatchStatus::Committed)
+                    .iter()
+                    .rev()
+                    .take(10)
+                    .map(|batch| batch.read_batching_factor())
+                    .collect::<Vec<u16>>();
+
+            let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
+
+            let latest_signed = match Self::get_latest_batch_to_sign(*target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            let current_next = match NextBatch::<T>::get(target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            Some(BatchingFactor {
+                latest_confirmed,
+                latest_signed,
+                current_next,
+                up_to_last_10_confirmed,
+            })
+        }
+
         pub fn committee_size() -> usize {
             T::CommitteeSize::get() as usize
         }
 
-        /// # apply_partial_stake_slash
-        ///
         /// This function applies a partial slash to the stakes of an attester and its nominators.
         /// It returns the self-nomination balance of the given attester and the updated nomination balances
         /// of the nominators with an applied grace percent.
@@ -1060,7 +1336,6 @@ pub mod pallet {
 
             // Calculate the amount to slash from the attester
             let slash_amount = percent_slash.mul_ceil(self_nomination_balance);
-
             // Update the nominations after slashing
             let nominators_after_slash = nominations
                 .into_iter()
@@ -1083,24 +1358,21 @@ pub mod pallet {
         }
 
         /// Applies permanent slashes to colluding attesters.
-        fn apply_permanent_attesters_slash(attester_indices: Vec<u32>) {
-            for attester_index in attester_indices {
-                if let Some((account_id, _attester_info)) =
-                    Attesters::<T>::iter().find(|(_, info)| info.index == attester_index)
-                {
-                    PermanentSlashes::<T>::append(account_id);
-                } else {
-                    log::error!("Colluding attester index: {:?} not found", attester_index);
-                }
+        fn apply_permanent_attesters_slash(attester_local_addresses: Vec<T::AccountId>) {
+            for account_id in attester_local_addresses {
+                PermanentSlashes::<T>::append(account_id);
             }
         }
 
-        pub fn find_and_update_batch(target: TargetId, message: &Vec<u8>) -> DispatchResult {
+        pub fn find_and_set_batch_as_committed(
+            target: TargetId,
+            message_hash: &H256,
+        ) -> DispatchResult {
             Batches::<T>::try_mutate(target, |batches_option| {
                 let batches = batches_option.as_mut().ok_or(Error::<T>::BatchNotFound)?;
                 let batch_by_message = batches
                     .iter_mut()
-                    .find(|batch| &batch.message() == message)
+                    .find(|batch| &batch.message_hash() == message_hash)
                     .ok_or(Error::<T>::BatchNotFound)?;
 
                 batch_by_message.status = BatchStatus::Committed;
@@ -1108,21 +1380,29 @@ pub mod pallet {
             })
         }
 
-        pub fn reward_submitter(submitter: T::AccountId, target: TargetId) -> DispatchResult {
-            let fast_confirmation_cost =
-                FastConfirmationCost::<T>::get(target).unwrap_or(Zero::zero());
-            let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
+        pub fn reward_submitter(
+            submitter: &T::AccountId,
+            submitter_on_target: &H160,
+            target: &TargetId,
+            to_pay: BalanceOf<T>,
+        ) -> DispatchResult {
+            let attester_recoverable: Vec<u8> = AttestersAgreements::<T>::get(submitter, target)
+                .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
 
-            if total_reward > Zero::zero() {
+            if attester_recoverable == submitter_on_target.encode() {
                 T::Currency::transfer(
-                    &T::CommitmentRewardSource::get(),
+                    &T::TreasuryAccounts::get_treasury_account(
+                        t3rn_primitives::TreasuryAccount::Fee,
+                    ),
                     &submitter,
-                    total_reward,
+                    to_pay,
                     ExistenceRequirement::KeepAlive,
                 )?;
-            }
 
-            Ok(())
+                Ok(())
+            } else {
+                Err(Error::<T>::AttesterDidNotAgreeToNewTarget.into())
+            }
         }
 
         pub fn try_activate_new_target(target: &TargetId) -> bool {
@@ -1327,7 +1607,9 @@ pub mod pallet {
             Ok(())
         }
 
-        fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
+        pub fn get_current_committee_transition_for_target(
+            target: &TargetId,
+        ) -> CommitteeTransition {
             let next_committee = NextCommittee::<T>::get();
             let mut committee_transition = Vec::new();
 
@@ -1346,7 +1628,7 @@ pub mod pallet {
             committee_transition
         }
 
-        fn get_current_committee_indices() -> CommitteeTransitionIndices {
+        pub fn get_current_committee_indices() -> CommitteeTransitionIndices {
             let current_committee = CurrentCommittee::<T>::get();
             let mut committee_indices: CommitteeTransitionIndices = [0; COMMITTEE_SIZE]; // Initialize the committee_indices array
 
@@ -1419,10 +1701,7 @@ pub mod pallet {
             full_shuffle
         }
 
-        pub fn process_repatriations(
-            n: frame_system::pallet_prelude::BlockNumberFor<T>,
-            aggregated_weight: Weight,
-        ) -> Weight {
+        pub fn process_repatriations(n: BlockNumberFor<T>, aggregated_weight: Weight) -> Weight {
             for target in AttestationTargets::<T>::get() {
                 Batches::<T>::mutate(target, |batches| {
                     let mut repatriated = false;
@@ -1503,14 +1782,16 @@ pub mod pallet {
         }
 
         pub fn process_next_batch_window(
-            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+            n: BlockNumberFor<T>,
             aggregated_weight: Weight,
         ) -> Weight {
             let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
-                let mut new_next_batch = BatchMessage::default();
-                new_next_batch.created = n;
+                let mut new_next_batch = BatchMessage {
+                    created: n,
+                    ..Default::default()
+                };
                 // If a batch exists, update its status
                 Batches::<T>::mutate(target, |batches| {
                     if let Some(batches) = batches {
@@ -1526,10 +1807,11 @@ pub mod pallet {
                                     batch.message_hash(),
                                 ));
                             } else {
-                                // Mark the batch as late if it has not been attested for. Skip if BatchingWindow overlaps with RepatriationPeriod
-                                if !((n % T::RepatriationPeriod::get()).is_zero()
-                                    && !batch.has_no_sfx())
+                                // Skip if BatchingWindow overlaps with RepatriationPeriod
+                                if !(n % T::RepatriationPeriod::get()).is_zero()
+                                    || batch.has_no_sfx()
                                 {
+                                    // Mark the batch as late if it has not been attested for.
                                     batch.latency = match batch.latency {
                                         LatencyStatus::OnTime => LatencyStatus::Late(1, 0),
                                         LatencyStatus::Late(n, r) =>
@@ -1596,7 +1878,7 @@ pub mod pallet {
         }
 
         pub fn process_pending_unnominations(
-            n: frame_system::pallet_prelude::BlockNumberFor<T>,
+            n: BlockNumberFor<T>,
             mut aggregated_weight: Weight,
         ) -> Weight {
             aggregated_weight += T::DbWeight::get().reads(1);
@@ -1686,7 +1968,7 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             let mut aggregated_weight: Weight = Zero::zero();
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() && Self::is_last_transition_attested() {
@@ -1751,10 +2033,12 @@ pub mod pallet {
                 AttestationTargets::<T>::append(target);
             }
 
+            // For each target, create new batch for next window
             for target in AttestationTargets::<T>::get() {
-                let mut new_next_batch = BatchMessage::default();
-                new_next_batch.created = frame_system::Pallet::<T>::block_number();
-                // Create new batch for next window
+                let new_next_batch = BatchMessage {
+                    created: frame_system::Pallet::<T>::block_number(),
+                    ..Default::default()
+                };
                 NextBatch::<T>::insert(target, new_next_batch.clone());
             }
         }
@@ -1769,6 +2053,7 @@ pub mod attesters_test {
     };
     use std::ops::Index;
 
+    use crate::{TargetBatchDispatchEvent, REWARD_ADJUSTMENT};
     use codec::Encode;
     use frame_support::{
         assert_err, assert_noop, assert_ok,
@@ -1776,24 +2061,23 @@ pub mod attesters_test {
         StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
-    use sp_core::H256;
-    use sp_runtime::traits::Keccak256;
-
-    use crate::TargetBatchDispatchEvent;
+    use sp_core::{H160, H256};
+    use sp_runtime::{traits::Keccak256, Percent};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
-        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
+        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersAgreements, AttestersError,
+        AttestersEvent, AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
         CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee,
         ExistentialDeposit, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes,
-        PreviousCommittee, Rewards, RuntimeEvent as Event, RuntimeOrigin, SFX2XTXLinksMap,
-        SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
+        NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations,
+        PermanentSlashes, PreviousCommittee, Rewards, RuntimeEvent as Event, RuntimeOrigin,
+        SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET,
+        POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            CommitteeRecoverable, CommitteeTransitionIndices,
+            BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
@@ -1802,6 +2086,88 @@ pub mod attesters_test {
         TreasuryAccount, TreasuryAccountProvider,
     };
     use tiny_keccak::{Hasher, Keccak};
+
+    #[test]
+    fn estimate_user_finality_fee_for_empty_batching_factor() {
+        let mut ext = ExtBuilder::default().build();
+
+        ext.execute_with(|| {
+            let target_id = ETHEREUM_TARGET;
+            AttestationTargets::<MiniRuntime>::append(&target_id);
+            // test data
+            let blocks_delay: BlockNumber = 1;
+            let base_user_fee_for_single_user: Balance = 10_000_000_000_000u128.try_into().unwrap();
+            let overcharge_32_percent_factor: Balance = 3_200_000_000_000u128.try_into().unwrap();
+
+            let result = Attesters::estimate_user_finality_fee(
+                RuntimeOrigin::signed(AccountId::from([1u8; 32])),
+                target_id,
+            );
+
+            let (target, estimated_fee) = expect_last_event_to_emit_finality_fee_estimation();
+
+            // For just one, has to be the same
+            assert_eq!(
+                estimated_fee,
+                base_user_fee_for_single_user + overcharge_32_percent_factor
+            );
+        });
+    }
+
+    #[test]
+    fn estimate_finality_fee_1_delay() {
+        let mut ext = ExtBuilder::default()
+            // .with_standard_sfx_abi()
+            // .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // test data
+            let target_id = TargetId::default();
+            let blocks_delay: BlockNumber = 1;
+            let base_user_fee_for_single_user: Balance = 10_000_000_000_000u128.try_into().unwrap();
+
+            let result = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+
+            let expected_reward = base_user_fee_for_single_user
+                .saturating_sub(REWARD_ADJUSTMENT.mul_ceil(base_user_fee_for_single_user));
+
+            // For just one, has to be the same
+            assert_eq!(result, expected_reward);
+        });
+    }
+
+    #[test]
+    fn estimate_finality_fee_10_delay() {
+        let mut ext = ExtBuilder::default()
+            // .with_standard_sfx_abi()
+            // .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            let target_id = TargetId::default();
+            let blocks_delay: BlockNumber = 10;
+            let base_user_fee_for_single_user: Balance = 10_000_000_000_000u128.try_into().unwrap();
+
+            let result = Attesters::estimate_finality_reward(&target_id, blocks_delay);
+
+            // let mut expected_finality_reward = PaidFinalityFees::get(target_id)
+            //     .as_ref()
+            //     .and_then(|fees| fees.last())
+            //     .unwrap_or(&base_user_fee_for_single_user);
+            // let mut expected_reward = *expected_finality_reward;
+            let mut expected_reward = base_user_fee_for_single_user;
+
+            for _ in 0..blocks_delay {
+                expected_reward = REWARD_ADJUSTMENT
+                    .mul_ceil(expected_reward)
+                    .saturating_add(expected_reward);
+            }
+
+            // The computed result has to be less than the just a decrease
+            assert!(result < expected_reward);
+        });
+    }
 
     pub fn deregister_attester(attester: AccountId) {
         // Assert that attester is register prior to deregistration
@@ -1912,7 +2278,7 @@ pub mod attesters_test {
         assert!(!Attesters::attestation_targets().contains(target));
         assert!(Attesters::pending_attestation_targets().contains(target));
         if AttestersStore::<MiniRuntime>::iter().count() == 0 {
-            Attesters::force_activate_target(RuntimeOrigin::root(), *target);
+            let _ = Attesters::force_activate_target(RuntimeOrigin::root(), *target);
         }
         for (attester, attester_info) in AttestersStore::<MiniRuntime>::iter() {
             // assume attester agrees to eth target: deriving eth address from ecdsa key
@@ -1929,13 +2295,13 @@ pub mod attesters_test {
     }
 
     pub fn add_target_and_transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
-        Attesters::add_attestation_target(RuntimeOrigin::root(), target);
+        let _ = Attesters::add_attestation_target(RuntimeOrigin::root(), target);
         if !Attesters::attestation_targets().contains(&target) {
             // if active set is empty, select the next active set
             if !ActiveSet::<MiniRuntime>::get().is_empty() {
                 select_new_committee();
             }
-            assert_eq!(Attesters::pending_attestation_targets(), vec![target]);
+            assert_eq!(Attesters::pending_attestation_targets(), [target]);
             make_all_agree_to_new_target_or_force_if_no_active_set(&target);
         }
 
@@ -1991,7 +2357,7 @@ pub mod attesters_test {
     // Returns H256 message hash + signature as Vec<u8>
     fn sign_and_submit_sfx_to_latest_attestation(
         attester: AccountId,
-        message: [u8; 32],
+        messages: Vec<[u8; 32]>,
         key_type: KeyTypeId,
         target: TargetId,
         secret_key: [u8; 32],
@@ -2000,8 +2366,10 @@ pub mod attesters_test {
         if Attesters::get_latest_batch_to_sign_message(target).is_none() {
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
-            let sfx_id_a = H256::from(message);
-            Attesters::request_sfx_attestation_commit(target, sfx_id_a);
+            for message in messages {
+                let sfx_id_a = H256::from(message);
+                let _ = Attesters::request_sfx_attestation_commit(target, sfx_id_a);
+            }
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
         }
@@ -2045,7 +2413,7 @@ pub mod attesters_test {
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
             let (_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester,
-                sfx_id_to_sign_on,
+                vec![sfx_id_to_sign_on],
                 ECDSA_ATTESTER_KEY_TYPE_ID,
                 ETHEREUM_TARGET,
                 [1u8; 32],
@@ -2054,6 +2422,48 @@ pub mod attesters_test {
             let batch_latency = Attesters::read_attestation_latency(&ETHEREUM_TARGET);
             assert!(batch_latency.is_some());
             assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
+        });
+    }
+
+    #[test]
+    fn submitting_attestation_reads_updates_batching_factor_overview() {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
+            // Submit an attestation signed with the Ed25519 key
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
+            let (_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
+                attester,
+                vec![sfx_id_to_sign_on],
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                ETHEREUM_TARGET,
+                [1u8; 32],
+            );
+
+            assert_ok!(Attesters::read_latest_batching_factor_overview(
+                RuntimeOrigin::signed(AccountId::from([1u8; 32]))
+            ));
+
+            let current_batching_factor = expect_last_event_to_emit_batching_factor_overview();
+
+            assert_eq!(
+                current_batching_factor,
+                vec![(
+                    ETHEREUM_TARGET,
+                    Some(BatchingFactor {
+                        latest_confirmed: 0,
+                        latest_signed: 1,
+                        current_next: 0,
+                        up_to_last_10_confirmed: vec![]
+                    })
+                )]
+            );
         });
     }
 
@@ -2071,7 +2481,7 @@ pub mod attesters_test {
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
             let (_hash, signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester,
-                sfx_id_to_sign_on,
+                vec![sfx_id_to_sign_on],
                 ECDSA_ATTESTER_KEY_TYPE_ID,
                 ETHEREUM_TARGET,
                 [1u8; 32],
@@ -2131,7 +2541,7 @@ pub mod attesters_test {
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
             let (message_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester.clone(),
-                sfx_id_to_sign_on,
+                vec![sfx_id_to_sign_on],
                 ECDSA_ATTESTER_KEY_TYPE_ID,
                 target,
                 [1u8; 32],
@@ -2171,6 +2581,7 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
                 vec![BatchMessage {
+                    available_to_commit_at: 0,
                     committed_sfx: Some(vec![sfx_id_a]),
                     reverted_sfx: None,
                     next_committee: None,
@@ -2231,7 +2642,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -2320,7 +2731,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -2376,7 +2787,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -2391,6 +2802,47 @@ pub mod attesters_test {
             assert_eq!(the_same_batch.status, BatchStatus::PendingAttestation);
             assert_eq!(the_same_batch.latency, LatencyStatus::Late(1, 0));
         });
+    }
+
+    fn expect_last_event_to_emit_batching_factor_overview(
+    ) -> Vec<(TargetId, Option<BatchingFactor>)> {
+        // Recover system event
+        let events = System::events();
+        let expect_desired_event = events.last();
+        assert!(expect_desired_event.clone().is_some());
+
+        match expect_desired_event {
+            Some(event) => match &event.event {
+                Event::Attesters(AttestersEvent::BatchingFactorRead(batching_factor_read)) =>
+                    batching_factor_read.clone(),
+                _ => panic!(
+                    "expect_last_event_to_emit_batching_factor_overview: unexpected event type"
+                ),
+            },
+            None =>
+                panic!("expect_last_event_to_emit_batching_factor_overview: no last event emitted"),
+        }
+    }
+
+    fn expect_last_event_to_emit_finality_fee_estimation() -> (TargetId, Balance) {
+        // Recover system event
+        let events = System::events();
+        let expect_desired_event = events.last();
+        assert!(expect_desired_event.clone().is_some());
+
+        match expect_desired_event {
+            Some(event) => match &event.event {
+                Event::Attesters(AttestersEvent::UserFinalityFeeEstimated(
+                    target,
+                    finality_fee_estimation,
+                )) => (*target, finality_fee_estimation.clone()),
+                _ => panic!(
+                    "expect_last_event_to_emit_finality_fee_estimation: unexpected event type"
+                ),
+            },
+            None =>
+                panic!("expect_last_event_to_emit_finality_fee_estimation: no last event emitted"),
+        }
     }
 
     fn expect_last_event_to_emit_pending_attestation_batches() -> (TargetId, Vec<(u32, H256)>) {
@@ -2441,7 +2893,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    *b"message_that_needs_attestation32",
+                    vec![*b"message_that_needs_attestation32"],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     ETHEREUM_TARGET,
                     [counter; 32],
@@ -2482,7 +2934,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    *b"message_that_needs_attestation32",
+                    vec![*b"message_that_needs_attestation32"],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     ETHEREUM_TARGET,
                     [counter; 32],
@@ -2585,7 +3037,7 @@ pub mod attesters_test {
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
-            Balances::deposit_creating(
+            let _balance = Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
@@ -2652,7 +3104,6 @@ pub mod attesters_test {
                 register_attester_with_single_private_key([counter; 32]);
             }
 
-            println!("Registered attesters");
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let _committee_transition: CommitteeTransitionIndices = [
@@ -2805,6 +3256,7 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_latest_batch_to_sign(target),
                 Some(BatchMessage {
+                    available_to_commit_at: 0,
                     committed_sfx: Some(vec![sfx_id_a]),
                     reverted_sfx: None,
                     next_committee: expected_transition,
@@ -3036,6 +3488,7 @@ pub mod attesters_test {
             assert_eq!(next_batch.committed_sfx, Some(vec![sfx_id_a, sfx_id_b]));
 
             let mut empty_batch = BatchMessage {
+                available_to_commit_at: 0,
                 committed_sfx: None,
                 reverted_sfx: None,
                 next_committee: None,
@@ -3063,6 +3516,7 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
                 vec![BatchMessage {
+                    available_to_commit_at: 0,
                     committed_sfx: Some(vec![sfx_id_a, sfx_id_b]),
                     reverted_sfx: None,
                     next_committee: None,
@@ -3255,7 +3709,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    sfx_id_to_sign_on,
+                    vec![sfx_id_to_sign_on],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     ETHEREUM_TARGET,
                     [counter; 32],
@@ -3298,7 +3752,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     ETHEREUM_TARGET,
                     [counter; 32],
@@ -3357,9 +3811,9 @@ pub mod attesters_test {
                 // Register an attester
                 let attester = AccountId::from([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_sfx_to_latest_attestation(
+                let (_message_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     target,
                     [counter; 32],
@@ -3382,15 +3836,34 @@ pub mod attesters_test {
                 BatchStatus::ReadyForSubmissionFullyApproved
             );
 
+            let submitter = AccountId::from([1; 32]);
+            // Recover submitter's agreed target eth address
+            let submitter_eth_address =
+                AttestersAgreements::<MiniRuntime>::get(&submitter, &target)
+                    .expect("attester eth address should exist");
+
             let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
-                signatures: first_batch.signatures,
                 hash: first_batch_hash,
-                message: first_batch_message.clone(),
+                executor_on_target: H160::from_slice(&submitter_eth_address),
             };
+
+            let delay = System::block_number() - first_batch.available_to_commit_at;
+            let estimated_finality_reward_payout =
+                Attesters::estimate_finality_reward(&target, delay);
+
+            const FEE_TREASURY_BALANCE: Balance = 1_000_000_000_000_000_000_000_000_000_000;
+            let _bal = Balances::deposit_creating(
+                &MiniRuntime::get_treasury_account(TreasuryAccount::Fee),
+                FEE_TREASURY_BALANCE,
+            );
+
+            let balance_of_submitter_prior = Balances::free_balance(AccountId::from([1; 32]));
+
+            assert_eq!(PaidFinalityFees::<MiniRuntime>::get(&target), None);
 
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
-                RuntimeOrigin::signed(AccountId::from([1; 32])),
+                RuntimeOrigin::signed(submitter),
                 target,
                 mock_valid_batch_confirmation.encode(),
             ));
@@ -3399,11 +3872,20 @@ pub mod attesters_test {
             let batch = Attesters::get_batch_by_message(target, first_batch_message)
                 .expect("Batch by message should exist");
             assert_eq!(batch.status, BatchStatus::Committed);
+
+            assert_eq!(
+                Balances::free_balance(AccountId::from([1; 32])),
+                balance_of_submitter_prior + estimated_finality_reward_payout
+            );
+
+            assert_eq!(
+                PaidFinalityFees::<MiniRuntime>::get(&target),
+                Some(vec![estimated_finality_reward_payout])
+            );
         });
     }
 
     #[test]
-    #[ignore] // to be fixed in Finality Fees
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
         let target: TargetId = ETHEREUM_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
@@ -3421,7 +3903,7 @@ pub mod attesters_test {
 
             for counter in 1..33u8 {
                 // Register an attester
-                let _attester = AccountId::from([counter; 32]);
+                let _ = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
             }
 
@@ -3433,7 +3915,7 @@ pub mod attesters_test {
                 // Submit an attestation signed with the Ed25519 key
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     target,
                     [counter; 32],
@@ -3441,7 +3923,6 @@ pub mod attesters_test {
             }
 
             // Check if the attestations have been added to the batch
-
             let fist_batches =
                 Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
             assert_eq!(fist_batches.len(), 1);
@@ -3453,18 +3934,16 @@ pub mod attesters_test {
             let latest_batch_hash = first_batch.message_hash();
 
             let colluded_batch_confirmation = TargetBatchDispatchEvent {
-                signatures: first_batch.signatures,
-                hash: latest_batch_hash,
-                message: colluded_message.encode(),
+                hash: colluded_message.into(),
+                executor_on_target: H160::from([1; 20]),
             };
 
-            assert_err!(
+            assert_ok!(
                 Attesters::commit_batch(
                     RuntimeOrigin::signed(AccountId::from([1; 32])),
                     target,
                     colluded_batch_confirmation.encode(),
-                ),
-                AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
+                ) // errors are emitted, but the call must be successfull to enact slash. AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
             );
 
             // Check if the batch status has not been updated to Committed
@@ -3760,6 +4239,7 @@ pub mod attesters_test {
     fn test_filled_message_produces_expected_hash() {
         use hex_literal::hex;
         let filled_batch = BatchMessage {
+            available_to_commit_at: 0,
             committed_sfx: Some(vec![
                 hex!("6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e").into(),
                 hex!("580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa").into(),
@@ -3810,7 +4290,7 @@ pub mod attesters_test {
             ]),
             index: 1,
             signatures: vec![],
-            created: (),
+            created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
         };
@@ -3829,13 +4309,14 @@ pub mod attesters_test {
     fn test_index_only_message_produces_expected_hash() {
         use hex_literal::hex;
         let filled_batch = BatchMessage {
+            available_to_commit_at: 0,
             committed_sfx: Some(vec![]),
             reverted_sfx: Some(vec![]),
             next_committee: Some(vec![]),
             banned_committee: Some(vec![]),
             index: 1,
             signatures: vec![],
-            created: (),
+            created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
         };

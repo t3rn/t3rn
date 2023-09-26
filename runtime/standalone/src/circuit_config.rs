@@ -51,7 +51,6 @@ parameter_types! {
 impl pallet_attesters::Config for Runtime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
-    type CommitmentRewardSource = EscrowAccount;
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
@@ -66,7 +65,7 @@ impl pallet_attesters::Config for Runtime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = HourlyShufflingFrequency;
-    type SlashAccount = EscrowAccount;
+    type TreasuryAccounts = Runtime;
     type Xdns = XDNS;
 }
 
@@ -269,6 +268,7 @@ impl pallet_circuit::Config for Runtime {
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
+    type TreasuryAccounts = Runtime;
     type WeightInfo = ();
     // type XBIPortal = XBIPortalRuntimeEntry;
     // type XBIPromise = XBIPortal;
@@ -326,7 +326,7 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
-    type MyVendor = PolkadotVendor;
+    type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();

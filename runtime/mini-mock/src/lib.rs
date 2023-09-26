@@ -7,10 +7,11 @@ use frame_support::{
 };
 use frame_system::EnsureSigned;
 pub use pallet_attesters::{
-    ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee, Error as AttestersError,
-    Event as AttestersEvent, LatencyStatus, NextBatch, NextCommitteeOnTarget, Nominations,
-    PendingUnnominations, PermanentSlashes, PreviousCommittee, SortedNominatedAttesters,
+    ActiveSet, AttestationTargets, Attesters as AttestersStore, AttestersAgreements, BatchMessage,
+    BatchStatus, Batches, CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee,
+    Error as AttestersError, Event as AttestersEvent, LatencyStatus, NextBatch,
+    NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
+    PreviousCommittee, SortedNominatedAttesters,
 };
 use sp_runtime::BuildStorage;
 use std::marker::PhantomData;
@@ -232,7 +233,7 @@ impl FindAuthor<AccountId> for FindAuthorMockRoundRobinRotate32 {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         // Get current block number
-        let current_block_number = <frame_system::Module<MiniRuntime>>::block_number();
+        let current_block_number = <frame_system::Pallet<MiniRuntime>>::block_number();
 
         let round_robin_rotate_32: u8 = (current_block_number % 32) as u8;
 
@@ -277,7 +278,7 @@ parameter_types! {
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
-    type CommitmentRewardSource = CommitmentRewardSource;
+    // type CommitmentRewardSource = CommitmentRewardSource;
     type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
@@ -292,7 +293,8 @@ impl pallet_attesters::Config for MiniRuntime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
-    type SlashAccount = SlashAccount;
+    // type SlashAccount = SlashAccount;
+    type TreasuryAccounts = MiniRuntime;
     type Xdns = XDNS;
 }
 
@@ -456,6 +458,7 @@ impl pallet_circuit::Config for MiniRuntime {
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
+    type TreasuryAccounts = MiniRuntime;
     type WeightInfo = ();
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
@@ -1078,7 +1081,6 @@ pub fn activate_all_light_clients() {
     XDNS::process_overview(System::block_number());
 
     make_all_light_clients_move_2_times_by(8);
-    XDNS::process_overview(System::block_number());
 }
 
 pub fn prepare_ext_builder_playground() -> TestExternalities {

@@ -3,6 +3,9 @@ name: CLI
 on:
   pull_request:
   merge_group:
+  push:
+    branches:
+      - development
 
 permissions:
   contents: read
@@ -36,9 +39,7 @@ jobs:
           filters: |
             src:
             - "client/cli.Dockerfile"
-            - "client/packages/cli/**/*.ts"
-            - "client/packages/cli/helm/**"
-            - "client/packages/cli/**/*.json"
+            - "client/packages/cli/**"
             - ".github/workflows/cli.yml"
 
       - name: Detected changes

@@ -40,9 +40,7 @@ jobs:
           filters: |
             src:
             - "client/packages/grandpa-ranger.Dockerfile"
-            - "client/packages/grandpa-ranger/**/*.ts"
-            - "client/packages/grandpa-ranger/**/*.json"
-            - "client/packages/grandpa-ranger/helm/**"
+            - "client/packages/grandpa-ranger/**"
             - ".github/workflows/grandpa-ranger.yml"
 
       - name: Detected changes
@@ -68,8 +66,8 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - run: yarn
-      - run: yarn fmt
+      - run: pnpm install
+      - run: pnpm fmt
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'

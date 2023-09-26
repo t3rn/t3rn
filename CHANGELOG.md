@@ -4,6 +4,122 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.56.0-rc.0] - 2023-09-26
+### :sparkles: New Features
+- [`a457399`](https://github.com/t3rn/t3rn/commit/a457399d5e9b579fa7ead2f324054947c107a4da) - zombienet test setup with AssetHub *(PR [#1313](https://github.com/t3rn/t3rn/pull/1313) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.55.2-rc.0] - 2023-09-22
+### :bug: Bug Fixes
+- [`4013a46`](https://github.com/t3rn/t3rn/commit/4013a4611ab0c1a21bb9573f7e9f8db6bfd644ed) - disregard past accumulated settlements from current round calculation *(PR [#1310](https://github.com/t3rn/t3rn/pull/1310) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.55.1-rc.0] - 2023-09-22
+### :wrench: Chores
+- [`bf9af27`](https://github.com/t3rn/t3rn/commit/bf9af274dc4d8bdd5e1966c5e8bb260a7ec6b77e) - disable inactive t0rn collators once per 6h session *(PR [#1311](https://github.com/t3rn/t3rn/pull/1311) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.55.0-rc.0] - 2023-09-21
+### :sparkles: New Features
+- [`3bcdf54`](https://github.com/t3rn/t3rn/commit/3bcdf54c856fbc1b67e49a4c7d82854e735dbdf2) - recover executor for each Vacuum::read_xtx_status *(PR [#1303](https://github.com/t3rn/t3rn/pull/1303) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.54.3-rc.0] - 2023-09-21
+### :wrench: Chores
+- [`a47e434`](https://github.com/t3rn/t3rn/commit/a47e4345920b6bcf49161d3c2d320464403bf5d9) - update sepolia pallet version to tag 1.1.3 *(PR [#1309](https://github.com/t3rn/t3rn/pull/1309) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.54.2-rc.0] - 2023-09-20
+### :bug: Bug Fixes
+- [`90cda7e`](https://github.com/t3rn/t3rn/commit/90cda7e7a29b486ea8d280ca5ba211de0031e24d) - check for above-zero target height increase before setting isActive *(PR [#1307](https://github.com/t3rn/t3rn/pull/1307) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.54.1-rc.0] - 2023-09-18
+### :wrench: Chores
+- [`93b3c26`](https://github.com/t3rn/t3rn/commit/93b3c263b5bbdebaff65b3def899b7a12ae9f724) - upgrade sepolia pallet version *(PR [#1306](https://github.com/t3rn/t3rn/pull/1306) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.54.0-rc.0] - 2023-09-16
+### :sparkles: New Features
+- [`f1af8c4`](https://github.com/t3rn/t3rn/commit/f1af8c4211d23449e93f59f277e1a1130932038f) - sdk align for ethereum ranger *(PR [#1304](https://github.com/t3rn/t3rn/pull/1304) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`723f330`](https://github.com/t3rn/t3rn/commit/723f330a64a15f5f9676d16d44638c4ae06d36a6) - grandpa-ranger should not escape submission loop *(PR [#1299](https://github.com/t3rn/t3rn/pull/1299) by [@3h4x](https://github.com/3h4x))*
+- [`7e14090`](https://github.com/t3rn/t3rn/commit/7e140907fa4ea2de7bf48c0880209fa236577072) - sdk have utils exported *(PR [#1305](https://github.com/t3rn/t3rn/pull/1305) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.53.0-rc.0] - 2023-09-12
+### :sparkles: New Features
+- [`1f2faba`](https://github.com/t3rn/t3rn/commit/1f2fababa6a560002becbe7a269f2b9cda0adbcb) - deployment kusama and polkadot ranger *(PR [#1289](https://github.com/t3rn/t3rn/pull/1289) by [@3h4x](https://github.com/3h4x))*
+- [`9f923cc`](https://github.com/t3rn/t3rn/commit/9f923cc6240df58622b48dedd996d33a55e1a7bd) - t0rn XCM config update *(PR [#1298](https://github.com/t3rn/t3rn/pull/1298) by [@chexware](https://github.com/chexware))*
+
+### :recycle: Refactors
+- [`ebacf3e`](https://github.com/t3rn/t3rn/commit/ebacf3e22ad5eb20cbd9440b358cc6ebad668621) - **grandpa-ranger**: submissions without interval *(PR [#1296](https://github.com/t3rn/t3rn/pull/1296) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`2e86869`](https://github.com/t3rn/t3rn/commit/2e86869aa3ba52211f8e017dc819559c1054fcd0) - grandpa ranger healthcheck *(PR [#1294](https://github.com/t3rn/t3rn/pull/1294) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.52.4-rc.0] - 2023-09-08
+### :white_check_mark: Tests
+- [`a62119f`](https://github.com/t3rn/t3rn/commit/a62119f2b7969b74c6cba8a2981cc3778a430224) - check for drained ImportedHeaders at grandpa LC reset *(PR [#1291](https://github.com/t3rn/t3rn/pull/1291) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.52.3-rc.0] - 2023-09-08
+### :bug: Bug Fixes
+- [`540674f`](https://github.com/t3rn/t3rn/commit/540674f010b91b492f81486974ac500b951ed53a) - drain imported hashes at light client reset *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.52.2-rc.0] - 2023-09-08
+### :bug: Bug Fixes
+- [`da39864`](https://github.com/t3rn/t3rn/commit/da398646722cdb3ee24c662459c13f2a2301b694) - cli with config file *(PR [#1287](https://github.com/t3rn/t3rn/pull/1287) by [@3h4x](https://github.com/3h4x))*
+- [`e01a035`](https://github.com/t3rn/t3rn/commit/e01a035335af8b4ef1759b2a616d775fcb25ab4d) - gha for cli *(PR [#1288](https://github.com/t3rn/t3rn/pull/1288) by [@3h4x](https://github.com/3h4x))*
+- [`31760cc`](https://github.com/t3rn/t3rn/commit/31760ccfd6cb08cfd83c533b60fd17927d4612c0) - drain imported headers at grandpa reset *(PR [#1290](https://github.com/t3rn/t3rn/pull/1290) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.52.1-rc.0] - 2023-09-07
+### :bug: Bug Fixes
+- [`3b66878`](https://github.com/t3rn/t3rn/commit/3b6687890faa0ad2e051b5ad585ad010315377e1) - correct assignment for Polkadot and Kusama vendors and instances to runtimes *(PR [#1286](https://github.com/t3rn/t3rn/pull/1286) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.52.0-rc.0] - 2023-09-06
+### :sparkles: New Features
+- [`0af5253`](https://github.com/t3rn/t3rn/commit/0af52539c1aa3ac5df212c26e982b75bdc0f7641) - **grandpa-ranger**: new sdk and types npm + logging for ranger *(PR [#1278](https://github.com/t3rn/t3rn/pull/1278) by [@3h4x](https://github.com/3h4x))*
+- [`f6b47af`](https://github.com/t3rn/t3rn/commit/f6b47afe57b7417e85543cb7fa2d89b898cfd8e6) - renaming CLI commands *(PR [#1285](https://github.com/t3rn/t3rn/pull/1285) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`727e0f2`](https://github.com/t3rn/t3rn/commit/727e0f218cfa00a5cabbf249bc6c8757ce072223) - change initialize grandpa light client to dispatch result *(PR [#1284](https://github.com/t3rn/t3rn/pull/1284) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.51.0-rc.0] - 2023-09-06
+### :sparkles: New Features
+- [`fbb238f`](https://github.com/t3rn/t3rn/commit/fbb238f6dc1d77f211057564ffbe71b45b9810e3) - migrate attesters + circuit to include finality fee against v1.0.0 Polkadot dependencies  *(PR [#1245](https://github.com/t3rn/t3rn/pull/1245) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.50.2-rc.0] - 2023-09-06
+### :wrench: Chores
+- [`c0e4b7b`](https://github.com/t3rn/t3rn/commit/c0e4b7bd73db7db030494fd32ee79913fd97375d) - add XDNS standard sfx abi to standalone chain specs *(PR [#1283](https://github.com/t3rn/t3rn/pull/1283) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.50.1-rc.0] - 2023-09-06
+### :bug: Bug Fixes
+- [`dfe6984`](https://github.com/t3rn/t3rn/commit/dfe69845c2a3821193e557cc114c102aa2c53999) - sdk/types support sepolia gw *(PR [#1281](https://github.com/t3rn/t3rn/pull/1281) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`4876db1`](https://github.com/t3rn/t3rn/commit/4876db12bf4d8190a7cd286a40a38c6e4f126bb3) - reinstantiate standalone RPC for Portal + XDNS *(PR [#1282](https://github.com/t3rn/t3rn/pull/1282) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.50.0-rc.0] - 2023-09-05
+### :sparkles: New Features
+- [`cf3d8f8`](https://github.com/t3rn/t3rn/commit/cf3d8f817f633d7f7e7fc5dec746646e40d6ef56) - zombienet base test for executing SFX *(PR [#1269](https://github.com/t3rn/t3rn/pull/1269) by [@3h4x](https://github.com/3h4x))*
+- [`9b52dae`](https://github.com/t3rn/t3rn/commit/9b52dae6a3e6a44342fca83241e9271e2031b896) - add sdk to npmjs *(PR [#1273](https://github.com/t3rn/t3rn/pull/1273) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`d238dfd`](https://github.com/t3rn/t3rn/commit/d238dfd7a933f0f24866f66f8f3fc3f116aa399e) - sfx in xtx existence check *(PR [#1276](https://github.com/t3rn/t3rn/pull/1276) by [@Sj-001](https://github.com/Sj-001))*
+- [`6567047`](https://github.com/t3rn/t3rn/commit/6567047a86145383ddd41981e78214ed48f1a183) - npm packages have to be built before publishing *(PR [#1277](https://github.com/t3rn/t3rn/pull/1277) by [@3h4x](https://github.com/3h4x))*
+- [`abbdcd9`](https://github.com/t3rn/t3rn/commit/abbdcd983fbcb5e5d0ce1da65734564436662f33) - derive admin origin set to Escrow for Root token destroys *(PR [#1279](https://github.com/t3rn/t3rn/pull/1279) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.49.0-rc.0] - 2023-08-29
 ### :bug: Bug Fixes
 - [`3294ecc`](https://github.com/t3rn/t3rn/commit/3294eccd03ee10eb123a0503ee3d4f0e0205b581) - cli register gateway *(PR [#1270](https://github.com/t3rn/t3rn/pull/1270) by [@ahkohd](https://github.com/ahkohd))*
@@ -1544,3 +1660,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.48.5-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.4-rc.0...v1.48.5-rc.0
 [v1.48.6-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.5-rc.0...v1.48.6-rc.0
 [v1.49.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.48.6-rc.0...v1.49.0-rc.0
+[v1.50.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.49.0-rc.0...v1.50.0-rc.0
+[v1.50.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.0-rc.0...v1.50.1-rc.0
+[v1.50.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.1-rc.0...v1.50.2-rc.0
+[v1.51.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.50.2-rc.0...v1.51.0-rc.0
+[v1.52.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.51.0-rc.0...v1.52.0-rc.0
+[v1.52.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.0-rc.0...v1.52.1-rc.0
+[v1.52.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.1-rc.0...v1.52.2-rc.0
+[v1.52.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.2-rc.0...v1.52.3-rc.0
+[v1.52.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.3-rc.0...v1.52.4-rc.0
+[v1.53.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.4-rc.0...v1.53.0-rc.0
+[v1.54.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.53.0-rc.0...v1.54.0-rc.0
+[v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
+[v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
+[v1.54.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.2-rc.0...v1.54.3-rc.0
+[v1.55.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.3-rc.0...v1.55.0-rc.0
+[v1.55.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.0-rc.0...v1.55.1-rc.0
+[v1.55.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.1-rc.0...v1.55.2-rc.0
+[v1.56.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.2-rc.0...v1.56.0-rc.0

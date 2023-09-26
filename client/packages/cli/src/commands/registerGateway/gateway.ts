@@ -80,15 +80,10 @@ const registerGateway = async (
   try {
     const registrationData = await getRegistrationData(circuit, gatewayData)
 
-    // need to call xdns.rebootSelfGateway to add 0x03030303
-    await sdk.circuit.tx.signAndSendSafe(
-      sdk.circuit.tx.createSudo(
-        circuit.tx.xdns.rebootSelfGateway(gatewayData.registrationData.verificationVendor as never)
-      )
-    )
-
     if (!registrationData) {
-      throw new Error(`${gatewayData.name} gateway registration failed!`)
+      throw new Error(
+        `${gatewayData.name} gateway registration data is not present!`,
+      )
     }
 
     spinner.succeed(colorLogMsg("SUCCESS", "Fetched registration data"))
@@ -139,8 +134,8 @@ const getRegistrationData = (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>,
 ) => {
-  switch (gatewayData.registrationData.verificationVendor) {
-    case "Rococo":
+  switch (gatewayData.registrationData.executionVendor) {
+    case "Substrate":
       return registerSubstrateVerificationVendor(circuit, gatewayData)
     case "Ethereum":
       return registerEthereumVerificationVendor(circuit)

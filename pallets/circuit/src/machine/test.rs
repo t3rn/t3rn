@@ -174,6 +174,45 @@ pub mod test {
                 >>::get_fsx(fsx_ids[0]),);
             });
     }
+    use crate::tests::BOB_RELAYER;
+    use t3rn_types::sfx::SideEffect;
+    #[test]
+    fn read_sfx_api_get_all_pending_xtx() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+
+                assert_eq!(<Circuit as ReadSFX<
+                    Hash,
+                    AccountId,
+                    Balance,
+                    BlockNumber,
+                >>::get_pending_xtx_ids(), vec![xtx_id]);
+
+                assert_eq!(<Circuit as ReadSFX<
+                    Hash,
+                    AccountId,
+                    Balance,
+                    BlockNumber,
+                >>::get_pending_xtx_for(BOB_RELAYER), vec![(
+                    xtx_id,
+                    vec![SideEffect {
+                        target: [0, 0, 0, 0],
+                        max_reward: 2,
+                        insurance: 3,
+                        action: [116, 114, 97, 110],
+                        encoded_args: vec![vec![42, 246, 86, 215, 84, 26, 25, 17, 173, 225, 126, 30, 234, 99, 78, 169, 50, 247, 0, 118, 125, 167, 191, 15, 94, 94, 97, 126, 250, 236, 22, 62], vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                        signature: vec![],
+                        enforce_executor: Some(BOB_RELAYER),
+                        reward_asset_id: None
+                    }], vec![hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe").into()])]);
+            });
+    }
 
     #[test]
     fn read_sfx_api_errors_get_fsx_if_xtx_does_not_exist() {

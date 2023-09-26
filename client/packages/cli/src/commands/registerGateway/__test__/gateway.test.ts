@@ -37,7 +37,7 @@ describe("fetchLatestAuthoritySetUpdateBlock", () => {
     } as never)
 
     const block = await fetchLatestAuthoritySetUpdateBlock(
-      "http://localhost:8080"
+      "http://localhost:8080",
     )
     expect(block).toEqual(1)
   })
@@ -50,7 +50,7 @@ describe("fetchLatestAuthoritySetUpdateBlock", () => {
     jest.spyOn(spinner, "fail")
 
     const block = await fetchLatestAuthoritySetUpdateBlock(
-      "http://localhost:8080"
+      "http://localhost:8080",
     )
     expect(block).toBeUndefined()
     expect(spinner.fail).toHaveBeenCalled()

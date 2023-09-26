@@ -1,33 +1,29 @@
 import { Sdk, ApiPromise, Keyring } from "@t3rn/sdk"
-import { getConfig } from "./config.ts"
 
 export type CircuitContext = {
   circuit: ApiPromise
   sdk: Sdk
   signer: ReturnType<Keyring["addFromMnemonic"]>
+  endpoint: string
 }
 
 export const createCircuitContext = async (
   exportMode = false,
 ): Promise<CircuitContext> => {
-  const config = getConfig()
 
   const keyring = new Keyring({ type: "sr25519" })
   const signer =
     process.env.CIRCUIT_SIGNER_KEY === undefined
       ? keyring.addFromUri("//Alice")
       : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
-  console.log(config.circuit.ws, signer.address)
-  const sdk = new Sdk(
-    config.circuit.ws,
-    signer,
-    exportMode,
-  )
+  const circuitWs = process.env.CIRCUIT_WS_ENDPOINT || "ws://localhost:9944"
+  const sdk = new Sdk(circuitWs, signer, exportMode)
   const circuit = await sdk.init()
 
   return {
     circuit,
     sdk,
     signer,
+    endpoint: circuitWs,
   }
 }

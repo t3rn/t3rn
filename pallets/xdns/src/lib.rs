@@ -90,7 +90,7 @@ pub mod pallet {
 
         type CircuitDLQ: CircuitDLQ<Self>;
 
-        type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
+        type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
 
         type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
 
@@ -203,7 +203,7 @@ pub mod pallet {
                     }
                 }
             })
-            .unwrap_or_default()
+                .unwrap_or_default()
         }
     }
 
@@ -281,15 +281,19 @@ pub mod pallet {
                 (Zero::zero(), Zero::zero());
 
             if let Some(last_record) = historic_overview.last() {
-                if let Some((local, target)) =
+                if let Some((target_increase, local_increase)) =
                     FinalityVerifierActivity::determine_finalized_reports_increase(&[
                         last_record.clone(),
                         new_activity.clone(),
                     ])
                 {
-                    is_moving = true;
-                    local_height_increase = local;
-                    target_finalized_height_increase = target;
+                    if local_increase > Zero::zero() {
+                        local_height_increase = local_increase;
+                    }
+                    if target_increase > Zero::zero() {
+                        is_moving = true;
+                        target_finalized_height_increase = target_increase;
+                    }
                 }
             }
 
@@ -303,14 +307,16 @@ pub mod pallet {
 
             if !is_moving {
                 if let Some(previous) = historic_overview.iter().rev().nth(1).cloned() {
-                    if let Some((_, _)) =
+                    if let Some((target_finality_height_increase, _)) =
                         FinalityVerifierActivity::determine_finalized_reports_increase(&[
                             previous,
                             last_record.clone(),
                             new_activity,
                         ])
                     {
-                        is_moving = true;
+                        if target_finality_height_increase > Zero::zero() {
+                            is_moving = true;
+                        }
                     }
                 }
             }
@@ -504,8 +510,17 @@ pub mod pallet {
             origin: OriginFor<T>,
             token_id: AssetId,
         ) -> DispatchResultWithPostInfo {
-            // AssetsOverlay ensures the admin / ownership rights
-            T::AssetsOverlay::destroy(origin, &token_id)?;
+            // Try destroying assets with associated to sudo origin of Escrow or admin / ownership rights
+            let is_root = ensure_signed_or_root(origin.clone())?.is_none();
+            let origin_admin: T::RuntimeOrigin = match is_root {
+                true => T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                )),
+                false => origin,
+            };
+
+            // Try destroying assets with
+            T::AssetsOverlay::destroy(origin_admin, &token_id)?;
 
             // Remove from all destinations
             let destinations = <Tokens<T>>::iter_prefix(token_id)
