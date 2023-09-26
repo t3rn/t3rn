@@ -42,7 +42,7 @@ class Executor {
     }
 
     this.signer = new Keyring({ type: "sr25519" }).addFromMnemonic(
-      this.config.circuit.signerKey
+      this.config.circuit.signerKey,
     );
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
     this.circuitClient = await this.sdk.init();
@@ -55,7 +55,7 @@ class Executor {
     // TODO: print wallet balance on available networks
     const balance = await getBalanceWithDecimals(
       this.circuitClient,
-      this.signer.address
+      this.signer.address,
     );
 
     // Convert the balance to a human-readable format
@@ -64,14 +64,14 @@ class Executor {
         circuit_signer_address: this.signer.address,
         circuit_signer_balance: balance,
       },
-      `Circuit Signer Address`
+      `Circuit Signer Address`,
     );
     this.prometheus.executorBalance.set(
       {
         signer: this.signer.address,
         target: this.config.circuit.name,
       },
-      balance
+      balance,
     );
 
     this.executionManager = new ExecutionManager(
@@ -79,11 +79,11 @@ class Executor {
       this.sdk,
       this.logger,
       this.config,
-      this.prometheus
+      this.prometheus,
     );
     await this.executionManager.setup(
       this.config.gateways,
-      this.config.vendors
+      this.config.vendors,
     );
     logger.info("Executor setup complete");
     return this;
