@@ -10,7 +10,7 @@ import { Prometheus } from "./prometheus";
 import { logger } from "./logging";
 
 /** An executor instance. */
-class Executor {
+export class Executor {
   name: string;
   circuitClient: Sdk["client"];
   executionManager: ExecutionManager;

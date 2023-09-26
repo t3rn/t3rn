@@ -8,8 +8,8 @@ import {
   Estimate,
   InclusionProof,
 } from "./gateways/substrate/relayer";
-import { Queue } from "./executionManager";
-import { Circuit, Strategy, Gateway } from "../config/config";
+import { ExecutionManager, Queue } from "./executionManager";
+import { Circuit, Strategy, Gateway, Config } from "../config/config";
 import { BiddingEngine, BiddingStrategy } from "./bidding";
 import { PriceEngine, CoingeckoPricing } from "./pricing";
 import { StrategyEngine, SfxStrategy, XtxStrategy } from "./strategy";
@@ -27,6 +27,7 @@ import {
   ListenerEventData,
 } from "./circuit/listener";
 import { CircuitRelayer } from "./circuit/relayer";
+import { Executor } from "./executor.class";
 
 dotenv.config();
 
