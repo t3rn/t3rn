@@ -6493,23 +6493,20 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-registry"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
+version = "0.0.1"
+source = "git+https://github.com/paritytech/trappist?branch=main#9b15c1bf1135b6e1e7d7b13afeb30ef47fec81fd"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
+ "pallet-assets",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
  "sp-std 8.0.0",
- "t3rn-primitives",
  "xcm",
- "xcm-builder",
- "xcm-executor",
- "xp-channel",
- "xp-xcm",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -15295,6 +15292,18 @@ dependencies = [
  "sp-std 8.0.0",
  "sp-weights",
  "xcm",
+]
+
+[[package]]
+name = "xcm-primitives"
+version = "0.0.1"
+source = "git+https://github.com/paritytech/trappist?branch=main#9b15c1bf1135b6e1e7d7b13afeb30ef47fec81fd"
+dependencies = [
+ "frame-support",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
