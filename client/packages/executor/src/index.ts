@@ -5,8 +5,6 @@ import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { PathLike } from "fs";
-import { mkdir } from "fs/promises";
-import { join } from "path";
 import "@t3rn/types";
 import {
   SubstrateRelayer,
@@ -34,16 +32,15 @@ import {
   ListenerEventData,
 } from "./circuit/listener";
 import { CircuitRelayer } from "./circuit/relayer";
-import { createLogger, getBalanceWithDecimals } from "./utils";
+import { getBalanceWithDecimals } from "./utils";
 import { Logger } from "pino";
 import { Prometheus } from "./prometheus";
 import { logger } from "./logging";
-import { homedir } from "os";
 
 dotenv.config();
 
 /** An executor instance. */
-class Instance {
+class Executor {
   name: string;
   circuitClient: Sdk["client"];
   executionManager: ExecutionManager;
@@ -51,7 +48,6 @@ class Instance {
   signer: KeyringPair;
   config: Config;
   logger: Logger;
-  baseDir: PathLike;
   logsDir: undefined | PathLike;
   stateFile: PathLike;
   prometheus: Prometheus;
@@ -60,16 +56,8 @@ class Instance {
    * Initializes an executor instance.
    *
    * @param name Display name and config identifier for an instance
-   * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
    */
-  constructor(name = "example", logToDisk = false, prometheus: Prometheus) {
-    this.name = name;
-    this.baseDir = join(homedir(), `.t3rn-executor-${name}`);
-    this.logsDir = logToDisk
-      ? join(this.baseDir.toString(), "logs")
-      : undefined;
-    this.stateFile = join(this.baseDir.toString(), "state.json");
-    // this.configFile = join(this.baseDir.toString(), "config.json");
+  constructor(prometheus: Prometheus) {
     this.prometheus = prometheus;
     this.config = config;
   }
@@ -77,8 +65,7 @@ class Instance {
   /**
    * Sets up and configures an executor instance.
    */
-  async setup(): Promise<Instance> {
-    await this.configureLogging();
+  async setup(): Promise<Executor> {
     await cryptoWaitReady();
 
     if (!this.config.circuit.signerKey) {
@@ -133,21 +120,10 @@ class Instance {
     logger.info("Executor setup complete");
     return this;
   }
-
-  /** Configures the instance's pino logger. */
-  async configureLogging(): Promise<Instance> {
-    if (this.logsDir) {
-      await mkdir(this.logsDir, { recursive: true });
-      this.logger = createLogger(this.name, this.logsDir.toString());
-    } else {
-      this.logger = createLogger(this.name);
-    }
-    return this;
-  }
 }
 
 export {
-  Instance,
+  Executor,
   ExecutionManager,
   Queue,
   Execution,

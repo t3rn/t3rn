@@ -157,9 +157,9 @@ export class SideEffect extends EventEmitter {
    * @param sideEffect Scale encoded side effect
    * @param id Id of the SFX
    * @param xtxId Id of the SFXs XTX
-   * @param sdk Instance of @t3rn/sdk
-   * @param strategyEngine Instance of the strategy engine
-   * @param biddingEngine Instance of the bidding engine
+   * @param sdk Executor of @t3rn/sdk
+   * @param strategyEngine Executor of the strategy engine
+   * @param biddingEngine Executor of the bidding engine
    * @param circuitSignerAddress Address of the executor account used for transaction on circuit
    * @param logger The logger instance
    * @returns SideEffect instance

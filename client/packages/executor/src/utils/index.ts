@@ -60,36 +60,6 @@ export function problySubstrateSeed(x: string): boolean {
   return /^0x[0-9a-f]{64}$/.test(x);
 }
 
-/** Creates a pino logger. */
-export function createLogger(name: string, logsDir?: string): Logger {
-  let logger: Logger;
-
-  if (logsDir) {
-    logger = pino(
-      {
-        level: process.env.LOG_LEVEL || "info",
-        formatters: {
-          bindings(bindings) {
-            return { ...bindings, name };
-          },
-        },
-      },
-      pino.destination(join(logsDir.toString(), `${Date.now()}.log`)),
-    );
-  } else {
-    logger = pino({
-      level: process.env.LOG_LEVEL || "info",
-      formatters: {
-        bindings(bindings) {
-          return { ...bindings, name };
-        },
-      },
-    });
-  }
-
-  return logger;
-}
-
 export async function getBalanceWithDecimals(
   client: Sdk["client"] | ApiPromise,
   address: string,

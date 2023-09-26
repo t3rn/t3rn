@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Instance Configuration should load custom config 1`] = `
+exports[`Executor Configuration should load custom config 1`] = `
 Object {
   "assets": Object {
     "BSX": Array [
@@ -152,7 +152,7 @@ Object {
 }
 `;
 
-exports[`Instance Configuration should persist custom config 1`] = `
+exports[`Executor Configuration should persist custom config 1`] = `
 Object {
   "assets": Object {
     "BSX": Array [
