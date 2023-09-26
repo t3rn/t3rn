@@ -64,7 +64,7 @@ serde                 = { version = "1.0", features = [ "derive", "alloc"], defa
 impl-serde            = { version = "0.4.0", default-features = false }
 serde_json            = { version = "1.0.41" }
 sha3                  = { version = "0.10.1", default-features = false }
-smallvec              = { version = "1.0", default-features = false, features = [ "const_generics" ] }
+smallvec              = { version = "1.11", default-features = false, features = [ "const_generics" ] }
 wasm-instrument       = { version = "0.4", default-features = false }
 wasmi                 = { version = "0.20", default-features = false }
 wasmi-validation      = { version = "0.4", default-features = false }
@@ -203,7 +203,7 @@ try-runtime-cli                = { git = "https://github.com/paritytech/substrat
 # New Asset Registry
 pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", branch = "main", default-features = false }
 
-jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
+jsonrpsee = { version = "0.20.1", features = [ "server", "macros" ] }
 
 t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = false }
 
