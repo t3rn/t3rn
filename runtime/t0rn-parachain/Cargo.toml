@@ -89,6 +89,9 @@ parachain-info                      = { workspace = true }
 parachains-common                   = { workspace = true }
 assets-common                       = { workspace = true }
 
+# Trappist
+xcm-primitives                      = { workspace = true }
+
 # t3rn Deps
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }

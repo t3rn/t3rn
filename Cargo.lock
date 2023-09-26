@@ -13064,6 +13064,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]

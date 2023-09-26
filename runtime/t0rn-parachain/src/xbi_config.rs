@@ -28,6 +28,7 @@ use xcm_builder::{
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
+use xcm_primitives::{AsAssetMultiLocation, ConvertedRegisteredAssetId};
 
 parameter_types! {
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
