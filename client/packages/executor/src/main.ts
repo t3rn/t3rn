@@ -1,6 +1,6 @@
 import { config } from "../config/config";
 import { AttestationManager } from "./attestationManager";
-import { Executor } from "./index";
+import { Executor } from "./executor.class";
 import { logger } from "./logging";
 import { Prometheus } from "./prometheus";
 

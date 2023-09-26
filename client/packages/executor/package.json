@@ -14,7 +14,7 @@
     "fmt": "prettier --write src config tests",
     "fmt:check": "prettier --check src config tests",
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test": "DOTENV_CONFIG_PATH=.env-tests mocha -r ts-node/register 'tests/**/*.ts' --require dotenv/config",
     "test:attestion": "mocha -r ts-node/register 'tests/**/attest*.ts'",
     "test-single": "yarn build && mocha -r ts-node/register"
   },

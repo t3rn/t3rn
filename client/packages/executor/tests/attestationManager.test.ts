@@ -4,6 +4,11 @@ import { AttestationManager } from "../src/attestationManager";
 import { mock } from "ts-mockito";
 import { Batch } from "../src/attestationManager/batch";
 import { Sdk } from "@t3rn/sdk";
+require('dotenv').config({ path: '.env-tests' });
+
+console.log("process.env.ETHEREUM_PRIVATE_KEY", process.env.ETHEREUM_PRIVATE_KEY);
+import { config } from "../config/config";
+console.log(config)
 
 chai.use(chaiAsPromised);
 chai.should();
