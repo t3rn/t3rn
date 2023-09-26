@@ -1,10 +1,8 @@
-import { join } from "path";
 import { ApiPromise } from "@polkadot/api";
 import { u8aToHex } from "@polkadot/util";
 import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { BN } from "@polkadot/util";
 import { Sdk } from "@t3rn/sdk";
-import { default as pino, Logger } from "pino";
 
 export async function getStorage(
   api: ApiPromise,
