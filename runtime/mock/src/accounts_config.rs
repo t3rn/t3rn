@@ -61,7 +61,7 @@ impl pallet_assets::Config for Runtime {
 pub struct AssetRegistryBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_asset_registry::BenchmarkHelper<AssetIdForTrustBackedAssets>
-for AssetRegistryBenchmarkHelper
+    for AssetRegistryBenchmarkHelper
 {
     fn get_registered_asset() -> AssetIdForTrustBackedAssets {
         use sp_runtime::traits::StaticLookup;
