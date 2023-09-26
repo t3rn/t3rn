@@ -161,7 +161,7 @@ parachains-common                   = { git = 'https://github.com/paritytech/cum
 assets-common                       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
 ## TODO: t3rn dependencies
-pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 substrate-abi         = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 xp-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
@@ -199,6 +199,9 @@ substrate-frame-rpc-system     = { git = "https://github.com/paritytech/substrat
 substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 substrate-wasm-builder         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+
+# New Asset Registry
+pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", branch = "main", default-features = false }
 
 jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 
