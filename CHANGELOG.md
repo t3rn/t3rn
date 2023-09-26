@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.56.0-rc.0] - 2023-09-26
+### :sparkles: New Features
+- [`a457399`](https://github.com/t3rn/t3rn/commit/a457399d5e9b579fa7ead2f324054947c107a4da) - zombienet test setup with AssetHub *(PR [#1313](https://github.com/t3rn/t3rn/pull/1313) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.55.2-rc.0] - 2023-09-22
 ### :bug: Bug Fixes
 - [`4013a46`](https://github.com/t3rn/t3rn/commit/4013a4611ab0c1a21bb9573f7e9f8db6bfd644ed) - disregard past accumulated settlements from current round calculation *(PR [#1310](https://github.com/t3rn/t3rn/pull/1310) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1672,3 +1677,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.55.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.3-rc.0...v1.55.0-rc.0
 [v1.55.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.0-rc.0...v1.55.1-rc.0
 [v1.55.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.1-rc.0...v1.55.2-rc.0
+[v1.56.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.2-rc.0...v1.56.0-rc.0
