@@ -5,42 +5,46 @@ command = "polkadot"
 [[relaychain.nodes]]
 name    = "alice"
 ws_port = 9933
+extra_args = [ "-lparachain=debug" ]
 
 [[relaychain.nodes]]
 name    = "bob"
 ws_port = 9934
+extra_args = [ "-lparachain=debug" ]
 
 [[relaychain.nodes]]
 name    = "charlie"
 ws_port = 9935
+extra_args = [ "-lparachain=debug" ]
 
 [[relaychain.nodes]]
 name    = "dave"
 ws_port = 9936
-
-[[relaychain.node_groups]]
-count = 1
-name  = "ferdie"
+extra_args = [ "-lparachain=debug" ]
 
 [[parachains]]
-chain         = "asset-hub-westend"
-cumulus_based = true
-id            = 1000
+chain          = "asset-hub-kusama-local"
+add_to_genesis = true
+cumulus_based  = true
+id             = 1000
 
    [parachains.collator]
    command  = "asset-hub"
    name     = "asset-hub-collator"
    ws_port  = 9946
+   args = ["--log=xcm=trace,pallet-assets=trace"]
 
 [[parachains]]
-chain         = "local"
-cumulus_based = true
-id            = 3333
+chain          = "local"
+add_to_genesis = true
+cumulus_based  = true
+id             = 3333
 
    [parachains.collator]
    command  = "t0rn-collator"
    name     = "collator"
    ws_port  = 9947
+   args = ["--log=xcm=trace,pallet-assets=trace"]
 
 [[hrmp_channels]]
 sender = 3333
