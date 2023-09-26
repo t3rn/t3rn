@@ -27,18 +27,18 @@
   "dependencies": {
     "@polkadot/api": "^10.9.1",
     "@polkadot/api-augment": "^10.9.1",
-    "@polkadot/keyring": "^12.4.1",
+    "@polkadot/keyring": "^12.5.1",
     "@polkadot/types": "^10.9.1",
-    "@polkadot/util": "^12.4.1",
-    "@polkadot/util-crypto": "^12.4.1",
-    "@t3rn/sdk": "^0.2.5",
+    "@polkadot/util": "^12.5.1",
+    "@polkadot/util-crypto": "^12.5.1",
+    "@t3rn/sdk": "^0.3.1",
     "@t3rn/types": "^0.1.10",
     "@types/chai": "^4.3.5",
     "@types/chai-as-promised": "^7.1.5",
     "@types/debug": "^4.1.8",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.5.2",
-    "axios": "^1.4.0",
+    "@types/node": "^20.7.0",
+    "axios": "^1.5.0",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "debug": "4.3.4",
@@ -61,15 +61,15 @@
     "web3": "^4.1.1"
   },
   "devDependencies": {
-    "@babel/preset-typescript": "^7.22.5",
+    "@babel/preset-typescript": "^7.23.0",
     "@types/bn.js": "^5.1.1",
-    "@typescript-eslint/eslint-plugin": "^6.4.1",
-    "@typescript-eslint/parser": "^6.4.1",
-    "eslint": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.3",
+    "@typescript-eslint/parser": "^6.7.3",
+    "eslint": "^8.50.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
     "ts-node": "^10.9.1",
     "tsup": "^7.2.0",
-    "typedoc": "^0.24.8",
-    "typescript": "5.1.6"
+    "typedoc": "^0.25.1",
+    "typescript": "5.2.2"
   }
 }
