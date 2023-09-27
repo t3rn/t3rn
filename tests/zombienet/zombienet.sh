@@ -198,9 +198,11 @@ confirm_sfx() {
 }
 
 spawn() {
+    build_polkadot
     build_asset_hub
+    build_collator
     echo "Spawning zombienet using provider: $provider..."
-    zombienet --provider="$provider" spawn ./zombienet-xcm.toml
+    zombienet --provider="$provider" spawn ./tests/zombienet/zombienet-xcm.toml
 }
 
 case "$1" in
