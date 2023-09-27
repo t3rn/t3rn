@@ -15,7 +15,6 @@ export class Circuit {
   // TODO get correct type
   signer: any;
   tx: Tx;
-  nonce: number
 
   /**
    * @param api - The ApiPromise instance
