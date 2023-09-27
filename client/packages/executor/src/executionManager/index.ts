@@ -611,13 +611,15 @@ export class ExecutionManager {
     sfx.on("Notification", (notification: Notification) => {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
+          // Increment nonce in case we want to send multiple bids in a single block
+          this.sdk.nonce++;
           this.circuitRelayer
             .bidSfx(
               notification.payload.sfxId,
               notification.payload.bidAmount as BN,
             )
-            .then(() => {
-              this.sdk.nonce++;
+            .then((data: any) => {
+              logger.error(data)
               sfx.bidAccepted(notification.payload.bidAmount as number);
             })
             .catch((e) => {
