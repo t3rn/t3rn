@@ -155,7 +155,6 @@ std = [
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-assets/std",
-  "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
   "pallet-grandpa-finality-verifier/std",
@@ -222,6 +221,9 @@ std = [
   "circuit-runtime-types/std",
   "pallet-eth2-finality-verifier/std",
   "pallet-sepolia-finality-verifier/std",
+  # Trappist pallets
+  "xcm-primitives/std",
+  "pallet-asset-registry/std",
 ]
 
 runtime-benchmarks = [
