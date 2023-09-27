@@ -313,7 +313,7 @@ export class ExecutionManager {
               logger.warn(
                 {
                   index: eventData.data[0].toString(),
-                  xtx: this.xtx,
+                  xtx: this.xtx.key,
                 },
                 "SFX not found on the given index",
               );
@@ -598,6 +598,10 @@ export class ExecutionManager {
     }
   }
 
+  public stopSfxListener(sfx) {
+    sfx.off('Notification');
+  }
+
   /**
    * Initialize SFX event listeners.
    *
@@ -613,6 +617,7 @@ export class ExecutionManager {
               notification.payload.bidAmount as BN,
             )
             .then(() => {
+              this.sdk.nonce++;
               sfx.bidAccepted(notification.payload.bidAmount as number);
             })
             .catch((e) => {

@@ -24,8 +24,8 @@ dependencies:
     specifier: ^12.5.1
     version: 12.5.1(@polkadot/util@12.5.1)
   '@t3rn/sdk':
-    specifier: ^0.3.1
-    version: 0.3.1
+    specifier: 0.4.0-rc.3
+    version: 0.4.0-rc.3
   '@t3rn/types':
     specifier: ^0.1.11
     version: 0.1.11(@polkadot/util-crypto@12.5.1)(@polkadot/util@12.5.1)(@types/node@20.7.0)(typescript@5.2.2)
@@ -2040,6 +2040,7 @@ packages:
 
   /@substrate/connect-extension-protocol@1.0.1:
     resolution: {integrity: sha512-161JhCC1csjH3GE5mPLEd7HbWtwNSPJBg3p1Ksz9SFlTzj/bgEwudiRN2y5i0MoLGCIJRYKyKGMxVnd29PzNjg==}
+    requiresBuild: true
     dev: false
 
   /@substrate/connect@0.7.26:
@@ -2077,8 +2078,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.3.1:
-    resolution: {integrity: sha512-weG4StxPiwtb/6OIGqq4Jd3lxL2g3WpDFDv9QGOhqlz6cIUmxQeL1MEhAdXhmY7a7v2ClAGhPwoCqs1dSjIfPg==}
+  /@t3rn/sdk@0.4.0-rc.3:
+    resolution: {integrity: sha512-4/RjnS7bYhuB/W4LDD8Ep6KvzpWSOd2ruqBp/Awomo5TPEiWNhoQ9PMsdEYsgNk2a0lO7DfcMr9hDd8g+KX8xA==}
     dependencies:
       '@polkadot/api': 8.14.1
       dotenv: 16.3.1
@@ -3778,6 +3779,7 @@ packages:
 
   /eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
+    requiresBuild: true
     dev: false
 
   /eventemitter3@5.0.1:

@@ -1,15 +1,7 @@
 import { ApiPromise } from "@polkadot/api";
 import { ExtrinsicExport } from "../export";
-// @ts-ignore
-import {
-  // @ts-ignore
-  T3rnPrimitivesXdnsXdnsRecord,
-  // @ts-ignore
-  T3rnTypesSideEffect,
-  // @ts-ignore
-  u128,
-} from "@polkadot/types/lookup";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import { SignerOptions } from "@polkadot/api/types/submittable";
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -30,6 +22,51 @@ export class Tx {
     this.api = api;
     this.signer = signer;
     this.exportMode = exportMode;
+  }
+
+  /**
+   *
+   * @param tx - The transaction to send
+   * @param param - Parameters for tx
+   *
+   * @returns Promise
+   */
+
+  async signAndSend(tx: SubmittableExtrinsic, options: Partial<SignerOptions>): Promise<string> {
+    let exportObj: ExtrinsicExport;
+
+    if (this.exportMode) {
+      exportObj = new ExtrinsicExport(tx, this.signer.address);
+    }
+
+    return new Promise((resolve, reject) =>
+      tx.signAndSend(
+        this.signer,
+        options,
+        async ({ dispatchError, status, events }) => {
+          events.forEach(({ event }) => {
+            exportObj?.addEvent(event);
+          });
+
+          if (dispatchError?.isModule) {
+            const err = this.api.registry.findMetaError(dispatchError.asModule);
+
+            exportObj?.addErr(dispatchError).toFile();
+            reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
+          } else if (dispatchError) {
+            exportObj?.addErr(dispatchError).toFile();
+
+            reject(Error(dispatchError.toString()));
+          } else if (status.isInBlock) {
+            resolve(status.asInBlock);
+          }
+        }
+      )
+    ).then((data: any) =>
+      {
+        return data
+      })
+    
   }
 
   /**

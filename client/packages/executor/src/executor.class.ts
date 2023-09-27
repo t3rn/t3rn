@@ -46,11 +46,12 @@ export class Executor {
     );
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
     this.circuitClient = await this.sdk.init();
-    this.circuitClient.on("disconnected", () => {
-      this.prometheus.circuitDisconnects.inc({
-        endpoint: this.config.circuit.rpc,
-      });
-    });
+
+    // Set nonce on start
+    this.sdk.nonce = (
+      await this.circuitClient.rpc.system.accountNextIndex(this.signer.address)
+    ).toNumber();
+    logger.info(`Set nonce for circuit to ${this.sdk.nonce}`);
 
     // TODO: print wallet balance on available networks
     const balance = await getBalanceWithDecimals(
