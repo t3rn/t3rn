@@ -112,23 +112,8 @@ export class Gateway {
       enforceExecutioner: args.enforceExecutioner,
     });
   };
-
-   /**
-   * Create a cross-chain transfer side effect, taking care of target specific encodings
-   * @param args - The arguments to create the side effect
-   * @param args.from - The address of the sender
-   * @param args.beneficiary - The address of the receiver
-   * @param args.destChainId - The destiantion chain ID
-   * @param args.asset - The MultiAsset value of the asset
-   * @param args.value - The value to transfer
-   * @param args.maxReward - The maximum reward for the side effect
-   * @param args.insurance - The insurance for the side effect
-   * @param args.nonce - The nonce of the side effect
-   * @param args.signature - The signature of the side effect
-   * @param args.enforceExecutioner - The address of the executioner
-   */
-
-   createXTransferSfx = (args: {
+/*
+  createXTransferSfx = (args: {
     from: string;
     beneficiary: string;
     destChainId: string;
@@ -164,7 +149,7 @@ export class Gateway {
       enforceExecutioner: args.enforceExecutioner,
     });
   };
-
+*/
   /**
    * Encode transfer arguments
    * @param from - The address of the sender
@@ -196,16 +181,7 @@ export class Gateway {
     return [to, encodedAmount];
   }
 
-   /**
-   * Encode xtransfer arguments
-   * @param from - The address of the sender
-   * @param beneficiary - The address of the receiver
-   * @param destChainId - The destination chain
-   * @param asset - The asset to transfer
-   * @param value - The value to transfer
-   * @param insurance - The insurance for the side effect
-   * @param reward - The reward for the side effect
-   */
+  /*
   encodeXTransferArgs(
     from: string,
     beneficiary: string,
@@ -229,7 +205,7 @@ export class Gateway {
 
     return [beneficiary, destChainId, asset, encodedAmount];
   }
-
+  */
   /**
    * Convert an address into t3rn compatible form. For example, we want to ensure we pass the public key for polkadot addresses
    * @param address - The address to convert
