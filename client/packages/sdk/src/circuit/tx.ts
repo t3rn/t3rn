@@ -27,7 +27,7 @@ export class Tx {
   /**
    *
    * @param tx - The transaction to send
-   * @param param - Parameters for tx
+   * @param options - Options for transaction
    *
    * @returns Promise
    */
