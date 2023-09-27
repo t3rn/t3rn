@@ -5,6 +5,8 @@ rangers:
   - kusama
   - polkadot
 
+logLevel: info
+
 securityContext: 
   capabilities:
     drop:

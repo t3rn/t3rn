@@ -1,0 +1,59 @@
+[relaychain]
+chain   = "rococo-local"
+command = "polkadot"
+
+[[relaychain.nodes]]
+name    = "alice"
+ws_port = 9933
+
+[[relaychain.nodes]]
+name    = "bob"
+ws_port = 9934
+
+[[relaychain.nodes]]
+name    = "charlie"
+ws_port = 9935
+
+[[relaychain.nodes]]
+name    = "dave"
+ws_port = 9936
+
+[[relaychain.node_groups]]
+count = 1
+name  = "ferdie"
+
+[[parachains]]
+chain         = "asset-hub-westend"
+cumulus_based = true
+id            = 1000
+
+   [parachains.collator]
+   command  = "asset-hub"
+   name     = "asset-hub-collator"
+   ws_port  = 9946
+
+[[parachains]]
+chain         = "local"
+cumulus_based = true
+id            = 3333
+
+   [parachains.collator]
+   command  = "t0rn-collator"
+   name     = "collator"
+   ws_port  = 9947
+
+[[hrmp_channels]]
+sender = 3333
+recipient = 1000
+max_capacity = 8
+max_message_size = 8192
+
+[[hrmp_channels]]
+sender = 1000
+recipient = 3333
+max_capacity = 8
+max_message_size = 8192  
+
+[types.Header]
+number = "u64"
+weight = "u64"

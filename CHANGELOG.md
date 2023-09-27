@@ -4,6 +4,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.56.1-rc.0] - 2023-09-26
+### :wrench: Chores
+- [`64960cf`](https://github.com/t3rn/t3rn/commit/64960cf7e85e245b73c59d1b00cc8174ab75e784) - add dependabot config with grouping *(PR [#1266](https://github.com/t3rn/t3rn/pull/1266) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.56.0-rc.0] - 2023-09-26
+### :sparkles: New Features
+- [`a457399`](https://github.com/t3rn/t3rn/commit/a457399d5e9b579fa7ead2f324054947c107a4da) - zombienet test setup with AssetHub *(PR [#1313](https://github.com/t3rn/t3rn/pull/1313) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.55.2-rc.0] - 2023-09-22
+### :bug: Bug Fixes
+- [`4013a46`](https://github.com/t3rn/t3rn/commit/4013a4611ab0c1a21bb9573f7e9f8db6bfd644ed) - disregard past accumulated settlements from current round calculation *(PR [#1310](https://github.com/t3rn/t3rn/pull/1310) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.55.1-rc.0] - 2023-09-22
+### :wrench: Chores
+- [`bf9af27`](https://github.com/t3rn/t3rn/commit/bf9af274dc4d8bdd5e1966c5e8bb260a7ec6b77e) - disable inactive t0rn collators once per 6h session *(PR [#1311](https://github.com/t3rn/t3rn/pull/1311) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.55.0-rc.0] - 2023-09-21
+### :sparkles: New Features
+- [`3bcdf54`](https://github.com/t3rn/t3rn/commit/3bcdf54c856fbc1b67e49a4c7d82854e735dbdf2) - recover executor for each Vacuum::read_xtx_status *(PR [#1303](https://github.com/t3rn/t3rn/pull/1303) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.54.3-rc.0] - 2023-09-21
+### :wrench: Chores
+- [`a47e434`](https://github.com/t3rn/t3rn/commit/a47e4345920b6bcf49161d3c2d320464403bf5d9) - update sepolia pallet version to tag 1.1.3 *(PR [#1309](https://github.com/t3rn/t3rn/pull/1309) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.54.2-rc.0] - 2023-09-20
+### :bug: Bug Fixes
+- [`90cda7e`](https://github.com/t3rn/t3rn/commit/90cda7e7a29b486ea8d280ca5ba211de0031e24d) - check for above-zero target height increase before setting isActive *(PR [#1307](https://github.com/t3rn/t3rn/pull/1307) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.54.1-rc.0] - 2023-09-18
+### :wrench: Chores
+- [`93b3c26`](https://github.com/t3rn/t3rn/commit/93b3c263b5bbdebaff65b3def899b7a12ae9f724) - upgrade sepolia pallet version *(PR [#1306](https://github.com/t3rn/t3rn/pull/1306) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.54.0-rc.0] - 2023-09-16
+### :sparkles: New Features
+- [`f1af8c4`](https://github.com/t3rn/t3rn/commit/f1af8c4211d23449e93f59f277e1a1130932038f) - sdk align for ethereum ranger *(PR [#1304](https://github.com/t3rn/t3rn/pull/1304) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`723f330`](https://github.com/t3rn/t3rn/commit/723f330a64a15f5f9676d16d44638c4ae06d36a6) - grandpa-ranger should not escape submission loop *(PR [#1299](https://github.com/t3rn/t3rn/pull/1299) by [@3h4x](https://github.com/3h4x))*
+- [`7e14090`](https://github.com/t3rn/t3rn/commit/7e140907fa4ea2de7bf48c0880209fa236577072) - sdk have utils exported *(PR [#1305](https://github.com/t3rn/t3rn/pull/1305) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.53.0-rc.0] - 2023-09-12
+### :sparkles: New Features
+- [`1f2faba`](https://github.com/t3rn/t3rn/commit/1f2fababa6a560002becbe7a269f2b9cda0adbcb) - deployment kusama and polkadot ranger *(PR [#1289](https://github.com/t3rn/t3rn/pull/1289) by [@3h4x](https://github.com/3h4x))*
+- [`9f923cc`](https://github.com/t3rn/t3rn/commit/9f923cc6240df58622b48dedd996d33a55e1a7bd) - t0rn XCM config update *(PR [#1298](https://github.com/t3rn/t3rn/pull/1298) by [@chexware](https://github.com/chexware))*
+
+### :recycle: Refactors
+- [`ebacf3e`](https://github.com/t3rn/t3rn/commit/ebacf3e22ad5eb20cbd9440b358cc6ebad668621) - **grandpa-ranger**: submissions without interval *(PR [#1296](https://github.com/t3rn/t3rn/pull/1296) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`2e86869`](https://github.com/t3rn/t3rn/commit/2e86869aa3ba52211f8e017dc819559c1054fcd0) - grandpa ranger healthcheck *(PR [#1294](https://github.com/t3rn/t3rn/pull/1294) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.52.4-rc.0] - 2023-09-08
 ### :white_check_mark: Tests
 - [`a62119f`](https://github.com/t3rn/t3rn/commit/a62119f2b7969b74c6cba8a2981cc3778a430224) - check for drained ImportedHeaders at grandpa LC reset *(PR [#1291](https://github.com/t3rn/t3rn/pull/1291) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1613,3 +1674,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.52.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.1-rc.0...v1.52.2-rc.0
 [v1.52.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.2-rc.0...v1.52.3-rc.0
 [v1.52.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.3-rc.0...v1.52.4-rc.0
+[v1.53.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.52.4-rc.0...v1.53.0-rc.0
+[v1.54.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.53.0-rc.0...v1.54.0-rc.0
+[v1.54.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.0-rc.0...v1.54.1-rc.0
+[v1.54.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.1-rc.0...v1.54.2-rc.0
+[v1.54.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.2-rc.0...v1.54.3-rc.0
+[v1.55.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.54.3-rc.0...v1.55.0-rc.0
+[v1.55.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.0-rc.0...v1.55.1-rc.0
+[v1.55.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.1-rc.0...v1.55.2-rc.0
+[v1.56.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.2-rc.0...v1.56.0-rc.0
+[v1.56.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.56.0-rc.0...v1.56.1-rc.0

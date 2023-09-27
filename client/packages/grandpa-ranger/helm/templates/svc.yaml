@@ -1,21 +1,33 @@
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $app_version := .Chart.AppVersion | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $repository := .Values.repository }}
+{{- $tag := .Values.tag }}
+
+{{- range $profile := .Values.rangers }}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ $release_name }}-{{ $profile }}
   annotations:
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-name: {{ $release_name }}
     prometheus.io/scrape: "true"
   labels:
-    app.kubernetes.io/name: {{ .Release.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: {{ $release_name }}-{{ $chart_version }}
+    app.kubernetes.io/name: {{ $release_name }}-{{ $profile }}
+    app.kubernetes.io/instance: {{ $release_name }}-{{ $profile }}
+    app.kubernetes.io/version: {{ $app_version }}
+    app.kubernetes.io/managed-by: Helm
 spec:
   selector:
-    app.kubernetes.io/name: {{ .Release.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ $release_name }}-{{ $profile }}
+    app.kubernetes.io/instance: {{ $release_name }}-{{ $profile }}
   ports:
     - name: http
       port: 8080
       targetPort: 8080
       protocol: TCP
   type: ClusterIP
+
+{{ end }}

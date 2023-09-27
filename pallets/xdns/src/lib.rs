@@ -281,15 +281,19 @@ pub mod pallet {
                 (Zero::zero(), Zero::zero());
 
             if let Some(last_record) = historic_overview.last() {
-                if let Some((local, target)) =
+                if let Some((target_increase, local_increase)) =
                     FinalityVerifierActivity::determine_finalized_reports_increase(&[
                         last_record.clone(),
                         new_activity.clone(),
                     ])
                 {
-                    is_moving = true;
-                    local_height_increase = local;
-                    target_finalized_height_increase = target;
+                    if local_increase > Zero::zero() {
+                        local_height_increase = local_increase;
+                    }
+                    if target_increase > Zero::zero() {
+                        is_moving = true;
+                        target_finalized_height_increase = target_increase;
+                    }
                 }
             }
 
@@ -303,14 +307,16 @@ pub mod pallet {
 
             if !is_moving {
                 if let Some(previous) = historic_overview.iter().rev().nth(1).cloned() {
-                    if let Some((_, _)) =
+                    if let Some((target_finality_height_increase, _)) =
                         FinalityVerifierActivity::determine_finalized_reports_increase(&[
                             previous,
                             last_record.clone(),
                             new_activity,
                         ])
                     {
-                        is_moving = true;
+                        if target_finality_height_increase > Zero::zero() {
+                            is_moving = true;
+                        }
                     }
                 }
             }

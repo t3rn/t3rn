@@ -33,10 +33,10 @@ use t3rn_types::sfx::TargetId;
 t3rn_primitives::reexport_currency_types!();
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
-pub struct OrderStatusRead<Hash, BlockNumber> {
+pub struct OrderStatusRead<Hash, BlockNumber, Account> {
     pub xtx_id: Hash,
     pub status: CircuitStatus,
-    pub all_included_sfx: Vec<(Hash, CircuitStatus)>,
+    pub all_included_sfx: Vec<(Hash, CircuitStatus, Option<Account>)>,
     pub timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
 }
 
@@ -130,7 +130,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        OrderStatusRead(OrderStatusRead<T::Hash, BlockNumberFor<T>>),
+        OrderStatusRead(OrderStatusRead<T::Hash, BlockNumberFor<T>, T::AccountId>),
     }
 
     #[pallet::error]
@@ -159,6 +159,39 @@ pub mod pallet {
             T::CircuitSubmitAPI::on_extrinsic_trigger(
                 origin,
                 side_effects,
+                speed_mode,
+                SecurityLvl::Optimistic,
+            )?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000)]
+        pub fn single_order(
+            origin: OriginFor<T>,
+            destination: TargetId,
+            asset: Asset,
+            amount: BalanceOf<T>,
+            reward_asset: Asset,
+            max_reward: BalanceOf<T>,
+            insurance: BalanceOf<T>,
+            target_account: T::AccountId,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            let sfx_order =
+                OrderSFX::<T::AccountId, Asset, BalanceOf<T>, TargetId, Vec<u8>, BalanceOf<T>> {
+                    sfx_action: SFXAction::Transfer(destination, asset, target_account, amount),
+                    max_reward,
+                    insurance,
+                    reward_asset,
+                    remote_origin_nonce: None,
+                };
+
+            let side_effect: SideEffect<T::AccountId, BalanceOf<T>> = sfx_order.try_into()?;
+
+            T::CircuitSubmitAPI::on_extrinsic_trigger(
+                origin,
+                sp_std::vec![side_effect],
                 speed_mode,
                 SecurityLvl::Optimistic,
             )?;
@@ -224,7 +257,6 @@ pub mod pallet {
                             }
                     })
             {
-
                 // ToDo: assess whether we need to undergo the whole SFX confirmaiton process or can just confirm the side effect, mint and divide assets between user and executor
 
                 // Mint wrapped assets on local chain.
@@ -255,15 +287,30 @@ pub mod pallet {
             _origin: OriginFor<T>,
             xtx_id: T::Hash,
         ) -> DispatchResultWithPostInfo {
+            Self::emit_order_status(xtx_id)
+        }
+
+        #[pallet::weight(100_000)]
+        pub fn read_all_pending_orders_status(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            for xtx_id in T::ReadSFX::get_pending_xtx_ids() {
+                Self::emit_order_status(xtx_id)?;
+            }
+            Ok(().into())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        pub fn emit_order_status(xtx_id: T::Hash) -> DispatchResultWithPostInfo {
             let (status, timeouts_at) = T::ReadSFX::get_xtx_status(xtx_id)?;
             let sfx_of_xtx = T::ReadSFX::get_fsx_of_xtx(xtx_id)?;
             let all_included_sfx = sfx_of_xtx
                 .into_iter()
                 .map(|sfx| {
                     let fsx_status = T::ReadSFX::get_fsx_status(sfx)?;
-                    Ok((sfx, fsx_status))
+                    let fsx_executor = T::ReadSFX::get_fsx_executor(sfx)?;
+                    Ok((sfx, fsx_status, fsx_executor))
                 })
-                .collect::<Result<Vec<(T::Hash, CircuitStatus)>, DispatchError>>()?;
+                .collect::<Result<Vec<(T::Hash, CircuitStatus, Option<T::AccountId>)>, DispatchError>>()?;
 
             Self::deposit_event(Event::OrderStatusRead(OrderStatusRead {
                 xtx_id,
@@ -282,27 +329,30 @@ mod tests {
     use codec::{Decode, Encode};
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
-    use sp_runtime::AccountId32;
+    use sp_runtime::{traits::Keccak256, AccountId32};
+    use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        hotswap_latest_receipt_header_root, initialize_eth2_with_3rd_epoch,
-        prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, BlockNumber, Circuit,
-        CircuitError, CircuitEvent, Clock, EthereumEventInclusionProof, GlobalOnInitQueues, Hash,
-        MiniRuntime, MockedAssetEvent, OrderStatusRead, Portal, Rewards, RuntimeEvent as Event,
-        RuntimeOrigin, System, Vacuum, VacuumEvent, ASSET_DOT, ASSET_USDT, ETHEREUM_TARGET,
-        POLKADOT_TARGET, XDNS,
-    };
-    use t3rn_primitives::{
-        circuit::CircuitSubmitAPI, clock::OnHookQueues, light_client::LightClientAsyncAPI,
-        portal::Portal as PortalT, ExecutionSource,
+        activate_all_light_clients, hotswap_latest_receipt_header_root,
+        initialize_eth2_with_3rd_epoch, prepare_ext_builder_playground, AccountId, AssetId, Assets,
+        Balance, Balances, BlockNumber, Circuit, CircuitError, CircuitEvent, Clock,
+        EthereumEventInclusionProof, GlobalOnInitQueues, Hash, MiniRuntime, MockedAssetEvent,
+        OrderStatusRead, Portal, Rewards, RuntimeEvent as Event, RuntimeOrigin, System, Vacuum,
+        VacuumEvent, ASSET_DOT, ASSET_USDT, ETHEREUM_TARGET, POLKADOT_TARGET, XDNS,
     };
 
     use t3rn_primitives::{
-        circuit::types::{OrderSFX, SFXAction},
+        circuit::{
+            types::{OrderSFX, SFXAction},
+            CircuitSubmitAPI,
+        },
         claimable::CircuitRole,
+        clock::OnHookQueues,
+        light_client::LightClientAsyncAPI,
         monetary::TRN,
-        GatewayVendor, SpeedMode, TreasuryAccount, TreasuryAccountProvider,
+        portal::Portal as PortalT,
+        ExecutionSource, GatewayVendor, SpeedMode, TreasuryAccount, TreasuryAccountProvider,
     };
-    use t3rn_types::sfx::ConfirmedSideEffect;
+    use t3rn_types::sfx::{ConfirmedSideEffect, SideEffect};
 
     use frame_support::{traits::Currency, weights::Weight};
 
@@ -311,15 +361,6 @@ mod tests {
         monetary::EXISTENTIAL_DEPOSIT,
     };
     use t3rn_types::fsx::TargetId;
-
-    fn activate_all_light_clients() {
-        for &gateway in XDNS::all_gateway_ids().iter() {
-            println!("Activating light client for gateway: {:?}", gateway);
-            Portal::turn_on(RuntimeOrigin::root(), gateway).unwrap();
-        }
-        XDNS::process_all_verifier_overviews(System::block_number());
-        XDNS::process_overview(System::block_number());
-    }
 
     fn mint_required_assets_for_optimistic_actors(
         requester: AccountId,
@@ -333,6 +374,8 @@ mod tests {
         let issuer_is_escrow_account = MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
         Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
         Balances::deposit_creating(&executor, (100_000 * TRN) as Balance); // To cover fees
+        let requester_starting_balance = Assets::balance(ASSET_DOT, &requester);
+        let executor_starting_balance = Assets::balance(ASSET_DOT, &executor);
         assert_ok!(Assets::mint(
             RuntimeOrigin::signed(issuer_is_escrow_account.clone()),
             asset_id,
@@ -347,11 +390,11 @@ mod tests {
         ));
         assert_eq!(
             Assets::balance(asset_id, &requester),
-            max_reward + (EXISTENTIAL_DEPOSIT as Balance)
+            max_reward + (EXISTENTIAL_DEPOSIT as Balance) + requester_starting_balance
         );
         assert_eq!(
             Assets::balance(asset_id, &executor),
-            insurance + (EXISTENTIAL_DEPOSIT as Balance)
+            insurance + (EXISTENTIAL_DEPOSIT as Balance) + executor_starting_balance
         );
     }
 
@@ -370,7 +413,7 @@ mod tests {
         }
     }
 
-    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash, BlockNumber> {
+    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash, BlockNumber, AccountId32> {
         // Recover system event
         let events = System::events();
         let expect_order_status_read = events.last();
@@ -431,6 +474,53 @@ mod tests {
     }
 
     #[test]
+    fn optimistic_order_single_decoded_sfx_vacuum_delivers_to_circuit() {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([2u8; 32]);
+            let requester_on_dest = AccountId32::from([3u8; 32]);
+
+            mint_required_assets_for_optimistic_actors(
+                requester.clone(),
+                executor,
+                200u128,
+                50u128,
+                ASSET_DOT,
+            );
+
+            activate_all_light_clients();
+
+            assert_ok!(Vacuum::single_order(
+                RuntimeOrigin::signed(requester.clone()),
+                POLKADOT_TARGET,
+                ASSET_DOT,
+                100u128,
+                ASSET_DOT,
+                200u128,
+                50u128,
+                requester_on_dest.clone(),
+                SpeedMode::Fast
+            ));
+
+            let xtx_id = expect_last_event_to_emit_xtx_id();
+
+            assert_eq!(
+                xtx_id,
+                Hash::from(hex!(
+                    "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
+                ))
+            );
+
+            // Expect balance of requester to be reduced by max_reward
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &requester),
+                EXISTENTIAL_DEPOSIT as Balance
+            );
+        });
+    }
+
+    #[test]
     fn optimistic_order_single_sfx_vacuum_delivers_to_circuit() {
         let mut ext = prepare_ext_builder_playground();
         ext.execute_with(|| {
@@ -476,6 +566,148 @@ mod tests {
             assert_eq!(
                 Assets::balance(ASSET_DOT, &requester),
                 EXISTENTIAL_DEPOSIT as Balance
+            );
+        });
+    }
+
+    fn make_whole_vacuum_trip_including_minting_and_confirmation(
+        reward_and_requested_asset: AssetId,
+        executor: AccountId32,
+        requester: AccountId32,
+        requester_on_dest: AccountId32,
+    ) {
+        mint_required_assets_for_optimistic_actors(
+            requester.clone(),
+            executor.clone(),
+            200u128,
+            50u128,
+            ASSET_DOT,
+        );
+
+        let sfx_action = SFXAction::Transfer(
+            POLKADOT_TARGET,
+            reward_and_requested_asset,
+            requester_on_dest.clone(),
+            100u128,
+        );
+        let sfx_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+            sfx_action,
+            max_reward: 200u128,
+            insurance: 50u128,
+            reward_asset: reward_and_requested_asset,
+            remote_origin_nonce: None,
+        };
+
+        assert_ok!(Vacuum::order(
+            RuntimeOrigin::signed(requester.clone()),
+            vec![sfx_order.clone()],
+            SpeedMode::Fast,
+        ));
+
+        let xtx_id = expect_last_event_to_emit_xtx_id();
+
+        let sfx: SideEffect<AccountId32, Balance> = sfx_order.try_into().unwrap();
+        let expected_sfx_hash = sfx.generate_id::<Keccak256>(xtx_id.0.as_slice(), 0);
+
+        assert_ok!(Circuit::bid_sfx(
+            RuntimeOrigin::signed(executor.clone()),
+            expected_sfx_hash,
+            198 as Balance,
+        ));
+
+        let mut scale_encoded_transfer_event = MockedAssetEvent::<MiniRuntime>::Transferred {
+            asset_id: reward_and_requested_asset,
+            from: executor.clone(),
+            to: requester_on_dest.clone(),
+            amount: 100 as Balance,
+        }
+        .encode();
+        // Complete bidding
+        System::set_block_number(System::block_number() + 3);
+        Clock::on_initialize(System::block_number());
+
+        // append an extra pallet event index byte as the second byte
+        scale_encoded_transfer_event.insert(0, 4u8);
+
+        // Confirm
+        let confirmation_transfer_1 = ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+            err: None,
+            output: None,
+            inclusion_data: scale_encoded_transfer_event,
+            executioner: executor.clone(),
+            received_at: System::block_number(),
+            cost: None,
+        };
+
+        assert_ok!(Circuit::confirm_side_effect(
+            RuntimeOrigin::signed(executor.clone()),
+            expected_sfx_hash,
+            confirmation_transfer_1
+        ));
+    }
+
+    #[test]
+    fn optimistic_order_four_times_in_dispersed_intervals_sfx_correctly_rewards_executor_at_successful_confirm(
+    ) {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([2u8; 32]);
+            let requester_on_dest = AccountId32::from([3u8; 32]);
+
+            activate_all_light_clients();
+
+            for loop_index in 0..3 {
+                make_whole_vacuum_trip_including_minting_and_confirmation(
+                    ASSET_DOT,
+                    executor.clone(),
+                    requester.clone(),
+                    requester_on_dest.clone(),
+                );
+            }
+
+            // Check executor's balance before claim - insurance amount should be returned
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                3 * (EXISTENTIAL_DEPOSIT as Balance + 50 as Balance) // 3 x insurance returns
+            );
+
+            System::set_block_number(300);
+            GlobalOnInitQueues::process_hourly(300, Weight::MAX);
+
+            // Claim via Rewards
+            let _claim_res = Rewards::claim(
+                RuntimeOrigin::signed(executor.clone()),
+                Some(CircuitRole::Executor),
+            );
+
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                3 * (EXISTENTIAL_DEPOSIT as Balance + 50 as Balance + 200 as Balance)
+            );
+
+            // Make one more request in the next round
+            System::set_block_number(301);
+            activate_all_light_clients();
+
+            make_whole_vacuum_trip_including_minting_and_confirmation(
+                ASSET_DOT,
+                executor.clone(),
+                requester.clone(),
+                requester_on_dest.clone(),
+            );
+
+            GlobalOnInitQueues::process_hourly(600, Weight::MAX);
+
+            // Claim via Rewards
+            let _claim_res = Rewards::claim(
+                RuntimeOrigin::signed(executor.clone()),
+                Some(CircuitRole::Executor),
+            );
+
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                4 * (EXISTENTIAL_DEPOSIT as Balance + 50 as Balance + 200 as Balance)
             );
         });
     }
@@ -544,13 +776,77 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
+                }
+            );
+
+            System::reset_events();
+
+            assert_ok!(Vacuum::read_all_pending_orders_status(
+                RuntimeOrigin::signed(requester.clone()),
+            ));
+
+            let order_status = expect_last_event_to_read_order_status();
+
+            assert_eq!(
+                order_status,
+                OrderStatusRead {
+                    xtx_id,
+                    status: CircuitStatus::PendingBidding,
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
+                }
+            );
+
+            System::reset_events();
+
+            assert_ok!(Vacuum::read_all_pending_orders_status(
+                RuntimeOrigin::signed(requester.clone()),
+            ));
+
+            let order_status = expect_last_event_to_read_order_status();
+
+            assert_eq!(
+                order_status,
+                OrderStatusRead {
+                    xtx_id,
+                    status: CircuitStatus::PendingBidding,
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -619,13 +915,17 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::FinishedAllSteps,
+                        Some(AccountId32::new([1u8; 32]))
+                    ),],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -746,13 +1046,13 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding, None)],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 49,
+                        estimated_height_there: 56,
+                        submit_by_height_here: 41,
+                        submit_by_height_there: 40,
+                        emergency_timeout_here: 433,
                         there: ETHEREUM_TARGET,
                         dlq: None
                     },
@@ -820,13 +1120,13 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
+                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps, Some(executor.clone())),],
                     timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 49,
+                        estimated_height_there: 56,
+                        submit_by_height_here: 41,
+                        submit_by_height_there: 40,
+                        emergency_timeout_here: 433,
                         there: ETHEREUM_TARGET,
                         dlq: None
                     },
@@ -918,13 +1218,17 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::PendingBidding,
+                        None
+                    )],
                     timeouts_at: AdaptiveTimeout {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
                         dlq: None
                     },
@@ -968,8 +1272,9 @@ mod tests {
                 CircuitError::<MiniRuntime>::ConfirmationFailed
             );
 
-            // Wait for after XTX timeout
+            // Wait for after XTX emergency timeout
             System::set_block_number(System::block_number() + 401);
+
             // Trigger XTX revert queue and expect move to DLQ
             Circuit::process_emergency_revert_xtx_queue(
                 System::block_number(),
@@ -998,21 +1303,26 @@ mod tests {
                 OrderStatusRead {
                     xtx_id,
                     status: CircuitStatus::Ready,
-                    all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::Ready),],
+                    all_included_sfx: vec![(
+                        expected_sfx_hash,
+                        CircuitStatus::Ready,
+                        Some(AccountId32::new([1u8; 32]))
+                    ),],
                     timeouts_at: AdaptiveTimeout {
-                        estimated_height_here: 817,
-                        estimated_height_there: 824,
-                        submit_by_height_here: 417,
-                        submit_by_height_there: 424,
-                        emergency_timeout_here: 417,
+                        estimated_height_here: 97,
+                        estimated_height_there: 152,
+                        submit_by_height_here: 65,
+                        submit_by_height_there: 88,
+                        emergency_timeout_here: 433,
                         there: [1, 1, 1, 1],
-                        dlq: Some(453)
+                        dlq: Some(469)
                     },
                 }
             );
 
             // Now activate the LightClient again and expect the DLQ to be processed
             mock_signal_unhalt(POLKADOT_TARGET, GatewayVendor::Polkadot);
+            activate_all_light_clients();
 
             // Advance 1 block
             System::set_block_number(System::block_number() + 1);

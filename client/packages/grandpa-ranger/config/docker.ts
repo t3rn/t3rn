@@ -19,4 +19,5 @@ export default {
 	},
 	rangeInterval: 10, // time between range submissions in seconds
 	targetGatewayId: "roco",
+	batches_max: 10,
 }

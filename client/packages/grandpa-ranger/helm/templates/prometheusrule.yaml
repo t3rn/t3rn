@@ -1,0 +1,31 @@
+# https://github.com/paritytech/substrate/blob/b797b89a9633c387ebc2f283af83d9cd450f5f50/scripts/ci/monitoring/alerting-rules/alerting-rules.yaml
+
+{{- range $profile := .Values.rangers }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: t3rn-blockchain
+    release: kube-prometheus-stack    
+    app: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    heritage: Helm
+  name: grandpa-ranger-{{ $profile }}.rules
+  namespace: grandpa-ranger
+spec:
+  groups:
+  - name: grandpa-ranger-{{ $profile }}.rules
+    rules:
+
+    - alert: GrandpaRangerHeightDiffError
+      annotations:
+        description: Grandpa Ranger Circuit and Target height diff has increased and is more than 50 blocks
+        monitoring: https://monitoring.t3rn.io/d/metrics-dashboard/grandpa-ranger?orgId=1&from=now-6h&to=now&refresh=1m
+      expr: max(height{service="grandpa-ranger-{{ $profile }}"}) - min(height{service="grandpa-ranger-{{ $profile }}"}) > 100
+      for: 30m
+      labels:
+        severity: error
+
+{{- end }}

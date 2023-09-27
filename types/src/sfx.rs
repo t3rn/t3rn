@@ -42,6 +42,7 @@ pub const SWAP_SIDE_EFFECT_ID: &[u8; 4] = b"swap";
 pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SideEffect<AccountId, BalanceOf> {
     pub target: TargetId,
     pub max_reward: BalanceOf,
