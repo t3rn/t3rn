@@ -224,18 +224,30 @@ pub mod pallet {
                             }
                     })
             {
-                side_effect.enforce_executor = Some(who.clone());
+
+                // ToDo: assess whether we need to undergo the whole SFX confirmaiton process or can just confirm the side effect, mint and divide assets between user and executor
+
+                // Mint wrapped assets on local chain.
+                let amount = decoded_remote_order.amount.as_u128();
+                // In the context of minting assets, max reward is the net reward to executor.
+                let max_reward = decoded_remote_order.max_reward.as_u128();
+                assert!(amount > max_reward, "Vecuum::remote_order -- amount must be greater than max_reward for minting assets");
+
+                // T::Xdns::mint_asset(decoded_remote_order.asset, amount, Origin::signed(T::TreasurAccounts::get_account(Treasury::Escrow())))?;
+                // side_effect.enforce_executor = Some(who.clone());
 
                 // Try bridge wrap assets.
                 //  T::CircuitSubmitAPI::confirm()
             }
 
+            // For remote order + remote reward, assume on_remote_origin_trigger
             T::CircuitSubmitAPI::on_remote_origin_trigger(
                 origin.clone(),
                 remote_origin.to_account_id(),
                 vec![side_effect],
                 speed_mode,
             )
+            //
         }
 
         #[pallet::weight(100_000)]
