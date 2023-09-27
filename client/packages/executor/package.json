@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "npm exec -- only-allow pnpm",
-    "start": "yarn build && EXECUTOR=example node dist/main.js",
+    "start": "yarn build && node dist/main.js",
     "dev": "ts-node src/main.ts",
     "build": "tsup",
     "lint": "eslint --ext .ts src",
