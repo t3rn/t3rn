@@ -16,7 +16,7 @@ export default {
       target: SFX_XTRAN_TARGET,
       maxReward: SFX_XTRAN_MAX_REWARD,
       insurance: SFX_XTRAN_INSURANCE,
-      action: "xtran",
+      action: "tass",
       encodedArgs: [
         {
           destChainId: SFX_XTRAN_CHAIN_ID, 

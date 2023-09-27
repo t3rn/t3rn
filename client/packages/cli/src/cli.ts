@@ -19,13 +19,13 @@ const program = new Command()
 program
   .name("t3rn CLI")
   .description("CLI for interacting with the t3rn blockchain")
-  .version("0.1.0")
+  .version("0.1.1")
 
 program
   .command("init")
   .description("Generate a config or transfer template")
   .option("-t, --transfer [file-path]", "Generate a transfer template")
-  .option("-x, --xtransfer [file-path]", "Generate a cross-chain transfer template")
+  //.option("-x, --xtransfer [file-path]", "Generate a cross-chain transfer template") // enable when agreed on XCM workflow
   .action(handleInitCmd)
 
 withExportMode(

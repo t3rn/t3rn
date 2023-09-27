@@ -37,7 +37,7 @@ export type EncodedArgs = z.infer<typeof EncodedArgsSchema>
 export const SideEffectActionSchema = z.enum([
   "data",
   "tran",
-  "xtran",
+  //"xtran",  // enable when agreed on XCM workflow
   "tass",
   "swap",
   "aliq",
@@ -94,7 +94,7 @@ export const SideEffectActions = {
   Data: "data",
   Transfer: "tran",
   TransferAsset: "tass",
-  XcmTransfer: "xtran",
+  //XcmTransfer: "xtran", // enable when agreed on XCM workflow
   Swap: "swap",
   AddLiquidity: "aliq",
   RemoveLiquidity: "rliq",
