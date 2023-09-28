@@ -33,16 +33,20 @@ export class CircuitRelayer extends EventEmitter {
    * @param sfxId The bid is for
    * @param amount The bidding amount, as integer in the reward asset
    */
-  async bidSfx(sfxId: string, amount: BN): Promise<string> {
-    logger.debug({ nonce: this.sdk.nonce }, "Submitting sfxBid to circuit")
-
+  async bidSfx(sfxId: string, amount: BN): Promise<any> {
     const encodedSfxId = createType("Hash", sfxId);
     const encodedAmount = createType("u128", amount);
     const tx = this.api.tx.circuit.bidSfx(
       encodedSfxId as never,
       encodedAmount as never,
     );
-    return this.sdk.circuit.tx.signAndSend(tx, { nonce: this.sdk.nonce });
+    const result = this.sdk.circuit.tx.signAndSend(tx, {
+      nonce: this.sdk.nonce,
+    });
+
+    // Increment nonce in case we want to send multiple bids in a single block
+    this.sdk.nonce++;
+    return result;
   }
 
   /**

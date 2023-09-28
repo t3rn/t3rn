@@ -36,39 +36,38 @@ export class Tx {
     tx: SubmittableExtrinsic,
     options: Partial<SignerOptions>
   ): Promise<any> {
-    let exportObj: ExtrinsicExport | undefined;
+    let exportObj: ExtrinsicExport;
 
     if (this.exportMode) {
       exportObj = new ExtrinsicExport(tx, this.signer.address);
     }
 
-    return tx.signAndSend(
-      this.signer,
-      options,
-      ({ dispatchError, status, events }) => {
-        if (this.exportMode && exportObj) {
+    return new Promise((resolve, reject) =>
+      tx.signAndSend(
+        this.signer,
+        options,
+        async ({ dispatchError, status, events }) => {
           events.forEach(({ event }) => {
-            exportObj.addEvent(event);
+            exportObj?.addEvent(event);
           });
-        }
 
-        if (dispatchError?.isModule) {
-          const err = this.api.registry.findMetaError(dispatchError.asModule);
+          if (dispatchError?.isModule) {
+            const err = this.api.registry.findMetaError(dispatchError.asModule);
 
-          if (this.exportMode && exportObj) {
-            exportObj.addErr(dispatchError).toFile();
+            exportObj?.addErr(dispatchError).toFile();
+            reject(Error(`${err.section}::${err.name}`));
+          } else if (dispatchError) {
+            exportObj?.addErr(dispatchError).toFile();
+
+            reject(Error(dispatchError.toString()));
+          } else if (status.isInBlock) {
+            resolve({status, events, dispatchError});
           }
-
-          throw new Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`);
-        } else if (dispatchError) {
-          if (this.exportMode && exportObj) {
-            exportObj.addErr(dispatchError).toFile();
-          }
-
-          throw new Error(dispatchError.toString());
         }
-      }
-    );
+      )
+    ).then((result: any) => {
+      return result
+    });
   }
 
   /**

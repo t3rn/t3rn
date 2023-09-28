@@ -599,7 +599,7 @@ export class ExecutionManager {
   }
 
   public stopSfxListener(sfx) {
-    sfx.off('Notification');
+    sfx.off("Notification");
   }
 
   /**
@@ -612,15 +612,13 @@ export class ExecutionManager {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
           // Increment nonce in case we want to send multiple bids in a single block
-          this.sdk.nonce++;
           this.circuitRelayer
             .bidSfx(
               notification.payload.sfxId,
               notification.payload.bidAmount as BN,
             )
-            .then((data: any) => {
-              logger.error(data)
-              sfx.bidAccepted(notification.payload.bidAmount as number);
+            .then((status: any) => {
+              sfx.bidAccepted(status, notification.payload.bidAmount as number);
             })
             .catch((e) => {
               logger.warn(
@@ -628,7 +626,7 @@ export class ExecutionManager {
                   xtxId: sfx.xtxId,
                   error: e.message,
                 },
-                `Bid rejected ❌`,
+                `🍄 Bid rejected`,
               );
               this.prometheus.executorBidRejected.inc({ error: e.message });
               sfx.bidRejected();

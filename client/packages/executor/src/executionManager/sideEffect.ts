@@ -399,7 +399,7 @@ export class SideEffect extends EventEmitter {
    *
    * @param bidAmount The bidding amount that was accepted. This is the reward amount, which is added to the subject
    */
-  bidAccepted(bidAmount: number) {
+  bidAccepted(status, bidAmount: number) {
     this.txStatus = TxStatus.Ready; // open mutex lock
 
     // usually, event fire quicker then a TX resolves. This prevents that we overwrite the TX status, when a lower bid was in the same block
@@ -408,7 +408,11 @@ export class SideEffect extends EventEmitter {
       this.reward.next(this.gateway.toFloat(bidAmount)); // not sure if we want to do this tbh. Reacting to other bids should be sufficient
       this.prometheus.executorBid.inc({ scenario: "Accepted" });
       logger.info(
-        { xtxId: this.xtxId, bidAmount: bidAmount.toString() },
+        {
+          xtxId: this.xtxId,
+          bidAmount: bidAmount.toString(),
+          block: status.inBlock,
+        },
         `Bid accepted ✅`,
       );
     } else {

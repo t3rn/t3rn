@@ -1,7 +1,10 @@
 import { default as chai, expect } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { Execution } from "../src/executionManager/execution";
-import { NotificationType, SideEffect } from "../src/executionManager/sideEffect";
+import {
+  NotificationType,
+  SideEffect,
+} from "../src/executionManager/sideEffect";
 import { instance, mock, when } from "ts-mockito";
 import { CircuitRelayer } from "../src/circuit/relayer";
 import BN from "bn.js";
@@ -40,54 +43,54 @@ describe("Execution", () => {
 describe("SideEffect", () => {
   let sfx;
 
-//   beforeEach(async () => {
-//     sfx = new SideEffect(
-//       {
-//         action: {
-//           toHuman() {
-//             return "tran";
-//           },
-//         },
-//         encodedArgs: [],
-//         target: {
-//           toU8a() {
-//             return Uint8Array.from(Buffer.from("ROCO"));
-//           },
-//         },
-//         from: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-//         to: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-//         value: 50,
-//         maxReward: 1,
-//         insurance: 100,
-//       },
-//       "0xacabacab",
-//       "0xacabacabacabacab",
-//       sdk as any,
-//       null!,
-//       null!,
-//       mock(),
-//       mock(),
-//       mock(),
-//     );
-//     this.vendor = record.gateway_record.verification_vendor.toHuman();
-//     this.executionVendor = record.gateway_record.execution_vendor.toHuman();
-//     let tokens: any[] = record.tokens.map((token) => token.toHuman());
+  //   beforeEach(async () => {
+  //     sfx = new SideEffect(
+  //       {
+  //         action: {
+  //           toHuman() {
+  //             return "tran";
+  //           },
+  //         },
+  //         encodedArgs: [],
+  //         target: {
+  //           toU8a() {
+  //             return Uint8Array.from(Buffer.from("ROCO"));
+  //           },
+  //         },
+  //         from: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+  //         to: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+  //         value: 50,
+  //         maxReward: 1,
+  //         insurance: 100,
+  //       },
+  //       "0xacabacab",
+  //       "0xacabacabacabacab",
+  //       sdk as any,
+  //       null!,
+  //       null!,
+  //       mock(),
+  //       mock(),
+  //       mock(),
+  //     );
+  //     this.vendor = record.gateway_record.verification_vendor.toHuman();
+  //     this.executionVendor = record.gateway_record.execution_vendor.toHuman();
+  //     let tokens: any[] = record.tokens.map((token) => token.toHuman());
 
-//     let nativeToken = tokens.filter((token) => token.gateway_id === this.id)[0];
-//     // @ts-ignore
-//     this.ticker = Object.values(nativeToken.token_props)[0].symbol;
-//     this.decimals = parseInt(
-//       // @ts-ignore
-//       Object.values(nativeToken.token_props)[0].decimals,
-//     );
-//     this.tokenId = parseInt(
-//       // @ts-ignore
-//       Object.values(nativeToken.token_props)[0].id,
-//     );
-//     this.allowedSideEffects = record.gateway_record.allowed_side_effects
-//       .toHuman()
-//       .map((entry) => entry[0]);
-//   });
+  //     let nativeToken = tokens.filter((token) => token.gateway_id === this.id)[0];
+  //     // @ts-ignore
+  //     this.ticker = Object.values(nativeToken.token_props)[0].symbol;
+  //     this.decimals = parseInt(
+  //       // @ts-ignore
+  //       Object.values(nativeToken.token_props)[0].decimals,
+  //     );
+  //     this.tokenId = parseInt(
+  //       // @ts-ignore
+  //       Object.values(nativeToken.token_props)[0].id,
+  //     );
+  //     this.allowedSideEffects = record.gateway_record.allowed_side_effects
+  //       .toHuman()
+  //       .map((entry) => entry[0]);
+  //   });
 });
 
 // describe("Circuit relayer functionality", async () => {
@@ -146,7 +149,7 @@ describe("SideEffect", () => {
 //       mock(),
 //     );
 //     expect(sfx.id).to.be.equal("0xdebf2d86fba3676d63249807a872f2080eb0d9fda7b1dab8407fa8277f632511");
-    
+
 //     executionManager.initSfxListeners(sfx);
 //     sfx.emit("Notification", {
 //       type: NotificationType.SubmitBid,
