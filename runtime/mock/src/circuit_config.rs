@@ -246,6 +246,24 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
 
         Ok(().into())
     }
+
+    fn mint(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(origin, asset_id, sp_runtime::MultiAddress::Id(user), amount)
+    }
+
+    fn burn(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::burn(origin, asset_id, sp_runtime::MultiAddress::Id(user), amount)
+    }
 }
 
 impl pallet_circuit::Config for Runtime {

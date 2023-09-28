@@ -1,6 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-extern crate core;
-
 pub mod evm_ingress_logs;
 #[cfg(test)]
 pub mod mini_mock;

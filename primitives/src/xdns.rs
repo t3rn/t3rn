@@ -36,6 +36,20 @@ pub trait PalletAssetsOverlay<T: frame_system::Config, Balance> {
         min_balance: Balance,
     ) -> DispatchResult;
 
+    fn mint(
+        origin: OriginFor<T>,
+        asset_id: AssetId,
+        user: <T as frame_system::Config>::AccountId,
+        amount: Balance,
+    ) -> DispatchResult;
+
+    fn burn(
+        origin: OriginFor<T>,
+        asset_id: AssetId,
+        user: <T as frame_system::Config>::AccountId,
+        amount: Balance,
+    ) -> DispatchResult;
+
     fn destroy(origin: OriginFor<T>, asset_id: &AssetId) -> DispatchResultWithPostInfo;
 }
 
@@ -263,7 +277,10 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     ) -> DispatchResult;
 
     fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord>;
-
+    fn check_asset_is_mintable(gateway_id: TargetId, asset_id: AssetId) -> bool;
+    fn mint(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
+    fn burn(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
+    fn is_target_active(gateway_id: TargetId, security_lvl: &SecurityLvl) -> bool;
     fn get_token_by_eth_address(
         gateway_id: TargetId,
         eth_address: H160,

@@ -457,11 +457,12 @@ pub mod pallet {
         pub fn add_supported_bridging_asset(
             origin: OriginFor<T>,
             asset_id: AssetId,
+            target_id: TargetId,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            if !<AuthorizedMintAssets<T>>::get().contains(&asset_id) {
-                <AuthorizedMintAssets<T>>::append(asset_id);
+            if !<AuthorizedMintAssets<T>>::get().contains(&(asset_id, target_id)) {
+                <AuthorizedMintAssets<T>>::append((&asset_id, &target_id));
             }
 
             Ok(().into())
@@ -472,12 +473,13 @@ pub mod pallet {
         pub fn purge_supported_bridging_asset(
             origin: OriginFor<T>,
             asset_id: AssetId,
+            target_id: TargetId,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            if <AuthorizedMintAssets<T>>::get().contains(&asset_id) {
+            if <AuthorizedMintAssets<T>>::get().contains(&(asset_id, target_id)) {
                 <AuthorizedMintAssets<T>>::mutate(|all_token_ids| {
-                    all_token_ids.retain(|&id| id != asset_id);
+                    all_token_ids.retain(|&(a_id, t_id)| a_id != asset_id && t_id != target_id);
                 });
             }
 
@@ -663,7 +665,8 @@ pub mod pallet {
     // All known TokenIds to t3rn
     #[pallet::storage]
     #[pallet::getter(fn supported_bridging_assets)]
-    pub type AuthorizedMintAssets<T: Config> = StorageValue<_, Vec<AssetId>, ValueQuery>;
+    pub type AuthorizedMintAssets<T: Config> =
+        StorageValue<_, Vec<(AssetId, TargetId)>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn all_gateway_ids)]
@@ -997,12 +1000,20 @@ pub mod pallet {
 
         fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord> {
             let mut available_assets = Vec::new();
-            for asset in <AuthorizedMintAssets<T>>::get() {
+            for (asset, target) in <AuthorizedMintAssets<T>>::get() {
                 if let Some(linked_asset) = <Tokens<T>>::get(asset, gateway_id) {
-                    available_assets.push(linked_asset);
+                    if target == gateway_id {
+                        available_assets.push(linked_asset);
+                    }
                 }
             }
             available_assets
+        }
+
+        fn check_asset_is_mintable(gateway_id: TargetId, asset_id: AssetId) -> bool {
+            Self::list_available_mint_assets(gateway_id)
+                .iter()
+                .any(|token| token.token_id == asset_id)
         }
 
         fn get_token_by_eth_address(
@@ -1236,9 +1247,6 @@ pub mod pallet {
         }
 
         fn read_last_activity_overview() -> Vec<GatewayActivity<BlockNumberFor<T>>> {
-            // Self::process_overview(<frame_system::Pallet<T>>::block_number());
-            // <GatewaysOverviewStore<T>>::get()
-
             let mut overview = <GatewaysOverviewStore<T>>::get();
             // get the latest update
             let latest_update = overview
@@ -1253,6 +1261,43 @@ pub mod pallet {
             }
 
             overview
+        }
+
+        fn is_target_active(gateway_id: TargetId, security_lvl: &SecurityLvl) -> bool {
+            match Self::read_last_activity(gateway_id) {
+                Some(activity) => activity.security_lvl >= *security_lvl && activity.is_active,
+                None => false,
+            }
+        }
+
+        fn mint(asset_id: AssetId, user: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
+            assert!(
+                Self::check_asset_is_mintable(T::SelfGatewayId::get(), asset_id),
+                "Asset is not mintable"
+            );
+            T::AssetsOverlay::mint(
+                T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                )),
+                asset_id,
+                user,
+                amount,
+            )
+        }
+
+        fn burn(asset_id: AssetId, user: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
+            assert!(
+                Self::check_asset_is_mintable(T::SelfGatewayId::get(), asset_id),
+                "Asset is not mintable"
+            );
+            T::AssetsOverlay::burn(
+                T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                )),
+                asset_id,
+                user,
+                amount,
+            )
         }
 
         fn verify_active(

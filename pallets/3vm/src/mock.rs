@@ -261,6 +261,24 @@ impl PalletAssetsOverlay<Test, Balance> for Test {
     fn destroy(_origin: RuntimeOrigin, _asset_id: &AssetId) -> DispatchResultWithPostInfo {
         Err("Mock PalletAssetsOverlay::destroy - not implemented".into())
     }
+
+    fn mint(
+        _origin: RuntimeOrigin,
+        _asset_id: AssetId,
+        _user: AccountId,
+        _amount: Balance,
+    ) -> DispatchResult {
+        Err("Mock PalletAssetsOverlay::mint - not implemented".into())
+    }
+
+    fn burn(
+        _origin: RuntimeOrigin,
+        _asset_id: AssetId,
+        _user: AccountId,
+        _amount: Balance,
+    ) -> DispatchResult {
+        Err("Mock PalletAssetsOverlay::burn - not implemented".into())
+    }
 }
 
 impl pallet_xdns::Config for Test {

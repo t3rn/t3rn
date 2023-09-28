@@ -242,8 +242,8 @@ pub type CommitteeRecoverable = Vec<Vec<u8>>;
 pub type CommitteeTransitionEncoded = Vec<u8>;
 
 pub type AttestersChange = Vec<([u8; 33], u32)>;
-pub type BatchConfirmedSfxWithGMPPayload = Vec<(H512)>;
-pub type BatchRevertedSfxId = Vec<(H256)>;
+pub type BatchConfirmedSfxWithGMPPayload = Vec<H512>;
+pub type BatchRevertedSfxId = Vec<H256>;
 
 pub trait AttestersWriteApi<Account, Error> {
     fn request_sfx_attestation_commit(

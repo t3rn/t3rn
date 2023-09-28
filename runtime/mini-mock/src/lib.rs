@@ -187,6 +187,24 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
 
         Ok(().into())
     }
+
+    fn mint(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(origin, asset_id, user, amount)
+    }
+
+    fn burn(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::burn(origin, asset_id, user, amount)
+    }
 }
 
 parameter_types! {
