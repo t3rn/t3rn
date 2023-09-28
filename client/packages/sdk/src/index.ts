@@ -33,7 +33,6 @@ export class Sdk {
   exportMode: boolean;
   nonce: number;
 
-
   /**
    * @param provider - RPC url or WsProvider instance of circuit
    * @param circuitSigner - The signer to use for signing transactions

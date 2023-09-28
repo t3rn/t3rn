@@ -1,10 +1,8 @@
-import { join } from "path";
 import { ApiPromise } from "@polkadot/api";
 import { u8aToHex } from "@polkadot/util";
 import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { BN } from "@polkadot/util";
 import { Sdk } from "@t3rn/sdk";
-import { default as pino, Logger } from "pino";
 
 export async function getStorage(
   api: ApiPromise,
@@ -58,36 +56,6 @@ export async function fetchNonce(
  */
 export function problySubstrateSeed(x: string): boolean {
   return /^0x[0-9a-f]{64}$/.test(x);
-}
-
-/** Creates a pino logger. */
-export function createLogger(name: string, logsDir?: string): Logger {
-  let logger: Logger;
-
-  if (logsDir) {
-    logger = pino(
-      {
-        level: process.env.LOG_LEVEL || "info",
-        formatters: {
-          bindings(bindings) {
-            return { ...bindings, name };
-          },
-        },
-      },
-      pino.destination(join(logsDir.toString(), `${Date.now()}.log`)),
-    );
-  } else {
-    logger = pino({
-      level: process.env.LOG_LEVEL || "info",
-      formatters: {
-        bindings(bindings) {
-          return { ...bindings, name };
-        },
-      },
-    });
-  }
-
-  return logger;
 }
 
 export async function getBalanceWithDecimals(
