@@ -18,9 +18,11 @@ pub type Asset = u32;
 pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
 use scale_info::TypeInfo;
-use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, H160, U256};
+use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, H160, H256, U256};
 use t3rn_abi::{
-    recode::recode_bytes_with_descriptor, sfx_abi::PerCodecAbiDescriptors, Codec, FilledAbi, SFXAbi,
+    evm_ingress_logs::{get_remote_order_abi_descriptor, RemoteEVMOrderLog},
+    recode::recode_bytes_with_descriptor,
+    Codec,
 };
 use t3rn_primitives::{
     circuit::{
@@ -40,15 +42,8 @@ pub struct OrderStatusRead<Hash, BlockNumber, Account> {
     pub timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
 }
 
-// emit OrderCreated(id, destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward, nonce);
-// event RemoteOrderIndexedCreated(bytes32 indexed id, uint32 indexed nonce, address indexed sender, bytes input);
-// where input = abi.encode(destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward)
-pub fn get_remote_order_abi_descriptor() -> Vec<u8> {
-    b"RemoteOrderIndexed:Log(sfxId+:Bytes32,nonce:Value32,sender+:Account20,destination:Bytes4,asset:Bytes4,targetAccount:Account32,amount:Value256,rewardAsset:Account20,insurance:Value256,maxReward:Value256)".to_vec()
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
-pub struct RemoteEVMOrderLocalized<T: Config> {
+#[derive(Debug, Clone, Eq, PartialEq, Encode, TypeInfo)]
+pub struct RemoteEVMOrderLocalized {
     pub from: H160,
     pub destination: TargetId,
     pub asset: u32,
@@ -58,11 +53,9 @@ pub struct RemoteEVMOrderLocalized<T: Config> {
     pub insurance: U256,
     pub max_reward: U256,
     pub nonce: u32,
-    phantom: PhantomData<T>,
 }
 
-impl<AccountId, Balance, T: Config> TryInto<SideEffect<AccountId, Balance>>
-    for RemoteEVMOrderLocalized<T>
+impl<AccountId, Balance> TryInto<SideEffect<AccountId, Balance>> for RemoteEVMOrderLocalized
 where
     u32: From<Asset>,
     Balance: Encode + Decode,
@@ -92,20 +85,20 @@ where
 
         let side_effect = SideEffect {
             target: self.destination,
+            // target: [3u8; 4],
             max_reward,
             insurance,
             action: *b"tass",
             encoded_args,
             signature: vec![],
             enforce_executor: None,
-            reward_asset_id: Some(
-                T::Xdns::get_token_by_eth_address(self.destination, self.reward_asset)?.token_id,
-            ),
+            reward_asset_id: None,
         };
 
         Ok(side_effect)
     }
 }
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -207,37 +200,55 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             // Assume finalized speed mode to remote order operations to avoid disputes in events of chain reorgs.
-            let speed_mode = SpeedMode::Finalized;
+            let speed_mode = SpeedMode::Fast;
 
             let verified_event_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
                 remote_target_id,
                 speed_mode.clone(),
                 Some([
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 113, 105, 211, 136, 32, 223, 209, 23, 195,
-                    250, 31, 34, 166, 151, 219, 165, 141, 144, 186, 6,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150, 80, 46, 240, 61, 236, 212, 170, 189,
+                    54, 140, 196, 111, 92, 44, 34, 166, 69, 148, 140,
                 ]), // replace with proper mapper to remoteOrder contract's address
-                order_remote_proof,
+                order_remote_proof, // 0,150,80,46,240,61,236,212,170,189,54,140,196,111,92,44,34,166,69,148,140
             )?
             .message;
 
             let recoded_message = recode_bytes_with_descriptor(
-                verified_event_bytes,
+                verified_event_bytes.clone(),
                 get_remote_order_abi_descriptor(),
                 Codec::Rlp,
                 Codec::Scale,
             )?;
 
-            let decoded_remote_order: RemoteEVMOrderLocalized<T> =
-                RemoteEVMOrderLocalized::decode(&mut recoded_message.as_slice()).map_err(|e| {
+            let decoded_remote_order_log = RemoteEVMOrderLog::decode(&mut &recoded_message[..])
+                .map_err(|e| {
                     log::error!(
-                        "Vecuum::remote_order -- error decoding remote order: {:?}",
+                        "Vecuum::remote_order -- error decoding RemoteEVMOrderLog: {:?}",
                         e
                     );
-                    DispatchError::Other("Vecuum::remote_order -- error decoding remote order")
+                    DispatchError::Other("Vecuum::remote_order -- error decoding RemoteEVMOrderLog")
                 })?;
+
+            let decoded_remote_order: RemoteEVMOrderLocalized = RemoteEVMOrderLocalized {
+                from: decoded_remote_order_log.sender,
+                destination: decoded_remote_order_log.destination,
+                asset: T::Xdns::get_token_by_eth_address(
+                    remote_target_id,
+                    decoded_remote_order_log.reward_asset,
+                )?
+                .token_id,
+                target_account: decoded_remote_order_log.target_account,
+                reward_asset: decoded_remote_order_log.reward_asset,
+                amount: decoded_remote_order_log.amount,
+                insurance: decoded_remote_order_log.insurance,
+                max_reward: decoded_remote_order_log.max_reward,
+                nonce: decoded_remote_order_log.nonce,
+            };
 
             let mut side_effect: SideEffect<T::AccountId, BalanceOf<T>> =
                 decoded_remote_order.clone().try_into()?;
+
+            side_effect.reward_asset_id = Some(decoded_remote_order.asset);
 
             let remote_origin: OrderOrigin<T::AccountId> =
                 OrderOrigin::from_remote_nonce(decoded_remote_order.nonce);
@@ -337,7 +348,7 @@ mod tests {
         Balance, Balances, BlockNumber, Circuit, CircuitError, CircuitEvent, Clock,
         EthereumEventInclusionProof, GlobalOnInitQueues, Hash, MiniRuntime, MockedAssetEvent,
         OrderStatusRead, Portal, Rewards, RuntimeEvent as Event, RuntimeOrigin, System, Vacuum,
-        VacuumEvent, ASSET_DOT, ASSET_USDT, ETHEREUM_TARGET, POLKADOT_TARGET, XDNS,
+        VacuumEvent, ASSET_DOT, ASSET_ETH, ASSET_USDT, ETHEREUM_TARGET, POLKADOT_TARGET, XDNS,
     };
 
     use t3rn_primitives::{
@@ -1150,6 +1161,76 @@ mod tests {
             assert_eq!(
                 Assets::balance(ASSET_USDT, &executor),
                 EXISTENTIAL_DEPOSIT as Balance + 50 as Balance + 200 as Balance
+            );
+        });
+    }
+
+    #[test]
+    fn vacuum_delivers_remote_order_with_local_reward_delivers_to_circuit_and_confirms_for_eth_targets(
+    ) {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            activate_all_light_clients();
+            initialize_eth2_with_3rd_epoch();
+
+            // Derive all arguments out of below proof sourced with eth2-proof client-side library
+            // ⬅️found receipt for tx:  0x189bb96988ab037da92d57ae514f414a26a15326f8a7681947db35dbbcfd47e6
+            // 🔃parsed receipt to hex form
+            // ⬅️found block for receipt:  0x189bb96988ab037da92d57ae514f414a26a15326f8a7681947db35dbbcfd47e6 4249964n
+            // ⬅️fetched all 153 sibling transaction receipts
+            // Computed Root:  0x76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966
+            // 🧮proof-calculated receipts root vs block receipts root:  0x76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966 0x76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966
+            // {
+            //   proof: [
+            //     'f8b1a0d573cf15a54d7ad0d0498169820a6dafd9633adec0f688d9d859d1741cdac5b6a03c3d817222f0515e057962c0db4bfd20674e227a3b3c43811b2f8f1357e127cea03fe55d8df8a0c96030c87b2f2caf2bc6f102b5546e097fda3f6eb8c89370ea6ca00e3ccf072c8ad2c828f4d859e0776b24cf345009c5cf3107413186a0617e5f7980808080a0e58215be848c1293dd381210359d84485553000a82b67410406d183b42adbbdd8080808080808080',
+            //     'f90211a086ff47818c4ed0f1d97d62c83605e662754d5c21d94e807c2142f7294eefda64a034960e2a1e3ec16b96816e81f842a51291989f5606c41aadba21b8069adaad64a057f37f57fecb0d336797db86604ea1d73a7933d5e6043c371729ca90989d5f8ca034754510b4bf1c613de0202a877a92be3e81ae1aacef713ac63d7fcdbeb84e05a099ec62a5e2b7bd634351e10bbdad33afbb3d9b52cb9b0a449fd38cec498624aba0f6b2fa50ec73e180a7c8b61cceacc8bfdf9214ef3df95abf4fa7b2e0ee38bb1aa0bc1b4735f691d698650aa757c1fac347e47b272dca9780293a091755f1eb49c4a0bb81253270782d099bd0cb4b5ab1fe9faad27c1657d6e55c7bce1129b0426011a03a2e7a799dc4f627368880fa7bfe6116ad913eaa04c1b200ecc5f4980ced9558a0649a03c1e451f6033a6b359f819c019ca9eb5fdb140bc5f01d9f369e2f1d69e8a04172cab94d1db98e819c0f5513d4944806a110862d9d8b67981cec1f5e1b3358a02e73b02f64e412bb54b38dc94bd232934438951d765abfa71df971606f9b6f74a0089c2c3e3b0c99a5f22d0c8c2e29c5e89835aa3d0848722eb1a52ef1cd0bae56a05b5a11c3bd83a7a0c764b11ccdf98de8ae91012637ab318f5ba980d303d199dba05fe9d9c59da9e5e95049f9baaa514da634b87daf0307d8de047399395b3ec606a002373b6677d1b3d1ebe4501df696607732e075a452e05f9b6aa8323fe7ee05d880',
+            //     'f902d420b902d002f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064'
+            //   ],
+            //   root: '76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966',
+            //   index: Uint8Array(1) [ 40 ],
+            // 
+            //   value: '02f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064',
+            //   event: 'f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064'
+            let rlp_encoded_remote_order_local_reward_event = EthereumEventInclusionProof {
+                witness: vec![
+                    hex!("f8b1a0d573cf15a54d7ad0d0498169820a6dafd9633adec0f688d9d859d1741cdac5b6a03c3d817222f0515e057962c0db4bfd20674e227a3b3c43811b2f8f1357e127cea03fe55d8df8a0c96030c87b2f2caf2bc6f102b5546e097fda3f6eb8c89370ea6ca00e3ccf072c8ad2c828f4d859e0776b24cf345009c5cf3107413186a0617e5f7980808080a0e58215be848c1293dd381210359d84485553000a82b67410406d183b42adbbdd8080808080808080").into(),
+                    hex!("f90211a086ff47818c4ed0f1d97d62c83605e662754d5c21d94e807c2142f7294eefda64a034960e2a1e3ec16b96816e81f842a51291989f5606c41aadba21b8069adaad64a057f37f57fecb0d336797db86604ea1d73a7933d5e6043c371729ca90989d5f8ca034754510b4bf1c613de0202a877a92be3e81ae1aacef713ac63d7fcdbeb84e05a099ec62a5e2b7bd634351e10bbdad33afbb3d9b52cb9b0a449fd38cec498624aba0f6b2fa50ec73e180a7c8b61cceacc8bfdf9214ef3df95abf4fa7b2e0ee38bb1aa0bc1b4735f691d698650aa757c1fac347e47b272dca9780293a091755f1eb49c4a0bb81253270782d099bd0cb4b5ab1fe9faad27c1657d6e55c7bce1129b0426011a03a2e7a799dc4f627368880fa7bfe6116ad913eaa04c1b200ecc5f4980ced9558a0649a03c1e451f6033a6b359f819c019ca9eb5fdb140bc5f01d9f369e2f1d69e8a04172cab94d1db98e819c0f5513d4944806a110862d9d8b67981cec1f5e1b3358a02e73b02f64e412bb54b38dc94bd232934438951d765abfa71df971606f9b6f74a0089c2c3e3b0c99a5f22d0c8c2e29c5e89835aa3d0848722eb1a52ef1cd0bae56a05b5a11c3bd83a7a0c764b11ccdf98de8ae91012637ab318f5ba980d303d199dba05fe9d9c59da9e5e95049f9baaa514da634b87daf0307d8de047399395b3ec606a002373b6677d1b3d1ebe4501df696607732e075a452e05f9b6aa8323fe7ee05d880").into(),
+                    hex!("f902d420b902d002f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064").into(),
+                ],
+                index: vec![40],
+                block_number: 100118,
+                event: hex!("f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064").into()
+            };
+
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([2u8; 32]);
+            let requester_on_dest = AccountId32::from(hex!("000000000000000000000000F85A57d965aEcD289c625Cae6161d0Ab5141bC66")); // 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
+
+            mint_required_assets_for_optimistic_actors(
+                requester.clone(),
+                executor.clone(),
+                200u128,
+                50u128,
+                ASSET_ETH,
+            );
+
+            assert!(hotswap_latest_receipt_header_root(hex!("76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966").into()));
+
+            activate_all_light_clients();
+
+            assert_ok!(Vacuum::remote_order(
+                RuntimeOrigin::signed(executor.clone()),
+                rlp_encoded_remote_order_local_reward_event.encode(),
+                ETHEREUM_TARGET,
+            ));
+
+            let xtx_id = expect_last_event_to_emit_xtx_id();
+
+            assert_eq!(
+                xtx_id,
+                Hash::from(hex!(
+                    "ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5"
+                ))
             );
         });
     }

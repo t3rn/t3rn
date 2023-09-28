@@ -744,8 +744,8 @@ pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
 }
 
-pub const T3RN_TARGET_ROCO: TargetId = [3u8, 3u8, 3u8, 3u8];
-pub const T3RN_TARGET_POLKADOT: TargetId = [0u8, 3u8, 3u8, 3u8];
+pub const T3RN_TARGET_ROCO: TargetId = [0u8, 3u8, 3u8, 3u8];
+pub const T3RN_TARGET_POLKADOT: TargetId = [3u8, 3u8, 3u8, 3u8];
 pub const ETHEREUM_TARGET: TargetId = [9u8; 4];
 pub const SEPOLIA_TARGET: TargetId = [10u8; 4];
 pub const ASTAR_TARGET: TargetId = [8u8; 4];
@@ -759,7 +759,7 @@ pub fn get_asset_eth_with_info() -> (u32, TokenInfo) {
         TokenInfo::Ethereum(EthereumToken {
             symbol: b"ETH".to_vec(),
             decimals: 18,
-            address: None,
+            address: Some(hex!("0000000000000000000000000000000000000000").into()),
         }),
     )
 }
@@ -781,7 +781,7 @@ pub fn get_asset_sepolia_with_info() -> (u32, TokenInfo) {
         TokenInfo::Ethereum(EthereumToken {
             symbol: b"SEPOLIA".to_vec(),
             decimals: 18,
-            address: None,
+            address: Some(hex!("0000000000000000000000000000000000000000").into()),
         }),
     )
 }
