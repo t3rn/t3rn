@@ -617,6 +617,7 @@ export class ExecutionManager {
               notification.payload.sfxId,
               notification.payload.bidAmount as BN,
             )
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .then((status: any) => {
               sfx.bidAccepted(status, notification.payload.bidAmount as number);
             })

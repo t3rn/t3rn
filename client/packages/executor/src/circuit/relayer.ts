@@ -33,6 +33,7 @@ export class CircuitRelayer extends EventEmitter {
    * @param sfxId The bid is for
    * @param amount The bidding amount, as integer in the reward asset
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async bidSfx(sfxId: string, amount: BN): Promise<any> {
     const encodedSfxId = createType("Hash", sfxId);
     const encodedAmount = createType("u128", amount);
