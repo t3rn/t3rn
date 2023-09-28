@@ -36,6 +36,7 @@ impl Encodable for Eth2IngressEventLog {
         s.begin_list(3);
         s.append(&self.address);
         s.append_list::<H256, _>(&self.topics);
+        // s.append_list::<H256, _>(&self.data);
         s.append(&self.data);
     }
 }
@@ -120,7 +121,7 @@ impl Recode for RecodeRlp {
 
         let mut total_size = 0usize;
         let fields_iter = fields_iter_clone.peekable();
-        let mut data_buf = Bytes::copy_from_slice(&data);
+        let mut flat_data = data.clone();
 
         let filled_abi_content = fields_iter
             .rev()
@@ -134,10 +135,9 @@ impl Recode for RecodeRlp {
                     filled_abi
                 } else {
                     let (filled_abi, chopped_size) =
-                        field_descriptor.decode_topics_as_rlp(data_buf.to_vec())?;
-                    data_buf.advance(chopped_size);
+                        field_descriptor.decode_topics_as_rlp(flat_data.clone())?;
+                    flat_data.truncate(flat_data.len() - chopped_size);
                     total_size += chopped_size;
-
                     filled_abi
                 };
                 Ok(Box::new(next_filled_abi))
@@ -185,6 +185,10 @@ impl Abi {
             },
             Abi::Bytes(name) => Ok((
                 FilledAbi::Bytes(name.clone(), input.to_vec()),
+                MINIMUM_INPUT_LENGTH,
+            )),
+            Abi::Bytes4(name) => Ok((
+                FilledAbi::Bytes4(name.clone(), last_32b[0..4].to_vec()),
                 MINIMUM_INPUT_LENGTH,
             )),
             Abi::Value256(name) => Ok((

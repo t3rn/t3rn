@@ -697,7 +697,6 @@ impl FilledAbi {
                     "H256/Account32::InvalidDataSize: expected 32 bytes"
                 );
                 let data_32b: Vec<u8> = field_data[..32].to_vec();
-
                 Ok((FilledAbi::H256(name, data_32b), 32usize))
             },
             Abi::Value256(name) => Ok((

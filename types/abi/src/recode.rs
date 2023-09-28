@@ -261,8 +261,21 @@ impl FilledAbi {
                     (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
                 }
             },
-            FilledAbi::Bytes4(_name, data)
-            | FilledAbi::Codec(_name, data)
+            FilledAbi::Bytes4(_name, data) => match (in_codec, out_codec) {
+                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
+                (Codec::Scale, Codec::Rlp) => {
+                    let mut data_4b: [u8; 4] = [0; 4];
+                    data_4b.copy_from_slice(&data[data.len() - 4..data.len()]);
+                    Ok(rlp::encode(&data_4b.to_vec()).to_vec())
+                },
+                (Codec::Rlp, Codec::Scale) => {
+                    // ToDo: consider convert between little vs big endian with data.rev()
+                    let mut data_4b: [u8; 4] = [0; 4];
+                    data_4b.copy_from_slice(&data[..4]);
+                    Ok(data_4b.to_vec())
+                },
+            },
+            FilledAbi::Codec(_name, data)
             | FilledAbi::Byte(_name, data)
             | FilledAbi::Bool(_name, data) => Ok(data.clone()),
             FilledAbi::H256(_name, data) | FilledAbi::Account32(_name, data) =>
@@ -275,7 +288,8 @@ impl FilledAbi {
                         Ok(rlp::encode(&decoded_account.to_raw_vec()).to_vec())
                     },
                     (Codec::Rlp, Codec::Scale) => {
-                        // todo: consider converting between little vs big endian with data.rev()
+                        // ToDo: consider convert between little vs big endian with data.rev()
+                        // let data_rev: Vec<u8> = data.iter().rev().cloned().collect();
                         let decoded_account: AccountId32 = AccountId32::decode(&mut &data[..])
                             .map_err(|_e| "Account32 error at recoding back to Scale")?;
                         Ok(decoded_account.encode())
