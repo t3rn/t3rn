@@ -20,7 +20,7 @@ const program = new Command()
 program
   .name("t3rn CLI")
   .description("CLI for interacting with the t3rn blockchain")
-  .version("0.1.2")
+  .version("0.1.0")
 
 program
   .command("init")
