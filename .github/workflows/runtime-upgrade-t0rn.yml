@@ -20,7 +20,7 @@ jobs:
     concurrency: runtime-upgrade
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
@@ -73,7 +73,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: 🐳 Build and publish the Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
@@ -168,7 +168,7 @@ jobs:
     needs: build-release
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: rustup show
@@ -184,7 +184,7 @@ jobs:
     concurrency: runtime-upgrade
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set variables 
         run: |

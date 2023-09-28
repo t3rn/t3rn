@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-mock-runtime"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
@@ -1035,7 +1035,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-pallets"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1070,7 +1070,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.55.2-rc.0",
+ "pallet-contracts 1.57.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -1128,7 +1128,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-types"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -1141,7 +1141,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-node"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-standalone-runtime",
  "clap",
@@ -1193,7 +1193,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-runtime"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -1218,7 +1218,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.55.2-rc.0",
+ "pallet-contracts 1.57.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -3381,7 +3381,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "evm",
  "frame-support",
@@ -4482,8 +4482,8 @@ dependencies = [
  "ink_allocator",
  "ink_engine",
  "ink_metadata",
- "ink_prelude",
- "ink_primitives",
+ "ink_prelude 3.0.0",
+ "ink_primitives 3.0.0",
  "num-traits",
  "parity-scale-codec",
  "paste",
@@ -4517,8 +4517,8 @@ dependencies = [
  "ink_eth_compatibility",
  "ink_lang_macro",
  "ink_metadata",
- "ink_prelude",
- "ink_primitives",
+ "ink_prelude 3.0.0",
+ "ink_primitives 3.0.0",
  "ink_storage",
  "parity-scale-codec",
 ]
@@ -4564,7 +4564,7 @@ checksum = "4cc314eb213969799a930abf4026a493c90e6e1f7801a1fa0ffaeb31c22af316"
 dependencies = [
  "ink_lang_codegen",
  "ink_lang_ir",
- "ink_primitives",
+ "ink_primitives 3.0.0",
  "parity-scale-codec",
  "proc-macro2",
  "syn 1.0.109",
@@ -4578,8 +4578,8 @@ checksum = "bc45b35402543837a828b12dcca8b806676bd41f9c32538487816515336a2526"
 dependencies = [
  "derive_more",
  "impl-serde 0.3.2",
- "ink_prelude",
- "ink_primitives",
+ "ink_prelude 3.0.0",
+ "ink_primitives 3.0.0",
  "scale-info",
  "serde",
 ]
@@ -4594,15 +4594,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "ink_prelude"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8cfdf91d2b442f08efb34dd3780fd6fbd3d033f63b42f62684fe47534948ef6"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "ink_primitives"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f2abfc9cdcccb447d730a8b79399b4cc8cd2d02281cf411ffb52b00f29d925d"
 dependencies = [
  "cfg-if",
- "ink_prelude",
+ "ink_prelude 3.0.0",
  "parity-scale-codec",
  "scale-info",
+]
+
+[[package]]
+name = "ink_primitives"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6414bcad12ebf0c3abbbb192a09e4d06e22f662cf3e19545204e1b0684be12a1"
+dependencies = [
+ "derive_more",
+ "ink_prelude 4.3.0",
+ "parity-scale-codec",
+ "scale-decode",
+ "scale-encode",
+ "scale-info",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -4616,8 +4640,8 @@ dependencies = [
  "derive_more",
  "ink_env",
  "ink_metadata",
- "ink_prelude",
- "ink_primitives",
+ "ink_prelude 3.0.0",
+ "ink_primitives 3.0.0",
  "ink_storage_derive",
  "parity-scale-codec",
  "scale-info",
@@ -6417,7 +6441,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-3vm"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "frame-benchmarking",
@@ -6450,7 +6474,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-account-manager"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6493,23 +6517,20 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-registry"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
+version = "0.0.1"
+source = "git+https://github.com/paritytech/trappist?branch=main#9b15c1bf1135b6e1e7d7b13afeb30ef47fec81fd"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
+ "pallet-assets",
+ "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
  "sp-std 8.0.0",
- "t3rn-primitives",
  "xcm",
- "xcm-builder",
- "xcm-executor",
- "xp-channel",
- "xp-xcm",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -6655,7 +6676,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6709,7 +6730,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-clock"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata 15.1.0",
@@ -6748,7 +6769,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "array-bytes",
  "assert_matches",
@@ -6861,7 +6882,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "frame-benchmarking",
@@ -6898,7 +6919,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry-rpc-runtime-api"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "pallet-contracts-registry",
  "parity-scale-codec",
@@ -6981,7 +7002,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "environmental",
  "evm",
@@ -7009,7 +7030,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7286,7 +7307,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7318,7 +7339,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-portal-rpc-runtime-api",
@@ -7334,7 +7355,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc-runtime-api"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "pallet-portal",
  "parity-scale-codec",
@@ -7680,7 +7701,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7710,7 +7731,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-xdns-rpc-runtime-api",
@@ -7725,7 +7746,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc-runtime-api"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
@@ -7736,7 +7757,7 @@ dependencies = [
 
 [[package]]
 name = "parachain-collator"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -9304,7 +9325,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-util"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "fp-evm",
  "pallet-evm",
@@ -11361,6 +11382,69 @@ dependencies = [
 ]
 
 [[package]]
+name = "scale-bits"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "036575c29af9b6e4866ffb7fa055dbf623fe7a9cc159b33786de6013a6969d89"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
+name = "scale-decode"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7789f5728e4e954aaa20cadcc370b99096fb8645fca3c9333ace44bb18f30095"
+dependencies = [
+ "derive_more",
+ "parity-scale-codec",
+ "scale-bits",
+ "scale-decode-derive",
+ "scale-info",
+ "smallvec",
+]
+
+[[package]]
+name = "scale-decode-derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27873eb6005868f8cc72dcfe109fae664cf51223d35387bc2f28be4c28d94c47"
+dependencies = [
+ "darling",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "scale-encode"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d70cb4b29360105483fac1ed567ff95d65224a14dd275b6303ed0a654c78de5"
+dependencies = [
+ "derive_more",
+ "parity-scale-codec",
+ "scale-encode-derive",
+ "scale-info",
+ "smallvec",
+]
+
+[[package]]
+name = "scale-encode-derive"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "995491f110efdc6bea96d6a746140e32bfceb4ea47510750a5467295a4707a25"
+dependencies = [
+ "darling",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "scale-info"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12965,7 +13049,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "parachain-collator",
  "sc-cli",
@@ -12974,7 +13058,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -13013,7 +13097,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.55.2-rc.0",
+ "pallet-contracts 1.57.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -13067,11 +13151,12 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]
 name = "t1rn-parachain-collator"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "parachain-collator",
  "sc-cli",
@@ -13118,7 +13203,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.55.2-rc.0",
+ "pallet-contracts 1.57.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -13177,7 +13262,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-abi"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13251,7 +13336,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-collator"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "parachain-collator",
  "sc-cli",
@@ -13324,7 +13409,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-primitives"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13367,8 +13452,8 @@ dependencies = [
  "cfg-if",
  "ink_env",
  "ink_lang",
- "ink_prelude",
- "ink_primitives",
+ "ink_prelude 3.0.0",
+ "ink_primitives 4.3.0",
  "lazy_static",
  "parity-scale-codec",
  "scale-info",
@@ -13388,7 +13473,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "1.55.2-rc.0"
+version = "1.57.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -15298,6 +15383,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "xcm-primitives"
+version = "0.0.1"
+source = "git+https://github.com/paritytech/trappist?branch=main#9b15c1bf1135b6e1e7d7b13afeb30ef47fec81fd"
+dependencies = [
+ "frame-support",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "xcm-procedural"
 version = "1.0.0"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v1.0.0#c9ec8c5a15959ce711bb60aa79add58f560d61e9"
@@ -15368,6 +15465,12 @@ dependencies = [
  "xp-format",
  "xp-xcm",
 ]
+
+[[package]]
+name = "xxhash-rust"
+version = "0.8.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9828b178da53440fa9c766a3d2f73f7cf5d0ac1fe3980c1e5018d899fd19e07b"
 
 [[package]]
 name = "yamux"

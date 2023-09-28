@@ -110,9 +110,12 @@ pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-ap
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-pallet-maintenance-mode                   = { path = "../../pallets/maintenance-mode", default-features = false }
+pallet-maintenance-mode          = { path = "../../pallets/maintenance-mode", default-features = false }
 
-pallet-asset-registry = { workspace = true }
+# Trappist
+xcm-primitives                   = { workspace = true }
+pallet-asset-registry            = { workspace = true }
+
 #pallet-xbi-portal     = { workspace = true }
 
 # Smart contracts VMs
@@ -152,7 +155,6 @@ std = [
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-assets/std",
-  "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
   "pallet-grandpa-finality-verifier/std",
@@ -219,6 +221,9 @@ std = [
   "circuit-runtime-types/std",
   "pallet-eth2-finality-verifier/std",
   "pallet-sepolia-finality-verifier/std",
+  # Trappist pallets
+  "xcm-primitives/std",
+  "pallet-asset-registry/std",
 ]
 
 runtime-benchmarks = [

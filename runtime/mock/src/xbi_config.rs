@@ -159,7 +159,7 @@ pub type Barrier = (
     AllowTopLevelPaidExecutionFrom<Everything>,
     AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
     // ^^^ Parent and its exec plurality get free execution
-    AssetRegistry,
+    //AssetRegistry,
 );
 
 parameter_types! {

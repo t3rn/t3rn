@@ -313,7 +313,7 @@ export class ExecutionManager {
               logger.warn(
                 {
                   index: eventData.data[0].toString(),
-                  xtx: this.xtx,
+                  xtx: this.xtx.key,
                 },
                 "SFX not found on the given index",
               );
@@ -598,6 +598,10 @@ export class ExecutionManager {
     }
   }
 
+  public stopSfxListener(sfx) {
+    sfx.off("Notification");
+  }
+
   /**
    * Initialize SFX event listeners.
    *
@@ -607,13 +611,15 @@ export class ExecutionManager {
     sfx.on("Notification", (notification: Notification) => {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
+          // Increment nonce in case we want to send multiple bids in a single block
           this.circuitRelayer
             .bidSfx(
               notification.payload.sfxId,
               notification.payload.bidAmount as BN,
             )
-            .then(() => {
-              sfx.bidAccepted(notification.payload.bidAmount as number);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .then((status: any) => {
+              sfx.bidAccepted(status, notification.payload.bidAmount as number);
             })
             .catch((e) => {
               logger.warn(
@@ -621,7 +627,7 @@ export class ExecutionManager {
                   xtxId: sfx.xtxId,
                   error: e.message,
                 },
-                `Bid rejected ❌`,
+                `🍄 Bid rejected`,
               );
               this.prometheus.executorBidRejected.inc({ error: e.message });
               sfx.bidRejected();
