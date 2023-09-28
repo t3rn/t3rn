@@ -145,7 +145,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn get_gmp)]
-    pub type GMP<T> = StorageMap<_, Identity, H256, Vec<u8>, OptionQuery>;
+    pub type GMP<T> = StorageMap<_, Identity, H256, H256, OptionQuery>;
 
     /// Links mapping SFX 2 XTX
     ///
@@ -581,7 +581,7 @@ pub mod pallet {
             Self::on_remote_origin_trigger(origin, order_origin, side_effects, speed_mode)
         }
 
-        fn store_gmp_payload(id: H256, payload: Vec<u8>) -> bool {
+        fn store_gmp_payload(id: H256, payload: H256) -> bool {
             if <GMP<T>>::contains_key(id) {
                 return false
             }
@@ -589,7 +589,7 @@ pub mod pallet {
             true
         }
 
-        fn get_gmp_payload(id: H256) -> Option<Vec<u8>> {
+        fn get_gmp_payload(id: H256) -> Option<H256> {
             <GMP<T>>::get(id)
         }
 
@@ -908,7 +908,7 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, __status, _requester| {
                     Self::confirm(xtx_id, current_fsx, &sfx_id, &confirmation).map_err(|e| {
-                        println!("Self::confirm hit an error -- {:?}", e);
+                        log::error!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
                     Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
@@ -1476,7 +1476,6 @@ impl<T: Config> Pallet<T> {
 
         let payload_codec = <T as Config>::Xdns::get_target_codec(&fsx.input.target)?;
 
-        println!("payload_codec: {:?}", payload_codec);
         fsx.input.confirm(
             sfx_abi,
             inclusion_receipt.message,

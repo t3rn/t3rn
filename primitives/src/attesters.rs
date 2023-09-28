@@ -4,7 +4,7 @@ use frame_support::pallet_prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_core::{H160, H256};
+use sp_core::{H160, H256, H512};
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
@@ -228,19 +228,28 @@ pub type CommitteeTransitionIndices = [u32; COMMITTEE_SIZE];
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
 pub struct GenericCommitteeTransition([(u32, Vec<u8>); COMMITTEE_SIZE]);
 
+pub enum GMPMessage {
+    /// GMP message to be sent to the attester
+    GMP(Vec<u8>),
+    /// GMP message to be sent to the executor
+    GMPCommitOrderBeneficiary(Vec<u8>),
+}
+pub type GMPPayload = Vec<u8>;
+
 pub type EvmCommitteeTransition = [(u32, H160); COMMITTEE_SIZE];
 pub type CommitteeTransition = Vec<(u32, Vec<u8>)>;
 pub type CommitteeRecoverable = Vec<Vec<u8>>;
 pub type CommitteeTransitionEncoded = Vec<u8>;
 
 pub type AttestersChange = Vec<([u8; 33], u32)>;
-pub type BatchConfirmedSfxId = Vec<H256>;
+pub type BatchConfirmedSfxWithGMPPayload = Vec<(H512)>;
+pub type BatchRevertedSfxId = Vec<(H256)>;
 
 pub trait AttestersWriteApi<Account, Error> {
     fn request_sfx_attestation_commit(
         target: TargetId,
         sfx_id: H256,
-        maybe_gmp_payload: Option<Vec<u8>>,
+        maybe_gmp_payload: Option<H256>,
     ) -> Result<(), Error>;
     fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error>;
     fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
@@ -342,7 +351,7 @@ impl<Account, Balance, Error> AttestersWriteApi<Account, Error>
     fn request_sfx_attestation_commit(
         _target: TargetId,
         _sfx_id: H256,
-        _maybe_gmp_payload: Option<Vec<u8>>,
+        _maybe_gmp_payload: Option<H256>,
     ) -> Result<(), Error> {
         Ok(())
     }

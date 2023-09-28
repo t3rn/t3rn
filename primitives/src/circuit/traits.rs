@@ -101,9 +101,9 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
         speed_mode: SpeedMode,
     ) -> DispatchResultWithPostInfo;
 
-    fn store_gmp_payload(id: H256, payload: Vec<u8>) -> bool;
+    fn store_gmp_payload(id: H256, payload: H256) -> bool;
 
-    fn get_gmp_payload(id: H256) -> Option<Vec<u8>>;
+    fn get_gmp_payload(id: H256) -> Option<H256>;
 
     fn verify_sfx_proof(
         target: TargetId,

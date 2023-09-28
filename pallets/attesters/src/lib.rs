@@ -29,7 +29,7 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, GenesisBuild, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::{BlockNumberFor, *};
-    use sp_core::{hexdisplay::AsBytesRef, H160, H256};
+    use sp_core::{hexdisplay::AsBytesRef, H160, H256, H512};
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
@@ -41,10 +41,10 @@ pub mod pallet {
     use t3rn_abi::{Codec, FilledAbi};
 
     pub use t3rn_primitives::attesters::{
-        AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
-        BatchingFactor, CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b,
-        COMMITTEE_SIZE, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
-        SR25519_ATTESTER_KEY_TYPE_ID,
+        AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi,
+        BatchConfirmedSfxWithGMPPayload, BatchRevertedSfxId, BatchingFactor,
+        CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
+        ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use t3rn_primitives::{
         attesters::{CommitteeRecoverable, CommitteeTransition},
@@ -69,8 +69,8 @@ pub mod pallet {
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct BatchMessage<BlockNumber> {
         pub available_to_commit_at: BlockNumber,
-        pub committed_sfx: Option<BatchConfirmedSfxId>,
-        pub reverted_sfx: Option<BatchConfirmedSfxId>,
+        pub committed_sfx: Option<BatchConfirmedSfxWithGMPPayload>,
+        pub reverted_sfx: Option<BatchRevertedSfxId>,
         pub next_committee: Option<CommitteeRecoverable>,
         pub banned_committee: Option<CommitteeRecoverable>,
         pub index: u32,
@@ -957,18 +957,29 @@ pub mod pallet {
         fn request_sfx_attestation_commit(
             target: TargetId,
             sfx_id: H256,
-            maybe_gmp_payload: Option<Vec<u8>>,
+            maybe_gmp_payload: Option<H256>,
         ) -> Result<(), DispatchError> {
+            // Put 2 x 32 bytes of sfx_id and possible GMP payload into 64 bytes
+            let mut sfx_id_and_gmp_payload = H512::zero();
+            sfx_id_and_gmp_payload[..32].copy_from_slice(&sfx_id[..]);
+            if let Some(gmp_payload) = maybe_gmp_payload {
+                sfx_id_and_gmp_payload[32..].copy_from_slice(&gmp_payload[..]);
+            }
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.committed_sfx {
-                        if batch_sfx.contains(&sfx_id) {
+                        if batch_sfx.contains(&sfx_id_and_gmp_payload) {
                             return Err("SfxAlreadyRequested".into())
                         } else {
-                            batch_sfx.push(sfx_id);
+                            batch_sfx.push(sfx_id_and_gmp_payload);
                         }
+                        // if batch_sfx.contains(&sfx_id) {
+                        //     return Err("SfxAlreadyRequested".into())
+                        // } else {
+                        //     batch_sfx.push(sfx_id);
+                        // }
                     } else {
-                        next_batch.committed_sfx = Some(vec![sfx_id]);
+                        next_batch.committed_sfx = Some(vec![sfx_id_and_gmp_payload]);
                     }
                     Ok(())
                 } else {
@@ -1718,8 +1729,11 @@ pub mod pallet {
                                 let mut sfx_to_repatriate: Vec<(CircuitStatus, H256)> = vec![];
 
                                 if let Some(batch_sfx) = batch.committed_sfx.as_ref() {
-                                    for sfx_id in batch_sfx.iter() {
-                                        sfx_to_repatriate.push((CircuitStatus::Committed, *sfx_id));
+                                    for sfx_id_with_gmp_payload in batch_sfx.iter() {
+                                        // Take first 32 bytes as sfx_id
+                                        let sfx_id =
+                                            H256::from_slice(&sfx_id_with_gmp_payload[..32]);
+                                        sfx_to_repatriate.push((CircuitStatus::Committed, sfx_id));
                                     }
                                 }
                                 if let Some(batch_sfx) = batch.reverted_sfx.as_ref() {
@@ -2062,7 +2076,7 @@ pub mod attesters_test {
         StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
-    use sp_core::{H160, H256};
+    use sp_core::{H160, H256, H512};
     use sp_runtime::{traits::Keccak256, Percent};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
@@ -2575,6 +2589,9 @@ pub mod attesters_test {
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
+            let mut sfx_gmp_a = H512::zero();
+            sfx_gmp_a[..32].copy_from_slice(&sfx_id_a[..]);
+
             assert_ok!(Attesters::request_sfx_attestation_commit(
                 target, sfx_id_a, None
             ));
@@ -2585,7 +2602,7 @@ pub mod attesters_test {
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
                 vec![BatchMessage {
                     available_to_commit_at: 0,
-                    committed_sfx: Some(vec![sfx_id_a]),
+                    committed_sfx: Some(vec![sfx_gmp_a]),
                     reverted_sfx: None,
                     next_committee: None,
                     banned_committee: None,
@@ -2722,6 +2739,9 @@ pub mod attesters_test {
                 .input
                 .generate_id::<Keccak256>(mock_xtx_id.as_bytes(), 0u32);
 
+            let mut sfx_gmp = H512::zero();
+            sfx_gmp[..32].copy_from_slice(&sfx_id[..]);
+
             assert_ok!(Attesters::request_sfx_attestation_commit(
                 target, sfx_id, None
             ));
@@ -2731,7 +2751,8 @@ pub mod attesters_test {
             let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
             assert_eq!(pending_batches.len(), 1);
             let pending_batch = pending_batches[0].clone();
-            assert_eq!(pending_batch.committed_sfx, Some(vec![sfx_id]));
+
+            assert_eq!(pending_batch.committed_sfx, Some(vec![sfx_gmp]));
             assert_eq!(pending_batch.reverted_sfx, None);
             assert_eq!(pending_batch.created, current_block_1);
 
@@ -2781,6 +2802,9 @@ pub mod attesters_test {
 
             let sfx_id = H256([3u8; 32]);
 
+            let mut sfx_gmp = H512::zero();
+            sfx_gmp[..32].copy_from_slice(&sfx_id[..]);
+
             assert_ok!(Attesters::request_sfx_attestation_commit(
                 target, sfx_id, None
             ));
@@ -2790,7 +2814,7 @@ pub mod attesters_test {
             let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
             assert_eq!(pending_batches.len(), 1);
             let pending_batch = pending_batches[0].clone();
-            assert_eq!(pending_batch.committed_sfx, Some(vec![sfx_id]));
+            assert_eq!(pending_batch.committed_sfx, Some(vec![sfx_gmp]));
             assert_eq!(pending_batch.created, current_block_1);
 
             const SLASH_TREASURY_BALANCE: Balance = 100;
@@ -3073,6 +3097,9 @@ pub mod attesters_test {
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
+            let mut sfx_gmp_a = H512::zero();
+            sfx_gmp_a[..32].copy_from_slice(&sfx_id_a[..]);
+
             assert_ok!(Attesters::request_sfx_attestation_commit(
                 target, sfx_id_a, None
             ));
@@ -3080,7 +3107,7 @@ pub mod attesters_test {
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             let (_message_hash, expected_message_bytes) =
-                calculate_hash_for_sfx_message(sfx_id_a.into(), 0);
+                calculate_hash_for_sfx_message(sfx_gmp_a.encode(), 0);
 
             assert_eq!(
                 Attesters::get_latest_batch_to_sign_message(target),
@@ -3264,11 +3291,14 @@ pub mod attesters_test {
                 ],
             ]);
 
+            let mut sfx_gmp = H512::zero();
+            sfx_gmp[..32].copy_from_slice(&sfx_id_a[..]);
+
             assert_eq!(
                 Attesters::get_latest_batch_to_sign(target),
                 Some(BatchMessage {
                     available_to_commit_at: 0,
-                    committed_sfx: Some(vec![sfx_id_a]),
+                    committed_sfx: Some(vec![sfx_gmp]),
                     reverted_sfx: None,
                     next_committee: expected_transition,
                     banned_committee: Some(vec![vec![
@@ -3340,7 +3370,8 @@ pub mod attesters_test {
                     140, 14, 31, 41, 168, 69, 85, 43, 198, 219, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 51, 37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107, 43, 253,
                     147, 171, 176, 108, 112, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
                 ])
             );
 
@@ -3348,7 +3379,7 @@ pub mod attesters_test {
                 Attesters::get_latest_batch_to_sign_hash(target),
                 Some(
                     hex_literal::hex!(
-                        "3e293db1e3431e80a5180fe1be16c54bf898f879ab888e3cf89de89f91a8ca6a"
+                        "42948d1310be9fed9894dc00cd7661b05fe3e048a9095823ecbb21e1a2a95c93"
                     )
                     .into()
                 )
@@ -3492,17 +3523,22 @@ pub mod attesters_test {
                 target, sfx_id_a, None
             ));
 
+            let mut sfx_gmp_a = H512::zero();
+            sfx_gmp_a[..32].copy_from_slice(&sfx_id_a[..]);
+
             // Verify that the attestation is added to the next batch
             let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
-            assert_eq!(next_batch.committed_sfx, Some(vec![sfx_id_a]));
+            assert_eq!(next_batch.committed_sfx, Some(vec![sfx_gmp_a]));
 
             // Add another SFX to the next batch
             let sfx_id_b = H256::repeat_byte(2);
             assert_ok!(Attesters::request_sfx_attestation_commit(
                 target, sfx_id_b, None
             ));
+            let mut sfx_gmp_b = H512::zero();
+            sfx_gmp_b[..32].copy_from_slice(&sfx_id_b[..]);
             let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
-            assert_eq!(next_batch.committed_sfx, Some(vec![sfx_id_a, sfx_id_b]));
+            assert_eq!(next_batch.committed_sfx, Some(vec![sfx_gmp_a, sfx_gmp_b]));
 
             let mut empty_batch = BatchMessage {
                 available_to_commit_at: 0,
@@ -3534,7 +3570,7 @@ pub mod attesters_test {
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
                 vec![BatchMessage {
                     available_to_commit_at: 0,
-                    committed_sfx: Some(vec![sfx_id_a, sfx_id_b]),
+                    committed_sfx: Some(vec![sfx_gmp_a, sfx_gmp_b]),
                     reverted_sfx: None,
                     next_committee: None,
                     banned_committee: None,
@@ -3713,7 +3749,7 @@ pub mod attesters_test {
         ext.execute_with(|| {
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
             let (_message_hash, _expected_message_bytes) =
-                calculate_hash_for_sfx_message(sfx_id_to_sign_on, 0);
+                calculate_hash_for_sfx_message(sfx_id_to_sign_on.encode(), 0);
 
             for counter in 1..33u8 {
                 // Register an attester
@@ -3754,7 +3790,7 @@ pub mod attesters_test {
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
             let (_message_hash, _expected_message_bytes) =
-                calculate_hash_for_sfx_message(message, 0);
+                calculate_hash_for_sfx_message(message.encode(), 0);
 
             for counter in 1..22u8 {
                 // Register an attester
@@ -3789,9 +3825,9 @@ pub mod attesters_test {
         });
     }
 
-    fn calculate_hash_for_sfx_message(message: [u8; 32], index: u32) -> ([u8; 32], Vec<u8>) {
+    fn calculate_hash_for_sfx_message(message: Vec<u8>, index: u32) -> ([u8; 32], Vec<u8>) {
         let mut message_bytes: Vec<u8> = Vec::new();
-        message_bytes.extend_from_slice(message.as_ref());
+        message_bytes.extend_from_slice(message.as_slice());
         message_bytes.extend_from_slice(index.to_le_bytes().as_ref());
 
         let mut keccak = Keccak::v256();
@@ -3814,7 +3850,8 @@ pub mod attesters_test {
 
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_message_hash, _message_bytes) = calculate_hash_for_sfx_message(message, 0);
+            let (_message_hash, _message_bytes) =
+                calculate_hash_for_sfx_message(message.encode(), 0);
 
             for counter in 1..33u8 {
                 // Register an attester
@@ -4258,9 +4295,9 @@ pub mod attesters_test {
         let filled_batch = BatchMessage {
             available_to_commit_at: 0,
             committed_sfx: Some(vec![
-                hex!("6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e").into(),
-                hex!("580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa").into(),
-                hex!("e23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6").into(),
+                hex!("6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e0000000000000000000000000000000000000000000000000000000000000000").into(),
+                hex!("580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa0000000000000000000000000000000000000000000000000000000000000000").into(),
+                hex!("e23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c60000000000000000000000000000000000000000000000000000000000000000").into(),
             ]),
             reverted_sfx: Some(vec![
                 hex!("ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f").into(),
@@ -4314,11 +4351,11 @@ pub mod attesters_test {
 
         let msg = filled_batch.message();
         let msg_as_hex = hex::encode(msg);
-        assert_eq!(msg_as_hex, "0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d6390000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfae23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b1100000001");
+        assert_eq!(msg_as_hex, "0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d6390000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e0000000000000000000000000000000000000000000000000000000000000000580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa0000000000000000000000000000000000000000000000000000000000000000e23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c60000000000000000000000000000000000000000000000000000000000000000ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b1100000001");
 
         assert_eq!(
             filled_batch.message_hash(),
-            hex!("92689b8b6360ba49e99b694643ba4c7fedb658496665252ab6de5aed79520a8c").into() // hex!("0e5ff1395ff4b94e02bad28b793efe3e27a32b3170191aae7a0a7c3c46a4a718").into()
+            hex!("f59f343a5c07f43e9a654e43ed9ce710005802f9e63a87111ed95072617008d0").into() // hex!("0e5ff1395ff4b94e02bad28b793efe3e27a32b3170191aae7a0a7c3c46a4a718").into()
         );
     }
 
