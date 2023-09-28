@@ -24,8 +24,8 @@ dependencies:
     specifier: ^12.5.1
     version: 12.5.1(@polkadot/util@12.5.1)
   '@t3rn/sdk':
-    specifier: 0.4.0-rc.3
-    version: 0.4.0-rc.3
+    specifier: 0.4.0
+    version: 0.4.0
   '@t3rn/types':
     specifier: ^0.1.11
     version: 0.1.11(@polkadot/util-crypto@12.5.1)(@polkadot/util@12.5.1)(@types/node@20.7.0)(typescript@5.2.2)
@@ -2078,8 +2078,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.4.0-rc.3:
-    resolution: {integrity: sha512-4/RjnS7bYhuB/W4LDD8Ep6KvzpWSOd2ruqBp/Awomo5TPEiWNhoQ9PMsdEYsgNk2a0lO7DfcMr9hDd8g+KX8xA==}
+  /@t3rn/sdk@0.4.0:
+    resolution: {integrity: sha512-Ck2y+0YiDUg94JK9GqL9gEhsnMM4xrcT0v4e0btD4wWGwZ4lU2sQbEdHZKWpMgcSUZ6WzM35AiNMJ/6V/BB3HQ==}
     dependencies:
       '@polkadot/api': 8.14.1
       dotenv: 16.3.1
