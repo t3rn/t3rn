@@ -8,8 +8,7 @@ use frame_support::{
 
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-
-use sp_std::{convert::TryInto, vec::Vec};
+use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use t3rn_primitives::{
     circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
     SpeedMode,

@@ -30,7 +30,7 @@ t3rn-abi        = { path = "../../../types/abi", default-features = false }
 t3rn-types      = { path = "../../../types", default-features = false, features = [ "runtime" ] }
 t3rn-primitives = { path = "../../../primitives", default-features = false }
 
-rlp = { version = "0.5.2", features = [ "derive" ] }
+rlp = { version = "0.5.2", features = [ "derive" ], default-features = false  }
 
 [dev-dependencies]
 hex                    = "0.4.2"
