@@ -3,8 +3,8 @@ import {Args} from "@/types.js";
 import {validate} from "@/utils/fns.js";
 import {XcmTransferSchema} from "@/schemas/xcm.ts";
 import {colorLogMsg} from "@/utils/log.js";
-import {ApiPromise, WsProvider, Utils} from "@t3rn/sdk";
-import { generateXcmTransferParameters } from "@/utils/xcm.ts";
+import {ApiPromise, WsProvider } from "@t3rn/sdk";
+import { generateXcmTransferParameters } from "@t3rn/sdk/utils";
 
 export const spinner = ora()
 
@@ -35,20 +35,9 @@ export const handleXcmTransferCommand = async (
     spinner.start()
 
     try {
-        /*
-        // ERROR WHEN CREATING SIGNER
-        const keyring = new Keyring({ type: "sr25519" })
-        const signer = process.env.CIRCUIT_KEY === undefined
-            ? keyring.addFromUri("//Alice")
-            : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-        console.log("Creating SDK...\n");
-        const sdk = new Sdk("ws://127.0.0.1:9933", signer);
-
-         */
         const targetApi = await ApiPromise.create({
             provider: new WsProvider("ws://127.0.0.1:9933"), // Rococo Validator on Zombienet
         })
-        console.log("Creating XCM message...\n")
         const xcmTransactionParams = generateXcmTransferParameters (
             targetApi,
             args.dest,

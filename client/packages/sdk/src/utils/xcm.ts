@@ -1,10 +1,8 @@
 import { ApiPromise } from '@polkadot/api';
 import type {
 	InteriorMultiLocation,
-	MultiLocation,
 	VersionedMultiAssets,
 	VersionedMultiLocation,
-   MultiAssets,
 } from '@polkadot/types/interfaces';
 type ASSET  = "ROC" | "USDT";
 type DESTINATION_TYPE = "system" | "relay" | "para";
