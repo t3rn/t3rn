@@ -9,7 +9,7 @@ import type {
 type ASSET  = "ROC" | "USDT";
 type DESTINATION_TYPE = "system" | "relay" | "para";
 
-export const generateXcmReserveAssetTransferMessageParameters = (api: ApiPromise, destChainId: string, beneficiaryAddress: string, assetType: ASSET, destinationType: DESTINATION_TYPE): JSON => {   
+export const generateXcmTransferParameters = (api: ApiPromise, destChainId: string, beneficiaryAddress: string, assetType: ASSET, destinationType: DESTINATION_TYPE): JSON => {
    let parentValue: string = "";
    switch (destinationType) {
       case "relay":
@@ -32,7 +32,7 @@ export const generateXcmReserveAssetTransferMessageParameters = (api: ApiPromise
    return xcmMessage;
 };
 
-export const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
+const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
    return api.registry.createType('XcmVersionedMultiLocation', {
       V3: {
          parents: parentValue,
@@ -45,7 +45,7 @@ export const createDestination = (api: ApiPromise, destChainId: string, parentVa
    });;
 };
 
-export const createBeneficiary = (api: ApiPromise, beneficiaryAddress: string): VersionedMultiLocation => {
+const createBeneficiary = (api: ApiPromise, beneficiaryAddress: string): VersionedMultiLocation => {
    const X1 = {AccountId32: {id: beneficiaryAddress}};
    return api.registry.createType('XcmVersionedMultiLocation', {
       V3: {
@@ -57,7 +57,7 @@ export const createBeneficiary = (api: ApiPromise, beneficiaryAddress: string): 
    });
 };
 
-export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: string, amount: string): VersionedMultiAssets => {
+const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: string, amount: string): VersionedMultiAssets => {
    let assetInterior: InteriorMultiLocation;
    switch (assetType) {
       case "USDT":

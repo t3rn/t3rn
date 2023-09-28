@@ -10,6 +10,7 @@ import { handleDgfCmd } from "./commands/dgf.ts"
 import { handleEstimateMaxReward } from "./commands/estimate.ts"
 import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
+import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -19,7 +20,7 @@ const program = new Command()
 program
   .name("t3rn CLI")
   .description("CLI for interacting with the t3rn blockchain")
-  .version("0.1.1")
+  .version("0.1.2")
 
 program
   .command("init")
@@ -113,4 +114,17 @@ program
   )
   .description("Estimate the max reward for an execution")
   .action(handleEstimateMaxReward),
-  program.parse(process.argv)
+
+withExportMode(
+    program
+        .command("xcmTransfer")
+        .description("Cross-chain transfer of assets using XCM")
+        .requiredOption("--dest <string>", "The destination chain")
+        .requiredOption("--recipient <string>", "The recipient address")
+        .requiredOption("--target-asset <symbol>", "The target asset")
+        .requiredOption("--target-amount <amount>", "The amount of the target asset")
+        .action(handleXcmTransferCommand)
+
+)
+
+program.parse(process.argv)
