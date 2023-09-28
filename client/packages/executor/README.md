@@ -36,7 +36,6 @@ To execute transactions on other blockchains, a custom relayer class is needed. 
 
 ## Getting Started:
 
-- in the parent `packages` directory, run `make` to build the local dependencies (`types` & `sdk`)
 - run `pnpm install`
 - configure your executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc` and using with `direnv`
-- run `EXECUTOR=myexec CIRCUIT_SIGNER_KEY=abc RELAYCHAIN_SIGNER_KEY=xyz pnpm start`
+- run `CIRCUIT_SIGNER_KEY=abc RELAYCHAIN_SIGNER_KEY=xyz pnpm start`

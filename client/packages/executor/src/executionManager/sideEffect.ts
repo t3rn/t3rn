@@ -157,9 +157,9 @@ export class SideEffect extends EventEmitter {
    * @param sideEffect Scale encoded side effect
    * @param id Id of the SFX
    * @param xtxId Id of the SFXs XTX
-   * @param sdk Instance of @t3rn/sdk
-   * @param strategyEngine Instance of the strategy engine
-   * @param biddingEngine Instance of the bidding engine
+   * @param sdk Executor of @t3rn/sdk
+   * @param strategyEngine Executor of the strategy engine
+   * @param biddingEngine Executor of the bidding engine
    * @param circuitSignerAddress Address of the executor account used for transaction on circuit
    * @param logger The logger instance
    * @returns SideEffect instance
@@ -399,7 +399,7 @@ export class SideEffect extends EventEmitter {
    *
    * @param bidAmount The bidding amount that was accepted. This is the reward amount, which is added to the subject
    */
-  bidAccepted(bidAmount: number) {
+  bidAccepted(status, bidAmount: number) {
     this.txStatus = TxStatus.Ready; // open mutex lock
 
     // usually, event fire quicker then a TX resolves. This prevents that we overwrite the TX status, when a lower bid was in the same block
@@ -408,7 +408,11 @@ export class SideEffect extends EventEmitter {
       this.reward.next(this.gateway.toFloat(bidAmount)); // not sure if we want to do this tbh. Reacting to other bids should be sufficient
       this.prometheus.executorBid.inc({ scenario: "Accepted" });
       logger.info(
-        { xtxId: this.xtxId, bidAmount: bidAmount.toString() },
+        {
+          xtxId: this.xtxId,
+          bidAmount: bidAmount.toString(),
+          block: status.inBlock,
+        },
         `Bid accepted ✅`,
       );
     } else {

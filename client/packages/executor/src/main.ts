@@ -1,6 +1,6 @@
 import { config } from "../config/config";
 import { AttestationManager } from "./attestationManager";
-import { Instance } from "./index";
+import { Executor } from "./executor.class";
 import { logger } from "./logging";
 import { Prometheus } from "./prometheus";
 
@@ -9,7 +9,7 @@ async function main() {
   const prometheus = new Prometheus();
 
   logger.info("Starting executor");
-  const instance = new Instance(process.env.EXECUTOR, false, prometheus);
+  const instance = new Executor(prometheus);
   await instance.setup();
 
   if (config.attestations.ethereum.privateKey === undefined) {
