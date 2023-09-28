@@ -35,48 +35,40 @@ export class Tx {
   async signAndSend(
     tx: SubmittableExtrinsic,
     options: Partial<SignerOptions>
-  ): Promise<string> {
+  ): Promise<any> {
     let exportObj: ExtrinsicExport | undefined;
 
     if (this.exportMode) {
       exportObj = new ExtrinsicExport(tx, this.signer.address);
     }
 
-    const status = await new Promise<string>((resolve, reject) => {
-      tx.signAndSend(
-        this.signer,
-        options,
-        async ({ dispatchError, status, events }) => {
-          if (this.exportMode && exportObj) {
-            events.forEach(({ event }) => {
-              exportObj.addEvent(event);
-            });
-          }
-
-          if (dispatchError?.isModule) {
-            const err = this.api.registry.findMetaError(dispatchError.asModule);
-
-            if (this.exportMode && exportObj) {
-              exportObj.addErr(dispatchError).toFile();
-            }
-
-            reject(
-              new Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`)
-            );
-          } else if (dispatchError) {
-            if (this.exportMode && exportObj) {
-              exportObj.addErr(dispatchError).toFile();
-            }
-
-            reject(new Error(dispatchError.toString()));
-          } else if (status.isInBlock) {
-            resolve(status.asInBlock.toString());
-          }
+    return tx.signAndSend(
+      this.signer,
+      options,
+      ({ dispatchError, status, events }) => {
+        if (this.exportMode && exportObj) {
+          events.forEach(({ event }) => {
+            exportObj.addEvent(event);
+          });
         }
-      );
-    });
 
-    return status;
+        if (dispatchError?.isModule) {
+          const err = this.api.registry.findMetaError(dispatchError.asModule);
+
+          if (this.exportMode && exportObj) {
+            exportObj.addErr(dispatchError).toFile();
+          }
+
+          throw new Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`);
+        } else if (dispatchError) {
+          if (this.exportMode && exportObj) {
+            exportObj.addErr(dispatchError).toFile();
+          }
+
+          throw new Error(dispatchError.toString());
+        }
+      }
+    );
   }
 
   /**
