@@ -1,10 +1,10 @@
-import ora from "ora";
-import {Args} from "@/types.js";
-import {validate} from "@/utils/fns.js";
-import {XcmTransferSchema} from "@/schemas/xcm.ts";
-import {colorLogMsg} from "@/utils/log.js";
-import {ApiPromise, WsProvider } from "@t3rn/sdk";
-import { generateXcmTransferParameters } from "@t3rn/sdk/utils";
+import ora from "ora"
+import {Args} from "@/types.js"
+import {validate} from "@/utils/fns.js"
+import {XcmTransferSchema} from "@/schemas/xcm.ts"
+import {colorLogMsg} from "@/utils/log.js"
+import {ApiPromise, WsProvider } from "@t3rn/sdk"
+import { generateXcmTransferParameters } from "@t3rn/sdk/utils"
 
 export const spinner = ora()
 
@@ -44,7 +44,7 @@ export const handleXcmTransferCommand = async (
             args.recipient,
             "ROC",
             "para"
-        );
+        )
         console.log("\n")
         console.table(JSON.stringify(xcmTransactionParams))
 
