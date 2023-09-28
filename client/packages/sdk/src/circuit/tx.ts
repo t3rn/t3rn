@@ -26,47 +26,49 @@ export class Tx {
 
   /**
    *
-   * @param tx - The transaction to send
-   * @param param - Parameters for tx
    *
-   * @returns Promise
+   * @param {SubmittableExtrinsic} tx
+   * @param {Partial<SignerOptions>} options
+   * @returns {*}  {Promise<string>}
+   * @memberof Tx
    */
-
-  async signAndSend(tx: SubmittableExtrinsic, options: Partial<SignerOptions>): Promise<string> {
-    let exportObj: ExtrinsicExport;
+  async signAndSend(
+    tx: SubmittableExtrinsic,
+    options: Partial<SignerOptions>
+  ): Promise<any> {
+    let exportObj: ExtrinsicExport | undefined;
 
     if (this.exportMode) {
       exportObj = new ExtrinsicExport(tx, this.signer.address);
     }
 
-    return new Promise((resolve, reject) =>
-      tx.signAndSend(
-        this.signer,
-        options,
-        async ({ dispatchError, status, events }) => {
+    return tx.signAndSend(
+      this.signer,
+      options,
+      ({ dispatchError, status, events }) => {
+        if (this.exportMode && exportObj) {
           events.forEach(({ event }) => {
-            exportObj?.addEvent(event);
+            exportObj.addEvent(event);
           });
-
-          if (dispatchError?.isModule) {
-            const err = this.api.registry.findMetaError(dispatchError.asModule);
-
-            exportObj?.addErr(dispatchError).toFile();
-            reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
-          } else if (dispatchError) {
-            exportObj?.addErr(dispatchError).toFile();
-
-            reject(Error(dispatchError.toString()));
-          } else if (status.isInBlock) {
-            resolve(status.asInBlock);
-          }
         }
-      )
-    ).then((data: any) =>
-      {
-        return data
-      })
-    
+
+        if (dispatchError?.isModule) {
+          const err = this.api.registry.findMetaError(dispatchError.asModule);
+
+          if (this.exportMode && exportObj) {
+            exportObj.addErr(dispatchError).toFile();
+          }
+
+          throw new Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`);
+        } else if (dispatchError) {
+          if (this.exportMode && exportObj) {
+            exportObj.addErr(dispatchError).toFile();
+          }
+
+          throw new Error(dispatchError.toString());
+        }
+      }
+    );
   }
 
   /**
@@ -144,16 +146,14 @@ export class Tx {
             exportObj?.addEvent(event);
           });
           if (status.isInBlock) {
-            resolve(events)
+            resolve(events);
           }
         }
       )
     ).then((events: any) => {
-      return events
+      return events;
     });
   }
-
-
 
   /**
    * Wraps a transaction object into sudo
