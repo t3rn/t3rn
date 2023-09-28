@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.57.0-rc.0] - 2023-09-28
+### :sparkles: New Features
+- [`9831fc0`](https://github.com/t3rn/t3rn/commit/9831fc0f2317b4973833c8f211d6a80b5facd3a5) - updated XCM configuration including Zombienet setup with enabled dev accounts on AssetHub *(PR [#1323](https://github.com/t3rn/t3rn/pull/1323) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.56.1-rc.0] - 2023-09-26
 ### :wrench: Chores
 - [`64960cf`](https://github.com/t3rn/t3rn/commit/64960cf7e85e245b73c59d1b00cc8174ab75e784) - add dependabot config with grouping *(PR [#1266](https://github.com/t3rn/t3rn/pull/1266) by [@3h4x](https://github.com/3h4x))*
@@ -1684,3 +1689,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.55.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.1-rc.0...v1.55.2-rc.0
 [v1.56.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.2-rc.0...v1.56.0-rc.0
 [v1.56.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.56.0-rc.0...v1.56.1-rc.0
+[v1.57.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.56.3-rc.0...v1.57.0-rc.0
