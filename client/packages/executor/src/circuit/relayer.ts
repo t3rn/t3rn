@@ -59,14 +59,22 @@ export class CircuitRelayer extends EventEmitter {
    */
   async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
     const txs = sfxs.map((sfx) => this.createConfirmTx(sfx));
+    let result;
     if (txs.length > 1) {
       // only batch if more than one tx
       const batch = this.sdk.circuit.tx.createBatch(txs);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return this.sdk.circuit.tx.signAndSendSafe(batch as any);
+      result = this.sdk.circuit.tx.signAndSend(batch as any, {
+        nonce: this.sdk.nonce,
+      });
     } else {
-      return this.sdk.circuit.tx.signAndSendSafe(txs[0] as never);
+      result = this.sdk.circuit.tx.signAndSend(txs[0] as never, {
+        nonce: this.sdk.nonce,
+      });
     }
+
+    this.sdk.nonce++;
+    return result;
   }
 
   /**

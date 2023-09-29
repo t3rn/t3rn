@@ -182,8 +182,8 @@ export class SubstrateRelayer extends EventEmitter {
         },
       ),
     );
-    this.nonce++
-    return result
+    this.nonce++;
+    return result;
   }
 
   /**
