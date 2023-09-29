@@ -494,6 +494,11 @@ export class ExecutionManager {
 
     const readyByStep: SideEffect[] = [];
 
+    logger.debug(
+      { readyByHeight, queuedBlocks, batchBlocks, vendor },
+      "SFXs ready for confirmation",
+    );
+
     // In case we have executed SFXs from the next phase already, we ensure that we only confirm the SFXs of the current phase
     for (let i = 0; i < readyByHeight.length; i++) {
       const xtxId = this.sfxToXtx[readyByHeight[i]];
@@ -502,16 +507,7 @@ export class ExecutionManager {
 
       if (!sfx) continue;
 
-      const isSfxInReadyByStep = (sfx) => {
-        return readyByStep.some(
-          (existingSfx) => existingSfx.xtxId === sfx.xtxId,
-        );
-      };
-
-      if (
-        sfx.phase === this.xtx[sfx.xtxId].currentPhase &&
-        !isSfxInReadyByStep(sfx)
-      ) {
+      if (sfx.phase === this.xtx[sfx.xtxId].currentPhase) {
         readyByStep.push(sfx);
       }
     }
@@ -531,14 +527,15 @@ export class ExecutionManager {
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(async ({ status, events }) => {
-          logger.error("status", status);
-          const blockHash = await this.circuitClient.rpc.chain.getBlockHash(
-            status.inBlock,
-          );
-          logger.error("blockHash", blockHash);
-          // const events =
-          //   await this.circuitClient.query.system.events.at(blockHash);
+        // TODO: we should be getting status and events like we do when we do signAndSend
+        .then(async (blockHeight) => {
+          const blockHash =
+            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
+          const events =
+            await this.circuitClient.query.system.events.at(blockHash);
+
+          logger.debug({ events, blockHash }, "Events for block");
+
           // TODO: can batch fail in any different way?
           // @ts-ignore - Property 'find' does not exist on type 'Codec'.
           const batchInterruptedEvent = events.find(
