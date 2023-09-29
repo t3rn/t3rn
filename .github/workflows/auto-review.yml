@@ -20,7 +20,7 @@ jobs:
 
     if: ${{ contains(github.event.pull_request.labels.*.name, 'review') }}
     steps:
-      - uses: fluxninja/openai-pr-reviewer@1.3.0
+      - uses: fluxninja/openai-pr-reviewer@1.16.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
