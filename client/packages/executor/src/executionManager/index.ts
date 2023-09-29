@@ -528,13 +528,13 @@ export class ExecutionManager {
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
         // TODO: we should be getting status and events like we do when we do signAndSend
-        .then(async (blockHeight) => {
-          const blockHash =
-            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
-          const events =
-            await this.circuitClient.query.system.events.at(blockHash);
-
-          logger.debug({ events, blockHash }, "Events for block");
+        .then(async ({ status, events }) => {
+          logger.debug({ status, events }, "Events for block");
+          const blockHash = status.inBlock;
+          // const blockHash =
+          //   await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
+          // const events =
+          //   await this.circuitClient.query.system.events.at(blockHash);
 
           // TODO: can batch fail in any different way?
           // @ts-ignore - Property 'find' does not exist on type 'Codec'.

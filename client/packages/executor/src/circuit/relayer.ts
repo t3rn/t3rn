@@ -59,6 +59,7 @@ export class CircuitRelayer extends EventEmitter {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async confirmSideEffects(sfxs: SideEffect[]): Promise<any> {
+    logger.debug({ sfxs, nonce: this.sdk.nonce }, "Confirming side effects");
     const txs = sfxs.map((sfx) => this.createConfirmTx(sfx));
     // only batch if more than one tx
     const batch = this.sdk.circuit.tx.createBatch(txs);
