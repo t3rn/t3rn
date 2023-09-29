@@ -89,8 +89,10 @@ describe("SideEffect", () => {
 });
 
 describe("Circuit relayer functionality", () => {
-  it("should increase nonce after first bidSfx", async () => {
-    const sdkMock: Sdk = mock(Sdk);
+  let sdkMock: Sdk;
+
+  beforeEach(async () => {
+    sdkMock = mock(Sdk);
     // Create mock instances for the properties you want to mock
     const circuitMock = mock(Circuit);
     const gatewaysMock: { [id: string]: Partial<Gateway> } = {
@@ -128,7 +130,9 @@ describe("Circuit relayer functionality", () => {
 
     // this.client.tx.circuit.bidSfx
     when(txCircuitMock.bidSfx).thenReturn(async () => {});
+  });
 
+  it("should increase nonce after first bidSfx", async () => {
     // Create an instance of the Sdk class with the mocked properties
     const sdkInstance = instance(sdkMock);
     sdkInstance.nonce = 1;
@@ -170,9 +174,10 @@ describe("Circuit relayer functionality", () => {
     // We want to be sure our mock class is initialized correctly
     expect(sdkInstance.nonce).to.be.equal(1);
 
-    await circuitRelayer.bidSfx(sfx.id, new BN(1));
-    await circuitRelayer.bidSfx(sfx.id, new BN(1));
+    circuitRelayer.bidSfx(sfx.id, new BN(1));
+    circuitRelayer.bidSfx(sfx.id, new BN(1));
 
+    // Nonce should increase by 2 because bidSfx was called twice
     expect(sdkInstance.nonce).to.be.equal(3);
   });
 });
