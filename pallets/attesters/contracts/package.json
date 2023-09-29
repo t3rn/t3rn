@@ -28,6 +28,7 @@
     "test": "hardhat test"
   },
   "dependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.5",
     "ethereumjs-util": "^7.1.5",
     "merkletreejs": "^0.3.10",
     "mocha": "^10.2.0",

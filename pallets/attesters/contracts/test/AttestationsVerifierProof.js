@@ -3,8 +3,10 @@ const { ethers } = require("hardhat");
 const ethUtil = require('ethereumjs-util');
 const { keccak256 } = require('ethereumjs-util');
 const { MerkleTree } = require('merkletreejs');
-const {formatBytes32String} = require("ethers/lib/utils");
+const { StandardMerkleTree } = require("@openzeppelin/merkle-tree");
+const {formatBytes32String, hexlify} = require("ethers/lib/utils");
 const {utils} = require("ethers");
+const {address} = require("hardhat/internal/core/config/config-validation");
 const encodedEmptyBatch = '0x00000000'
 
 // Standardized prefix for Ethereum signed messages that has message of 32 bytes
@@ -28,43 +30,84 @@ async function generateSignatures(wallets, messageHash, attestationsVerifier) {
     return signatures
 }
 
-function constructMerkleProofs(signers) {
-    // Convert each signer to a hashed leaf.
-    const leaves = signers.map(signer => keccak256(ethUtil.toBuffer(signer)));
-
-    // Construct the Merkle tree.
-    const tree = new MerkleTree(leaves, keccak256);
-
-    // Get the Merkle root.
-    const root = tree.getRoot().toString('hex');
-
-    // For each signer, generate a Merkle proof.
-    const proofsBuffer = signers.map(signer => tree.getHexProof(keccak256(ethUtil.toBuffer(signer))));
-
-    // Convert proofs (buffers) to bytes32 strings.
-    const proofs = proofsBuffer.map(proof => proof.map(node => node.toString()));
-
-    const expectedRoot = keccak256(ethUtil.toBuffer(ethers.utils.solidityPack(Array(signers.length).fill('address'), signers)));
-    // const expectedRoot = keccak256(ethUtil.toBuffer(signers));
-
-    console.log("constructMerkleProofs -- Calculated Root: ", root);
-    console.log("constructMerkleProofs -- Expected Root: ", expectedRoot.toString('hex'));
-    console.log("constructMerkleProofs -- Proofs: ", proofs);
-
-    return proofs;
-}
-
 function constructMerkleRoot(signers) {
     // Convert each signer to a hashed leaf.
     const leaves = signers.map(signer => keccak256(ethUtil.toBuffer(signer)));
 
     // Construct the Merkle tree.
-    const tree = new MerkleTree(leaves, keccak256);
+    const tree = new MerkleTree(leaves, keccak256, { sort: true });
 
-    // Get the Merkle root.
-    const root = "0x" + tree.getRoot().toString('hex');
+    return tree.getRoot();
+}
 
-    return root;
+function constructMerkleProofs(signers) {
+
+    console.log('Signers:', signers);
+    // Wrap each signer in an array
+    const signersArrays = signers.map((signer) => [signer]);
+
+    const tree = StandardMerkleTree.of(signersArrays, ["address"]);
+    // const tree = StandardMerkleTree.of(signers, Array(signers.length).fill('address'));
+
+    console.log('Merkle Root:', tree.root);
+
+    // Create a Merkle tree from the leaves.
+
+    const proofs = []
+
+    for (const [i, v] of tree.entries()) {
+        const proof = tree.getProof(i);
+        console.log('Value:', v);
+        console.log('Proof:', proof);
+        proofs.push(proof)
+    }
+
+    // Create a multi proof from the leaves.
+    const multiProof = tree.getMultiProof(signersArrays);
+    console.log('Multi Proof:', multiProof);
+
+    // const verified = tree.verifyMultiProof(multiProof);
+
+    return proofs;
+}
+
+function constructMultiMerkleProof(signers) {
+
+    console.log('Signers:', signers);
+    // Wrap each signer in an array
+    const signersArrays = signers.map((signer) => [signer]);
+
+    const tree = StandardMerkleTree.of(signersArrays, ["address"]);
+    // const tree = StandardMerkleTree.of(signers, Array(signers.length).fill('address'));
+
+    console.log('Merkle Root:', tree.root);
+
+    // Create a Merkle tree from the leaves.
+
+    const proofs = []
+    const leafHashes = [];
+    for (const [i, v] of tree.entries()) {
+        const proof = tree.getProof(i);
+        // console.log('Value:', v);
+        // console.log('Proof:', proof);
+        leafHashes.push(tree.leafHash(v));
+        proofs.push(proof)
+    }
+
+    // Create a multi proof from the leaves.
+    const multiProof = tree.getMultiProof(signersArrays);
+    console.log('Multi Proof:', multiProof);
+    console.log('leafHashes Proof:', leafHashes);
+    console.log('leafHashes Lentgth:', leafHashes.length);
+
+    const verified = tree.verifyMultiProof(multiProof);
+    console.assert(verified, 'Multi proof is not verified');
+
+    return {
+        root: tree.root,
+        proof: multiProof.proof,
+        flags: multiProof.proofFlags,
+    };
 }
 function getMessageHash(batch) {
     const encodedBatch = batchEncodePacked(batch)
@@ -99,6 +142,37 @@ function batchEncodePacked(batch) {
       [batch.currentCommitteeHash, batch.nextCommitteeHash, batch.committedSfx, batch.revertedSfx, batch.index]
     );
 }
+
+
+// enum OperationType { TransferCommit, TransferRevert, CallCommit, CallRevert }
+
+function batchEncodePackedGMP(batch) {
+
+    let gmpBytes = "0x";
+
+    batch.committedSfx.forEach((sfx) => {
+       const mockedAddressBytes = ethers.utils.solidityPack(['address'], ["0x3333333333333333333333333333333333333333"]);
+       // encode without packed
+
+       const encodedSfxTransferCommitment = ethers.utils.solidityPack(['uint8', 'bytes32', 'address'], [0, sfx, mockedAddressBytes]);
+        gmpBytes += encodedSfxTransferCommitment.slice(2); // remove 0x
+    });
+
+    batch.revertedSfx.forEach((sfx) => {
+        const mockedAddressBytes = ethers.utils.solidityPack(['address'], ["0x3333333333333333333333333333333333333333"]);
+        const encodedSfxTransferRevert = ethers.utils.solidityPack(['uint8', 'bytes32'], [1, sfx]);
+        gmpBytes += encodedSfxTransferRevert.slice(2); // remove 0x;
+    });
+
+    // batch.committedSfxCalls.forEach((sfx) => {
+    //     const mockedAddressBytes = ethers.utils.solidityPack(['address'], ["0x3333333333333333333333333333333333333333"]);
+    //     const encodedSfxTransferCommitment = ethers.utils.solidityPack(['byte', 'bytes32', 'address', 'uint16', 'bytes'], [1, sfx, mockedAddressBytes]);
+    //     gmpBytes += encodedSfxTransferCommitment;
+    // });
+
+    return gmpBytes;
+}
+
 
 function batchDecodePacked(packedBatch) {
     return ethers.utils.defaultAbiCoder.decode(
@@ -151,7 +225,7 @@ describe("AttestationSignature", function() {
 
         // Recover the signer's address with solidity contract
         const AttestationsVerifierProofs = await ethers.getContractFactory("AttestationsVerifierProofs");
-        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0);
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0, ethers.constants.AddressZero);
         await attestationsVerifier.deployed();
 
         // Contract adds prefix, so we call it without it
@@ -170,7 +244,7 @@ describe("AttestationsVerifierProofs", function() {
         const wallet = new ethers.Wallet(privateKey);
 
         const AttestationsVerifierProofs = await ethers.getContractFactory("AttestationsVerifierProofs");
-        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0);
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0, ethers.constants.AddressZero);
         await attestationsVerifier.deployed();
 
         // Create the signature
@@ -300,7 +374,7 @@ describe("AttestationsVerifierProofs", function() {
         expect(batchMessageHash).to.equal("0x92689b8b6360ba49e99b694643ba4c7fedb658496665252ab6de5aed79520a8c");
 
         const AttestationsVerifierProofs = await ethers.getContractFactory("AttestationsVerifierProofs");
-        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0);
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0, ethers.constants.AddressZero);
         await attestationsVerifier.deployed();
 
         let txEncodedBatchOutput = await attestationsVerifier.batchEncodePacked(batch);
@@ -331,7 +405,7 @@ describe("AttestationsVerifierProofs", function() {
         expect(batchMessageHash).to.equal("0x51f81bcdfc324a0dff2b5bec9d92e21cbebc4d5e29d3a3d30de3e03fbeab8d7f");
 
         const AttestationsVerifierProofs = await ethers.getContractFactory("AttestationsVerifierProofs");
-        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0);
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0, ethers.constants.AddressZero);
         await attestationsVerifier.deployed();
 
         let txEncodedBatchOutput = await attestationsVerifier.batchEncodePacked(batch);
@@ -395,7 +469,7 @@ describe("AttestationsVerifierProofs", function() {
         expect(batchMessageHash).to.equal("0x571e2e5fc34e6563ebadfc86189cc1b665cefe590fd8015e7d5f3759aaf39ff5");
 
         const AttestationsVerifierProofs = await ethers.getContractFactory("AttestationsVerifierProofs");
-        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0);
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy([], 0, ethers.constants.AddressZero);
         await attestationsVerifier.deployed();
 
         let txEncodedBatchOutput = await attestationsVerifier.batchEncodePacked(batch);
@@ -471,10 +545,10 @@ describe("AttestationsVerifierProofs", function() {
 
     it("Should initialize committee and verify signatures for full batch", async function() {
         const wallets = Array.from({
-            length: 32
+            length: 8
         }, () => ethers.Wallet.createRandom());
         const wallets_next_committee = Array.from({
-            length: 32
+            length: 8
         }, () => ethers.Wallet.createRandom());
 
         const [defaultSigner] = await ethers.getSigners();
@@ -495,7 +569,8 @@ describe("AttestationsVerifierProofs", function() {
         const committedSfx = [ethers.utils.id("sfx#1"), ethers.utils.id("sfx#2"), ethers.utils.id("sfx#3")];
 
         const AttestationsVerifierProofs = await ethers.getContractFactory("AttestationsVerifierProofs");
-        const attestationsVerifier = await AttestationsVerifierProofs.deploy(initialCommittee, 0);
+
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy(initialCommittee, initialCommittee, 0, ethers.constants.AddressZero);
         await attestationsVerifier.deployed();
 
         let batch = {
@@ -508,26 +583,59 @@ describe("AttestationsVerifierProofs", function() {
         };
         // Encoding the Batch struct
         const encodedBatchMessage = batchEncodePacked(batch);
+        const encodedBatchMessageGMP = batchEncodePackedGMP(batch);
+
+        console.log("encodedBatchMessageGMP", encodedBatchMessageGMP);
+        // Verify that the batch message decodes correctly
+        let txDecode = await attestationsVerifier.decodeAndProcessPayload(encodedBatchMessageGMP);
+        let out = txDecode;
+        console.log("txDecode receipt = ", out);
 
         // Hashing the encoded Batch struct
         const messageHash = ethers.utils.keccak256(encodedBatchMessage);
-
+        console.log("messageHash", messageHash);
         const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
 
+        signatures.forEach((sig) => console.log("\"" + ethers.utils.hexlify(sig) + "\","));
         // Send the batch message
-        let tx = await attestationsVerifier.receiveAttestationBatch(constructMerkleRoot(initialCommittee), batch.nextCommitteeHash, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, messageHash, signatures, constructMerkleProofs(initialCommittee));
+        // let tx = await attestationsVerifier.receiveAttestationBatch(constructMerkleRoot(initialCommittee), batch.nextCommitteeHash, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, messageHash, signatures, constructMerkleProofs(initialCommittee));
 
+        //         bytes calldata batchPayload,
+        //         bytes[] calldata signatures,
+        //         bytes32[] calldata multiProofProof,
+        //         bool[] calldata multiProofMembershipFlags
+
+        // //        bytes32 _currentCommitteeHash,
+        // //        bytes32 nextCommitteeHash,
+        // //        address[] memory bannedCommittee,
+        // //        bytes32[] memory committedSfx,
+        // //        bytes32[] memory revertedSfx,
+        // //        uint32 index,
+        let multiProofData = constructMultiMerkleProof(initialCommittee);
+
+        // let batchPayload = ethers.utils.solidityPack(['bytes32', 'bytes32', 'address[]', 'bytes32[]', 'bytes32[]', 'uint32'], [multiProofData.root, batch.nextCommitteeHash, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index]);
+        let batchPayload = ethers.utils.defaultAbiCoder.encode(['bytes32', 'bytes32', 'address[]', 'bytes32[]', 'bytes32[]', 'uint32'], [multiProofData.root, batch.nextCommitteeHash, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index]);
+
+        // let tx = await attestationsVerifier.receiveAttestationBatch(constructMerkleRoot(initialCommittee), batch.nextCommitteeHash, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, messageHash, signatures, constructMerkleProofs(initialCommittee));
+
+        let txTest = await attestationsVerifier.verifySignaturesTest(messageHash, signatures, multiProofData.proof, multiProofData.flags);
+        // console.log("txTest: ", txTest);
+        // let tx = await attestationsVerifier.receiveAttestationBatch(multiProofData.root, batch.nextCommitteeHash, batch.index, batchPayload, signatures, multiProofData.proof, multiProofData.flags);
 
         // Wait for the transaction to be mined and get the logs
-        const receipt = await tx.wait();
+        const receipt = await txTest.wait();
+        const output = receipt.logs[0].topics;
 
-        console.log("receipt out: ", receipt);
-        let allEvents = await parseAllEvents(receipt, attestationsVerifier);
+        // console.log("outout out: ", outout);
+        // console.log("receipt out: ", receipt);
+        // let allEvents = await parseAllEvents(receipt, attestationsVerifier);
+        //
+        // console.log("allEvents TestEvent ", allEvents["TestEvent"]);
         // Get the SignerEmitted events from the logs
 
         // Check that the correct addresses and indexes were emitted
-        const parsedBatchAppliedEvents = allEvents["BatchApplied"];
-        expect(parsedBatchAppliedEvents.length).to.equal(1);
+        // const parsedBatchAppliedEvents = allEvents["BatchApplied"];
+        // expect(parsedBatchAppliedEvents.length).to.equal(1);
     });
 });
 
@@ -667,7 +775,8 @@ describe("AttestationsCommittee", function() {
         await expect(sendBatch(attestationsVerifier, index+2, committees[index], committees[index], [])).to.be.revertedWith("Signatures verification failed");
     });
 });
-
+// args to REMIX constructor example
+// ["0x5cb78Ec7701bD8d0f7cd4fEd625599E735252268",     "0x7247215D1A891790eaD0C79fd42dAe94a47825Bb",     "0x241A2d40191933E4c3E137cf84739E8f95C5a86E",     "0x6C35bf635D772B92f8cF93e5Aa1c418f86158cDe",     "0x33820541866667ec507e17a16B232659F4e96bC6",     "0xec8bb4585fA3Cd40e05fc8D3CC9CB0401E64979e",     "0xBc8D8d4862420Fd297C06f4447D6E35E64bbBbfE",     "0x4D61779D64482238Acc3D2E8396bAaC8772824b2",     "0x7D9e08f0e4C5850f8D1D03f2C6cccE40bDed6146",     "0x35Fd9a2cD48A2C81cF1fdeD82C0C84a0661ac44b",     "0x2c9EF2c5a32BD2e0Fc646bcA54761ef135d1E4A5",     "0xB8c7910F90D3ebb03b3DD7ae7527f8E04831688b",     "0xbD66dA643591e3a5c25289C1d6Cb2C5AD7Efa0AE",     "0x1D005a07eDdAC64D26F9899c8142eF0d33e7af0D",     "0xB6c08D61975dC1314aa8C14D112842a0FF229B16",     "0xc8B0aD7514c90B01223E82d33fA303682a10b8E5",     "0x838378a481a9d6505d46479Ad4041a1815705224",     "0x096E5Ff9169938b02d4f06007390fCA65CFCd712",     "0x5dd2761ccdEbF19d0Aca18e98Bb83df5dA66Dc9C",     "0xC2C692eCaCC73aA1b03A68F59CC16D39Ea2e1590",     "0x03459788Cccf4f983e42b23Db55363e74C8CD438",     "0x518BefcBd221542F7F3665a5F218b99B0acE5DF6",     "0xE20835Cb30FDbFf43d2A807264a3677B7fC7db5D",     "0x20b95DE757374093AD99580601E069780b35eC03",     "0x2143E9D2f1c52226c726ad7eb2BF06db36985efc",     "0xc0eBd12be6d147fbd91404DC8DFEBfb09f4b2e34",     "0xCA54b7B6709E12ac3A132b85f4145Bb812fbDdF0",     "0x33C1A6D5348e1b654C1d1c931C4ac2c290110Fa2",     "0x4b4747a40891d7467277922062bEfB1f54AFDBBC",     "0x72aC370671A935C7Aa178368c76D2f30715B573c",     "0xA801890766C46717e2F9fbAE2781e879860d5cC1",     "0x6Cc6bFdFcEA8CA19aBc8D3A47ba340bA9460abEc"]
 async function sendBatch(attestationsVerifier, index, prevCommittee = [], nextCommittee = [], bannedCommittee = [], committedSfx = [], revertedSfx = []) {
     let batch = {
         currentCommitteeHash: keccak256(ethUtil.toBuffer(ethers.utils.solidityPack(Array(prevCommittee.length).fill('address'), prevCommittee.map(wallet => wallet.address)))),

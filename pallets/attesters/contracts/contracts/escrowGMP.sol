@@ -42,6 +42,7 @@ contract EscrowGMP {
         Call onRevert;
     }
 
+    bytes32[] public revertedBridgeOrders;
     mapping(bytes32 => uint256) public localPayments;
     mapping(bytes32 => EscrowCall) public escrowCalls;
     mapping(bytes32 => bool) public remotePayments;
@@ -66,6 +67,24 @@ contract EscrowGMP {
         // Store the payment if it hasn't been stored already
         localPayments[id] = block.number;
         return (id, payment);
+    }
+
+    function addRevertedBridgeOrders(bytes32[] calldata ids) external returns (bool) {
+        for (uint256 i = 0; i < ids.length; i++) {
+            revertedBridgeOrders.push(ids[i]);
+        }
+        return (true);
+    }
+
+    function lookupAndRemoveRevertedBridgeOrder(bytes32 id) external returns (bool) {
+        for (uint256 i = 0; i < revertedBridgeOrders.length; i++) {
+            if (revertedBridgeOrders[i] == id) {
+                revertedBridgeOrders[i] = revertedBridgeOrders[revertedBridgeOrders.length - 1];
+                revertedBridgeOrders.pop();
+                return (true);
+            }
+        }
+        return (false);
     }
 
     function storeRemoteOrderPayload(bytes32 sfxId, bytes32 payloadHash) external returns (bool) {
