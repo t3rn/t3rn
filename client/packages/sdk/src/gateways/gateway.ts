@@ -112,7 +112,44 @@ export class Gateway {
       enforceExecutioner: args.enforceExecutioner,
     });
   };
+/*
+  createXTransferSfx = (args: {
+    from: string;
+    beneficiary: string;
+    destChainId: string;
+    asset: string;
+    value: number | BN | string;
+    maxReward: number | BN | string;
+    insurance: number | BN | string;
+    nonce: number;
+    signature?: string;
+    enforceExecutioner?: string;
+  }): T3rnTypesSideEffect => {
+    const encodedArgs: string[] = this.encodeXTransferArgs(
+      args.from,
+      args.beneficiary,
+      args.destChainId,
+      args.asset,
+      args.value,
+      args.insurance,
+      args.maxReward
+    );
 
+    const maxReward = new AmountConverter({ value: args.maxReward }).toBn();
+    const insurance = new AmountConverter({ value: args.insurance }).toBn();
+
+    return createSfx({
+      target: toU8aId(this.id),
+      nonce: args.nonce,
+      maxReward,
+      insurance,
+      encodedArgs,
+      action: "tran",
+      signature: args.signature,
+      enforceExecutioner: args.enforceExecutioner,
+    });
+  };
+*/
   /**
    * Encode transfer arguments
    * @param from - The address of the sender
@@ -144,6 +181,31 @@ export class Gateway {
     return [to, encodedAmount];
   }
 
+  /*
+  encodeXTransferArgs(
+    from: string,
+    beneficiary: string,
+    destChainId: number | BN | string,
+    asset: string,
+    value: number | BN | string,
+    insurance: number | BN | string,
+    reward: number | BN | string
+  ): string[] {
+    if (!this.allowedSideEffects.includes("xtran"))
+      throw new Error(`XTransfer Sfx not supported for ${this.id}`);
+    // ensure we pass the correct address encoding (e.g. pub key for substrate)
+    beneficiary = this.validateAddress(beneficiary);
+
+    // convert value to LittleEndian
+    const encodedAmount = new AmountConverter({
+      value,
+      decimals: this.decimals,
+      valueTypeSize: this.valueTypeSize,
+    }).toLeHex();
+
+    return [beneficiary, destChainId, asset, encodedAmount];
+  }
+  */
   /**
    * Convert an address into t3rn compatible form. For example, we want to ensure we pass the public key for polkadot addresses
    * @param address - The address to convert

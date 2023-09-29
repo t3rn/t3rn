@@ -10,6 +10,7 @@ import { handleDgfCmd } from "./commands/dgf.ts"
 import { handleEstimateMaxReward } from "./commands/estimate.ts"
 import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
+import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -23,8 +24,9 @@ program
 
 program
   .command("init")
-  .option("-t, --transfer [file-path]", "Generate a transfer template")
   .description("Generate a config or transfer template")
+  .option("-t, --transfer [file-path]", "Generate a transfer template")
+  //.option("-x, --xtransfer [file-path]", "Generate a cross-chain transfer template") // enable when agreed on XCM workflow
   .action(handleInitCmd)
 
 withExportMode(
@@ -112,4 +114,17 @@ program
   )
   .description("Estimate the max reward for an execution")
   .action(handleEstimateMaxReward),
-  program.parse(process.argv)
+
+withExportMode(
+    program
+        .command("xcmTransfer")
+        .description("Cross-chain transfer of assets using XCM")
+        .requiredOption("--dest <string>", "The destination chain")
+        .requiredOption("--recipient <string>", "The recipient address")
+        .requiredOption("--target-asset <symbol>", "The target asset")
+        .requiredOption("--target-amount <amount>", "The amount of the target asset")
+        .action(handleXcmTransferCommand)
+
+)
+
+program.parse(process.argv)

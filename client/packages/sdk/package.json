@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/sdk",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "t3rn's client side SDK",
   "files": [
     "dist/**/*"
@@ -40,6 +40,7 @@
   "dependencies": {
     "@polkadot/api": "^8.9.1",
     "dotenv": "^16.0.3",
+    "@polkadot/types": "^8.9.1",
     "node-fetch": "2",
     "web3": "^4.0.3"
   },
