@@ -454,7 +454,7 @@ export class ExecutionManager {
    * @param blockHeight The latest block height
    */
   updateGatewayHeight(vendor: string, blockHeight: number) {
-    logger.info(
+    logger.debug(
       {
         vendor: vendor,
         blockHeight: blockHeight,
