@@ -4,7 +4,7 @@ import {validate} from "@/utils/fns.js"
 import {XcmTransferSchema} from "@/schemas/xcm.ts"
 import {colorLogMsg} from "@/utils/log.js"
 import {ApiPromise, WsProvider } from "@t3rn/sdk"
-import { generateXcmTransferParameters } from "@t3rn/sdk/utils"
+import { generateXcmTransferParameters } from "@/utils/xcm.ts"
 
 export const spinner = ora()
 
