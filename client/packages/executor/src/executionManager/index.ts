@@ -502,7 +502,16 @@ export class ExecutionManager {
 
       if (!sfx) continue;
 
-      if (sfx.phase === this.xtx[sfx.xtxId].currentPhase) {
+      const isSfxInReadyByStep = (sfx) => {
+        return readyByStep.some(
+          (existingSfx) => existingSfx.xtxId === sfx.xtxId,
+        );
+      };
+
+      if (
+        sfx.phase === this.xtx[sfx.xtxId].currentPhase &&
+        !isSfxInReadyByStep(sfx)
+      ) {
         readyByStep.push(sfx);
       }
     }
