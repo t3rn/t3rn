@@ -54,7 +54,7 @@
     "prettier": "^3.0.3",
     "prom-client": "^14.2.0",
     "rxjs": "^7.8.1",
-    "sinon": "^15.2.0",
+    "sinon": "^16.0.0",
     "standard": "^17.1.0",
     "ts-mockito": "^2.6.1",
     "types": "link:@polkadot/keyring/types",
