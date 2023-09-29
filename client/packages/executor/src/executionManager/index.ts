@@ -531,11 +531,14 @@ export class ExecutionManager {
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(async (blockHeight) => {
-          const blockHash =
-            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
-          const events =
-            await this.circuitClient.query.system.events.at(blockHash);
+        .then(async ({ status, events }) => {
+          logger.error("status", status);
+          const blockHash = await this.circuitClient.rpc.chain.getBlockHash(
+            status.inBlock,
+          );
+          logger.error("blockHash", blockHash);
+          // const events =
+          //   await this.circuitClient.query.system.events.at(blockHash);
           // TODO: can batch fail in any different way?
           // @ts-ignore - Property 'find' does not exist on type 'Codec'.
           const batchInterruptedEvent = events.find(

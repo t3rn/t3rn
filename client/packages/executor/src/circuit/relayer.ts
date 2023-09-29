@@ -57,7 +57,8 @@ export class CircuitRelayer extends EventEmitter {
    * @param sfxs Array of SideEffect objects that should be confirmed
    * @returns The block height of the included tx
    */
-  async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async confirmSideEffects(sfxs: SideEffect[]): Promise<any> {
     const txs = sfxs.map((sfx) => this.createConfirmTx(sfx));
     let result;
     if (txs.length > 1) {
