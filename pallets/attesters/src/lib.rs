@@ -79,6 +79,7 @@ pub mod pallet {
         pub created: BlockNumber,
         pub status: BatchStatus,
         pub latency: LatencyStatus,
+        pub halt: bool,
     }
 
     impl<BlockNumber: Zero> Default for BatchMessage<BlockNumber> {
@@ -93,6 +94,7 @@ pub mod pallet {
                 status: BatchStatus::PendingMessage,
                 created: Zero::zero(),
                 latency: LatencyStatus::OnTime,
+                halt: false,
                 index: 0,
             }
         }
@@ -2611,6 +2613,7 @@ pub mod attesters_test {
                     created: current_block_1,
                     latency: LatencyStatus::OnTime,
                     index: 0,
+                    halt: false,
                 }]
             );
         });
@@ -3310,6 +3313,7 @@ pub mod attesters_test {
                     created: current_block_1,
                     latency: LatencyStatus::OnTime,
                     index: 0,
+                    halt: false,
                 })
             );
 
@@ -3551,6 +3555,7 @@ pub mod attesters_test {
                 created: 0,
                 latency: LatencyStatus::OnTime,
                 index: 0,
+                halt: false,
             };
             let batching_window: BlockNumber =
                 <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
@@ -3579,6 +3584,7 @@ pub mod attesters_test {
                     created: 0,
                     latency: LatencyStatus::OnTime,
                     index: 0,
+                    halt: false,
                 }]
             );
             assert_eq!(
@@ -4347,6 +4353,7 @@ pub mod attesters_test {
             created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
+            halt: false,
         };
 
         let msg = filled_batch.message();
@@ -4373,6 +4380,7 @@ pub mod attesters_test {
             created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
+            halt: false,
         };
 
         let msg = filled_batch.message();
