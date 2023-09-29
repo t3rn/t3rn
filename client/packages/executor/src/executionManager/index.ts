@@ -98,7 +98,7 @@ export class ExecutionManager {
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
-    this.biddingEngine = new BiddingEngine(logger, prometheus);
+    this.biddingEngine = new BiddingEngine(prometheus);
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.prometheus = prometheus;

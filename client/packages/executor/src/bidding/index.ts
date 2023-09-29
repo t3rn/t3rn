@@ -1,6 +1,5 @@
 import { SideEffect } from "../executionManager/sideEffect";
 import { config } from "../../config/config";
-import { Logger } from "pino";
 import { Prometheus } from "../prometheus";
 
 /**
@@ -35,10 +34,7 @@ export class BiddingEngine {
   whoBidsOnWhat = new Map<string, string[]>();
   prometheus: Prometheus;
 
-  constructor(
-    public logger: Logger,
-    prometheus: Prometheus,
-  ) {
+  constructor(prometheus: Prometheus) {
     this.prometheus = prometheus;
   }
 
