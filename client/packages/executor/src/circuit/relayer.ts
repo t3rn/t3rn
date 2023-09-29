@@ -41,6 +41,7 @@ export class CircuitRelayer extends EventEmitter {
       encodedSfxId as never,
       encodedAmount as never,
     );
+
     const result = this.sdk.circuit.tx.signAndSend(tx, {
       nonce: this.sdk.nonce,
     });

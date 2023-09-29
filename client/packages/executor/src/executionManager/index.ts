@@ -598,10 +598,6 @@ export class ExecutionManager {
     }
   }
 
-  public stopSfxListener(sfx) {
-    sfx.off("Notification");
-  }
-
   /**
    * Initialize SFX event listeners.
    *
