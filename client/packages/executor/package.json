@@ -37,7 +37,7 @@
     "@types/chai-as-promised": "^7.1.6",
     "@types/debug": "^4.1.9",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.7.0",
+    "@types/node": "^20.8.0",
     "axios": "^1.5.1",
     "chai": "^4.3.8",
     "chai-as-promised": "^7.1.1",
