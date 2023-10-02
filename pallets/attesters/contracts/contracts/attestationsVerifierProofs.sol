@@ -23,11 +23,41 @@ contract AttestationsVerifierProofs {
         address[] bannedCommittee;
         bytes32[][2] committedSfx;
         bytes32[] revertedSfx;
+        uint256[] priceUpdates;
         uint32 index;
         bytes encodedGMPPayload;
     }
 
+    struct PriceEntry {
+        uint256 priceInETH; // This will represent how much 1 unit of the asset is worth in ETH.
+        uint256 lastUpdated; // Timestamp of the last update.
+    }
+
+    function updatePrice(string memory assetName, uint256 newPrice) internal {
+        prices[assetName].priceInETH = newPrice;
+        prices[assetName].lastUpdated = block.timestamp;
+    }
+
+    function batchUpdatePrices(string[] memory assetNames, uint256[] memory newPrices) internal {
+        require(assetNames.length == newPrices.length, "Mismatched arrays");
+
+        for(uint256 i = 0; i < assetNames.length; i++) {
+            updatePrice(assetNames[i], newPrices[i]);
+        }
+    }
+
+    function getPrice(string memory assetName) external view returns (uint256) {
+        return prices[assetName].priceInETH;
+    }
+
+    function getPriceUpdateTime(string memory assetName) external view returns (uint256) {
+        return prices[assetName].lastUpdated;
+    }
+
+
     mapping(address => uint256) public attestersIndices;
+    mapping(string => PriceEntry) public prices;
+
     address public owner;
     uint256 public committeeSize;
     uint256 public quorum;
@@ -128,6 +158,13 @@ contract AttestationsVerifierProofs {
         }
 
         decodeAndProcessPayload(batchPayload);
+
+        // Check if batch includes price updates and apply them
+        if (batch.priceUpdates.length > 0) {
+            require(batch.priceUpdates.length == 2, "Invalid price updates length");
+            updatePrice("xTRN", batch.priceUpdates[0]);
+            updatePrice("xDOT", batch.priceUpdates[1]);
+        }
 
         currentBatchIndex = batch.index;
 
