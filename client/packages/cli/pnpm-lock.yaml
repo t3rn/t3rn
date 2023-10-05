@@ -48,8 +48,8 @@ dependencies:
     specifier: ^2.6.0
     version: 2.6.0
   zod:
-    specifier: ^3.21.4
-    version: 3.21.4
+    specifier: ^3.22.3
+    version: 3.22.3
 
 devDependencies:
   '@jest/globals':
@@ -5413,7 +5413,7 @@ packages:
       util: 0.12.5
       web3-errors: 1.1.1
       web3-types: 1.1.1
-      zod: 3.21.4
+      zod: 3.22.3
     dev: false
 
   /web3@4.1.1:
@@ -5582,6 +5582,6 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /zod@3.21.4:
-    resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
+  /zod@3.22.3:
+    resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
     dev: false
