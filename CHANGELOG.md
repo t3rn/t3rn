@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.59.0-rc.0] - 2023-10-09
+### :sparkles: New Features
+- [`e695992`](https://github.com/t3rn/t3rn/commit/e695992ed2296369bcfb6a643ff4d42dc0cfa968) - **executor**: handling nonce in relayer *(PR [#1330](https://github.com/t3rn/t3rn/pull/1330) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.58.1-rc.0] - 2023-10-03
 ### :bug: Bug Fixes
 - [`bccb14d`](https://github.com/t3rn/t3rn/commit/bccb14ddd56ae4941c9b5c8d9273f8a5032c1b90) - lower SyncCommitteeSupermajority sepolia *(PR [#1336](https://github.com/t3rn/t3rn/pull/1336) by [@3h4x](https://github.com/3h4x))*
@@ -1709,3 +1714,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.57.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.56.3-rc.0...v1.57.0-rc.0
 [v1.58.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.57.0-rc.0...v1.58.0-rc.0
 [v1.58.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.0-rc.0...v1.58.1-rc.0
+[v1.59.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.2-rc.0...v1.59.0-rc.0
