@@ -121,10 +121,10 @@
       }
     },
     {
-      "name": "Rockmine",
-      "id": "mine",
+      "name": "AssetHub - Rococo",
+      "id": "rhub",
       "tokenId": 1002,
-      "rpc": "wss://rococo-rockmine-rpc.polkadot.io",
+      "rpc": "wss://rococo-asset-hub-rpc.polkadot.io",
       "transferData": {
         "receiver": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
         "fee": 0

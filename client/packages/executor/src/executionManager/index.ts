@@ -98,7 +98,7 @@ export class ExecutionManager {
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
-    this.biddingEngine = new BiddingEngine(logger, prometheus);
+    this.biddingEngine = new BiddingEngine(prometheus);
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.prometheus = prometheus;
@@ -314,7 +314,7 @@ export class ExecutionManager {
               logger.warn(
                 {
                   index: eventData.data[0].toString(),
-                  xtx: this.xtx,
+                  xtx: this.xtx.key,
                 },
                 "SFX not found on the given index",
               );
@@ -455,7 +455,7 @@ export class ExecutionManager {
    * @param blockHeight The latest block height
    */
   updateGatewayHeight(vendor: string, blockHeight: number) {
-    logger.info(
+    logger.debug(
       {
         vendor: vendor,
         blockHeight: blockHeight,
@@ -495,6 +495,11 @@ export class ExecutionManager {
 
     const readyByStep: SideEffect[] = [];
 
+    logger.debug(
+      { readyByHeight, queuedBlocks, batchBlocks, vendor },
+      "SFXs ready for confirmation",
+    );
+
     // In case we have executed SFXs from the next phase already, we ensure that we only confirm the SFXs of the current phase
     for (let i = 0; i < readyByHeight.length; i++) {
       const xtxId = this.sfxToXtx[readyByHeight[i]];
@@ -523,11 +528,15 @@ export class ExecutionManager {
       );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
-        .then(async (blockHeight) => {
-          const blockHash =
-            await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
-          const events =
-            await this.circuitClient.query.system.events.at(blockHash);
+        // TODO: we should be getting status and events like we do when we do signAndSend
+        .then(async ({ status, events }) => {
+          logger.debug({ status, events }, "Events for block");
+          const blockHash = status.inBlock;
+          // const blockHash =
+          //   await this.circuitClient.rpc.chain.getBlockHash(blockHeight);
+          // const events =
+          //   await this.circuitClient.query.system.events.at(blockHash);
+
           // TODO: can batch fail in any different way?
           // @ts-ignore - Property 'find' does not exist on type 'Codec'.
           const batchInterruptedEvent = events.find(
@@ -608,13 +617,15 @@ export class ExecutionManager {
     sfx.on("Notification", (notification: Notification) => {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
+          // Increment nonce in case we want to send multiple bids in a single block
           this.circuitRelayer
             .bidSfx(
               notification.payload.sfxId,
               notification.payload.bidAmount as BN,
             )
-            .then(() => {
-              sfx.bidAccepted(notification.payload.bidAmount as number);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .then((status: any) => {
+              sfx.bidAccepted(status, notification.payload.bidAmount as number);
             })
             .catch((e) => {
               logger.warn(
@@ -622,7 +633,7 @@ export class ExecutionManager {
                   xtxId: sfx.xtxId,
                   error: e.message,
                 },
-                `Bid rejected ❌`,
+                `🍄 Bid rejected`,
               );
               this.prometheus.executorBidRejected.inc({ error: e.message });
               sfx.bidRejected();

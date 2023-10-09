@@ -27,7 +27,7 @@ export class SubstrateRelayer extends EventEmitter {
   client: ApiPromise;
   /** Signer for target */
   signer: Sdk["signer"];
-  /** Nonce of the signer, tracked locally to enable optimistic nonce increment */
+  /** Nonce of the signer, tracked locally to enable multi tx in single block */
   nonce: number;
   /** Name of the target */
   name: string;
@@ -87,8 +87,7 @@ export class SubstrateRelayer extends EventEmitter {
   }
 
   /**
-   * Submit the transaction to the target chain. This function increments the nonce locally to enable optimistic nonce increment. This
-   * allows transaction to be submitted in parallel without waiting for the previous one to be included. A successful submission will
+   * Submit the transaction to the target chain. A successful submission will
    * trigger inclusion proof generation.
    *
    * @param sfx Object to execute
@@ -110,12 +109,10 @@ export class SubstrateRelayer extends EventEmitter {
     }
 
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
-    const nonce = this.nonce;
-    this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
-    return new Promise<void>((resolve, reject) =>
+    const result = new Promise<void>((resolve, reject) =>
       tx.signAndSend(
         this.signer,
-        { nonce },
+        { nonce: this.nonce },
         async ({ dispatchError, status, events }) => {
           if (dispatchError?.isModule) {
             // something went wrong and we can decode the error
@@ -148,11 +145,6 @@ export class SubstrateRelayer extends EventEmitter {
               data: dispatchError.toString(),
               sfxId: sfx.id,
             });
-            // we attempt to restore the correct nonce
-            this.nonce = await this.fetchNonce(
-              this.client,
-              this.signer.address,
-            );
             reject(Error(dispatchError.toString()));
           } else if (status.isFinalized) {
             const blockNumber = await this.generateSfxInclusionProof(
@@ -195,6 +187,8 @@ export class SubstrateRelayer extends EventEmitter {
         },
       ),
     );
+    this.nonce++;
+    return result;
   }
 
   /**

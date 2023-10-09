@@ -15,10 +15,9 @@ pub use frame_support::{
     StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
+use pallet_circuit::ChainId;
 use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
-
-use pallet_circuit::ChainId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -31,6 +30,7 @@ use sp_runtime::{
 };
 pub use sp_runtime::{Perbill, Permill};
 use t3rn_primitives::{
+    circuit::ReadSFX,
     portal::HeightResult,
     xdns::{FullGatewayRecord, GatewayRecord},
     TreasuryAccountProvider,
@@ -89,6 +89,8 @@ pub type Executive = frame_executive::Executive<
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
+
+use t3rn_types::sfx::SideEffect;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -318,7 +320,7 @@ impl_runtime_apis! {
         }
     }
 
-     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
+     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId, Balance, Hash> for Runtime {
         fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
             let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
 
@@ -326,6 +328,14 @@ impl_runtime_apis! {
                 Ok(HeightResult::Height(height)) => Some(height.into()),
                 _ => None,
             }
+        }
+
+       fn fetch_all_active_xtx(for_executor: AccountId) -> Vec<(
+            Hash,                              // xtx_id
+            Vec<SideEffect<AccountId, Balance>>, // side_effects
+            Vec<Hash>,                         // sfx_ids
+        )> {
+            Circuit::get_pending_xtx_for(for_executor)
         }
     }
 

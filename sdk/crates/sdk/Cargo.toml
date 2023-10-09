@@ -23,7 +23,7 @@ t3rn-sdk-primitives = { path = "../primitives", default-features = false }
 
 ink_env        = { optional = true, version = "=3.0.0", default-features = false, features = [ "ink-debug" ] }
 ink_prelude    = { optional = true, version = "=3.0.0", default-features = false }
-ink_primitives = { optional = true, version = "=3.0.0", default-features = false }
+ink_primitives = { optional = true, version = "=4.3.0", default-features = false }
 
 [dev-dependencies]
 ink_lang    = { version = "=3.0.0" }

@@ -36,6 +36,7 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
         const BLOCKS_PER_DAY: BlockNumber = 24 * BLOCKS_PER_HOUR;
         const BLOCKS_PER_WEEK: BlockNumber = 7 * BLOCKS_PER_DAY;
         const BLOCKS_PER_2_WEEKS: BlockNumber = 2 * BLOCKS_PER_WEEK;
+        const SESSION_PERIOD: BlockNumber = 6 * BLOCKS_PER_HOUR;
 
         let mut total_consumed: Weight = Zero::zero();
         // Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
@@ -66,6 +67,15 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
                 Percent::from_percent(BI_WEEKLY_SHARE) * on_init_weight_limit;
             total_consumed =
                 total_consumed.saturating_add(Self::process_bi_weekly(n, bi_weekly_weight_limit));
+        }
+
+        // Process session - in case assigned during session period (every 6 hours) validators has not produced any block, remove them from the session by calling `Session::disable`
+        if (n & SESSION_PERIOD).is_zero() {
+            Rewards::find_inactive_authors(Session::validators())
+                .iter()
+                .for_each(|v| {
+                    Session::disable(v);
+                });
         }
 
         let weight = Circuit::process_signal_queue(

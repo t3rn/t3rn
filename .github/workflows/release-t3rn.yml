@@ -17,7 +17,7 @@ jobs:
     runs-on: ["self-hosted", "rust"]
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
@@ -65,7 +65,7 @@ jobs:
     needs: build-release
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV

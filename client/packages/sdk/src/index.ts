@@ -1,6 +1,6 @@
 import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 import types from "./config/types.json";
 import rpc from "./config/rpc.json";
@@ -31,19 +31,16 @@ export class Sdk {
   /* Circuit signer */
   signer: any;
   exportMode: boolean;
+  nonce: number;
 
   /**
    * @param provider - RPC url or WsProvider instance of circuit
    * @param circuitSigner - The signer to use for signing transactions
    * @param exportMode
    */
-  constructor(
-    provider: string | WsProvider,
-    circuitSigner: any,
-    exportMode: boolean = false
-  ) {
+  constructor(provider: string | WsProvider, circuitSigner: any, exportMode: boolean = false) {
     this.signer = circuitSigner;
-    if (typeof provider === "string") {
+    if( typeof provider === "string") {
       this.provider = new WsProvider(provider);
     } else {
       this.provider = provider;
@@ -56,7 +53,7 @@ export class Sdk {
    * @returns ApiPromise instance
    */
   async init(): Promise<ApiPromise> {
-    await cryptoWaitReady();
+    await cryptoWaitReady()
     this.client = await ApiPromise.create({
       provider: this.provider,
       types: types as any,
@@ -69,16 +66,4 @@ export class Sdk {
   }
 }
 
-export {
-  Encodings,
-  Converters,
-  Types,
-  Gateway,
-  Circuit,
-  Tx,
-  Utils,
-  ApiPromise,
-  WsProvider,
-  Keyring,
-  cryptoWaitReady,
-};
+export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils, ApiPromise, WsProvider, Keyring, cryptoWaitReady};

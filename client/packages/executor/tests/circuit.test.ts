@@ -3,6 +3,7 @@ import { CircuitRelayer } from "../src/circuit/relayer";
 import { Sdk } from "@t3rn/sdk";
 import { BN } from "@polkadot/util";
 import { mock } from "ts-mockito";
+import { SideEffect } from "src/executionManager/sideEffect";
 
 // Include basic testing and the check for the methods in the next block
 describe("Basic CircuitRelayer setup", () => {
