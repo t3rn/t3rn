@@ -86,7 +86,23 @@ export class Executor {
       this.config.gateways,
       this.config.vendors,
     );
+
+    // In case anything goes wrong with nonces we should reset it on each new block to chain state
+    this.watchBlock();
+
     logger.info("Executor setup complete");
     return this;
+  }
+
+  async watchBlock() {
+    await this.circuitClient.rpc.chain.subscribeNewHeads(async () => {
+      // Process the new block header
+      this.sdk.nonce = (
+        await this.circuitClient.rpc.system.accountNextIndex(
+          this.signer.address,
+        )
+      ).toNumber();
+      logger.info(`Set nonce for circuit to ${this.sdk.nonce}`);
+    });
   }
 }

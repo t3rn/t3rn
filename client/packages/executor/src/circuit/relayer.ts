@@ -41,6 +41,7 @@ export class CircuitRelayer extends EventEmitter {
       encodedSfxId as never,
       encodedAmount as never,
     );
+
     const result = this.sdk.circuit.tx.signAndSend(tx, {
       nonce: this.sdk.nonce,
     });
@@ -56,16 +57,19 @@ export class CircuitRelayer extends EventEmitter {
    * @param sfxs Array of SideEffect objects that should be confirmed
    * @returns The block height of the included tx
    */
-  async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async confirmSideEffects(sfxs: SideEffect[]): Promise<any> {
+    logger.debug({ sfxs, nonce: this.sdk.nonce }, "Confirming side effects");
     const txs = sfxs.map((sfx) => this.createConfirmTx(sfx));
-    if (txs.length > 1) {
-      // only batch if more than one tx
-      const batch = this.sdk.circuit.tx.createBatch(txs);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return this.sdk.circuit.tx.signAndSendSafe(batch as any);
-    } else {
-      return this.sdk.circuit.tx.signAndSendSafe(txs[0] as never);
-    }
+    // only batch if more than one tx
+    const batch = this.sdk.circuit.tx.createBatch(txs);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = this.sdk.circuit.tx.signAndSend(batch as any, {
+      nonce: this.sdk.nonce,
+    });
+
+    this.sdk.nonce++;
+    return result;
   }
 
   /**
