@@ -8,7 +8,7 @@ type ASSET  = "ROC" | "USDT"
 type DESTINATION_TYPE = "system" | "relay" | "para";
 
 export const generateXcmTransferParameters = (api: ApiPromise, destChainId: string, beneficiaryAddress: string, assetType: ASSET, destinationType: DESTINATION_TYPE): JSON => {
-   let parentValue = ""
+   let parentValue
    switch (destinationType) {
       case "relay":
          parentValue = "0"
@@ -58,13 +58,10 @@ export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: str
    let assetInterior: InteriorMultiLocation
    switch (assetType) {
       case "USDT":
-        const X3 = {
+         assetInterior = api.registry.createType('InteriorMultiLocation', {
             ParachainId: 1000,
             PalletInstance: 50,
-            GeneralIndex: 140
-         }
-         assetInterior = api.registry.createType('InteriorMultiLocation', {
-            X3
+            GeneralIndex: 140,
          })
          break
       default: 
