@@ -20,14 +20,13 @@ export const generateXcmTransferParameters = (api: ApiPromise, destChainId: stri
    const destination: VersionedMultiLocation = createDestination(api, destChainId, parentValue)
    const beneficiary: VersionedMultiLocation = createBeneficiary(api, beneficiaryAddress)
    const assets =  createAssets(api, "ROC", parentValue, "1000000000000")
-   const xcmMessage: JSON = JSON.parse(`{
+   return JSON.parse(`{
       "dest": ${destination.toString()},
       "beneficiary": ${beneficiary.toString()},
       "assets": ${assets.toString()},
       "feeAssetItem": "0",
       "weightLimit": "Unlimited"
    }`)
-   return xcmMessage
 }
 
 export const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
@@ -59,10 +58,10 @@ export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: str
    let assetInterior: InteriorMultiLocation
    switch (assetType) {
       case "USDT":
-         let X3 = {
+        const X3 = {
             ParachainId: 1000,
             PalletInstance: 50,
-            GeneralIndex: 140,
+            GeneralIndex: 140
          }
          assetInterior = api.registry.createType('InteriorMultiLocation', {
             X3

@@ -4,7 +4,7 @@ import {validate} from "@/utils/fns.js"
 import {XcmTransferSchema} from "@/schemas/xcm.ts"
 import {colorLogMsg} from "@/utils/log.js"
 import {ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
-import { generateXcmTransferParameters, createAssets, createBeneficiary, createDestination } from "@/utils/xcm.ts"//"@t3rn/sdk/utils"
+import {createAssets, createBeneficiary, createDestination} from "@/utils/xcm.ts"//"@t3rn/sdk/utils"
 
 export const spinner = ora()
 
@@ -38,13 +38,6 @@ export const handleXcmTransferCommand = async (
         const targetApi = await ApiPromise.create({
             provider: new WsProvider("ws://127.0.0.1:9933"), // Rococo Validator on Zombienet
         })
-        const xcmTransactionParams = generateXcmTransferParameters (
-            targetApi,
-            args.dest,
-            args.recipient,
-            "ROC",
-            "para"
-        )
         const xcmDestParam = createDestination(targetApi, args.dest, "0")
         const xcmBeneficiaryParam = createBeneficiary(targetApi, args.recipient)
         const xcmAssetsParam = createAssets(targetApi, "ROC", "0", args.targetAmount)
