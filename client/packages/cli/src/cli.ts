@@ -119,6 +119,8 @@ withExportMode(
     program
         .command("xcmTransfer")
         .description("Cross-chain transfer of assets using XCM")
+        .requiredOption("--type <string>", "The type of XCM transfer")
+        .requiredOption("--endpoint <string>", "The RPC endpoint from which the XCM transaction will be submitted")
         .requiredOption("--dest <string>", "The destination chain")
         .requiredOption("--recipient <string>", "The recipient address")
         .requiredOption("--target-asset <symbol>", "The target asset")

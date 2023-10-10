@@ -30,14 +30,23 @@ export const generateXcmTransferParameters = (api: ApiPromise, destChainId: stri
 }
 
 export const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
+   let destinationInterior: InteriorMultiLocation
+   if (destChainId != "1") {
+      destinationInterior = api.registry.createType('InteriorMultiLocation', {
+         X1: {
+            parachain: destChainId,
+         },
+      })
+   }
+   else {
+      destinationInterior = api.registry.createType('InteriorMultiLocation', {
+         Here: '',
+      })
+   }
    return api.registry.createType('XcmVersionedMultiLocation', {
       V3: {
          parents: parentValue,
-         interior: {
-            X1: {
-               parachain: destChainId,
-            },
-         },
+         interior: destinationInterior,
       },
    })
 }
@@ -59,7 +68,7 @@ export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: str
    switch (assetType) {
       case "USDT":
          assetInterior = api.registry.createType('InteriorMultiLocation', {
-            ParachainId: 1000,
+            parachain: 1000,
             PalletInstance: 50,
             GeneralIndex: 140,
          })
@@ -78,7 +87,7 @@ export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: str
             id: {
                Concrete: {
                   interior: assetInterior,
-                  parent: parentValue,
+                  parents: parentValue,
                }
             }
          },]
