@@ -2,7 +2,6 @@ import "@t3rn/types";
 import { EventEmitter } from "events";
 import { Sdk } from "@t3rn/sdk";
 import { Codec } from "@polkadot/types/types";
-import { logger } from "../logging";
 
 /**
  * Enum for the different types of events emitted by the relayer
@@ -83,12 +82,18 @@ export class CircuitListener extends EventEmitter {
           });
         } else if (notifications[i].event.method === "HeadersAdded") {
           let vendor = "";
-          // if (notifications[i].event.section === "rococoBridge") {
-          //   vendor = "Rococo";
-          // }
-          if (notifications[i].event.section === "polkadotBridge") {
-            vendor = "Polkadot";
+          switch (notifications[i].event.section) {
+            case "rococoBridge":
+              vendor = "Rococo";
+              break;
+            case "polkadotBridge":
+              vendor = "Polkadot";
+              break;
+            case "kusamaBridge":
+              vendor = "Kusama";
+              break;
           }
+
           const data = {
             vendor,
             height: parseInt(String(notifications[i].event.data[0])),
