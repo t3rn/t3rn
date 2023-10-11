@@ -123,7 +123,7 @@ export class SubstrateRelayer extends EventEmitter {
               {
                 sfxId: sfx.id,
                 sfx: sfx,
-                error
+                error,
               },
               `SFX Execution failed 🚨`,
             );
@@ -137,7 +137,9 @@ export class SubstrateRelayer extends EventEmitter {
               this.client,
               this.signer.address,
             );
-            reject(Error(`${error.section}::${error.name}: ${error.docs.join(" ")}`));
+            reject(
+              Error(`${error.section}::${error.name}: ${error.docs.join(" ")}`),
+            );
           } else if (dispatchError) {
             // something went wrong and we can't decode the error
             this.emit("Event", <RelayerEventData>{

@@ -21,6 +21,6 @@ spec:
         description: Executor stopped winning bidding
         monitoring: https://monitoring.t3rn.io/d/0VXqnBj4k/executors?orgId=1&refresh=30s
       expr: increase(executor_bid_total{scenario="Won"}[1h]) == 0  OR absent(increase(executor_bid_total{scenario="Won"}[1h])) == 1
-      for: 30m
+      for: 4h
       labels:
         severity: error
