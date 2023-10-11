@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.59.0-rc.0] - 2023-10-09
+### :sparkles: New Features
+- [`e695992`](https://github.com/t3rn/t3rn/commit/e695992ed2296369bcfb6a643ff4d42dc0cfa968) - **executor**: handling nonce in relayer *(PR [#1330](https://github.com/t3rn/t3rn/pull/1330) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.58.1-rc.0] - 2023-10-03
+### :bug: Bug Fixes
+- [`bccb14d`](https://github.com/t3rn/t3rn/commit/bccb14ddd56ae4941c9b5c8d9273f8a5032c1b90) - lower SyncCommitteeSupermajority sepolia *(PR [#1336](https://github.com/t3rn/t3rn/pull/1336) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.58.0-rc.0] - 2023-09-29
+### :sparkles: New Features
+- [`c691c45`](https://github.com/t3rn/t3rn/commit/c691c4545e837f8c348cb44f9653edc0c6d37b84) - **executor**: batching transactions *(PR [#1320](https://github.com/t3rn/t3rn/pull/1320) by [@3h4x](https://github.com/3h4x))*
+- [`93b5d85`](https://github.com/t3rn/t3rn/commit/93b5d8528722a2a0f6950cf274a85fb2d96d0735) - **cli**: xcm transfer *(PR [#1308](https://github.com/t3rn/t3rn/pull/1308) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`6181cf9`](https://github.com/t3rn/t3rn/commit/6181cf9be6148c2c9b2048aae1e61e192e47fe10) - bump outdated t3rn SDK version at CLI package.json *(PR [#1332](https://github.com/t3rn/t3rn/pull/1332) by [@chexware](https://github.com/chexware))*
+
+### :wrench: Chores
+- [`24e6656`](https://github.com/t3rn/t3rn/commit/24e6656c49a166822900aeb0bf0c2610f2e147d9) - upgrade eth2-lc for sepolia to next version *(PR [#1333](https://github.com/t3rn/t3rn/pull/1333) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.57.0-rc.0] - 2023-09-28
+### :sparkles: New Features
+- [`9831fc0`](https://github.com/t3rn/t3rn/commit/9831fc0f2317b4973833c8f211d6a80b5facd3a5) - updated XCM configuration including Zombienet setup with enabled dev accounts on AssetHub *(PR [#1323](https://github.com/t3rn/t3rn/pull/1323) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.56.1-rc.0] - 2023-09-26
 ### :wrench: Chores
 - [`64960cf`](https://github.com/t3rn/t3rn/commit/64960cf7e85e245b73c59d1b00cc8174ab75e784) - add dependabot config with grouping *(PR [#1266](https://github.com/t3rn/t3rn/pull/1266) by [@3h4x](https://github.com/3h4x))*
@@ -1684,3 +1711,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.55.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.1-rc.0...v1.55.2-rc.0
 [v1.56.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.55.2-rc.0...v1.56.0-rc.0
 [v1.56.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.56.0-rc.0...v1.56.1-rc.0
+[v1.57.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.56.3-rc.0...v1.57.0-rc.0
+[v1.58.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.57.0-rc.0...v1.58.0-rc.0
+[v1.58.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.0-rc.0...v1.58.1-rc.0
+[v1.59.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.2-rc.0...v1.59.0-rc.0

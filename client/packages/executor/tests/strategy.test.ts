@@ -1,7 +1,5 @@
 import { expect } from "chai";
 import { StrategyEngine } from "../src/strategy/index";
-import { BiddingEngine } from "../src/bidding/index";
-import { SideEffect } from "../src/executionManager/sideEffect";
 
 describe("Basic StrategyEngine setup", () => {
   it("should be a class", () => {

@@ -20,14 +20,16 @@ use xcm::latest::prelude::*;
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, LocalMint,
-    NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
+    FixedWeightBounds, FungiblesAdapter, IsConcrete, NativeAsset, NoChecking, ParentAsSuperuser,
+    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents,
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
+
+use xcm_primitives::{AsAssetMultiLocation, ConvertedRegisteredAssetId};
 
 parameter_types! {
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
@@ -103,6 +105,7 @@ parameter_types! {
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
     pub AssetsPalletLocation: MultiLocation =
         PalletInstance(12u8).into();
+    pub PlaceholderAccount: AccountId = PolkadotXcm::check_account();
 }
 
 pub type SovereignAccountOf = (
@@ -134,18 +137,23 @@ pub type TrustBackedAssetsConvertedConcreteId =
 pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
-    // Use the asset registry for lookups
-    TrustBackedAssetsConvertedConcreteId,
-    //ConvertedConcreteAssetId<AssetIdForTrustBackedAssets, Balance, AssetRegistry, JustTry>,
+    // Use this currency when it is a registered fungible asset matching the given location or name
+    // Assets not found in AssetRegistry will not be used
+    ConvertedRegisteredAssetId<
+        AssetIdForTrustBackedAssets,
+        Balance,
+        AsAssetMultiLocation<AssetIdForTrustBackedAssets, AssetRegistry>,
+        JustTry,
+    >,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We only want to allow teleports of known assets. We use non-zero issuance as an indication
-    // that this asset is known.
-    LocalMint<parachains_common::impls::NonZeroIssuance<AccountId, Assets>>,
-    // The account to use for tracking teleports.
-    CheckingAccount,
+    // We don't track any teleports of `Assets`.
+    NoChecking,
+    // We don't track any teleports of `Assets`, but a placeholder account is provided due to trait
+    // bounds.
+    PlaceholderAccount,
 >;
 
 pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
