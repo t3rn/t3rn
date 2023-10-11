@@ -39,16 +39,20 @@ export const handleXcmTransferCommand = async (
 
     try {
         const targetApi = await ApiPromise.create({
-            provider: new WsProvider(args.endpoint), // Rococo Validator on Zombienet
+            provider: new WsProvider(args.endpoint),
         })
         const xcmBeneficiaryParam = createBeneficiary(targetApi, args.recipient)
         const xcmAssetFeeItem = targetApi.registry.createType("u32", 0)
-        console.log("Sending XCM Transfer:\n")
+        console.log("Sending XCM Transfer... \n")
 
         const keyring = new Keyring({ type: "sr25519" })
-        let signer = keyring.addFromUri(args.signer)
-        if (args.signer == "//Circuit") {
-            signer = keyring.addFromMnemonic(procces.env.CIRCUIT_SIGNER_KEY)
+        let signer = process.env.CIRCUIT_SIGNER_KEY === undefined
+            ? keyring.addFromUri(args.signer)
+            : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
+        if (args.signer == "//Circuit" && process.env.CIRCUIT_SIGNER_KEY === undefined) {
+            console.log("Circuit signer not found... Exit\n")
+            spinner.stop()
+            process.exit(0)
         }
         if (args.type == "relay") {
             const xcmDestParam = createDestination(targetApi, args.dest, "0")
