@@ -17,9 +17,9 @@ pub mod test {
         tests::ESCROW_ACCOUNT,
     };
     use hex_literal::hex;
+    use sp_core::H512;
     use t3rn_primitives::circuit::{AdaptiveTimeout, Cause, CircuitStatus};
     use t3rn_types::fsx::SecurityLvl;
-
     #[test]
     fn attesters_api_receives_sfx_after_finalized_all_steps_for_escrow_security() {
         ExtBuilder::default()
@@ -50,7 +50,17 @@ pub mod test {
                     .unwrap();
                 assert_eq!(fsx_ids.len(), 1);
 
-                assert_eq!(next_batch.unwrap().committed_sfx, Some(fsx_ids));
+                let mut fsx_with_gmp_payload = vec![];
+                for fsx_id in fsx_ids {
+                    let mut fsx_gmp = H512::zero();
+                    fsx_gmp[..32].copy_from_slice(&fsx_id[..]);
+                    fsx_with_gmp_payload.push(fsx_gmp);
+                }
+
+                assert_eq!(
+                    next_batch.unwrap().committed_sfx,
+                    Some(fsx_with_gmp_payload)
+                );
             });
     }
 
@@ -145,7 +155,17 @@ pub mod test {
                     .unwrap();
                 assert_eq!(fsx_ids.len(), 1);
 
-                assert_eq!(next_batch.unwrap().committed_sfx, Some(fsx_ids));
+                let mut fsx_with_gmp_payload = vec![];
+                for fsx_id in fsx_ids {
+                    let mut fsx_gmp = H512::zero();
+                    fsx_gmp[..32].copy_from_slice(&fsx_id[..]);
+                    fsx_with_gmp_payload.push(fsx_gmp);
+                }
+
+                assert_eq!(
+                    next_batch.unwrap().committed_sfx,
+                    Some(fsx_with_gmp_payload)
+                );
             });
     }
 
