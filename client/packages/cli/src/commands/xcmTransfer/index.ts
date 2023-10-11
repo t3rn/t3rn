@@ -46,12 +46,10 @@ export const handleXcmTransferCommand = async (
         console.log("Sending XCM Transfer:\n")
 
         const keyring = new Keyring({ type: "sr25519" })
-        let signerUri = args.signer
+        let signer = keyring.addFromUri(args.signer)
         if (args.signer == "//Circuit") {
-            signerUri = procces.env.CIRCUIT_SIGNER_KEY
+            signer = keyring.addFromMnemonic(procces.env.CIRCUIT_SIGNER_KEY)
         }
-        const signer = keyring.addFromUri(signerUri)
-
         if (args.type == "relay") {
             const xcmDestParam = createDestination(targetApi, args.dest, "0")
             const xcmAssetsParam = createAssets(targetApi, args.targetAsset, "0", args.targetAmount)
