@@ -16,6 +16,7 @@ use t3rn_primitives::{
 pub type Asset = u32;
 pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
+use frame_support::sp_runtime::Saturating;
 use scale_info::TypeInfo;
 use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, H160, H256, U256};
 use t3rn_abi::{
@@ -30,7 +31,6 @@ use t3rn_primitives::{
     xdns::Xdns,
 };
 use t3rn_types::sfx::TargetId;
-
 t3rn_primitives::reexport_currency_types!();
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
@@ -199,7 +199,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
             // Assume finalized speed mode to remote order operations to avoid disputes in events of chain reorgs.
+            #[cfg(feature = "test-skip-verification")]
             let speed_mode = SpeedMode::Fast;
+            #[cfg(not(feature = "test-skip-verification"))]
+            let speed_mode = SpeedMode::Finalized;
 
             let verified_event_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
                 remote_target_id,
@@ -244,6 +247,11 @@ pub mod pallet {
                 nonce: decoded_remote_order_log.nonce,
             };
 
+            assert!(T::Xdns::is_target_active(
+                remote_target_id.clone(),
+                &SecurityLvl::Optimistic
+            ));
+
             let mut side_effect: SideEffect<T::AccountId, BalanceOf<T>> =
                 decoded_remote_order.clone().try_into()?;
 
@@ -256,7 +264,7 @@ pub mod pallet {
             // If the target is a remote chain, then the intent is to transfer funds to the remote chain. We don't need to go into details of assets order transfers or swaps.
             // If target is a local chain (t3rn) && asset used for reward payout equals the asset transferred on remote chain - assume bridge operation of wrapped assets.
             if &decoded_remote_order.destination == &[3, 3, 3, 3]
-                && T::Xdns::list_available_mint_assets(remote_target_id)
+                && T::Xdns::list_available_mint_assets([3, 3, 3, 3])
                     .iter()
                     .any(|asset: &TokenRecord| {
                         &asset.token_id == &decoded_remote_order.asset
@@ -267,29 +275,49 @@ pub mod pallet {
                             }
                     })
             {
-                // ToDo: assess whether we need to undergo the whole SFX confirmaiton process or can just confirm the side effect, mint and divide assets between user and executor
+                // Mint wrapped assets on local chain.
+                let amount = BalanceOf::<T>::decode(
+                    &mut &decoded_remote_order.amount.as_u128().encode()[..],
+                )
+                .map_err(|e| {
+                    DispatchError::Other("Vacuum::remote_order -- error decoding amount")
+                })?;
+                // In the context of minting assets, max reward is the net reward to executor.
+                let max_reward = BalanceOf::<T>::decode(
+                    &mut &decoded_remote_order.max_reward.as_u128().encode()[..],
+                )
+                .map_err(|e| {
+                    DispatchError::Other("Vacuum::remote_order -- error decoding amount")
+                })?;
+
+                assert!(amount >= max_reward, "Vacuum::remote_order -- amount must be greater (rarely equal) than max_reward for minting assets");
+                let asset = decoded_remote_order.asset;
+                assert!(
+                    T::Xdns::check_asset_is_mintable([3, 3, 3, 3], asset),
+                    "Vacuum::remote_order -- asset is not mintable"
+                );
+
+                let target_account =
+                    T::AccountId::decode(&mut &decoded_remote_order.target_account.encode()[..])
+                        .map_err(|e| {
+                            DispatchError::Other(
+                                "Vacuum::remote_order -- error decoding target_account",
+                            )
+                        })?;
 
                 // Mint wrapped assets on local chain.
-                let amount = decoded_remote_order.amount.as_u128();
-                // In the context of minting assets, max reward is the net reward to executor.
-                let max_reward = decoded_remote_order.max_reward.as_u128();
-                assert!(amount > max_reward, "Vecuum::remote_order -- amount must be greater than max_reward for minting assets");
-
-                // T::Xdns::mint_asset(decoded_remote_order.asset, amount, Origin::signed(T::TreasurAccounts::get_account(Treasury::Escrow())))?;
-                // side_effect.enforce_executor = Some(who.clone());
-
-                // Try bridge wrap assets.
-                //  T::CircuitSubmitAPI::confirm()
+                T::Xdns::mint(asset, who, max_reward)?;
+                T::Xdns::mint(asset, target_account, max_reward.saturating_sub(amount))?;
+                Ok(().into())
+            } else {
+                // For remote order + remote reward, assume on_remote_origin_trigger
+                T::CircuitSubmitAPI::on_remote_origin_trigger(
+                    origin.clone(),
+                    remote_origin.to_account_id(),
+                    vec![side_effect],
+                    speed_mode,
+                )
             }
-
-            // For remote order + remote reward, assume on_remote_origin_trigger
-            T::CircuitSubmitAPI::on_remote_origin_trigger(
-                origin.clone(),
-                remote_origin.to_account_id(),
-                vec![side_effect],
-                speed_mode,
-            )
-            //
         }
 
         #[pallet::weight(100_000)]
@@ -360,7 +388,8 @@ mod tests {
         light_client::LightClientAsyncAPI,
         monetary::TRN,
         portal::Portal as PortalT,
-        ExecutionSource, GatewayVendor, SpeedMode, TreasuryAccount, TreasuryAccountProvider,
+        EthereumToken, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount,
+        TreasuryAccountProvider,
     };
     use t3rn_types::sfx::{ConfirmedSideEffect, SideEffect};
 
@@ -1231,6 +1260,80 @@ mod tests {
                     "ad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5"
                 ))
             );
+        });
+    }
+
+    #[test]
+    fn vacuum_delivers_remote_bridging_order_and_mints_ordered_assets() {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            activate_all_light_clients();
+            initialize_eth2_with_3rd_epoch();
+            // Derive all arguments out of below proof sourced with eth2-proof client-side library
+            // ⬅️found receipt for tx:  0x189bb96988ab037da92d57ae514f414a26a15326f8a7681947db35dbbcfd47e6
+            // 🔃parsed receipt to hex form
+            // ⬅️found block for receipt:  0x189bb96988ab037da92d57ae514f414a26a15326f8a7681947db35dbbcfd47e6 4249964n
+            // ⬅️fetched all 153 sibling transaction receipts
+            // Computed Root:  0x76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966
+            // 🧮proof-calculated receipts root vs block receipts root:  0x76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966 0x76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966
+            // {
+            //   proof: [
+            //     'f8b1a0d573cf15a54d7ad0d0498169820a6dafd9633adec0f688d9d859d1741cdac5b6a03c3d817222f0515e057962c0db4bfd20674e227a3b3c43811b2f8f1357e127cea03fe55d8df8a0c96030c87b2f2caf2bc6f102b5546e097fda3f6eb8c89370ea6ca00e3ccf072c8ad2c828f4d859e0776b24cf345009c5cf3107413186a0617e5f7980808080a0e58215be848c1293dd381210359d84485553000a82b67410406d183b42adbbdd8080808080808080',
+            //     'f90211a086ff47818c4ed0f1d97d62c83605e662754d5c21d94e807c2142f7294eefda64a034960e2a1e3ec16b96816e81f842a51291989f5606c41aadba21b8069adaad64a057f37f57fecb0d336797db86604ea1d73a7933d5e6043c371729ca90989d5f8ca034754510b4bf1c613de0202a877a92be3e81ae1aacef713ac63d7fcdbeb84e05a099ec62a5e2b7bd634351e10bbdad33afbb3d9b52cb9b0a449fd38cec498624aba0f6b2fa50ec73e180a7c8b61cceacc8bfdf9214ef3df95abf4fa7b2e0ee38bb1aa0bc1b4735f691d698650aa757c1fac347e47b272dca9780293a091755f1eb49c4a0bb81253270782d099bd0cb4b5ab1fe9faad27c1657d6e55c7bce1129b0426011a03a2e7a799dc4f627368880fa7bfe6116ad913eaa04c1b200ecc5f4980ced9558a0649a03c1e451f6033a6b359f819c019ca9eb5fdb140bc5f01d9f369e2f1d69e8a04172cab94d1db98e819c0f5513d4944806a110862d9d8b67981cec1f5e1b3358a02e73b02f64e412bb54b38dc94bd232934438951d765abfa71df971606f9b6f74a0089c2c3e3b0c99a5f22d0c8c2e29c5e89835aa3d0848722eb1a52ef1cd0bae56a05b5a11c3bd83a7a0c764b11ccdf98de8ae91012637ab318f5ba980d303d199dba05fe9d9c59da9e5e95049f9baaa514da634b87daf0307d8de047399395b3ec606a002373b6677d1b3d1ebe4501df696607732e075a452e05f9b6aa8323fe7ee05d880',
+            //     'f902d420b902d002f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064'
+            //   ],
+            //   root: '76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966',
+            //   index: Uint8Array(1) [ 40 ],
+            // 
+            //   value: '02f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064',
+            //   event: 'f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064'
+
+            // Enroll asset as mintable
+            assert_ok!(XDNS::enroll_bridge_asset(
+                RuntimeOrigin::root(),
+                1u32,
+                [3, 3, 3, 3],
+                TokenInfo::Ethereum(EthereumToken {
+                    decimals: 18,
+                    symbol: b"sepl".to_vec(),
+                    address: Some([0; 20])
+                })
+            ));
+
+            let rlp_encoded_remote_order_local_reward_event = EthereumEventInclusionProof {
+                witness: vec![
+                    hex!("f8b1a0d573cf15a54d7ad0d0498169820a6dafd9633adec0f688d9d859d1741cdac5b6a03c3d817222f0515e057962c0db4bfd20674e227a3b3c43811b2f8f1357e127cea03fe55d8df8a0c96030c87b2f2caf2bc6f102b5546e097fda3f6eb8c89370ea6ca00e3ccf072c8ad2c828f4d859e0776b24cf345009c5cf3107413186a0617e5f7980808080a0e58215be848c1293dd381210359d84485553000a82b67410406d183b42adbbdd8080808080808080").into(),
+                    hex!("f90211a086ff47818c4ed0f1d97d62c83605e662754d5c21d94e807c2142f7294eefda64a034960e2a1e3ec16b96816e81f842a51291989f5606c41aadba21b8069adaad64a057f37f57fecb0d336797db86604ea1d73a7933d5e6043c371729ca90989d5f8ca034754510b4bf1c613de0202a877a92be3e81ae1aacef713ac63d7fcdbeb84e05a099ec62a5e2b7bd634351e10bbdad33afbb3d9b52cb9b0a449fd38cec498624aba0f6b2fa50ec73e180a7c8b61cceacc8bfdf9214ef3df95abf4fa7b2e0ee38bb1aa0bc1b4735f691d698650aa757c1fac347e47b272dca9780293a091755f1eb49c4a0bb81253270782d099bd0cb4b5ab1fe9faad27c1657d6e55c7bce1129b0426011a03a2e7a799dc4f627368880fa7bfe6116ad913eaa04c1b200ecc5f4980ced9558a0649a03c1e451f6033a6b359f819c019ca9eb5fdb140bc5f01d9f369e2f1d69e8a04172cab94d1db98e819c0f5513d4944806a110862d9d8b67981cec1f5e1b3358a02e73b02f64e412bb54b38dc94bd232934438951d765abfa71df971606f9b6f74a0089c2c3e3b0c99a5f22d0c8c2e29c5e89835aa3d0848722eb1a52ef1cd0bae56a05b5a11c3bd83a7a0c764b11ccdf98de8ae91012637ab318f5ba980d303d199dba05fe9d9c59da9e5e95049f9baaa514da634b87daf0307d8de047399395b3ec606a002373b6677d1b3d1ebe4501df696607732e075a452e05f9b6aa8323fe7ee05d880").into(),
+                    hex!("f902d420b902d002f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064").into(),
+                ],
+                index: vec![40],
+                block_number: 100118,
+                event: hex!("f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064").into()
+            };
+
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([0u8; 32]);
+            let requester_on_dest = AccountId32::from(hex!("000000000000000000000000F85A57d965aEcD289c625Cae6161d0Ab5141bC66")); // 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
+
+            assert!(hotswap_latest_receipt_header_root(hex!("76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966").into()));
+
+            activate_all_light_clients();
+
+            // Check executor + requester have no assets prior to the order
+            assert_eq!(Assets::balance(1u32, &requester), 0);
+            assert_eq!(Assets::balance(1u32, &executor), 0);
+
+            assert_ok!(Vacuum::remote_order(
+                RuntimeOrigin::signed(executor.clone()),
+                rlp_encoded_remote_order_local_reward_event.encode(),
+                ETHEREUM_TARGET,
+            ));
+
+            // Check that assets were minted according to the bridge order formula:
+            // user: amount - max_reward
+            // executor: max_reward (net)
+            assert_eq!(Assets::balance(1u32, &requester), 0);
+            assert_eq!(Assets::balance(1u32, &executor), 100);
         });
     }
 
