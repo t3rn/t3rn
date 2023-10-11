@@ -1,6 +1,10 @@
 import { z } from "zod"
 
 export const XcmTransferSchema = z.object({
+    signer: z.string({
+        invalid_type_error: "Signer must be a string",
+        required_error: "Signer is required",
+    }),
     type: z.string({
         invalid_type_error: "XCM transfer type must be a string",
         required_error: "XCM transfer type is required",

@@ -10,6 +10,7 @@ export const spinner = ora()
 
 export const handleXcmTransferCommand = async (
     _args: Args<
+        | "signer"
         | "type"
         | "endpoint"
         | "dest"
@@ -43,8 +44,14 @@ export const handleXcmTransferCommand = async (
         const xcmBeneficiaryParam = createBeneficiary(targetApi, args.recipient)
         const xcmAssetFeeItem = targetApi.registry.createType("u32", 0)
         console.log("Sending XCM Transfer:\n")
+
         const keyring = new Keyring({ type: "sr25519" })
-        const signer = keyring.addFromUri("//Alice")
+        let signerUri = args.signer
+        if (args.signer == "//Circuit") {
+            signerUri = procces.env.CIRCUIT_SIGNER_KEY
+        }
+        const signer = keyring.addFromUri(signerUri)
+
         if (args.type == "relay") {
             const xcmDestParam = createDestination(targetApi, args.dest, "0")
             const xcmAssetsParam = createAssets(targetApi, args.targetAsset, "0", args.targetAmount)
@@ -103,7 +110,7 @@ export const handleXcmTransferCommand = async (
                     }
                 })
         }
-
+        console.log("XCM Transfer Completed\n")
         spinner.stop()
         process.exit(0)
 
