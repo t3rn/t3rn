@@ -46,7 +46,7 @@ export const handleXcmTransferCommand = async (
         console.log("Sending XCM Transfer... \n")
 
         const keyring = new Keyring({ type: "sr25519" })
-        let signer = process.env.CIRCUIT_SIGNER_KEY === undefined
+        const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
             ? keyring.addFromUri(args.signer)
             : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
         if (args.signer == "//Circuit" && process.env.CIRCUIT_SIGNER_KEY === undefined) {
