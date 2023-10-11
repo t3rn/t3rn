@@ -468,6 +468,38 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn enroll_bridge_asset(
+            origin: OriginFor<T>,
+            asset_id: AssetId,
+            target_id: TargetId,
+            token_info: TokenInfo,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            assert!(!Self::check_asset_is_mintable(target_id, asset_id));
+
+            if !<AllTokenIds<T>>::get().contains(&asset_id) {
+                Self::register_new_token(&origin, asset_id, token_info.clone())?;
+            }
+            // Check that the asset is not already added to the gateway
+            if !<Tokens<T>>::contains_key(&asset_id, &target_id) {
+                Self::link_token_to_gateway(asset_id, target_id, token_info)?;
+            }
+
+            <AuthorizedMintAssets<T>>::append((&asset_id, &target_id));
+
+            log::info!(
+                "Enrolled asset {:?} for bridging to {:?}",
+                asset_id,
+                target_id
+            );
+            // Check that the asset is mintable
+            assert!(Self::check_asset_is_mintable(target_id, asset_id));
+
+            Ok(().into())
+        }
+
         /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
         pub fn purge_supported_bridging_asset(
@@ -1274,6 +1306,13 @@ pub mod pallet {
             assert!(
                 Self::check_asset_is_mintable(T::SelfGatewayId::get(), asset_id),
                 "Asset is not mintable"
+            );
+            log::debug!(
+                "attempt of minting asset: {:?} for user: {:?} with amount: {:?} on chain: {:?}",
+                asset_id,
+                user,
+                amount,
+                T::SelfGatewayId::get()
             );
             T::AssetsOverlay::mint(
                 T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(

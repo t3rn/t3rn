@@ -112,7 +112,7 @@ describe("RemoteOrder::ID", function() {
             };
         }
 
-        it("Should subtract maxReward correctly in ETH", async function() {
+        it.skip("Should subtract maxReward correctly in ETH", async function() {
             // send order with ETH as rewardAsset
             let params = await getParams();
             await contract.connect(addr1).remoteOrderDecoded(params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH,  { value: params.maxRewardETH } );

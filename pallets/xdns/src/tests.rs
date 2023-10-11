@@ -327,6 +327,43 @@ fn should_register_token_and_populate_assets_storage_successfully() {
 }
 
 #[test]
+fn mints_and_burns_registered_token_on_ownership_permissions() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+
+            let authorize_asset = 9999u32;
+            // Enroll asset as mintable
+            assert_ok!(XDNS::enroll_bridge_asset(
+                Origin::root(),
+                authorize_asset,
+                [3, 3, 3, 3],
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 9999,
+                    symbol: b"9999".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            let beneficiary = AccountId::from([5; 32]);
+
+            assert_ok!(XDNS::mint(authorize_asset, beneficiary.clone(), 999));
+            // Check that the balance was minted
+            assert_eq!(Assets::balance(authorize_asset, &beneficiary), 999);
+
+            // Check that the balance can be burned
+            assert_ok!(XDNS::burn(authorize_asset, beneficiary.clone(), 888));
+            assert_eq!(Assets::balance(authorize_asset, &beneficiary), 111);
+        });
+}
+
+#[test]
 fn should_purge_token_and_destroy_asset_as_root_successfully() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
@@ -1127,6 +1164,55 @@ fn adds_and_lists_supported_bridging_assets_when_authorized_by_root() {
                 Origin::root(),
                 authorize_asset,
                 mintable_gateway,
+            ));
+
+            // Check that the asset is added
+            assert_eq!(
+                XDNS::list_available_mint_assets(mintable_gateway),
+                vec![TokenRecord {
+                    token_id: 1111,
+                    gateway_id: [1, 1, 1, 1],
+                    token_props: TokenInfo::Substrate(SubstrateToken {
+                        id: 1,
+                        symbol: b"mint".to_vec(),
+                        decimals: 1
+                    })
+                }]
+            );
+
+            assert!(XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+        });
+}
+
+#[test]
+fn enrolls_supported_bridging_assets_when_authorized_by_root() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let authorize_asset: u32 = 1111;
+            let mintable_gateway: [u8; 4] = [1, 1, 1, 1];
+
+            assert!(!XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+
+            assert_ok!(XDNS::enroll_bridge_asset(
+                Origin::root(),
+                authorize_asset,
+                mintable_gateway,
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"mint".to_vec(),
+                    decimals: 1,
+                })
             ));
 
             // Check that the asset is added
