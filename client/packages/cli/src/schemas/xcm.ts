@@ -1,8 +1,21 @@
 import { z } from "zod"
 
 export const XcmTransferSchema = z.object({
+    signer: z.string({
+        invalid_type_error: "Signer must be a string",
+        required_error: "Signer is required",
+    }),
+    type: z.string({
+        invalid_type_error: "XCM transfer type must be a string",
+        required_error: "XCM transfer type is required",
+    })
+    .max(5),
+    endpoint: z.string({
+        invalid_type_error: "Enpoint must be a string",
+        required_error: "Endpoint is required",
+    }),
     dest: z.string({
-        invalid_type_error: "Destination chain ID be a string",
+        invalid_type_error: "Destination chain ID must be a string",
         required_error: "Destination chain ID is required",
     })
     .max(4),
