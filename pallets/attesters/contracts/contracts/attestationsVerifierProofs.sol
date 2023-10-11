@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
-interface IEscrowGMP {
-    function commitRemoteExecutorPayload(bytes32 sfxId, address executor) external returns (bool);
-    function revertRemoteExecutorPayload(bytes32 sfxId) external returns (bool);
-    function mintOrBurnToVault(bool mint, bytes32 sfxId, uint256 amount, address mintContract) external returns (bool);
-}
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./escrowGMP.sol";
 
 contract AttestationsVerifierProofs {
+    using SafeERC20 for IERC20;
+
     using MerkleProof for bytes[];
 
     event SignerEmitted(address indexed signer);
@@ -20,62 +18,58 @@ contract AttestationsVerifierProofs {
         bool is_halted;
         bytes32 currentCommitteeHash;
         bytes32 nextCommitteeHash;
+        address[] maybeNextCommittee;
         address[] bannedCommittee;
-        bytes32[][2] committedSfx;
-        bytes32[] revertedSfx;
-        uint256[] priceUpdates;
-        uint32 index;
+        bytes32 bannedStake;
+        bytes32 newCommitteeStake;
+        bytes32 priceUpdates;
         bytes encodedGMPPayload;
+        uint32 index;
     }
 
-    struct PriceEntry {
-        uint256 priceInETH; // This will represent how much 1 unit of the asset is worth in ETH.
-        uint256 lastUpdated; // Timestamp of the last update.
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
     }
 
-    function updatePrice(string memory assetName, uint256 newPrice) internal {
-        prices[assetName].priceInETH = newPrice;
-        prices[assetName].lastUpdated = block.timestamp;
-    }
-
-    function batchUpdatePrices(string[] memory assetNames, uint256[] memory newPrices) internal {
-        require(assetNames.length == newPrices.length, "Mismatched arrays");
-
-        for(uint256 i = 0; i < assetNames.length; i++) {
-            updatePrice(assetNames[i], newPrices[i]);
+    // Return price in ETH for a given asset.
+    function getQuote(string memory assetName, uint256 amountOfEth) external view returns (uint256) {
+        if (keccak256(abi.encode(assetName)) == keccak256(abi.encode("TRN"))) {
+            uint128[2] memory prices = abi.decode(abi.encode(currentTRNPriceAttestedInDOTAndETH), (uint128[2]));
+            return amountOfEth * prices[1];
+        } else if (keccak256(abi.encode(assetName)) == keccak256(abi.encode("DOT"))) {
+            uint128[2] memory prices = abi.decode(abi.encode(currentTRNPriceAttestedInDOTAndETH), (uint128[2]));
+            uint256 amountOfTrn = amountOfEth * (prices[1]);
+            return amountOfTrn * prices[0];
+        } else {
+            revert("Invalid asset name");
         }
     }
 
-    function getPrice(string memory assetName) external view returns (uint256) {
-        return prices[assetName].priceInETH;
-    }
-
-    function getPriceUpdateTime(string memory assetName) external view returns (uint256) {
-        return prices[assetName].lastUpdated;
-    }
-
-
-    mapping(address => uint256) public attestersIndices;
-    mapping(string => PriceEntry) public prices;
-
     address public owner;
+    address public xDOT;
+    address public xTRN;
     uint256 public committeeSize;
     uint256 public quorum;
     uint256 public currentCommitteeTransitionCount;
     uint256 public currentBatchIndex;
     uint256 public totalAttesters; // added a counter to track total attestors.
     bytes32 public currentCommitteeHash;
+    bytes32 public currentCommitteeStake; // staled (TRN | DOT) (uint64 | uint64) and 3-pool-liquid (TRN | DOT) (uint64 | uint64)
     bytes32 public nextCommitteeHash;
-    IEscrowGMP private escrowGMP;
+    bytes32 public currentTRNPriceAttestedInDOTAndETH;
+    EscrowGMP private escrowGMP;
 
     function batchEncodePacked(Batch memory batch) public pure returns (bytes memory) {
         return abi.encode(
             batch.is_halted,
             batch.currentCommitteeHash,
             batch.nextCommitteeHash,
+            batch.maybeNextCommittee,
             batch.bannedCommittee,
-            batch.committedSfx,
-            batch.revertedSfx,
+            batch.bannedStake,
+            batch.newCommitteeStake,
+            batch.priceUpdates,
             batch.encodedGMPPayload,
             batch.index
         );
@@ -85,19 +79,32 @@ contract AttestationsVerifierProofs {
         return keccak256(batchEncodePacked(batch));
     }
 
-    constructor(address[] memory initialCommittee, address[] memory nextCommittee, uint256 startingIndex, address _escrowGMP) {
+    constructor(address[] memory initialCommittee, address[] memory nextCommittee, uint256 startingIndex, EscrowGMP _escrowGMP) {
         currentCommitteeTransitionCount = 1;
-        for(uint i = 0; i < initialCommittee.length; i++) {
-            attestersIndices[initialCommittee[i]] = currentCommitteeTransitionCount;
-        }
         totalAttesters = initialCommittee.length;
         currentBatchIndex = startingIndex;
         owner = msg.sender;
         committeeSize = initialCommittee.length;
         quorum = committeeSize * 2 / 3;
-        currentCommitteeHash = implyCommitteeRoot(initialCommittee);
-        nextCommitteeHash = implyCommitteeRoot(nextCommittee);
-        escrowGMP = IEscrowGMP(_escrowGMP);
+        if (initialCommittee.length > 0) {
+            currentCommitteeHash = implyCommitteeRoot(initialCommittee);
+        }
+        if (nextCommittee.length > 0) {
+            nextCommitteeHash = implyCommitteeRoot(nextCommittee);
+        }
+        escrowGMP = _escrowGMP;
+    }
+
+    function overrideCommitteeHash(bytes32 newCommitteeHash) public onlyOwner {
+        currentCommitteeHash = newCommitteeHash;
+    }
+
+    function overrideNextCommitteeHash(bytes32 newCommitteeHash) public onlyOwner {
+        nextCommitteeHash = newCommitteeHash;
+    }
+
+    function overrideCurrentBatchIndex(uint256 newBatchIndex) public onlyOwner {
+        currentBatchIndex = newBatchIndex;
     }
 
     function implyCommitteeRoot(address[] memory committee) public pure returns (bytes32) {
@@ -126,17 +133,15 @@ contract AttestationsVerifierProofs {
     }
 
     function receiveAttestationBatch(
-        uint32 index,
         bytes calldata batchPayload,
+        bytes calldata batchGMPPayload,
         bytes[] calldata signatures,
         bytes32[] calldata multiProofProof,
-        bool[] calldata multiProofMembershipFlags,
-        address[] calldata maybeNextCommittee
+        bool[] calldata multiProofMembershipFlags
     ) public {
         Batch memory batch = abi.decode(batchPayload, (Batch));
-
         bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
-        require(index == currentBatchIndex + 1, "Batch index mismatch");
+        require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
 
         bytes32[] memory attestersAsLeaves = recoverCurrentSigners(
             batchMessageHash,
@@ -147,8 +152,8 @@ contract AttestationsVerifierProofs {
         // Check if maybeNextCommittee contains new members commitment
         // If so, use the currently store next committee hash to verify signatures
         // Otherwise, use the currently stored current committee hash to verify signatures
-        if (maybeNextCommittee.length > 0) {
-            bytes32 impliedNextCommitteeHash = implyCommitteeRoot(maybeNextCommittee);
+        if (batch.maybeNextCommittee.length > 0) {
+            bytes32 impliedNextCommitteeHash = implyCommitteeRoot(batch.maybeNextCommittee);
             require(impliedNextCommitteeHash == nextCommitteeHash, "Next committee hash mismatch");
             require(MerkleProof.multiProofVerifyCalldata(multiProofProof, multiProofMembershipFlags, impliedNextCommitteeHash, attestersAsLeaves), "Multi-proof of attestations commitments verification failed");
             currentCommitteeHash = nextCommitteeHash;
@@ -157,18 +162,39 @@ contract AttestationsVerifierProofs {
             require(MerkleProof.multiProofVerifyCalldata(multiProofProof, multiProofMembershipFlags, currentCommitteeHash, attestersAsLeaves), "Multi-proof of attestations commitments verification failed");
         }
 
-        decodeAndProcessPayload(batchPayload);
+        decodeAndProcessPayload(batchGMPPayload);
 
         // Check if batch includes price updates and apply them
-        if (batch.priceUpdates.length > 0) {
-            require(batch.priceUpdates.length == 2, "Invalid price updates length");
-            updatePrice("xTRN", batch.priceUpdates[0]);
-            updatePrice("xDOT", batch.priceUpdates[1]);
+        if (batch.priceUpdates != bytes32(0)) {
+            currentTRNPriceAttestedInDOTAndETH = batch.priceUpdates;
         }
+
+        // Update the current committee stake if needed
+        updateCurrentCommitteeStakeIfNeededBe(batch.bannedStake, batch.newCommitteeStake);
 
         currentBatchIndex = batch.index;
 
         emit BatchApplied(batchMessageHash, msg.sender);
+    }
+
+    function updateCurrentCommitteeStakeIfNeededBe(bytes32 bannedStake, bytes32 _newCommitteeStake) internal {
+        if (_newCommitteeStake != bytes32(0)) {
+            currentCommitteeStake = _newCommitteeStake;
+        }
+        if (bannedStake != bytes32(0)) {
+            // decode current stake and subtract the banned stake from it.
+            uint64[4] memory bannedStakeDecoded = abi.decode(abi.encode(bannedStake), (uint64[4]));
+            uint64[4] memory currentStakeDecoded = abi.decode(abi.encode(currentCommitteeStake), (uint64[4]));
+            uint64[4] memory newStakeDecoded;
+            for (uint256 i = 0; i < 4; i++) {
+                if (bannedStakeDecoded[i] > currentStakeDecoded[i]) {
+                    newStakeDecoded[i] = 0;
+                } else {
+                    newStakeDecoded[i] = currentStakeDecoded[i] - bannedStakeDecoded[i];
+                }
+            }
+            currentCommitteeStake = abi.decode(abi.encode(newStakeDecoded), (bytes32));
+        }
     }
 
     function recoverCurrentSigners(
@@ -212,7 +238,7 @@ contract AttestationsVerifierProofs {
 
     enum OperationType { TransferCommit, TransferRevert, Mint, CallCommit, CallRevert }
 
-    function decodeAndProcessPayload(bytes calldata payload) public {
+    function decodeAndProcessPayload(bytes calldata payload) public onlyOwner {
         require(payload.length > 0, "Payload cannot be empty");
 
         uint256 offset = 0;
@@ -228,38 +254,54 @@ contract AttestationsVerifierProofs {
                 require(sfxId != bytes32(0), "Invalid sfxId");
                 address destination = address(bytes20(payload[offset+32:offset+52]));
                 require(destination != address(0), "Invalid destination");
-                escrowGMP.commitRemoteExecutorPayload(sfxId, destination);
+                escrowGMP.commitRemoteBeneficiaryPayload(sfxId, destination);
                 offset += 52;
             } else if (opType == OperationType.TransferRevert) {
                 require(payload.length >= offset + 32, "Payload too short for TransferRevert");
                 data = bytes(payload[offset:offset+32]);  // 32 bytes for sfxId
                 bytes32 sfxId = bytes32(payload[offset:offset+32]);
                 require(sfxId != bytes32(0), "Invalid sfxId");
-                escrowGMP.revertRemoteExecutorPayload(sfxId);
+                escrowGMP.revertRemoteOrderPayload(sfxId);
                 offset += 32;
             } else if (opType == OperationType.Mint) {
-                require(payload.length >= offset + 68, "Payload too short for Mint");
-                data = bytes(payload[offset:offset+68]);  // 32 bytes for sfxId + 16 bytes for amount + 20 bytes for address
+                require(payload.length >= offset + 88, "Payload too short for Mint");
+                data = bytes(payload[offset:offset+88]);  // 32 bytes for sfxId + 16 bytes for amount + 20 bytes for address of mint contract + 20 bytes for address of destination
                 bytes32 sfxId = bytes32(payload[offset:offset+32]);
                 require(sfxId != bytes32(0), "Invalid sfxId");
                 uint256 amount = uint256(uint128(bytes16(payload[offset+32:offset+48])));
                 require(amount > 0, "Invalid amount");
-                address destination = address(bytes20(payload[offset+52:offset+72]));
+                address destination = address(bytes20(payload[offset+48:offset+68]));
                 require(destination != address(0), "Invalid destination");
-                escrowGMP.mintOrBurnToVault(true, sfxId, amount, destination);
-                offset += 32;
-            } else if (opType == OperationType.CallCommit || opType == OperationType.CallRevert) {
-                uint16 inputLength = uint16(bytes2(payload[offset:offset+2]));
-                offset += 2;
-                uint256 totalDataLength = 32 + 20 + inputLength;  // sfxId + destinationContract + input data
-                require(payload.length >= offset + totalDataLength, "Payload too short for CallCommit/CallRevert");
-                data = bytes(payload[offset:offset+totalDataLength]);
-                if (opType == OperationType.CallCommit) {
-                    processCallCommit(data);
-                } else {
-                    processCallRevert(data);
+                address beneficiary = address(bytes20(payload[offset+68:offset+88]));
+                require(beneficiary != address(0), "Invalid destination");
+                // Send xDOT from Vault address in ERC-20 to beneficiary, if amount does not exceed stake secured by current committee
+                if (destination == xTRN) {
+                    // Decode currentCommitteeStake for liquid and 3-pool assets collected in TRN
+                    uint64[4] memory currentStakeDecoded = abi.decode(abi.encode(currentCommitteeStake), (uint64[4]));
+                    uint256 totalTRNStake = currentStakeDecoded[0] + currentStakeDecoded[2];
+                    if (amount < totalTRNStake) {
+                        escrowGMP.withdrawFromVaultSkipGMPChecks(destination, amount, beneficiary);
+                    }
+                } else if (destination == xDOT) {
+                    // Decode currentCommitteeStake for liquid and 3-pool assets collected in DOT
+                    uint64[4] memory currentStakeDecoded = abi.decode(abi.encode(currentCommitteeStake), (uint64[4]));
+                    uint256 totalDOTStake = currentStakeDecoded[1] + currentStakeDecoded[3];
+                    if (amount < totalDOTStake) {
+                        escrowGMP.withdrawFromVaultSkipGMPChecks(destination, amount, beneficiary);
+                    }
                 }
-                offset += totalDataLength;
+                offset += 88;
+            } else if (opType == OperationType.CallCommit || opType == OperationType.CallRevert) {
+                require(payload.length >= offset + 32, "Payload too short for CallCommit/CallRevert");
+                data = bytes(payload[offset:offset+32]);  // 32 bytes for sfxId
+                bytes32 sfxId = bytes32(payload[offset:offset+32]);
+                require(sfxId != bytes32(0), "Invalid sfxId");
+                if (opType == OperationType.CallCommit) {
+                    escrowGMP.commitEscrowCall(sfxId);
+                } else {
+                    escrowGMP.revertEscrowCall(sfxId);
+                }
+                offset += 32;
             } else {
                 revert("Invalid operation type");
             }
@@ -277,75 +319,11 @@ contract AttestationsVerifierProofs {
 
     struct CallCommit {
         bytes32 sfxId;
-        address destinationContract;
-        bytes input;
     }
 
     struct CallRevert {
         bytes32 sfxId;
-        address destinationContract;
-        bytes input;
     }
-
-    function processCallCommit(bytes memory data) internal pure returns (CallCommit memory) {
-        CallCommit memory commit;
-        (commit.sfxId, commit.destinationContract, commit.input) = abi.decode(data, (bytes32, address, bytes));
-        return commit;
-    }
-
-    function processCallRevert(bytes memory data) internal pure returns (CallRevert memory) {
-        CallRevert memory revertData;
-        (revertData.sfxId, revertData.destinationContract, revertData.input) = abi.decode(data, (bytes32, address, bytes));
-        return revertData;
-    }
-
-    function verifySignedByActiveCommittee(
-        bytes32 messageHash,
-        bytes[] memory signatures
-    ) public returns (bool) {
-        uint256 validSignatures = 0;
-        uint256 quorum = committeeSize * 2 / 3;
-        for (uint i = 0; i < signatures.length; i++) {
-            bytes32 r;
-            bytes32 s;
-            uint8 v;
-
-            bytes memory signature = signatures[i];
-
-            if (signature.length != 65) {
-                continue;
-            }
-
-            assembly {
-                r := mload(add(signature, 32))
-                s := mload(add(signature, 64))
-                v := byte(0, mload(add(signature, 96)))
-            }
-
-            if (v < 27) {
-                v += 27;
-            }
-
-            if (v != 27 && v != 28) {
-                continue;
-            } else {
-                bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
-                address signer = ecrecover(prefixedHash, v, r, s);
-                uint256 attesterIndex = attestersIndices[signer];
-
-                if (attesterIndex == currentCommitteeTransitionCount) {
-                    validSignatures += 1;
-                }
-            }
-
-            if (validSignatures >= quorum) {
-                return true;
-            }
-        }
-
-        return validSignatures >= quorum;
-    }
-
 
     function addressArrayContains(address[] memory array, address value) private pure returns (bool) {
         for(uint256 i = 0; i < array.length; i++) {

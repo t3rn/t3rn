@@ -13,18 +13,25 @@ async function main() {
     const contractEscrowGMP = await ContractEscrowGMP.deploy(contractt3rnVault.address) // contractt3rnVault.address
     await contractEscrowGMP.deployed();
 
-    console.log('Contract escrowGMP deployed to address:', contractEscrowGMP.address);
+    console.log('Contract EscrowGMP deployed to address:', contractEscrowGMP.address);
 
     const ContractXOrder = await ethers.getContractFactory('RemoteOrder');
-    const contractxOrder = await ContractXOrder.deploy(contractEscrowGMP.address)
+    const contractxOrder = await ContractXOrder.deploy(contractEscrowGMP.address, contractt3rnVault.address)
     await contractxOrder.deployed();
 
-    console.log('Contract contractxOrder deployed to address:', contractxOrder.address);
+    console.log('Contract RemoteOrder deployed to address:', contractxOrder.address);
 
-    contractxOrderRes = await contractxOrder.remoteOrder("0x03030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064");
+    const ContractLocalExchange = await ethers.getContractFactory('LocalExchange');
+    const contractLocalExchange = await ContractLocalExchange.deploy()
+    await contractLocalExchange.deployed();
 
-    console.log('Contract contractxOrderRes res address:', contractxOrder.address);
+    console.log('Contract LocalExchange deployed to address:', contractLocalExchange.address);
 
+    const ContractAttesters = await ethers.getContractFactory('AttestationsVerifierProofs');
+    const contractAttesters = await ContractAttesters.deploy([], [], 1, contractEscrowGMP.address);
+    await contractAttesters.deployed();
+
+    console.log('Contract AttestationsVerifierProofs deployed to address:', contractAttesters.address);
 }
 
 main()

@@ -15,7 +15,17 @@ interface It3rnVault {
 contract t3rnVault {
     using SafeERC20 for IERC20;
 
-    address private escrow; // Only this address can withdraw
+    address public escrow; // Only this address can withdraw
+    address public owner; // Only this address can withdraw
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only Owner can call this function");
+        _;
+    }
+
+    function assignEscrow(address _escrow) public onlyOwner {
+        escrow = _escrow;
+    }
 
     modifier onlyEscrow() {
         require(msg.sender == escrow, "Only Escrow can call this function");
@@ -23,7 +33,7 @@ contract t3rnVault {
     }
 
     constructor() {
-        escrow = msg.sender;
+        owner = msg.sender;
     }
 
     function deposit(address asset, uint256 amount) external payable {
