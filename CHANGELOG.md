@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.60.0-rc.0] - 2023-10-12
+### :sparkles: New Features
+- [`97e0f5c`](https://github.com/t3rn/t3rn/commit/97e0f5c93fbc64b12e6a6adbf94bfbabb0aaddd5) - **cli**: enabled XCM transactions sending using the CLI *(PR [#1350](https://github.com/t3rn/t3rn/pull/1350) by [@chexware](https://github.com/chexware))*
+- [`624c90a`](https://github.com/t3rn/t3rn/commit/624c90a19c01e29cf6745ce9ffa02024cb35b487) - enable inbound bridging of ERC-20 tokens via GMP & SFX attestations  *(PR [#1293](https://github.com/t3rn/t3rn/pull/1293) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.59.0-rc.0] - 2023-10-09
 ### :sparkles: New Features
 - [`e695992`](https://github.com/t3rn/t3rn/commit/e695992ed2296369bcfb6a643ff4d42dc0cfa968) - **executor**: handling nonce in relayer *(PR [#1330](https://github.com/t3rn/t3rn/pull/1330) by [@3h4x](https://github.com/3h4x))*
@@ -1715,3 +1721,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.58.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.57.0-rc.0...v1.58.0-rc.0
 [v1.58.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.0-rc.0...v1.58.1-rc.0
 [v1.59.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.2-rc.0...v1.59.0-rc.0
+[v1.60.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.59.0-rc.0...v1.60.0-rc.0
