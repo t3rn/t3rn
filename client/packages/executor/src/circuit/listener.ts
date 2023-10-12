@@ -2,7 +2,6 @@ import "@t3rn/types";
 import { EventEmitter } from "events";
 import { Sdk } from "@t3rn/sdk";
 import { Codec } from "@polkadot/types/types";
-import { logger } from "../logging";
 
 /**
  * Enum for the different types of events emitted by the relayer
@@ -65,7 +64,6 @@ export class CircuitListener extends EventEmitter {
       // TODO: refactor this to use event types in the same way ExecutionManager does
       for (let i = 0; i < notifications.length; i++) {
         if (notifications[i].event.method === "NewSideEffectsAvailable") {
-          // receives new side effects
           this.emit("Event", <ListenerEventData>{
             type: ListenerEvents.NewSideEffectsAvailable,
             data: notifications[i].event.data,
@@ -83,14 +81,19 @@ export class CircuitListener extends EventEmitter {
             data: notifications[i].event.data,
           });
         } else if (notifications[i].event.method === "HeadersAdded") {
-          logger.debug(
-            { event: notifications[i].toHuman() },
-            "Received new headers with HeadersAdded event",
-          );
           let vendor = "";
-          if (notifications[i].event.section === "rococoBridge") {
-            vendor = "Rococo";
+          switch (notifications[i].event.section) {
+            case "rococoBridge":
+              vendor = "Rococo";
+              break;
+            case "polkadotBridge":
+              vendor = "Polkadot";
+              break;
+            case "kusamaBridge":
+              vendor = "Kusama";
+              break;
           }
+
           const data = {
             vendor,
             height: parseInt(String(notifications[i].event.data[0])),

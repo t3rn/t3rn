@@ -116,23 +116,30 @@ export class SubstrateRelayer extends EventEmitter {
         async ({ dispatchError, status, events }) => {
           if (dispatchError?.isModule) {
             // something went wrong and we can decode the error
-            const err = this.client.registry.findMetaError(
+            const error = this.client.registry.findMetaError(
               dispatchError.asModule,
             );
             logger.info(
               {
                 sfxId: sfx.id,
                 sfx: sfx,
-                error: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+                error,
               },
               `SFX Execution failed 🚨`,
             );
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutionError,
-              data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+              data: `${error.section}::${error.name}: ${error.docs.join(" ")}`,
               sfxId: sfx.id,
             });
-            reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
+            // we attempt to restore the correct nonce
+            this.nonce = await this.fetchNonce(
+              this.client,
+              this.signer.address,
+            );
+            reject(
+              Error(`${error.section}::${error.name}: ${error.docs.join(" ")}`),
+            );
           } else if (dispatchError) {
             // something went wrong and we can't decode the error
             this.emit("Event", <RelayerEventData>{

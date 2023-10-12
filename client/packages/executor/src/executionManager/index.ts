@@ -338,6 +338,12 @@ export class ExecutionManager {
    * @param sdk The SDK instance
    */
   async addXtx(xtxData: EventData, sdk: Sdk) {
+    // Verify if we can execute this XTX (all SFXs must have target supported by us)
+    if (!this.isXtxExecutable(xtxData)) {
+      logger.warn("XTX is not executable");
+      return;
+    }
+
     // create the XTX object
     const xtx = new Execution(
       logger,
@@ -385,6 +391,29 @@ export class ExecutionManager {
       await this.addRiskRewardParameters(sfx);
     }
     logger.info({ xtxId: xtx.id }, "XTX initialized");
+  }
+
+  private isXtxExecutable(xtxData: EventData): boolean {
+    const targets = xtxData[2].map((sfx) =>
+      Buffer.from(sfx.target, "hex").toString("utf8"),
+    );
+    const supportedTargets = this.config.gateways.map((gateway) => {
+      return gateway.id;
+    });
+
+    const areAllTargetsSupported = targets.every((target) =>
+      supportedTargets.includes(target),
+    );
+
+    if (areAllTargetsSupported) {
+      return true;
+    }
+
+    logger.warn(
+      { xtx: xtxData, xtxTargets: targets, supportedTargets },
+      "Not all targets are supported for this XTX.",
+    );
+    return false;
   }
 
   /**

@@ -178,12 +178,28 @@ export const config: Config = {
     decimals: 12,
     signerKey: process.env.CIRCUIT_SIGNER_KEY,
   },
-  vendors: ["Rococo"],
+  vendors: ["Rococo", "Kusama", "Polkadot"],
   gateways: [
+    {
+      name: "Kusama",
+      id: "kusm",
+      rpc: "wss://kusama-rpc.polkadot.io",
+      type: "Substrate",
+      signerKey: process.env.RELAYCHAIN_SIGNER_KEY,
+      accountPrefix: 42,
+    },
     {
       name: "Rococo",
       id: "roco",
       rpc: "wss://rococo-rpc.polkadot.io",
+      type: "Substrate",
+      signerKey: process.env.RELAYCHAIN_SIGNER_KEY,
+      accountPrefix: 42,
+    },
+    {
+      name: "Polkadot",
+      id: "pdot",
+      rpc: "wss://rpc.polkadot.io",
       type: "Substrate",
       signerKey: process.env.RELAYCHAIN_SIGNER_KEY,
       accountPrefix: 42,
@@ -206,6 +222,12 @@ export const config: Config = {
     },
   },
   assets: {
+    KSM: [
+      {
+        priceSource: "coingecko",
+        id: "kusama",
+      },
+    ],
     BSX: [
       {
         priceSource: "coingecko",
@@ -213,6 +235,12 @@ export const config: Config = {
       },
     ],
     ROC: [
+      {
+        priceSource: "coingecko",
+        id: "polkadot",
+      },
+    ],
+    DOT: [
       {
         priceSource: "coingecko",
         id: "polkadot",
@@ -226,10 +254,32 @@ export const config: Config = {
     ],
   },
   strategies: {
+    ksm: {
+      supportedAssets: ["KSM"],
+      sfx: {
+        minProfitUsd: 3,
+        minYield: 0.05,
+      },
+      xtx: {
+        minInsuranceAmountUsd: 1,
+        minInsuranceShare: 0.1,
+      },
+    },
     roco: {
       supportedAssets: ["ROC"],
       sfx: {
         minProfitUsd: 3,
+        minYield: 0.05,
+      },
+      xtx: {
+        minInsuranceAmountUsd: 1,
+        minInsuranceShare: 0.1,
+      },
+    },
+    pdot: {
+      supportedAssets: ["DOT"],
+      sfx: {
+        minProfitUsd: 1,
         minYield: 0.05,
       },
       xtx: {
