@@ -52,6 +52,7 @@ const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
 pub(crate) const SS58_FORMAT: u16 = 9935;
 pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
+pub(crate) const SS58_FORMAT_T1RN: u16 = 9933;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
@@ -232,6 +233,80 @@ pub fn local_testnet_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,              // You MUST set this correctly!
+            bad_blocks: None,
+        },
+    )
+}
+
+pub fn kusama_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "TIN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t1rn",
+        // Id
+        "t1rn",
+        ChainType::Live,
+        move || {
+            polkadot_genesis_full(
+                vec![
+                    (
+                        // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .into(),
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .unchecked_into(),
+                    ),
+                    (
+                        // Collator 2: t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
+                            .into(),
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
+                            .unchecked_into(),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    // Genesis Account: SUDO (t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX = hex!("0x00a6769855d6df941f09e0743f8879f66bad2dde6534a268dfe478449a16312b").into()
+                    (get_account_id_from_adrs(SUDO), SUPPLY),
+                ],
+                PARACHAIN_ID.into(),
+                // Sudo
+                get_account_id_from_adrs(SUDO),
+            )
+        },
+        // Bootnodes
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-1.t3rn.io/tcp/33333/p2p/12D3KooWDWGoYHhsVUtLehNEdwp8JNi4DLTJVB2L53HMHarBXw66",
+            )
+                .expect("Failed to parse bootnode #1 address"),
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-2.t3rn.io/tcp/33333/p2p/12D3KooWLGtGEf92p8CbUmzwFYavEtDUaJNJCbBSp4muSqs2cVz1",
+            )
+                .expect("Failed to parse bootnode #2 address"),
+        ],
+        // Telemetry
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/telemetry.kusama.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+                1,
+            )])
+                .expect("telemetry"),
+        ),
+        // Protocol ID
+        Some("t1rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "kusama".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
             bad_blocks: None,
         },
     )
