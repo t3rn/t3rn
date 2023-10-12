@@ -19,6 +19,7 @@ use frame_support::{
     traits::{fungibles::Destroy, ConstU32},
     Blake2_128Concat, PalletId, StorageHasher,
 };
+use frame_system::{pallet_prelude::OriginFor, Config};
 
 use sp_core::H256;
 use sp_runtime::{
@@ -121,6 +122,7 @@ impl pallet_vacuum::Config for Runtime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type Xdns = XDNS;
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -175,6 +177,24 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
             is_sufficient,
             min_balance,
         )
+    }
+
+    fn mint(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(origin, asset_id, sp_runtime::MultiAddress::Id(user), amount)
+    }
+
+    fn burn(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::burn(origin, asset_id, sp_runtime::MultiAddress::Id(user), amount)
     }
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {

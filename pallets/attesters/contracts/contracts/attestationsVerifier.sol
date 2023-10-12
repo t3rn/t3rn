@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 contract AttestationsVerifier {
 
     event SignerEmitted(address indexed signer);
-    event BatchApplied(bytes32 indexed batchHash);
+    event BatchApplied(bytes32 indexed batchHash, address indexed executor);
     event SignerNotInCommittee(address indexed signer);
 
     struct Batch {
@@ -20,6 +20,7 @@ contract AttestationsVerifier {
     mapping(bytes32 => bool) public revertedSfxMap;
     mapping(address => uint256) public attestersIndices;
     address public owner;
+    address public escrowGMP;
     uint256 public committeeSize;
     uint256 public currentCommitteeTransitionCount;
     uint256 public currentBatchIndex;
@@ -103,7 +104,7 @@ contract AttestationsVerifier {
 
         currentBatchIndex = batch.index;
 
-        emit BatchApplied(expectedBatchHash);
+        emit BatchApplied(expectedBatchHash, msg.sender);
     }
 
     function verifySignedByActiveCommittee(

@@ -6,6 +6,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::{BlockNumberFor, OriginFor};
 use scale_info::TypeInfo;
+use sp_core::H160;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
@@ -33,6 +34,20 @@ pub trait PalletAssetsOverlay<T: frame_system::Config, Balance> {
         admin: <T as frame_system::Config>::AccountId,
         is_sufficient: bool,
         min_balance: Balance,
+    ) -> DispatchResult;
+
+    fn mint(
+        origin: OriginFor<T>,
+        asset_id: AssetId,
+        user: <T as frame_system::Config>::AccountId,
+        amount: Balance,
+    ) -> DispatchResult;
+
+    fn burn(
+        origin: OriginFor<T>,
+        asset_id: AssetId,
+        user: <T as frame_system::Config>::AccountId,
+        amount: Balance,
     ) -> DispatchResult;
 
     fn destroy(origin: OriginFor<T>, asset_id: &AssetId) -> DispatchResultWithPostInfo;
@@ -260,6 +275,16 @@ pub trait Xdns<T: frame_system::Config, Balance> {
         gateway_id: [u8; 4],
         token_props: TokenInfo,
     ) -> DispatchResult;
+
+    fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord>;
+    fn check_asset_is_mintable(gateway_id: TargetId, asset_id: AssetId) -> bool;
+    fn mint(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
+    fn burn(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
+    fn is_target_active(gateway_id: TargetId, security_lvl: &SecurityLvl) -> bool;
+    fn get_token_by_eth_address(
+        gateway_id: TargetId,
+        eth_address: H160,
+    ) -> Result<TokenRecord, DispatchError>;
 
     fn add_new_gateway(
         gateway_id: [u8; 4],

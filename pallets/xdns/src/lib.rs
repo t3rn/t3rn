@@ -452,6 +452,72 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn add_supported_bridging_asset(
+            origin: OriginFor<T>,
+            asset_id: AssetId,
+            target_id: TargetId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            if !<AuthorizedMintAssets<T>>::get().contains(&(asset_id, target_id)) {
+                <AuthorizedMintAssets<T>>::append((&asset_id, &target_id));
+            }
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn enroll_bridge_asset(
+            origin: OriginFor<T>,
+            asset_id: AssetId,
+            target_id: TargetId,
+            token_info: TokenInfo,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            assert!(!Self::check_asset_is_mintable(target_id, asset_id));
+
+            if !<AllTokenIds<T>>::get().contains(&asset_id) {
+                Self::register_new_token(&origin, asset_id, token_info.clone())?;
+            }
+            // Check that the asset is not already added to the gateway
+            if !<Tokens<T>>::contains_key(&asset_id, &target_id) {
+                Self::link_token_to_gateway(asset_id, target_id, token_info)?;
+            }
+
+            <AuthorizedMintAssets<T>>::append((&asset_id, &target_id));
+
+            log::info!(
+                "Enrolled asset {:?} for bridging to {:?}",
+                asset_id,
+                target_id
+            );
+            // Check that the asset is mintable
+            assert!(Self::check_asset_is_mintable(target_id, asset_id));
+
+            Ok(().into())
+        }
+
+        /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn purge_supported_bridging_asset(
+            origin: OriginFor<T>,
+            asset_id: AssetId,
+            target_id: TargetId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            if <AuthorizedMintAssets<T>>::get().contains(&(asset_id, target_id)) {
+                <AuthorizedMintAssets<T>>::mutate(|all_token_ids| {
+                    all_token_ids.retain(|&(a_id, t_id)| a_id != asset_id && t_id != target_id);
+                });
+            }
+
+            Ok(().into())
+        }
+
         /// Removes a gateway from the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
         pub fn purge_gateway_record(
@@ -568,6 +634,8 @@ pub mod pallet {
         TokenRecordAlreadyExists,
         /// XDNS Token not found in assets overlay
         TokenRecordNotFoundInAssetsOverlay,
+        /// XDNS Token not found in on that gateway
+        TokenRecordNotFoundInGateway,
         /// Gateway Record not found
         GatewayRecordNotFound,
         /// SideEffectABI already exists
@@ -625,6 +693,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn all_token_ids)]
     pub type AllTokenIds<T: Config> = StorageValue<_, Vec<AssetId>, ValueQuery>;
+
+    // All known TokenIds to t3rn
+    #[pallet::storage]
+    #[pallet::getter(fn supported_bridging_assets)]
+    pub type AuthorizedMintAssets<T: Config> =
+        StorageValue<_, Vec<(AssetId, TargetId)>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn all_gateway_ids)]
@@ -956,6 +1030,43 @@ pub mod pallet {
             Ok(())
         }
 
+        fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord> {
+            let mut available_assets = Vec::new();
+            for (asset, target) in <AuthorizedMintAssets<T>>::get() {
+                if let Some(linked_asset) = <Tokens<T>>::get(asset, gateway_id) {
+                    if target == gateway_id {
+                        available_assets.push(linked_asset);
+                    }
+                }
+            }
+            available_assets
+        }
+
+        fn check_asset_is_mintable(gateway_id: TargetId, asset_id: AssetId) -> bool {
+            Self::list_available_mint_assets(gateway_id)
+                .iter()
+                .any(|token| token.token_id == asset_id)
+        }
+
+        fn get_token_by_eth_address(
+            gateway_id: TargetId,
+            eth_address: sp_core::H160,
+        ) -> Result<TokenRecord, DispatchError> {
+            for token in <GatewayTokens<T>>::get(gateway_id) {
+                let token_record = <Tokens<T>>::get(token, gateway_id)
+                    .ok_or(Error::<T>::TokenRecordNotFoundInGateway)?;
+                match token_record.token_props {
+                    TokenInfo::Ethereum(ref eth_token) =>
+                        if eth_token.address == Some(eth_address.into()) {
+                            return Ok(token_record.clone())
+                        },
+                    TokenInfo::Substrate(_) =>
+                        return Err(Error::<T>::TokenRecordNotFoundInGateway.into()),
+                }
+            }
+            Err(Error::<T>::TokenRecordNotFoundInGateway.into())
+        }
+
         fn add_new_gateway(
             gateway_id: TargetId,
             verification_vendor: GatewayVendor,
@@ -1168,9 +1279,6 @@ pub mod pallet {
         }
 
         fn read_last_activity_overview() -> Vec<GatewayActivity<BlockNumberFor<T>>> {
-            // Self::process_overview(<frame_system::Pallet<T>>::block_number());
-            // <GatewaysOverviewStore<T>>::get()
-
             let mut overview = <GatewaysOverviewStore<T>>::get();
             // get the latest update
             let latest_update = overview
@@ -1185,6 +1293,50 @@ pub mod pallet {
             }
 
             overview
+        }
+
+        fn is_target_active(gateway_id: TargetId, security_lvl: &SecurityLvl) -> bool {
+            match Self::read_last_activity(gateway_id) {
+                Some(activity) => activity.security_lvl >= *security_lvl && activity.is_active,
+                None => false,
+            }
+        }
+
+        fn mint(asset_id: AssetId, user: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
+            assert!(
+                Self::check_asset_is_mintable(T::SelfGatewayId::get(), asset_id),
+                "Asset is not mintable"
+            );
+            log::debug!(
+                "attempt of minting asset: {:?} for user: {:?} with amount: {:?} on chain: {:?}",
+                asset_id,
+                user,
+                amount,
+                T::SelfGatewayId::get()
+            );
+            T::AssetsOverlay::mint(
+                T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                )),
+                asset_id,
+                user,
+                amount,
+            )
+        }
+
+        fn burn(asset_id: AssetId, user: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
+            assert!(
+                Self::check_asset_is_mintable(T::SelfGatewayId::get(), asset_id),
+                "Asset is not mintable"
+            );
+            T::AssetsOverlay::burn(
+                T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                )),
+                asset_id,
+                user,
+                amount,
+            )
         }
 
         fn verify_active(

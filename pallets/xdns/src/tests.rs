@@ -27,7 +27,7 @@ use frame_support::pallet_prelude::Weight;
 
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
 use sp_core::crypto::AccountId32;
-use sp_runtime::DispatchError;
+use sp_runtime::{print, DispatchError};
 use t3rn_primitives::{
     circuit::SecurityLvl::{Escrow, Optimistic},
     clock::OnHookQueues,
@@ -323,6 +323,43 @@ fn should_register_token_and_populate_assets_storage_successfully() {
             ));
 
             assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+        });
+}
+
+#[test]
+fn mints_and_burns_registered_token_on_ownership_permissions() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+
+            let authorize_asset = 9999u32;
+            // Enroll asset as mintable
+            assert_ok!(XDNS::enroll_bridge_asset(
+                Origin::root(),
+                authorize_asset,
+                [3, 3, 3, 3],
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 9999,
+                    symbol: b"9999".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            let beneficiary = AccountId::from([5; 32]);
+
+            assert_ok!(XDNS::mint(authorize_asset, beneficiary.clone(), 999));
+            // Check that the balance was minted
+            assert_eq!(Assets::balance(authorize_asset, &beneficiary), 999);
+
+            // Check that the balance can be burned
+            assert_ok!(XDNS::burn(authorize_asset, beneficiary.clone(), 888));
+            assert_eq!(Assets::balance(authorize_asset, &beneficiary), 111);
         });
 }
 
@@ -833,7 +870,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
             ));
 
             Attesters::force_activate_target(Origin::root(), [1, 1, 1, 1]).unwrap();
-            Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
+            Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1), None);
             Attesters::on_initialize(System::block_number());
 
             assert_eq!(XDNS::process_overview(System::block_number()), ());
@@ -1082,6 +1119,183 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                 XDNS::verifier_overview(),
                 expected_verifier_overview_all_off
             );
+        });
+}
+
+use t3rn_primitives::xdns::TokenRecord;
+#[test]
+fn adds_and_lists_supported_bridging_assets_when_authorized_by_root() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let authorize_asset: u32 = 1111;
+            let mintable_gateway: [u8; 4] = [1, 1, 1, 1];
+
+            assert!(!XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+
+            assert_ok!(XDNS::register_new_token(
+                &Origin::root(),
+                authorize_asset,
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"mint".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_ok!(XDNS::link_token_to_gateway(
+                authorize_asset,
+                mintable_gateway,
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"mint".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_ok!(XDNS::add_supported_bridging_asset(
+                Origin::root(),
+                authorize_asset,
+                mintable_gateway,
+            ));
+
+            // Check that the asset is added
+            assert_eq!(
+                XDNS::list_available_mint_assets(mintable_gateway),
+                vec![TokenRecord {
+                    token_id: 1111,
+                    gateway_id: [1, 1, 1, 1],
+                    token_props: TokenInfo::Substrate(SubstrateToken {
+                        id: 1,
+                        symbol: b"mint".to_vec(),
+                        decimals: 1
+                    })
+                }]
+            );
+
+            assert!(XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+        });
+}
+
+#[test]
+fn enrolls_supported_bridging_assets_when_authorized_by_root() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let authorize_asset: u32 = 1111;
+            let mintable_gateway: [u8; 4] = [1, 1, 1, 1];
+
+            assert!(!XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+
+            assert_ok!(XDNS::enroll_bridge_asset(
+                Origin::root(),
+                authorize_asset,
+                mintable_gateway,
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"mint".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            // Check that the asset is added
+            assert_eq!(
+                XDNS::list_available_mint_assets(mintable_gateway),
+                vec![TokenRecord {
+                    token_id: 1111,
+                    gateway_id: [1, 1, 1, 1],
+                    token_props: TokenInfo::Substrate(SubstrateToken {
+                        id: 1,
+                        symbol: b"mint".to_vec(),
+                        decimals: 1
+                    })
+                }]
+            );
+
+            assert!(XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+        });
+}
+
+#[test]
+fn purges_previously_added_supported_bridging_assets_when_authorized_by_root() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let authorize_asset: u32 = 1111;
+            let mintable_gateway: [u8; 4] = [1, 1, 1, 1];
+
+            assert!(!XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+
+            assert_ok!(XDNS::register_new_token(
+                &Origin::root(),
+                authorize_asset,
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"mint".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_ok!(XDNS::link_token_to_gateway(
+                authorize_asset,
+                mintable_gateway,
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"mint".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_ok!(XDNS::add_supported_bridging_asset(
+                Origin::root(),
+                authorize_asset,
+                mintable_gateway,
+            ));
+
+            assert!(XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+
+            assert_ok!(XDNS::purge_supported_bridging_asset(
+                Origin::root(),
+                authorize_asset,
+                mintable_gateway,
+            ));
+
+            assert!(!XDNS::check_asset_is_mintable(
+                mintable_gateway,
+                authorize_asset
+            ));
+
+            assert_eq!(XDNS::list_available_mint_assets(mintable_gateway), vec![]);
         });
 }
 

@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+pub mod evm_ingress_logs;
 #[cfg(test)]
 pub mod mini_mock;
 pub mod recode;

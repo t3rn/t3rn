@@ -91,6 +91,7 @@ impl pallet_vacuum::Config for Runtime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type Xdns = XDNS;
 }
 
 use t3rn_primitives::{monetary::TRN, xdns::PalletAssetsOverlay};
@@ -244,6 +245,24 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
         Assets::finish_destroy(origin.clone(), *asset_id)?;
 
         Ok(().into())
+    }
+
+    fn mint(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(origin, asset_id, sp_runtime::MultiAddress::Id(user), amount)
+    }
+
+    fn burn(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::burn(origin, asset_id, sp_runtime::MultiAddress::Id(user), amount)
     }
 }
 

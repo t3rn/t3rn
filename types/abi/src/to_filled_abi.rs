@@ -5,7 +5,7 @@ use frame_support::ensure;
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
-pub use crate::recode_rlp::EthIngressEventLog;
+pub use crate::recode_rlp::Eth2IngressEventLog;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
 pub enum FilledAbi {
@@ -697,7 +697,6 @@ impl FilledAbi {
                     "H256/Account32::InvalidDataSize: expected 32 bytes"
                 );
                 let data_32b: Vec<u8> = field_data[..32].to_vec();
-
                 Ok((FilledAbi::H256(name, data_32b), 32usize))
             },
             Abi::Value256(name) => Ok((
@@ -934,7 +933,7 @@ mod test_fill_abi {
     use std::vec;
 
     use rlp_derive::{RlpDecodable, RlpEncodable};
-    use sp_core::{crypto::AccountId32, ByteArray};
+    use sp_core::{crypto::AccountId32, ByteArray, H160};
 
     #[test]
     fn fills_abi_for_bool_in_rlp() {
@@ -1170,22 +1169,24 @@ mod test_fill_abi {
         assert!(wrong_event.parse_log(log.clone()).is_ok());
         assert!(correct_event.parse_log(log).is_ok());
 
-        let rlp_raw_log_bytes = EthIngressEventLog(
-            vec![
+        let rlp_raw_log_bytes = Eth2IngressEventLog {
+            address: H160::from_slice(&hex!("0909090909090909090909090909090909090909")),
+            topics: vec![
                 hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
                 hex!("0000000000000000000000000000000000000000000000000000000000012345").into(),
             ],
-            hex!(
+            data: hex!(
                 "
 			0000000000000000000000000000000000000000000000000000000000012345
 			0000000000000000000000000000000000000000000000000000000000054321
 			"
             )
             .into(),
-        );
+        };
 
         let filled_abi =
-            FilledAbi::try_fill_abi(abi, rlp_raw_log_bytes.encode(), Codec::Rlp).unwrap();
+            FilledAbi::try_fill_abi(abi, rlp::encode(&rlp_raw_log_bytes).to_vec(), Codec::Rlp)
+                .unwrap();
 
         assert_eq!(
             filled_abi,
@@ -1448,7 +1449,7 @@ mod test_fill_abi {
         let filled_abi =
             FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
 
-        let recoded_bytes4 = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+        let recoded_bytes4 = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale, false);
 
         assert_ok!(recoded_bytes4.clone());
 
@@ -1466,7 +1467,7 @@ mod test_fill_abi {
         let filled_abi =
             FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
 
-        let recoded_bytes4 = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+        let recoded_bytes4 = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale, false);
 
         assert_ok!(recoded_bytes4.clone());
 
@@ -1493,7 +1494,7 @@ mod test_fill_abi {
         let filled_abi =
             FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
 
-        let recoded_2_words_tuple = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+        let recoded_2_words_tuple = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale, false);
 
         assert_ok!(recoded_2_words_tuple.clone());
 

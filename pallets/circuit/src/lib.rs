@@ -72,7 +72,10 @@ pub use state::XExecSignal;
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 
 pub use t3rn_primitives::light_client::InclusionReceipt;
-use t3rn_primitives::{attesters::AttestersWriteApi, circuit::ReadSFX};
+use t3rn_primitives::{
+    attesters::AttestersWriteApi,
+    circuit::{CircuitSubmitAPI, ReadSFX},
+};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 use t3rn_types::fsx::TargetId;
 
@@ -139,6 +142,10 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn storage_migrations_done)]
     pub type StorageMigrations<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn get_gmp)]
+    pub type GMP<T> = StorageMap<_, Identity, H256, H256, OptionQuery>;
 
     /// Links mapping SFX 2 XTX
     ///
@@ -572,6 +579,27 @@ pub mod pallet {
             speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             Self::on_remote_origin_trigger(origin, order_origin, side_effects, speed_mode)
+        }
+
+        fn store_gmp_payload(id: H256, payload: H256) -> bool {
+            if <GMP<T>>::contains_key(id) {
+                return false
+            }
+            <GMP<T>>::insert(id, payload);
+            true
+        }
+
+        fn get_gmp_payload(id: H256) -> Option<H256> {
+            <GMP<T>>::get(id)
+        }
+
+        fn verify_sfx_proof(
+            target: TargetId,
+            speed_mode: SpeedMode,
+            source: Option<ExecutionSource>,
+            encoded_proof: Vec<u8>,
+        ) -> Result<InclusionReceipt<BlockNumberFor<T>>, DispatchError> {
+            <T as Config>::Portal::verify_event_inclusion(target, speed_mode, source, encoded_proof)
         }
     }
 
@@ -1396,6 +1424,7 @@ impl<T: Config> Pallet<T> {
                     "Unable to find matching Side Effect in given Xtx to confirm",
                 )),
         };
+
         log::debug!("Order confirmed!");
 
         #[cfg(not(feature = "test-skip-verification"))]
@@ -1412,14 +1441,13 @@ impl<T: Config> Pallet<T> {
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
-        log::debug!("Inclusion confirmed!");
-
-        // ToDo: handle misbehavior
         #[cfg(not(feature = "test-skip-verification"))]
         log::debug!(
             "SFX confirmation inclusion receipt: {:?}",
             inclusion_receipt
         );
+
+        log::debug!("Inclusion confirmed!");
 
         let sfx_abi =
             <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action).ok_or({
@@ -1446,12 +1474,14 @@ impl<T: Config> Pallet<T> {
             ))
         }
 
+        let payload_codec = <T as Config>::Xdns::get_target_codec(&fsx.input.target)?;
+
         fsx.input.confirm(
             sfx_abi,
             inclusion_receipt.message,
             // todo: store the codec info in gateway's records and use it here
             &Codec::Scale,
-            &Codec::Scale,
+            &payload_codec,
         )?;
 
         log::debug!("Confirmation success");
@@ -1815,6 +1845,9 @@ impl<T: Config> Pallet<T> {
                             match T::Attesters::request_sfx_attestation_commit(
                                 fsx.input.target,
                                 sfx_id,
+                                <Self as CircuitSubmitAPI<T, BalanceOf<T>>>::get_gmp_payload(
+                                    sfx_id,
+                                ),
                             ) {
                                 Ok(_) => {
                                     Self::deposit_event(

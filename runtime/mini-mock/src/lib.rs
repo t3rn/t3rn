@@ -1,5 +1,6 @@
 use codec::{Decode, Encode};
 use frame_support::{
+    assert_ok,
     dispatch::DispatchResultWithPostInfo,
     log,
     traits::{fungibles::Destroy, AsEnsureOriginWithArg, FindAuthor},
@@ -12,6 +13,9 @@ pub use pallet_attesters::{
     Error as AttestersError, Event as AttestersEvent, LatencyStatus, NextBatch,
     NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
     PreviousCommittee, SortedNominatedAttesters,
+};
+pub use pallet_eth2_finality_verifier::{
+    types::EthereumEventInclusionProof, ExecutionHeaderMap as Eth2ExecutionHeaderMap,
 };
 use sp_runtime::BuildStorage;
 use std::marker::PhantomData;
@@ -182,6 +186,24 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
         Assets::finish_destroy(origin.clone(), *asset_id)?;
 
         Ok(().into())
+    }
+
+    fn mint(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(origin, asset_id, user, amount)
+    }
+
+    fn burn(
+        origin: RuntimeOrigin,
+        asset_id: AssetId,
+        user: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::burn(origin, asset_id, user, amount)
     }
 }
 
@@ -470,6 +492,7 @@ impl pallet_circuit_vacuum::Config for MiniRuntime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type Xdns = XDNS;
 }
 
 impl pallet_portal::Config for MiniRuntime {
@@ -739,8 +762,8 @@ pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
 }
 
-pub const T3RN_TARGET_ROCO: TargetId = [3u8, 3u8, 3u8, 3u8];
-pub const T3RN_TARGET_POLKADOT: TargetId = [0u8, 3u8, 3u8, 3u8];
+pub const T3RN_TARGET_ROCO: TargetId = [0u8, 3u8, 3u8, 3u8];
+pub const T3RN_TARGET_POLKADOT: TargetId = [3u8, 3u8, 3u8, 3u8];
 pub const ETHEREUM_TARGET: TargetId = [9u8; 4];
 pub const SEPOLIA_TARGET: TargetId = [10u8; 4];
 pub const ASTAR_TARGET: TargetId = [8u8; 4];
@@ -754,7 +777,7 @@ pub fn get_asset_eth_with_info() -> (u32, TokenInfo) {
         TokenInfo::Ethereum(EthereumToken {
             symbol: b"ETH".to_vec(),
             decimals: 18,
-            address: None,
+            address: Some(hex!("0000000000000000000000000000000000000000").into()),
         }),
     )
 }
@@ -776,7 +799,7 @@ pub fn get_asset_sepolia_with_info() -> (u32, TokenInfo) {
         TokenInfo::Ethereum(EthereumToken {
             symbol: b"SEPOLIA".to_vec(),
             decimals: 18,
-            address: None,
+            address: Some(hex!("0000000000000000000000000000000000000000").into()),
         }),
     )
 }
@@ -852,7 +875,7 @@ pub fn get_asset_usdt_with_sepl_info() -> (u32, TokenInfo) {
         TokenInfo::Ethereum(EthereumToken {
             symbol: b"USDT".to_vec(),
             decimals: 6,
-            address: Some(hex!("dAC17F958D2ee523a2206206994597C13D831ec7")),
+            address: Some(hex!("7169D38820dfd117C3FA1f22a697dBA58d90BA06")),
         }),
     )
 }
@@ -880,7 +903,7 @@ impl ExtBuilder {
             gateway_id: ASTAR_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
-            codec: t3rn_abi::Codec::Rlp,
+            codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![
@@ -900,7 +923,7 @@ impl ExtBuilder {
             gateway_id: KUSAMA_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
-            codec: t3rn_abi::Codec::Rlp,
+            codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
@@ -914,7 +937,7 @@ impl ExtBuilder {
             gateway_id: POLKADOT_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
-            codec: t3rn_abi::Codec::Rlp,
+            codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
@@ -935,9 +958,9 @@ impl ExtBuilder {
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![
-                (*b"tran", Some(2)),
-                (*b"tass", Some(4)),
-                (*b"cevm", Some(88)),
+                (*b"tran", Some(132)),
+                (*b"tass", Some(132)),
+                (*b"cevm", Some(132)),
             ],
         });
         self
@@ -956,9 +979,9 @@ impl ExtBuilder {
             registrant: None,
             escrow_account: Some(mock_escrow_account),
             allowed_side_effects: vec![
-                (*b"tran", Some(2)),
-                (*b"tass", Some(4)),
-                (*b"cevm", Some(88)),
+                (*b"tran", Some(133)),
+                (*b"tass", Some(133)),
+                (*b"cevm", Some(133)),
             ],
         });
         self
@@ -1039,7 +1062,10 @@ impl ExtBuilder {
         ext
     }
 }
-use pallet_eth2_finality_verifier::LightClientAsyncAPI;
+use pallet_eth2_finality_verifier::{
+    mock::{generate_epoch_update, generate_initialization},
+    LightClientAsyncAPI,
+};
 
 pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
     use t3rn_primitives::portal::Portal as PortalT;
@@ -1097,6 +1123,56 @@ pub fn prepare_ext_builder_playground() -> TestExternalities {
     reboot_and_link_assets(&mut ext);
 
     ext
+}
+
+pub fn hotswap_latest_receipt_header_root(hotswap_receipt_root: [u8; 32]) -> bool {
+    if Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values().count() == 0 {
+        return false
+    }
+
+    let mut last_header = Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values()
+        .last()
+        .unwrap();
+
+    last_header.receipts_root = hotswap_receipt_root;
+
+    Eth2ExecutionHeaderMap::<MiniRuntime>::insert(last_header.number, last_header.clone());
+
+    println!(
+        "Hotswap latest receipt header root to {:?} -- {:?}",
+        hotswap_receipt_root, last_header.number
+    );
+
+    true
+}
+pub fn initialize_eth2_with_3rd_epoch() {
+    use t3rn_primitives::portal::Portal as PortalT;
+
+    let init = generate_initialization(None, None);
+
+    assert_ok!(Portal::initialize(
+        RuntimeOrigin::root(),
+        ETHEREUM_TARGET,
+        init.encode()
+    ));
+
+    let submission_data = generate_epoch_update(
+        0,
+        3,
+        Some(
+            init.checkpoint
+                .attested_beacon
+                .hash_tree_root::<MiniRuntime>()
+                .unwrap(),
+        ),
+        None,
+        None,
+    );
+
+    assert_ok!(Portal::submit_encoded_headers(
+        ETHEREUM_TARGET,
+        submission_data.encode()
+    ));
 }
 
 pub fn reboot_and_link_assets(ext: &mut TestExternalities) {

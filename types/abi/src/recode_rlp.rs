@@ -5,10 +5,82 @@ use sp_core::{H160, H256};
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Eth2IngressEventLog {
+    pub address: H160,
+    pub topics: Vec<H256>,
+    pub data: Vec<u8>,
+}
+
+impl Decodable for Eth2IngressEventLog {
+    fn decode(rlp: &rlp::Rlp) -> Result<Self, rlp::DecoderError> {
+        let address = rlp.val_at::<H160>(0)?;
+        let topics = rlp.list_at::<H256>(1).map_err(|e| {
+            log::error!("Error decoding Eth2IngressEventLog topics: {:?}", e);
+            e
+        })?;
+        let data = rlp.val_at::<Vec<u8>>(2).map_err(|e| {
+            log::error!("Error decoding Eth2IngressEventLog data: {:?}", e);
+            e
+        })?;
+        Ok(Eth2IngressEventLog {
+            address,
+            topics,
+            data,
+        })
+    }
+}
+
+impl Encodable for Eth2IngressEventLog {
+    fn rlp_append(&self, s: &mut rlp::RlpStream) {
+        s.begin_list(3);
+        s.append(&self.address);
+        s.append_list::<H256, _>(&self.topics);
+        // s.append_list::<H256, _>(&self.data);
+        s.append(&self.data);
+    }
+}
+
+impl Eth2IngressEventLog {
+    pub fn encode(&self) -> Vec<u8> {
+        rlp::encode(self).to_vec()
+    }
+}
+
+#[test]
+fn decodes_eth2_ingress_event_log_out_of_usdt_erc20_transfer() {
+    let rlp_encoded_usdt_erc20: Vec<u8> = hex_literal::hex!("f89b947169d38820dfd117c3fa1f22a697dba58d90ba06f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa0000000000000000000000000b12713bfa9d1de339ca14b01f8f14f092ffe75bfa00000000000000000000000000e8eb8efdb38c216f2ec7185b1f54855ac50a8cea00000000000000000000000000000000000000000000000000000000003473bc0").into();
+
+    let decoded: Eth2IngressEventLog = rlp::decode(&rlp_encoded_usdt_erc20.as_slice()).unwrap();
+
+    assert_eq!(
+        decoded,
+        Eth2IngressEventLog {
+            address: H160::from(hex_literal::hex!(
+                "7169d38820dfd117c3fa1f22a697dba58d90ba06"
+            )),
+            topics: vec![
+                H256::from(hex_literal::hex!(
+                    "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+                )),
+                H256::from(hex_literal::hex!(
+                    "000000000000000000000000b12713bfa9d1de339ca14b01f8f14f092ffe75bf"
+                )), // from
+                H256::from(hex_literal::hex!(
+                    "0000000000000000000000000e8eb8efdb38c216f2ec7185b1f54855ac50a8ce"
+                )), // to
+            ],
+            data: vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                3, 71, 59, 192
+            ], // amount
+        }
+    );
+}
+
 use bytes::{Buf, Bytes};
-use frame_support::ensure;
+use frame_support::{ensure, log, log::error};
+use rlp::{Decodable, Encodable};
 
 pub struct RecodeRlp;
 
@@ -36,11 +108,10 @@ impl Recode for RecodeRlp {
         name: Option<Name>,
         fields_iter_clone: IntoIter<Box<Abi>>,
     ) -> Result<(FilledAbi, usize), DispatchError> {
-        let eth_ingress_event_log: EthIngressEventLog =
-            EthIngressEventLog::decode(&mut &field_data[..])
-                .map_err(|_e| "EthIngressEventLog::decode can't be derived with provided data")?;
+        let eth_ingress_event_log: Eth2IngressEventLog = rlp::decode(&mut &field_data[..])
+            .map_err(|_e| "Eth2IngressEventLog::decode can't be derived with provided data")?;
 
-        let (topics, data) = (eth_ingress_event_log.0, eth_ingress_event_log.1);
+        let (topics, data) = (eth_ingress_event_log.topics, eth_ingress_event_log.data);
 
         let mut flat_topics: Vec<u8> = topics
             .into_iter()
@@ -50,7 +121,7 @@ impl Recode for RecodeRlp {
 
         let mut total_size = 0usize;
         let fields_iter = fields_iter_clone.peekable();
-        let mut data_buf = Bytes::copy_from_slice(&data);
+        let mut flat_data = data.clone();
 
         let filled_abi_content = fields_iter
             .rev()
@@ -64,10 +135,9 @@ impl Recode for RecodeRlp {
                     filled_abi
                 } else {
                     let (filled_abi, chopped_size) =
-                        field_descriptor.decode_topics_as_rlp(data_buf.to_vec())?;
-                    data_buf.advance(chopped_size);
+                        field_descriptor.decode_topics_as_rlp(flat_data.clone())?;
+                    flat_data.truncate(flat_data.len() - chopped_size);
                     total_size += chopped_size;
-
                     filled_abi
                 };
                 Ok(Box::new(next_filled_abi))
@@ -115,6 +185,10 @@ impl Abi {
             },
             Abi::Bytes(name) => Ok((
                 FilledAbi::Bytes(name.clone(), input.to_vec()),
+                MINIMUM_INPUT_LENGTH,
+            )),
+            Abi::Bytes4(name) => Ok((
+                FilledAbi::Bytes4(name.clone(), last_32b[0..4].to_vec()),
                 MINIMUM_INPUT_LENGTH,
             )),
             Abi::Value256(name) => Ok((

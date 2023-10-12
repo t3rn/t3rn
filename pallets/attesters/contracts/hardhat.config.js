@@ -20,8 +20,7 @@ module.exports = {
     sepolia: {
       url: "https://eth-sepolia.public.blastapi.io", 
       chainId: 11155111, 
-      accounts: [ETHEREUM_PRIVATE_KEY], 
+      accounts: ["0x78d3cbf37f1197996246b95bd42af04b14314bc23aa1b607410b0a72b5600156"],
     },
   },
-
 };

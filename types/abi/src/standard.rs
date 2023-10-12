@@ -40,14 +40,14 @@ pub fn get_sfx_transfer_abi() -> SFXAbi {
         args_names: vec![(b"to".to_vec(), true), (b"amount".to_vec(), true)],
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
+            for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value256)".to_vec(),
             for_scale:
                 b"Balances:Struct(Transfer:Event(from:Account32,to:Account32,amount:Value128))"
                     .to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Transfer:Struct(to:Account20,amount:Value256)".to_vec(),
+            for_rlp: b"Transfer:Struct(to+:Account20,amount+:Value256)".to_vec(),
             for_scale: b"Transfer:Struct(to:Account32,amount:Value128)".to_vec(),
         },
         maybe_prefix_memo: None,
@@ -57,14 +57,14 @@ pub fn get_sfx_transfer_abi() -> SFXAbi {
 pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
-            (b"asset_id".to_vec(), true),
+            (b"asset_id".to_vec(), false),
             (b"to".to_vec(), true),
             (b"amount".to_vec(), true),
         ],
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp:
-                b"Assets:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
+                b"Transfer:Log(from+:Account20,to+:Account20,amount:Value256)"
                     .to_vec(),
             for_scale:
                 b"Assets:Struct(Transferred:Event(asset_id:Value32,from:Account32,to:Account32,amount:Value128))"
@@ -72,7 +72,7 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Assets:Struct(asset_id:Account20,to:Account20,amount:Value128)".to_vec(),
+            for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount:Value256)".to_vec(),
             for_scale: b"Assets:Struct(asset_id:Value32,to:Account32,amount:Value128)".to_vec(),
         },
         maybe_prefix_memo: None,
@@ -183,12 +183,12 @@ pub fn get_call_evm_contract_abi() -> SFXAbi {
             // assume all indexed in topics ("+")
             for_rlp: b"CallEvm:Log(target+:Account20,source+:Account20,tx_hash+:H256,input-:Bytes)"
                 .to_vec(),
-            for_scale: b"Evm:Struct(Call:Event(source+:Account32,target+:Account32))".to_vec(),
+            for_scale: b"Evm:Struct(Call:Event(source+:Account20,target+:Account20))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             for_rlp: b"CallEvm:Struct(target:Account20,value:Value256,input:Bytes,gas_limit:Value256,max_fee_per_gas:Value256,max_priority_fee_per_gas:Value256,nonce:Value256,access_list:Bytes)"
                 .to_vec(),
-            for_scale: b"CallEvm:Struct(target:Account32,value:Value128,input:Bytes,gas_limit:Value128,max_fee_per_gas:Value128,max_priority_fee_per_gas:Value128,nonce:Value128,access_list:Bytes)"
+            for_scale: b"CallEvm:Struct(target:Account20,value:Value128,input:Bytes,gas_limit:Value128,max_fee_per_gas:Value128,max_priority_fee_per_gas:Value128,nonce:Value128,access_list:Bytes)"
                 .to_vec(),
         },
         maybe_prefix_memo: None,
@@ -254,7 +254,7 @@ mod test_abi_standards {
     use hex_literal::hex;
     use sp_core::{H160, U256};
 
-    use crate::{to_filled_abi::EthIngressEventLog, Abi, FilledAbi};
+    use crate::{to_filled_abi::Eth2IngressEventLog, Abi, FilledAbi};
     use sp_core::H256;
     use sp_runtime::AccountId32;
 
@@ -412,26 +412,34 @@ mod test_abi_standards {
         const HUNDRED: u128 = 100;
 
         let ordered_args = vec![
-            H160::from(hex!("0000000000000000000000000000000000054321")).encode(), // to
-            HUNDRED.encode(),                                                      // amount
+            AccountId32::from(hex!(
+                "0000000000000000000000000000000000000000000000000000000000054321"
+            ))
+            .encode(), // to
+            HUNDRED.encode(), // amount
         ];
 
         let hundred_u256: U256 = U256::from(HUNDRED);
         let mut hundred_u256_bytes = [0u8; 32];
         hundred_u256.to_big_endian(&mut hundred_u256_bytes);
-        let rlp_raw_log_bytes = EthIngressEventLog(
-            vec![
+
+        let rlp_raw_log_bytes = Eth2IngressEventLog {
+            address: H160::from_slice(&hex!("0909090909090909090909090909090909090909")),
+            topics: vec![
                 hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
                 hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
                 hex!("0000000000000000000000000000000000000000000000000000000000054321").into(),
                 hundred_u256_bytes.into(),
             ],
-            hex!(
+            data: hex!(
                 "
 			"
             )
             .into(),
-        );
+        };
+
+        println!("{:?}", rlp_raw_log_bytes.encode());
+        println!("{:?}", rlp_raw_log_bytes);
 
         let res = transfer_interface.validate_arguments_against_received(
             &ordered_args,
@@ -451,7 +459,10 @@ mod test_abi_standards {
 
         let ordered_args = vec![
             // target
-            H160::from(hex!("0000000000000000000000000000000000054321")).encode(),
+            AccountId32::from(hex!(
+                "0000000000000000000000000000000000000000000000000000000000054321"
+            ))
+            .encode(),
             // value
             HUNDRED.encode(),
             // input
@@ -472,8 +483,9 @@ mod test_abi_standards {
             vec![],
         ];
 
-        let rlp_raw_log_bytes = EthIngressEventLog(
-            vec![
+        let rlp_raw_log_bytes = Eth2IngressEventLog {
+            address: H160::from_slice(&hex!("0909090909090909090909090909090909090909")),
+            topics: vec![
                 hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
                 // address of the smart contract -- target
                 hex!("0000000000000000000000000000000000000000000000000000000000054321").into(),
@@ -483,13 +495,13 @@ mod test_abi_standards {
                 hex!("3b9aca00e23c7ca8e3976f71de69e0be0e9c6f16b02a052f7d52fb1c39c7a8d3").into(),
             ],
             // encoded function parameters
-            hex!(
+            data: hex!(
                 "
                    0000000000000000000000000000000000000000000000000000000102030405
 			"
             )
             .into(),
-        );
+        };
 
         let res = call_interface.validate_arguments_against_received(
             &ordered_args,
