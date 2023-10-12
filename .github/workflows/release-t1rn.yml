@@ -16,7 +16,7 @@ env:
 jobs:
   build-release:
     runs-on: [self-hosted, rust]
-    name: t1rn Rococo Release
+    name: t1rn Kusama Release
     concurrency: runtime-upgrade
     steps:
       - name: Checkout
