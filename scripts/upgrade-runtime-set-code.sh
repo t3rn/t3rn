@@ -1,31 +1,43 @@
 #!/bin/bash
 
-POLKADOT_CLI_VERSION="@polkadot/api-cli@0.55.3"
+POLKADOT_CLI_VERSION="@polkadot/api-cli@0.52.27"
 
-if [ $# -lt 3 ]; then
-  echo "Usage <sudo secret> <tag> <parachain_name> [--dryrun]"
+if [[ -z "$1" || -z $2 || -z $3 ]]; then
+  echo "usage 'sudo secret' \$tag \$parachain_name [--dryrun]"
+  # fx: $0 'sudo secret' v0.0.0-up t0rn --dryrun
   exit 1
 fi
 
-get_current_block(){
-  block_hash="$( npm exec -- ${POLKADOT_CLI_VERSION} --ws ${rpc_endpoint} rpc.chain.getFinalizedHead \
-    | jq -r .getFinalizedHead
+get_finalized_head(){
+  block_hash="$( \
+    curl \
+      -sSfH "content-type: application/json" \
+      -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
+      $http_provider \
+      | \
+      jq -r .result \
   )"
-  block_number="$( npm exec -- ${POLKADOT_CLI_VERSION} --ws ${rpc_endpoint} rpc.chain.getBlock ${block_hash} \
-      | jq -r .getBlock.block.header.number
+  block_number="$( \
+    curl \
+      -sSfH "content-type: application/json" \
+      -d "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"chain_getBlock\",\"params\":[\"$block_hash\"]}" \
+      $http_provider \
+      | \
+      jq -r .result.block.header.number \
   )"
-  printf "%s" ${block_number//,/}
+  printf $(( block_number ))
 }
 
 sudo_secret="$1"
 tag=$2
 parachain_name=$3
-rpc_endpoint="wss://rpc.${parachain_name}.io"
+ws_provider="wss://ws.${parachain_name}.io"
+http_provider="https://rpc.${parachain_name}.io"
 wasm_binary=./${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry) || true
 
-echo "💈 Script started at $(get_current_block) block in ${parachain_name} chain"
+echo "💈 Script started at $(get_finalized_head) block in ${parachain_name} chain"
 
 if [[ ! -z $dryrun ]]; then
   echo
@@ -40,22 +52,22 @@ if [[ ! -f $wasm_binary ]]; then
 fi
 
 if ! git tag --list | grep -Fq $tag; then
-  echo -e "$tag has not been found in the git repository."
+  echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade"
   exit 1
 fi
 
 set -Ee
 
-echo "🐙 Checking out $tag..."
+echo "🐙 checking out $tag..."
 git checkout $tag &>/dev/null
-echo "✅ Tag checked out"
+echo "✅ tag checked out"
 echo
 
-echo "🔎 Making sure runtime version got updated..."
+echo "🔎 making sure runtime version got updated..."
 
 runtime_version="$( \
-  npm exec -- ${POLKADOT_CLI_VERSION} \
-    --ws $rpc_endpoint \
+  npm exec -- $POLKADOT_CLI_VERSION \
+    --ws $ws_provider \
     consts.system.version \
     2>/dev/null )"
 
@@ -70,28 +82,28 @@ new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | 
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
 
 if [[ $new_spec_version -le $old_spec_version ]]; then
-  echo "🔴 Runtime spec version not incremented"
+  echo "🔴 runtime spec version not incremented"
   exit 1
 fi
 
 if [[ $new_impl_version -le $old_impl_version ]]; then
-  echo "🔴 Runtime impl version not incremented"
+  echo "🔴 runtime impl version not incremented"
   exit 1
 fi
 
 if [[ $new_tx_version -le $old_tx_version ]]; then
-  echo "🔴 Runtime transaction version not incremented"
+  echo "🔴 runtime transaction version not incremented"
   exit 1
 fi
 
 if [[ $new_author_version -le $old_author_version ]]; then
-  echo "🔴 Runtime authoring version not incremented"
+  echo "🔴 runtime authoring version not incremented"
   exit 1
 fi
-echo "✅ Runtime versions updated"
+echo "✅ runtime versions updated"
 
 echo
-echo "🫧 Check WASM artifact..."
+echo "🫧 check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $wasm_binary | jq -r .blake2_256)
 wasm_hash_fetched="$(cat ${wasm_binary}.blake2_256)"
 echo "🔢 WASM blake2_256 hash: $wasm_hash_calculated"
@@ -104,7 +116,7 @@ else
   echo "✅ WASM blake2_256 hash is matching"
 fi
 
-echo "⚙️ Set_code runtime upgrade... $dryrun"
+echo "⚙️ set_code runtime upgrade... $dryrun"
 
 # Skip converting wasm to hex when run with dryrun flag
 if [[ -z $dryrun ]]; then
@@ -120,11 +132,11 @@ fi
 
 # Execute runtime upgrade if dryrun flag is not present
 if [[ -z $dryrun ]]; then
-  npm exec -- ${POLKADOT_CLI_VERSION} \
-    --ws $rpc_endpoint \
-    --sudo \
+  npm exec -- $POLKADOT_CLI_VERSION \
+    --ws $ws_provider \
+    --sudoUncheckedWeight "100000" \
     --seed "$sudo_secret" \
     --params $wasm_binary \
     tx.system.setCode
 fi
-echo "✅ Runtime upgrade executed... $dryrun"
+echo "✅ runtime upgrade executed... $dryrun"
