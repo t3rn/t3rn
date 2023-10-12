@@ -46,14 +46,12 @@ contract EscrowGMP {
         _;
     }
 
-    function storeRemoteOrderPayload(bytes32 sfxId, bytes32 payloadHash) external returns (bool) {
+    function storeRemoteOrderPayload(bytes32 sfxId, bytes32 payloadHash) external {
         // Check if the payload is already stored and return false if it is
-        if (remotePaymentsPayloadHash[sfxId] != 0) {
-            return (false);
+        if (remotePaymentsPayloadHash[sfxId] == 0) {
+            // Store the payment payload (hash of the payload)
+            remotePaymentsPayloadHash[sfxId] = payloadHash;
         }
-        // Store the payment payload (hash of the payload)
-        remotePaymentsPayloadHash[sfxId] = payloadHash;
-        return (true);
     }
 
     function commitRemoteBeneficiaryPayload(bytes32 sfxId, address beneficiary) onlyAttesters external returns (bool) {

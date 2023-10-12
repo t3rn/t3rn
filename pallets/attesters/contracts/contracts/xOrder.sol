@@ -48,7 +48,7 @@ contract RemoteOrder {
         } else {
             IERC20(rewardAsset).safeTransferFrom(msg.sender, address(vault), maxReward);
         }
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward))), "Payload already stored");
+        escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward)));
 
         emit RemoteOrderCreated(id, nonce, msg.sender, input);
 
@@ -78,7 +78,7 @@ contract RemoteOrder {
             IERC20(assetHere).safeTransferFrom(msg.sender, address(vault), amount);
         }
 
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(assetHere, amount))), "Payload already stored");
+        escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(assetHere, amount)));
 
         emit RemoteOrderCreated(id, nonce, msg.sender, input);
     }
@@ -152,7 +152,7 @@ contract RemoteOrder {
             IERC20(rewardAsset).safeTransferFrom(msg.sender, address(vault), maxReward);
         }
 
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward))), "Payload already stored");
+        escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward)));
 
         emit RemoteOrderCreated(id, nonce, msg.sender, abi.encode(destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward));
 
@@ -180,7 +180,7 @@ contract RemoteOrder {
             IERC20(assetHere).safeTransferFrom(msg.sender, address(vault), amount);
         }
 
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(assetHere, amount))), "Payload already stored");
+        escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(assetHere, amount)));
 
         emit RemoteOrderCreated(id, nonce, msg.sender, abi.encode(destination, assetThere, targetAccount, amount, assetHere, uint256(0), maxRewardSubtractedFromAmount));
     }

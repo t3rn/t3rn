@@ -66,36 +66,70 @@ pub mod pallet {
         Committed,
     }
 
+    //   Encoded BatchMessage struct on the smart contract side
+    //   struct Batch {
+    //         bool is_halted;
+    //         bytes32 currentCommitteeHash;
+    //         bytes32 nextCommitteeHash;
+    //         address[] maybeNextCommittee;
+    //         address[] bannedCommittee;
+    //         bytes32 bannedStake;
+    //         bytes32 newCommitteeStake;
+    //         bytes32 priceUpdates;
+    //         bytes encodedGMPPayload;
+    //         uint32 index;
+    //     }
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct BatchMessage<BlockNumber> {
-        pub available_to_commit_at: BlockNumber,
+        pub halt: bool,
+        pub current_committee_hash: H256,
+        pub next_committee_hash: H256,
+        pub maybe_next_committee: Option<CommitteeRecoverable>,
+        pub maybe_banned_committee: Option<CommitteeRecoverable>,
+        pub maybe_banned_stake_decrease: Option<H256>,
+        pub prices_updates: Option<H256>,
+        pub new_committee_stake: Option<H256>,
+        pub index: u32,
+        pub encoded_gmp_payload: Vec<u8>,
+        // Below fields are part of the GMP Payload message
         pub committed_sfx: Option<BatchConfirmedSfxWithGMPPayload>,
         pub reverted_sfx: Option<BatchRevertedSfxId>,
-        pub next_committee: Option<CommitteeRecoverable>,
-        pub banned_committee: Option<CommitteeRecoverable>,
-        pub index: u32,
+        pub committed_escrow_call_sfx: Option<BatchRevertedSfxId>,
+        pub reverted_escrow_call_sfx: Option<BatchRevertedSfxId>,
+        pub bridge_sfx: Option<BatchConfirmedSfxWithGMPPayload>,
         // Below fields are not part of the message, but are used to track the state of the message
+        pub available_to_commit_at: BlockNumber,
         pub signatures: Vec<(u32, Signature65b)>,
         pub created: BlockNumber,
         pub status: BatchStatus,
         pub latency: LatencyStatus,
-        pub halt: bool,
+        pub current_committee: Option<CommitteeRecoverable>,
     }
 
     impl<BlockNumber: Zero> Default for BatchMessage<BlockNumber> {
         fn default() -> Self {
             BatchMessage {
-                available_to_commit_at: Zero::zero(),
+                halt: false,
+                current_committee_hash: H256::zero(),
+                next_committee_hash: H256::zero(),
+                maybe_next_committee: None,
+                maybe_banned_committee: None,
+                maybe_banned_stake_decrease: None,
+                prices_updates: None,
+                new_committee_stake: H256::zero(),
+                index: 0,
+                encoded_gmp_payload: Vec::new(),
                 committed_sfx: None,
                 reverted_sfx: None,
-                next_committee: None,
-                banned_committee: None,
+                committed_escrow_call_sfx: None,
+                reverted_escrow_call_sfx: None,
+                bridge_sfx: None,
+                available_to_commit_at: BlockNumber::zero(),
                 signatures: Vec::new(),
+                created: BlockNumber::zero(),
                 status: BatchStatus::PendingMessage,
-                created: Zero::zero(),
-                latency: LatencyStatus::OnTime,
-                halt: false,
-                index: 0,
+                latency: LatencyStatus::NotStarted,
+                current_committee: None,
             }
         }
     }
@@ -126,23 +160,68 @@ pub mod pallet {
                         encoded_message.extend_from_slice(eth_address_as_32b_word.as_slice());
                     }
                 };
+            // Include all the fields of the BatchMessage struct into the encoded message; keeping the fields order:
+            encoded_message.extend_from_slice(self.halt.as_bytes());
+            encoded_message.extend_from_slice(self.current_committee_hash.as_bytes());
+            encoded_message.extend_from_slice(self.next_committee_hash.as_bytes());
+            if let Some(ref committee) = self.maybe_next_committee {
+                encode_eth_committee_addresses_into_message(committee);
+            }
+            if let Some(ref committee) = self.maybe_banned_committee {
+                encode_eth_committee_addresses_into_message(committee);
+            }
+            if let Some(ref banned_stake_decrease) = self.maybe_banned_stake_decrease {
+                encode_eth_committee_addresses_into_message(banned_stake_decrease);
+            }
+            if let Some(ref new_committee_stake) = self.new_committee_stake {
+                encode_eth_committee_addresses_into_message(new_committee_stake);
+            }
+            if let Some(ref prices_updates) = self.prices_updates {
+                encoded_message.extend_from_slice(prices_updates.as_bytes());
+            }
 
-            if let Some(ref committee) = self.next_committee {
-                encode_eth_committee_addresses_into_message(committee);
+            let mut gmp_payload = vec![];
+
+            enum OperationType {
+                TransferCommit = 0,
+                TransferRevert = 1,
+                Mint = 2,
+                CallCommit = 3,
+                CallRevert = 4,
             }
-            if let Some(ref committee) = self.banned_committee {
-                encode_eth_committee_addresses_into_message(committee);
-            }
+
             if let Some(ref sfx_vec) = self.committed_sfx {
                 for sfx in sfx_vec.iter() {
-                    encoded_message.extend_from_slice(sfx.as_bytes());
+                    gmp_payload.push(OperationType::TransferCommit as u8);
+                    gmp_payload.extend_from_slice(sfx.as_bytes());
                 }
             }
             if let Some(ref sfx_vec) = self.reverted_sfx {
                 for sfx in sfx_vec.iter() {
-                    encoded_message.extend_from_slice(sfx.as_bytes());
+                    gmp_payload.push(OperationType::TransferRevert as u8);
+                    gmp_payload.extend_from_slice(sfx.as_bytes());
                 }
             }
+            if let Some(ref sfx_vec) = self.bridge_sfx {
+                for sfx in sfx_vec.iter() {
+                    gmp_payload.push(OperationType::Mint as u8);
+                    gmp_payload.extend_from_slice(sfx.as_bytes());
+                }
+            }
+            if let Some(ref sfx_vec) = self.committed_escrow_call_sfx {
+                for sfx in sfx_vec.iter() {
+                    gmp_payload.push(OperationType::CallCommit as u8);
+                    gmp_payload.extend_from_slice(sfx.as_bytes());
+                }
+            }
+            if let Some(ref sfx_vec) = self.reverted_escrow_call_sfx {
+                for sfx in sfx_vec.iter() {
+                    gmp_payload.push(OperationType::CallRevert as u8);
+                    gmp_payload.extend_from_slice(sfx.as_bytes());
+                }
+            }
+            encoded_message.extend_from_slice(gmp_payload.as_slice());
+
             encoded_message.extend_from_slice(self.index.to_be_bytes().as_slice());
             encoded_message
         }
@@ -172,6 +251,15 @@ pub mod pallet {
                 batching_factor = sfx.len() as u16;
             }
             if let Some(ref sfx) = self.reverted_sfx {
+                batching_factor = batching_factor.saturating_add(sfx.len() as u16)
+            }
+            if let Some(ref sfx) = self.bridge_sfx {
+                batching_factor = batching_factor.saturating_add(sfx.len() as u16)
+            }
+            if let Some(ref sfx) = self.committed_escrow_call_sfx {
+                batching_factor = batching_factor.saturating_add(sfx.len() as u16)
+            }
+            if let Some(ref sfx) = self.reverted_escrow_call_sfx {
                 batching_factor = batching_factor.saturating_add(sfx.len() as u16)
             }
 
