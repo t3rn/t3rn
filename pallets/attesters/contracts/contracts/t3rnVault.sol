@@ -1,4 +1,5 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -17,6 +18,10 @@ contract t3rnVault {
 
     address public escrow; // Only this address can withdraw
     address public owner; // Only this address can withdraw
+
+    receive() external payable {}
+
+    fallback() external payable {}
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only Owner can call this function");
