@@ -110,7 +110,9 @@ build_collator() {
     fi
     echo "✅ $NETWORK built"
     cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/collator"
-    "$bin_dir/collator -V"
+    
+    echo Current version of collator:
+    "$bin_dir/collator" -V
 }
 
 force_build_collator() {
