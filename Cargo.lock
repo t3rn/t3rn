@@ -7004,7 +7004,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes#b5ec41d5cf80fbe428b5c51bd491c2bc6b4821c4"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes#03476e36f46fcc65676468c4fc4ee651ff7b7a6d"
 dependencies = [
  "eth_trie",
  "ethereum-types",
