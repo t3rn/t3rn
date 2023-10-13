@@ -279,14 +279,14 @@ pub fn kusama_config() -> ChainSpec {
                 get_account_id_from_adrs(SUDO_T1RN),
             )
         },
-        // Bootnodes
+        // Bootnodes 
         vec![
             sc_service::config::MultiaddrWithPeerId::from_str(
-                "/dns/bootnode-1.t3rn.io/tcp/33333/p2p/12D3KooWDWGoYHhsVUtLehNEdwp8JNi4DLTJVB2L53HMHarBXw66",
+                "/dns/bootnode-1.t1rn.io/tcp/33333/p2p/12D3KooWKWjFmAzdj3vdxSwvfT62jQFCwMbWMY9yPVhGfRskgWGw",
             )
                 .expect("Failed to parse bootnode #1 address"),
             sc_service::config::MultiaddrWithPeerId::from_str(
-                "/dns/bootnode-2.t3rn.io/tcp/33333/p2p/12D3KooWLGtGEf92p8CbUmzwFYavEtDUaJNJCbBSp4muSqs2cVz1",
+                "/dns/bootnode-2.t1rn.io/tcp/33333/p2p/12D3KooWRQtXyE2cR3uXva8bPhd8cqHA5L8cZHXiH4kkMf8KtP9H",
             )
                 .expect("Failed to parse bootnode #2 address"),
         ],
