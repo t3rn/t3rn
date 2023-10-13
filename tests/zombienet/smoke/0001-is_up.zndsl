@@ -1,5 +1,5 @@
 Description: Smoke test - parachains are up and registered
-Network: ../zombienet-t1rn.toml
+Network: ../zombienet.toml
 Creds: config
 
 alice: is up

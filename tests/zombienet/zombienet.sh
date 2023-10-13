@@ -106,12 +106,10 @@ build_collator() {
         echo "::group::Building $NETWORK..."
         time cargo build --manifest-path "$root_dir/node/$NETWORK-parachain/Cargo.toml" --release --locked
         echo "::endgroup::"
-        
-        echo "Copying $NETWORK to bin dir"
-        cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/"
-    else
-        echo "✅ $NETWORK already built"
+        cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/${NETWORK}-collator"
     fi
+    echo "✅ $NETWORK built"
+    cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/collator"
 }
 
 force_build_collator() {
@@ -135,7 +133,7 @@ smoke() {
     # TODO[Optimisation]: loop through directory and test all
     # TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
     echo "::group::Zombienet tests..."
-    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_${NETWORK}.zndsl
+    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up.zndsl
     echo "::endgroup::"
 }
 
@@ -241,7 +239,7 @@ case "$1" in
     "spawn_xcm")
         spawn_xcm
     ;;
-    "force_build_collator")
+    "build")
         force_build_collator
     ;;
     *)
