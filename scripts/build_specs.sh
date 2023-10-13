@@ -11,8 +11,8 @@ SPECS_DIR=${ROOT_DIR}/specs
 
 mkdir -p $SPECS_DIR
 
-$COLLATOR_BIN build-spec --chain $SPECS_DIR/$RELAYCHAIN_NAME.raw.json > $SPECS_DIR/${PARACHAIN_NAME}.json
-$COLLATOR_BIN build-spec --chain $SPECS_DIR/$RELAYCHAIN_NAME.raw.json --raw > $SPECS_DIR/${PARACHAIN_NAME}.raw.json
+$COLLATOR_BIN build-spec --chain $RELAYCHAIN_NAME > $SPECS_DIR/${PARACHAIN_NAME}.json
+$COLLATOR_BIN build-spec --chain $RELAYCHAIN_NAME --raw > $SPECS_DIR/${PARACHAIN_NAME}.raw.json
 $COLLATOR_BIN export-genesis-wasm --chain $SPECS_DIR/${PARACHAIN_NAME}.raw.json > $SPECS_DIR/${PARACHAIN_NAME}.wasm
 
 rm -rf "${ROOT_DIR}"/target/release/specs

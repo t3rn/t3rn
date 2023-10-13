@@ -12,6 +12,8 @@ pdot_branch=release-v1.0.0
 polkadot_tmp_dir=/tmp/polkadot
 asset_hub_tmp_dir=/tmp/asset_hub
 
+NETWORK=${2:-t0rn}
+echo "🦄 Running zombienet for network ${NETWORK}"
 
 arch=$(uname -s 2>/dev/null || echo not)
 if [[ $arch == "Darwin" ]]; then
@@ -98,27 +100,26 @@ build_asset_hub() {
     fi
 }
 
-NODE_ARG=t3rn
 
 build_collator() {
-    if [ ! -f "$bin_dir/$NODE_ARG-collator" ]; then
-        echo "::group::Building $NODE_ARG..."
-        time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    if [ ! -f "$bin_dir/$NETWORK-collator" ]; then
+        echo "::group::Building $NETWORK..."
+        time cargo build --manifest-path "$root_dir/node/$NETWORK-parachain/Cargo.toml" --release --locked
         echo "::endgroup::"
         
-        echo "Copying $NODE_ARG to bin dir"
-        cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
+        echo "Copying $NETWORK to bin dir"
+        cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/"
     else
-        echo "✅ $NODE_ARG already built"
+        echo "✅ $NETWORK already built"
     fi
 }
 
 force_build_collator() {
-    echo "::group::Rebuilding $NODE_ARG..."
-    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release
+    echo "::group::Rebuilding $NETWORK..."
+    time cargo build --manifest-path "$root_dir/node/$NETWORK-parachain/Cargo.toml" --release
     echo "::endgroup::"
     
-    cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
+    cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/"
 }
 
 setup() {
@@ -126,7 +127,6 @@ setup() {
     fetch_zombienet
     build_polkadot
     
-    NODE_ARG=t0rn
     build_collator
 }
 
@@ -135,7 +135,7 @@ smoke() {
     # TODO[Optimisation]: loop through directory and test all
     # TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
     echo "::group::Zombienet tests..."
-    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_and_registered.feature
+    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_${NETWORK}.zndsl
     echo "::endgroup::"
 }
 
@@ -159,7 +159,7 @@ upgrade() {
     $working_dir/download.sh "$parachain"
     
     # Run collator and upgrade with built WASM binary
-    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
+    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
     
     echo "Upgrade tests succeed!"
 }
@@ -185,7 +185,7 @@ upgrade_local() {
     $working_dir/download_local.sh "$parachain"
     
     # Run collator and upgrade with built WASM binary
-    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.feature
+    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
     
     echo "Upgrade tests succeed!"
 }
@@ -197,22 +197,17 @@ confirm_sfx() {
     docker-compose down
 }
 
-spawn() {
-    build_polkadot
+spawn_xcm() {
+    setup
     build_asset_hub
-    build_collator
     echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet-xcm.toml
 }
 
-spawn_t1rn() {
-    make_bin_dir
-    fetch_zombienet
-    build_polkadot
-    NODE_ARG=t1rn
-    build_collator
+spawn() {
+    setup
     echo "Spawning zombienet for t1rn using provider: $provider..."
-    zombienet --provider="$provider" spawn ./zombienet-t1rn.toml
+    zombienet --provider="$provider" spawn ./zombienet-${NETWORK}.toml
 }
 
 case "$1" in
@@ -243,8 +238,8 @@ case "$1" in
         setup
         spawn
     ;;
-    "spawn_t1rn")
-        spawn_t1rn
+    "spawn_xcm")
+        spawn_xcm
     ;;
     "force_build_collator")
         force_build_collator
