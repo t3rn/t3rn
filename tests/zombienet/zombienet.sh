@@ -205,6 +205,16 @@ spawn() {
     zombienet --provider="$provider" spawn ./zombienet-xcm.toml
 }
 
+spawn_t1rn() {
+    make_bin_dir
+    fetch_zombienet
+    build_polkadot
+    NODE_ARG=t1rn
+    build_collator
+    echo "Spawning zombienet for t1rn using provider: $provider..."
+    zombienet --provider="$provider" spawn ./zombienet-t1rn.toml
+}
+
 case "$1" in
     "setup")
         setup
@@ -232,6 +242,9 @@ case "$1" in
     "spawn")
         setup
         spawn
+    ;;
+    "spawn_t1rn")
+        spawn_t1rn
     ;;
     "force_build_collator")
         force_build_collator

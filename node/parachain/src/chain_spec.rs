@@ -272,11 +272,13 @@ pub fn kusama_config() -> ChainSpec {
                 // Prefunded accounts
                 vec![
                     // Genesis Account: SUDO (t1VvZZNxTLsJ8BMfxHUwZxvqWoxnVfnCEgBBddrAS6kBqzppW = hex!("0x3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533").into()
-                    (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
+                    // (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
+                    (hex!("3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533").into(), SUPPLY),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                get_account_id_from_adrs(SUDO_T1RN),
+                // get_account_id_from_adrs(SUDO_T1RN),
+                hex!("3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533").into(),
             )
         },
         // Bootnodes 
