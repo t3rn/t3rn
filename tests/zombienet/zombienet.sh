@@ -198,9 +198,15 @@ confirm_sfx() {
 }
 
 spawn() {
+    make_bin_dir
+    fetch_zombienet
+
     build_polkadot
     build_asset_hub
+
+    NODE_ARG=t0rn
     build_collator
+
     echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet-xcm.toml
 }
