@@ -50,7 +50,7 @@ const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
-const SUDO_T1RN: &str = "t1VvZZNxTLsJ8BMfxHUwZxvqWoxnVfnCEgBBddrAS6kBqzppW"; // @t1rn; 32b = 0x3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533
+const SUDO_T1RN: &str = "t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ"; // @t1rn; 32b = 0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061
 pub(crate) const SS58_FORMAT: u16 = 9935;
 pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
 pub(crate) const SS58_FORMAT_T1RN: u16 = 4815;
@@ -271,17 +271,17 @@ pub fn kusama_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
-                    // Genesis Account: SUDO (t1VvZZNxTLsJ8BMfxHUwZxvqWoxnVfnCEgBBddrAS6kBqzppW = hex!("0x3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533").into()
+                    // Genesis Account: SUDO (t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ = hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into()
                     // (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
-                    (hex!("3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533").into(), SUPPLY),
+                    (hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(), SUPPLY),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                // get_account_id_from_adrs(SUDO_T1RN),
-                hex!("3e34455bd94e4e59375e3a8a2da43a34b052a3a0aea2cead912a83d7eba56533").into(),
+                // get_account_id_from_adrs(SUDO_T1RN),1
+                hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(),
             )
         },
-        // Bootnodes 
+        // Bootnodes ACCOUNT_STORAGE_ROOT_INDEX
         vec![
             sc_service::config::MultiaddrWithPeerId::from_str(
                 "/dns/bootnode-1.t1rn.io/tcp/33333/p2p/12D3KooWKWjFmAzdj3vdxSwvfT62jQFCwMbWMY9yPVhGfRskgWGw",
