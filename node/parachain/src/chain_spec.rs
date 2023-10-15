@@ -45,6 +45,8 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
 const PARACHAIN_ID: u32 = 3333;
+
+const PARACHAIN_ID_T1RN: u32 = 3334;
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
@@ -273,12 +275,12 @@ pub fn kusama_config() -> ChainSpec {
                 vec![
                     // Genesis Account: SUDO (t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ = hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into()
                     // (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
-                    (hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(), SUPPLY),
+                    (hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(), SUPPLY),
                 ],
-                PARACHAIN_ID.into(),
+                PARACHAIN_ID_T1RN.into(),
                 // Sudo
                 // get_account_id_from_adrs(SUDO_T1RN),1
-                hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(),
+                hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(),
             )
         },
         // Bootnodes ACCOUNT_STORAGE_ROOT_INDEX
