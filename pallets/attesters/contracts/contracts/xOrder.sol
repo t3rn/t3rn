@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -9,23 +9,60 @@ import "./escrowGMP.sol";
 
 enum ActionType { RemotePayment, EscrowCall }
 
-contract RemoteOrder {
+contract XOrder {
 
     using SafeERC20 for IERC20;
 
     EscrowGMP public escrowGMP;
-    t3rnVault public vault;
+    address payable private vault;
+    address public owner;
     address private attesters;
+    mapping(address => uint32) public supportedBridgeAssetsHereToThere;
 
     event RemoteOrderCreated(bytes32 indexed id, uint32 indexed nonce, address indexed sender, bytes input);
 
-    constructor(EscrowGMP _escrowGMPAddress, t3rnVault _vault) {
+    constructor(EscrowGMP _escrowGMPAddress, address payable _vault) {
         escrowGMP = _escrowGMPAddress;
         vault = _vault;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
     }
 
     function generateId(address requester, uint32 nonce) public pure returns (bytes32) {
         return keccak256(abi.encode(keccak256(abi.encode(requester, nonce)), bytes32(0)));
+    }
+
+    function addSupportedBridgeAsset(address assetHere, uint32 assetThere) public onlyOwner {
+        supportedBridgeAssetsHereToThere[assetHere] = assetThere;
+    }
+
+    /*
+     * Before making the order, the function checks that the user has enough balance (of either Ether or the ERC20 token).
+     * If everything is okay, it increases the nonce for the user, creates a unique id for the order, saves the order in the mapping,
+     * and emits the OrderCreated event.
+     */
+    function orderMemoryData(
+        bytes memory input
+    ) public payable {
+        uint32 nonce = uint32(block.number);
+        bytes32 id = generateId(msg.sender, nonce);
+
+        (bytes4 destination, uint32 asset, bytes32 targetAccount, uint256 amount, address rewardAsset, uint256 insurance, uint256 maxReward) = abi.decode(input, (bytes4, uint32, bytes32, uint256, address, uint256, uint256));
+        // Accept temporary ownership of assets
+        if (rewardAsset == address(0)) {
+            require(msg.value == maxReward, "Mismatched deposit amount");
+            bool sent = vault.send(msg.value);
+            require(sent, "Failed to send Ether to vault");
+        } else {
+            IERC20(rewardAsset).safeTransferFrom(msg.sender, address(vault), maxReward);
+        }
+        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward))), "Payload already stored");
+
+        emit RemoteOrderCreated(id, nonce, msg.sender, input);
     }
 
     /*
@@ -35,52 +72,23 @@ contract RemoteOrder {
      */
     function remoteOrder(
         bytes calldata input
-    ) public payable returns (bool) {
-
-        uint32 nonce = uint32(block.number);
-        bytes32 id = generateId(msg.sender, nonce);
-
-        (bytes4 destination, uint32 asset, bytes32 targetAccount, uint256 amount, address rewardAsset, uint256 insurance, uint256 maxReward) = abi.decode(input, (bytes4, uint32, bytes32, uint256, address, uint256, uint256));
-        // Accept temporary ownership of assets
-        if (rewardAsset == address(0)) {
-            require(msg.value == maxReward, "Mismatched deposit amount");
-            payable(address(vault)).transfer(maxReward);
-        } else {
-            IERC20(rewardAsset).safeTransferFrom(msg.sender, address(vault), maxReward);
-        }
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward))), "Payload already stored");
-
-        emit RemoteOrderCreated(id, nonce, msg.sender, input);
-
-        return true;
+    ) public payable {
+        orderMemoryData(input);
     }
 
-    /*
-     * Before making the order, the function checks that the user has enough balance (of either Ether or the ERC20 token).
-     * If everything is okay, it increases the nonce for the user, creates a unique id for the order, saves the order in the mapping,
-     * and emits the OrderCreated event.
-     */
-    function remoteBridge(
-        bytes calldata input
+    function remoteBridgeAsset(
+        address assetHere,
+        bytes32 targetAccount,
+        uint256 amount,
+        uint256 maxRewardSubtractedFromAmount
     ) public payable {
-        uint32 nonce = uint32(block.number);
-        bytes32 id = generateId(msg.sender, nonce);
 
-        (uint8 bridgeOrderType, bytes4 destination, bytes4 assetThere, address assetHere, bytes32 targetAccount, uint256 amount, uint256 maxRewardSubtractedFromAmount) = abi.decode(input, (uint8, bytes4, bytes4, address, bytes32, uint256, uint256));
+        uint32 assetThere = supportedBridgeAssetsHereToThere[assetHere];
+        require(assetThere != 0, "Unsupported bridge asset");
 
-        require(bridgeOrderType == 0x01, "Invalid bridge order type");
+        bytes memory input = abi.encode(bytes4(0x03030303), assetThere, targetAccount, amount, assetHere, uint256(0) , maxRewardSubtractedFromAmount);
 
-        // Accept temporary ownership of assets
-        if (assetHere == address(0)) {
-            require(msg.value == amount, "Mismatched deposit amount");
-            payable(address(vault)).transfer(amount);
-        } else {
-            IERC20(assetHere).safeTransferFrom(msg.sender, address(vault), amount);
-        }
-
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(assetHere, amount))), "Payload already stored");
-
-        emit RemoteOrderCreated(id, nonce, msg.sender, input);
+        orderMemoryData(input);
     }
 
     function claimPayoutOrRefund(
@@ -133,55 +141,14 @@ contract RemoteOrder {
     */
     function remoteOrderDecoded(
         bytes4 destination,
-        bytes4 asset,
+        uint32 asset,
         bytes32 targetAccount,
         uint256 amount,
         address rewardAsset,
         uint256 insurance,
         uint256 maxReward
-    ) public payable returns (bool) {
-
-        uint32 nonce = uint32(block.number);
-        bytes32 id = generateId(msg.sender, nonce);
-
-        // Accept temporary ownership of assets
-        if (rewardAsset == address(0)) {
-            require(msg.value == maxReward, "Mismatched deposit amount");
-            payable(address(vault)).transfer(maxReward);
-        } else {
-            IERC20(rewardAsset).safeTransferFrom(msg.sender, address(vault), maxReward);
-        }
-
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(rewardAsset, maxReward))), "Payload already stored");
-
-        emit RemoteOrderCreated(id, nonce, msg.sender, abi.encode(destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward));
-
-        return true;
-    }
-
-    function remoteBridgeOrderDecoded(
-        bytes4 destination,
-        bytes4 assetThere,
-        address assetHere,
-        bytes32 targetAccount,
-        uint256 amount,
-        uint256 maxRewardSubtractedFromAmount
     ) public payable {
-
-        uint32 nonce = uint32(block.number);
-
-        bytes32 id = generateId(msg.sender, nonce);
-
-        // Accept temporary ownership of assets
-        if (assetHere == address(0)) {
-            require(msg.value == amount, "Mismatched deposit amount");
-            payable(address(vault)).transfer(amount);
-        } else {
-            IERC20(assetHere).safeTransferFrom(msg.sender, address(vault), amount);
-        }
-
-        require(escrowGMP.storeRemoteOrderPayload(id, keccak256(abi.encode(assetHere, amount))), "Payload already stored");
-
-        emit RemoteOrderCreated(id, nonce, msg.sender, abi.encode(destination, assetThere, targetAccount, amount, assetHere, uint256(0), maxRewardSubtractedFromAmount));
+        bytes memory input = abi.encodePacked(destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward);
+        orderMemoryData(input);
     }
 }

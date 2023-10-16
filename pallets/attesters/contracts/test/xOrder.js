@@ -17,8 +17,8 @@ function generateId(addr, nonce) {
 }
 
 
-describe("RemoteOrder::ID", function() {
-    let RemoteOrder;
+describe("XOrder::ID", function() {
+    let XOrder;
     let contract;
     let owner;
     let addr1;
@@ -35,9 +35,9 @@ describe("RemoteOrder::ID", function() {
     });
 
     beforeEach(async function() {
-        RemoteOrder = await ethers.getContractFactory("RemoteOrder");
+        XOrder = await ethers.getContractFactory("XOrder");
         [owner, addr1, addr2, _] = await ethers.getSigners();
-        contract = await RemoteOrder.deploy(escrowGMPContract.address, t3rnVaultContract.address);
+        contract = await XOrder.deploy(escrowGMPContract.address, t3rnVaultContract.address);
         await contract.deployed();
     });
 
@@ -58,7 +58,7 @@ describe("RemoteOrder::ID", function() {
     });
 
 
-    describe("RemoteOrder::Rewards", function() {
+    describe("XOrder::Rewards", function() {
         let contract, USDCContract, owner, addr1, initialAddr1Balance, initialAddr1USDCBalance;
         before(async function() {
             await require("hardhat").network.provider.request({
@@ -69,8 +69,8 @@ describe("RemoteOrder::ID", function() {
             [owner, addr1] = await ethers.getSigners();
 
             // deploy contract
-            const RemoteOrder = await ethers.getContractFactory("RemoteOrder");
-            contract = await RemoteOrder.deploy(escrowGMPContract.address, t3rnVaultContract.address);
+            const XOrder = await ethers.getContractFactory("XOrder");
+            contract = await XOrder.deploy(escrowGMPContract.address, t3rnVaultContract.address);
             await contract.deployed();
 
             // deploy USDC mock contract
