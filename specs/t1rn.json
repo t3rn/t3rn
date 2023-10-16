@@ -29,12 +29,12 @@
       },
       "parachainSystem": {},
       "parachainInfo": {
-        "parachainId": 3333
+        "parachainId": 3334
       },
       "balances": {
         "balances": [
           [
-            "5DUGMUBACg87sPm3PvCKp4g1FSpGfX7ThJiBpibs3YrfLZLD",
+            "5ED1M2ahWVAxfgPTXULHScLjyanQSFMQVRLkFbEQewJZNdNM",
             100000000000000000000
           ]
         ]
@@ -4447,7 +4447,7 @@
         "startInMaintenanceMode": false
       },
       "sudo": {
-        "key": "5DUGMUBACg87sPm3PvCKp4g1FSpGfX7ThJiBpibs3YrfLZLD"
+        "key": "5ED1M2ahWVAxfgPTXULHScLjyanQSFMQVRLkFbEQewJZNdNM"
       }
     }
   }
