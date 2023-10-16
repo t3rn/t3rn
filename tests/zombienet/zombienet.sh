@@ -136,7 +136,11 @@ smoke() {
     # TODO[Optimisation]: loop through directory and test all
     # TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
     echo "::group::Zombienet tests..."
-    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up.zndsl
+    if [ "$NETWORK" = "t0rn" ]; then
+        time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up.zndsl
+    else
+        time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_t1rn.zndsl
+    fi
     echo "::endgroup::"
 }
 

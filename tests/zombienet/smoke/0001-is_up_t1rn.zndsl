@@ -1,0 +1,10 @@
+Description: Smoke test - parachains are up and registered
+Network: ../zombienet-t1rn.toml
+Creds: config
+
+alice: is up
+bob: is up
+
+alice: parachain 3334 is registered within 225 seconds
+
+collator: reports block height is at least 5 within 250 seconds
