@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.62.0-rc.0] - 2023-10-16
+### :sparkles: New Features
+- [`554c231`](https://github.com/t3rn/t3rn/commit/554c2319d83e67e9280bdc02b708a3f4b83bd5a9) - t1rn release *(PR [#1352](https://github.com/t3rn/t3rn/pull/1352) by [@3h4x](https://github.com/3h4x))*
+
+### :recycle: Refactors
+- [`e6ce951`](https://github.com/t3rn/t3rn/commit/e6ce951107a711e82bb444394ae6dea4b78666f3) - add XOrders on top of RemoteOrders contracts  *(PR [#1353](https://github.com/t3rn/t3rn/pull/1353) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.61.0-rc.0] - 2023-10-13
 ### :sparkles: New Features
 - [`5f98223`](https://github.com/t3rn/t3rn/commit/5f982232b37063b991b21d88adb8a6a3f3c56424) - add polkadot and kusama to executor *(PR [#1300](https://github.com/t3rn/t3rn/pull/1300) by [@3h4x](https://github.com/3h4x))*
@@ -1728,3 +1736,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.59.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.58.2-rc.0...v1.59.0-rc.0
 [v1.60.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.59.0-rc.0...v1.60.0-rc.0
 [v1.61.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.60.0-rc.0...v1.61.0-rc.0
+[v1.62.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.61.0-rc.0...v1.62.0-rc.0
