@@ -1,4 +1,4 @@
 import * as Substrate from "./substrate"
-import { generateXcmTransferParameters } from "./xcm"
+import { XcmTransferParameters } from "./xcm"
 
-export { Substrate, generateXcmTransferParameters }
+export { Substrate, XcmTransferParameters }

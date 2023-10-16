@@ -11,7 +11,7 @@ interface ICreateXcmParameters {
    createDestination: (api: ApiPromise, destChainId: string, parentValue: string) => VersionedMultiLocation
    createBeneficiary: (api: ApiPromise, beneficiaryAddress: string) => VersionedMultiLocation
    createAssets: (api: ApiPromise, assetType: ASSET, parentValue: string, amount: string) => VersionedMultiAssets
-   createFeeAssetItem: (api: ApiPromise, feeAssetItem: string) => u32
+   createFeeAssetItem: (api: ApiPromise, feeAssetItem: number) => u32
    //createWeightLimit: (api: ApiPromise, isLimited: bool, weight: U32) => u32
 }
 
@@ -77,7 +77,7 @@ export const XcmTransferParameters: ICreateXcmParameters = {
          },]
       })
    },
-   createFeeAssetItem: (api: ApiPromise, feeAssetItem: string): u32 => {
-      return api.registry.createType("u32", feeAssetItem.toNumber)
+   createFeeAssetItem: (api: ApiPromise, feeAssetItem: number): u32 => {
+      return api.registry.createType("u32", feeAssetItem)
    }
 }

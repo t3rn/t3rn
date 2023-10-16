@@ -3,8 +3,8 @@ import {Args} from "@/types.js"
 import {validate} from "@/utils/fns.js"
 import {XcmTransferSchema} from "@/schemas/xcm.ts"
 import {colorLogMsg} from "@/utils/log.js"
-import {ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
-import {createAssets, createBeneficiary, createDestination, createFeeAssetItem, XcmTransferParameters} from "@/utils/xcm.ts"//"@t3rn/sdk/utils"
+import {ApiPromise, WsProvider, Keyring} from "@t3rn/sdk"
+import {XcmTransferParameters} from "@t3rn/sdk/utils"
 
 export const spinner = ora()
 
@@ -42,7 +42,7 @@ export const handleXcmTransferCommand = async (
             provider: new WsProvider(args.endpoint),
         })
         const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(targetApi, args.recipient)
-        const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, "0")
+        const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
 
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
