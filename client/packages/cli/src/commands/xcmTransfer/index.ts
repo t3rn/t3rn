@@ -43,6 +43,11 @@ export const handleXcmTransferCommand = async (
         })
         const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(targetApi, args.recipient)
         const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
+        console.log("Asset\n")
+        const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
+        console.log("Destination\n")
+        const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
+
 
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
@@ -54,8 +59,6 @@ export const handleXcmTransferCommand = async (
             process.exit(0)
         }
         if (args.type == "relay") {
-            const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, "0")
-            const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, "0", args.targetAmount)
             await targetApi.tx.xcmPallet
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
                 .signAndSend(signer, ({ status, events }) => {
@@ -82,9 +85,7 @@ export const handleXcmTransferCommand = async (
                     }
                 })
         }
-        else if (args.type == "para") {
-            const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, "1")
-            const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, "1", args.targetAmount)
+        else {
             await targetApi.tx.polkadotXcm
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
                 .signAndSend(signer, ({ status, events }) => {
