@@ -13,10 +13,10 @@ name  = "bob"
 [[parachains]]
 chain         = "local"
 cumulus_based = true
-id            = 3333
+id            = 3334
 
 [parachains.collator]
-command  = "collator"
+command  = "t1rn-collator"
 name     = "collator"
 ws_port  = 9944
 
