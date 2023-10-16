@@ -1,4 +1,4 @@
-name: t0rn Rococo Release
+name: Release
 
 on:
   push:
@@ -9,13 +9,8 @@ on:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
       - "**/runtime-upgrade-t0rn.yml"
+      - "collator.*.Dockerfile"
       - "specs/*.raw.json"
-
-env:
-  PARACHAIN_NAME: t0rn
-  RUST_BACKTRACE: full
-  CARGO_TERM_COLOR: always
-  CARGO_INCREMENTAL: 0
 
 jobs:
   release:
