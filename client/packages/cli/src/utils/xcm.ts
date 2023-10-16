@@ -4,8 +4,8 @@ import type {
 	VersionedMultiAssets,
 	VersionedMultiLocation,
 } from '@polkadot/types/interfaces'
+import {U32} from '@polkadot/types'
 type ASSET  = "ROC" | "USDT"
-type DESTINATION_TYPE = "system" | "relay" | "para";
 
 export const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
    let destinationInterior: InteriorMultiLocation
@@ -70,4 +70,8 @@ export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: str
             }
          },]
       })
+}
+
+export const createFeeAssetItem = (api: ApiPromise, feeAssetItem: string): U32 => {
+   return api.registry.createType("u32", feeAssetItem.toNumber)
 }

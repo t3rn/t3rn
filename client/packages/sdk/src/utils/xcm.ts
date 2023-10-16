@@ -30,21 +30,30 @@ export const generateXcmTransferParameters = (api: ApiPromise, destChainId: stri
    return xcmMessage;
 };
 
-const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
+export const createDestination = (api: ApiPromise, destChainId: string, parentValue: string): VersionedMultiLocation => {
+   let destinationInterior: InteriorMultiLocation
+   if (destChainId != "1") {
+      destinationInterior = api.registry.createType('InteriorMultiLocation', {
+         X1: {
+            parachain: destChainId,
+         },
+      })
+   }
+   else {
+      destinationInterior = api.registry.createType('InteriorMultiLocation', {
+         Here: '',
+      })
+   }
    return api.registry.createType('XcmVersionedMultiLocation', {
       V3: {
          parents: parentValue,
-         interior: {
-            X1: {
-               parachain: destChainId,
-            },
-         },
+         interior: destinationInterior,
       },
-   });;
-};
+   })
+}
 
-const createBeneficiary = (api: ApiPromise, beneficiaryAddress: string): VersionedMultiLocation => {
-   const X1 = {AccountId32: {id: beneficiaryAddress}};
+export const createBeneficiary = (api: ApiPromise, beneficiaryAddress: string): VersionedMultiLocation => {
+   const X1 = {AccountId32: {id: beneficiaryAddress}}
    return api.registry.createType('XcmVersionedMultiLocation', {
       V3: {
          parents: 0,
@@ -52,39 +61,40 @@ const createBeneficiary = (api: ApiPromise, beneficiaryAddress: string): Version
             X1,
          },
       },
-   });
-};
+   })
+}
 
-const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: string, amount: string): VersionedMultiAssets => {
-   let assetInterior: InteriorMultiLocation;
+export const createAssets = (api: ApiPromise, assetType: ASSET, parentValue: string, amount: string): VersionedMultiAssets => {
+   let assetInterior: InteriorMultiLocation
    switch (assetType) {
       case "USDT":
-         let X3 = {
-            ParachainId: 1000,
+         assetInterior = api.registry.createType('InteriorMultiLocation', {
+            parachain: 1000,
             PalletInstance: 50,
             GeneralIndex: 140,
-         };
-         assetInterior = api.registry.createType('InteriorMultiLocation', {
-            X3
-         });
-         break;
-      default: 
+         })
+         break
+      default:
          assetInterior = api.registry.createType('InteriorMultiLocation', {
             Here: '',
-         });
+         })
    }
-   
+
    return api.registry.createType('XcmVersionedMultiAssets', {
-         V3: [{
-            fun: {
-               Fungible: amount,
-            },
-            id: {
-               Concrete: {
-                  interior: assetInterior,
-                  parent: parentValue,
-               }
+      V3: [{
+         fun: {
+            Fungible: amount,
+         },
+         id: {
+            Concrete: {
+               interior: assetInterior,
+               parents: parentValue,
             }
-         },]
-      });
+         }
+      },]
+   })
+}
+
+export const createFeeAssetItem = (api: ApiPromise, feeAssetItem: string): U32 => {
+   return api.registry.createType("u32", feeAssetItem.toNumber)
 }

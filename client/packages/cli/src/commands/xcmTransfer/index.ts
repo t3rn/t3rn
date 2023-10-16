@@ -4,7 +4,7 @@ import {validate} from "@/utils/fns.js"
 import {XcmTransferSchema} from "@/schemas/xcm.ts"
 import {colorLogMsg} from "@/utils/log.js"
 import {ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
-import {createAssets, createBeneficiary, createDestination} from "@/utils/xcm.ts"//"@t3rn/sdk/utils"
+import {createAssets, createBeneficiary, createDestination, createFeeAssetItem} from "@/utils/xcm.ts"//"@t3rn/sdk/utils"
 
 export const spinner = ora()
 
@@ -42,7 +42,7 @@ export const handleXcmTransferCommand = async (
             provider: new WsProvider(args.endpoint),
         })
         const xcmBeneficiaryParam = createBeneficiary(targetApi, args.recipient)
-        const xcmAssetFeeItem = targetApi.registry.createType("u32", 0)
+        const xcmAssetFeeItem = createFeeAssetItem(targetApi, "0")
         console.log("Sending XCM Transfer... \n")
 
         const keyring = new Keyring({ type: "sr25519" })
