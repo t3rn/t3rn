@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.63.1-rc.0] - 2023-10-16
+### :bug: Bug Fixes
+- [`5bc68dd`](https://github.com/t3rn/t3rn/commit/5bc68ddd12707e1b4d1b987c47b9340426c7ece3) - include binary for docker context *(PR [#1364](https://github.com/t3rn/t3rn/pull/1364) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.63.0-rc.0] - 2023-10-16
 ### :sparkles: New Features
 - [`449bf83`](https://github.com/t3rn/t3rn/commit/449bf838952e379cb963dbf2c911510cd8e3b2cc) - t1rn release docker *(PR [#1355](https://github.com/t3rn/t3rn/pull/1355) by [@3h4x](https://github.com/3h4x))*
@@ -1743,3 +1748,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.61.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.60.0-rc.0...v1.61.0-rc.0
 [v1.62.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.61.0-rc.0...v1.62.0-rc.0
 [v1.63.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.62.0-rc.0...v1.63.0-rc.0
+[v1.63.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.63.0-rc.0...v1.63.1-rc.0
