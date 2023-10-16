@@ -11,6 +11,7 @@ on:
       - "**/runtime-upgrade-t0rn.yml"
       - "collator.*.Dockerfile"
       - "specs/*.raw.json"
+      - ".dockerignore"
 
 env:
   PARACHAIN_NAME: t0rn
