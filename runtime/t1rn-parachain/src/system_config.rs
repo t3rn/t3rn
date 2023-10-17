@@ -14,7 +14,7 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = frame_support::traits::Everything;
-    /// Block type as expected by this runtime.
+    /// The header type.
     type Block = Block;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
@@ -31,6 +31,7 @@ impl frame_system::Config for Runtime {
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = AccountIdLookup<AccountId, ()>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    /// The index type for storing how many extrinsics an account has signed.
     type Nonce = u32;
     /// What to do if an account is fully reaped from the system.
     type OnKilledAccount = ();

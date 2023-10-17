@@ -1,15 +1,15 @@
 use crate::*;
 
 use frame_support::{
-    traits::{ConstBool, PrivilegeCmp},
+    traits::{ConstBool, NeverEnsureOrigin, PrivilegeCmp},
     PalletId,
 };
 
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
-use sp_runtime::impl_opaque_keys;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::{cmp::Ordering, prelude::*};
 
 // TODO: remove when we import t3rn_primitives
@@ -212,6 +212,33 @@ impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
             _ => None,
         }
     }
+}
+
+parameter_types! {
+    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
+    pub const MaxApprovals: u32 = 100;
+    pub const ProposalBond: Permill = Permill::from_percent(3);
+    pub const SpendPeriod: u32 = (60 * 60 * 24) / 12;
+    pub const ProposalBondMinimum: u128 = 10_u128 * (TRN as u128);
+}
+
+impl pallet_treasury::Config for Runtime {
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type Burn = ();
+    type BurnDestination = ();
+    type Currency = Balances;
+    type MaxApprovals = MaxApprovals;
+    type OnSlash = Treasury;
+    type PalletId = TreasuryId;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMaximum = ();
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
+    type SpendFunds = ();
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendPeriod = SpendPeriod;
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 struct CheckInherents;
