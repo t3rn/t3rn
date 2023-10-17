@@ -3,8 +3,8 @@ import {Args} from "@/types.js"
 import {validate} from "@/utils/fns.js"
 import {XcmTransferSchema} from "@/schemas/xcm.ts"
 import {colorLogMsg} from "@/utils/log.js"
-import {ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
-import {createAssets, createBeneficiary, createDestination} from "@/utils/xcm.ts"//"@t3rn/sdk/utils"
+import {ApiPromise, WsProvider, Keyring} from "@t3rn/sdk"
+import {XcmTransferParameters} from "@t3rn/sdk/utils"
 
 export const spinner = ora()
 
@@ -34,16 +34,20 @@ export const handleXcmTransferCommand = async (
         process.exit()
     }
 
-    spinner.text = "Submitting XCM Transaction... "
+    spinner.text = "Submitting XCM Transaction... \n"
     spinner.start()
 
     try {
         const targetApi = await ApiPromise.create({
             provider: new WsProvider(args.endpoint),
         })
-        const xcmBeneficiaryParam = createBeneficiary(targetApi, args.recipient)
-        const xcmAssetFeeItem = targetApi.registry.createType("u32", 0)
-        console.log("Sending XCM Transfer... \n")
+        const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(targetApi, args.recipient)
+        const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
+        console.log("Asset\n")
+        const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
+        console.log("Destination\n")
+        const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
+
 
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
@@ -55,8 +59,6 @@ export const handleXcmTransferCommand = async (
             process.exit(0)
         }
         if (args.type == "relay") {
-            const xcmDestParam = createDestination(targetApi, args.dest, "0")
-            const xcmAssetsParam = createAssets(targetApi, args.targetAsset, "0", args.targetAmount)
             await targetApi.tx.xcmPallet
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
                 .signAndSend(signer, ({ status, events }) => {
@@ -83,9 +85,7 @@ export const handleXcmTransferCommand = async (
                     }
                 })
         }
-        else if (args.type == "para") {
-            const xcmDestParam = createDestination(targetApi, args.dest, "1")
-            const xcmAssetsParam = createAssets(targetApi, args.targetAsset, "1", args.targetAmount)
+        else {
             await targetApi.tx.polkadotXcm
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
                 .signAndSend(signer, ({ status, events }) => {
