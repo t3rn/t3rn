@@ -1,9 +1,9 @@
 #!/bin/bash
 bin_dir=../../bin
 
-echo "Downloading wasm for $2 tag $1"
+echo "Downloading wasm for $1 tag $2"
 
-export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/${1} | jq -r '.assets[] | select(.name | endswith ("compact.compressed.wasm")).browser_download_url' | grep ${2}-parachain-runtime)
+export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/${2} | jq -r '.assets[] | select(.name | endswith ("compact.compressed.wasm")).browser_download_url' | grep ${1}-parachain-runtime)
 echo Url: $url
 
 [ "$url" ] || exit 1
