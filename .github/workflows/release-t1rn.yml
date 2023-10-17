@@ -1,0 +1,152 @@
+name: t1rn Release
+
+on:
+  push:
+    tags:
+      # This is a GLOB not a regex. Don't add escape sequences to me
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+env:
+  PARACHAIN_NAME: t1rn
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+  RUSTC_WRAPPER: sccache
+  RUST_BACKTRACE: full
+
+jobs:
+  build-release:
+    runs-on: [self-hosted, rust]
+    name: t1rn Kusama Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          gpg_private_key: ${{ secrets.T3RN_CI_GPG_PRIVATE_KEY }}
+
+      - name: Get release
+        id: release
+        uses: bruceadams/get-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Set variables 
+        run: |
+          echo "${{ steps.release.outputs.upload_url }}"
+          echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+          echo "CIRCUIT_BINARY=./target/release/${{ env.PARACHAIN_NAME }}-collator" >> $GITHUB_ENV
+          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-${GITHUB_REF/refs\/tags\//}-x86_64-unknown-linux-gnu" >> $GITHUB_ENV
+          echo "WASM_BINARY=./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm" >> $GITHUB_ENV
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
+
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
+
+      - name: 🏭 Build circuit
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+          args: --manifest-path ./node/${{ env.PARACHAIN_NAME }}-parachain/Cargo.toml --locked --release
+
+      - name: 🫧 Build runtime WASM
+        run: |
+          ./scripts/build_wasm.sh ${{ env.PARACHAIN_NAME }}
+
+      - name: 🐋 Login to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🐳 Build and publish the Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/t3rn/${{ env.PARACHAIN_NAME }}-collator:${{ env.PUSHED_TAG }}
+          platforms: linux/amd64
+          file: collator.${{ env.PARACHAIN_NAME }}.Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: 🎱 Gzip circuit collator
+        run: |
+          gzip -c ${{ env.CIRCUIT_BINARY }} > ${{ env.CIRCUIT_BINARY }}.gz
+
+      - name: 🖐🏾 Fingerprint the gball
+        run: |
+          sha256sum -b ${{ env.CIRCUIT_BINARY }}.gz \
+          | grep -oE '^[a-f0-9]+' \
+          | tr -d '\n' \
+          > ${{ env.CIRCUIT_BINARY }}.gz.sha256sum
+
+      - name: 🖐🏾 Fingerprint the runtime WASM
+        run: |
+          sha256sum -b ${{ env.WASM_BINARY }} \
+          | grep -oE '^[a-f0-9]+' \
+          | tr -d '\n' \
+          > ${{ env.WASM_BINARY }}.sha256sum
+
+      - name: 📦 Upload the circuit collator gball as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.CIRCUIT_BINARY }}.gz
+          asset_name: ${{ env.CIRCUIT_RELEASE_ASSET }}.gz
+          asset_content_type: application/gzip
+
+      - name: 🍔 Provide the circuit collator sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.CIRCUIT_BINARY }}.gz.sha256sum
+          asset_name: ${{ env.CIRCUIT_RELEASE_ASSET }}.gz.sha256sum
+          asset_content_type: text/plain
+
+      - name: 📦 Upload the runtime WASM as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.WASM_BINARY }}
+          asset_name: ${{ env.WASM_RELEASE_ASSET }}
+          asset_content_type: text/plain
+
+      - name: 🍔 Provide the runtime WASM sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.WASM_BINARY }}.sha256sum
+          asset_name: ${{ env.WASM_RELEASE_ASSET }}.sha256sum
+          asset_content_type: text/plain
+
+      - name: 🍔 Provide the runtime WASM json info as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.WASM_BINARY }}.info.json
+          asset_name: ${{ env.WASM_RELEASE_ASSET }}.info.json
+          asset_content_type: text/plain

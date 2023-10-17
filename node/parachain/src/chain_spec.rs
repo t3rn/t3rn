@@ -45,13 +45,17 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
 const PARACHAIN_ID: u32 = 3333;
+
+const PARACHAIN_ID_T1RN: u32 = 3334;
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
+const SUDO_T1RN: &str = "t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ"; // @t1rn; 32b = 0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061
 pub(crate) const SS58_FORMAT: u16 = 9935;
 pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
+pub(crate) const SS58_FORMAT_T1RN: u16 = 4815;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
@@ -232,6 +236,82 @@ pub fn local_testnet_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,              // You MUST set this correctly!
+            bad_blocks: None,
+        },
+    )
+}
+
+pub fn kusama_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "TIN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t1rn",
+        // Id
+        "t1rn",
+        ChainType::Live,
+        move || {
+            polkadot_genesis_full(
+                vec![
+                    (
+                        // Collator 1: 5Cyauvc374WEMNDuWVpjb1rBKhqGsCZnbXCS9nAizD97eSLT
+                        hex!("2854a19e6cb5c712db0e4dddc02b144805ed09523144f88d94c45ae933e56106")
+                            .into(),
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .unchecked_into(),
+                    ),
+                    (
+                        // Collator 2: 5FHUyvsgf7PQ8mprJejXDc3dADfpTXphbtC5Djv9Vr1JLC2x
+                        hex!("8e738cd5ba60cd9f5ac551c4e68c9f1367d20a9ad22dbc85f19095e59ca43731")
+                            .into(),
+                        hex!("8e738cd5ba60cd9f5ac551c4e68c9f1367d20a9ad22dbc85f19095e59ca43731")
+                            .unchecked_into(),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    // Genesis Account: SUDO (t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ = hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into()
+                    // (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
+                    (hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(), SUPPLY),
+                ],
+                PARACHAIN_ID_T1RN.into(),
+                // Sudo
+                // get_account_id_from_adrs(SUDO_T1RN),1
+                hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(),
+            )
+        },
+        // Bootnodes ACCOUNT_STORAGE_ROOT_INDEX
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-1.t1rn.io/tcp/33333/p2p/12D3KooWKWjFmAzdj3vdxSwvfT62jQFCwMbWMY9yPVhGfRskgWGw",
+            )
+                .expect("Failed to parse bootnode #1 address"),
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-2.t1rn.io/tcp/33333/p2p/12D3KooWRQtXyE2cR3uXva8bPhd8cqHA5L8cZHXiH4kkMf8KtP9H",
+            )
+                .expect("Failed to parse bootnode #2 address"),
+        ],
+        // Telemetry
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/telemetry.kusama.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+                1,
+            )])
+                .expect("telemetry"),
+        ),
+        // Protocol ID
+        Some("t1rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "kusama".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
             bad_blocks: None,
         },
     )

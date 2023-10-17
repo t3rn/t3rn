@@ -16,7 +16,7 @@ cumulus_based = true
 id            = 3333
 
 [parachains.collator]
-command  = "t0rn-collator"
+command  = "collator"
 name     = "collator"
 ws_port  = 9944
 
