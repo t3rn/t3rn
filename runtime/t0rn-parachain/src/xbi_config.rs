@@ -8,7 +8,7 @@ use cumulus_primitives_core::ParaId;
 use cumulus_primitives_core::GetChannelInfo;
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    traits::{ConstU32, ContainsPair, Everything, Get, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -16,6 +16,7 @@ use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
 use xcm::latest::prelude::*;
+use sp_std::marker::PhantomData;
 
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
@@ -24,7 +25,7 @@ use xcm_builder::{
     FixedWeightBounds, FungiblesAdapter, IsConcrete, NativeAsset, NoChecking, ParentAsSuperuser,
     ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    TrailingSetTopicAsId, UsingComponents, WithComputedOrigin
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
@@ -101,7 +102,11 @@ parameter_types! {
 
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(3333).into();
-    pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+    pub UniversalLocation: InteriorMultiLocation = (
+		GlobalConsensus(NetworkId::Rococo),
+		Parachain(ParachainInfo::parachain_id().into()),
+	).into();
+    pub AssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
     pub AssetsPalletLocation: MultiLocation =
         PalletInstance(12u8).into();
@@ -131,7 +136,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 >;
 
 pub type TrustBackedAssetsConvertedConcreteId =
-    assets_common::TrustBackedAssetsConvertedConcreteId<AssetsPalletLocation, Balance>;
+assets_common::TrustBackedAssetsConvertedConcreteId<AssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
@@ -167,15 +172,26 @@ match_types! {
 }
 
 // FIXME: should be using asset_registry
-pub type Barrier = (
+pub type Barrier = TrailingSetTopicAsId<(
     TakeWeightCredit,
+    // Expected responses are OK.
     AllowKnownQueryResponses<PolkadotXcm>,
-    AllowTopLevelPaidExecutionFrom<Everything>,
-    AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-    AllowSubscriptionsFrom<ParentOrSiblings>,
-    // ^^^ Parent and its exec plurality get free execution
-    // AssetRegistry,
-);
+    // Allow XCMs with some computed origins to pass through.
+    WithComputedOrigin<
+        (
+            // If the message is one that immediately attemps to pay for execution, then
+            // allow it.
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            // Parent, its pluralities (i.e. governance bodies), and the Fellows plurality
+            // get free execution.
+            AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+            // Subscriptions for version tracking are OK.
+            AllowSubscriptionsFrom<ParentOrSiblings>,
+        ),
+        UniversalLocation,
+        ConstU32<8>,
+    >,
+)>;
 
 parameter_types! {
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
@@ -273,6 +289,16 @@ match_types! {
         MultiLocation { parents: 1, interior: X1(_) }
     };
 }
+pub struct ReserveAssetsFrom<T>(PhantomData<T>);
+impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for ReserveAssetsFrom<T> {
+    fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+        let prefix = T::get();
+        log::trace!(target: "xcm::AssetsFrom", "prefix: {:?}, origin: {:?}, asset: {:?}", prefix, origin, asset);
+        &prefix == origin
+    }
+}
+
+pub type Reserves = (NativeAsset, ReserveAssetsFrom<AssetHubLocation>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -285,7 +311,7 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = Barrier;
     type CallDispatcher = RuntimeCall;
     type FeeManager = ();
-    type IsReserve = NativeAsset;
+    type IsReserve = Reserves;
     type IsTeleporter = (
         NativeAsset,
         // IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
