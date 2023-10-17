@@ -151,7 +151,12 @@ jobs:
       - name: 📼 Run zombienet smoke tests
         continue-on-error: false
         working-directory: tests/zombienet
-        run: ./zombienet.sh smoke
+        run: ./zombienet.sh smoke t0rn
+
+      - name: 📼 Run zombienet smoke tests
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh smoke t1rn
 
       - name: Print sccache stats
         working-directory: tests/zombienet

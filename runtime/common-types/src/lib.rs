@@ -120,6 +120,7 @@ parameter_types! {
         .build_or_panic();
     // Allows for t3 prefix in addresses
     pub const SS58Prefix: u16 = 9935;
+    pub const SS58PrefixT1rn: u16 = 4815;
 
     // TO DO: Abstract these values in the future (e.g. using assset registry)
     // AssetHub Parachain ID - 1000

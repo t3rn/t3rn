@@ -15,11 +15,11 @@ async function main() {
 
     console.log('Contract EscrowGMP deployed to address:', contractEscrowGMP.address);
 
-    const ContractXOrder = await ethers.getContractFactory('RemoteOrder');
+    const ContractXOrder = await ethers.getContractFactory('XOrder');
     const contractxOrder = await ContractXOrder.deploy(contractEscrowGMP.address, contractt3rnVault.address)
     await contractxOrder.deployed();
 
-    console.log('Contract RemoteOrder deployed to address:', contractxOrder.address);
+    console.log('Contract XOrder deployed to address:', contractxOrder.address);
 
     const ContractLocalExchange = await ethers.getContractFactory('LocalExchange');
     const contractLocalExchange = await ContractLocalExchange.deploy()

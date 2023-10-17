@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -16,8 +16,12 @@ struct LocalOrderEntry {
 }
 
 
-contract LocalExchange is Ownable {
+contract LocalExchange {
     using SafeERC20 for IERC20;
+
+    // constructor(address initialOwner) {
+    //     owner = initialOwner;
+    // }
 
     mapping(address => uint32) public requestNonce;
     mapping(bytes32 => bool) public localOrders;
@@ -153,15 +157,15 @@ contract LocalExchange is Ownable {
         if (rewardToken == address(0)) {
             payable(user).transfer(reward);
         } else { // If the reward token is an ERC-20 token -- the amount was not transferred to the contract, only allowance was given. So no need to transfer back. Just reset allowance.
-            IERC20(rewardToken).safeApprove(address(this), 0);
+            IERC20(rewardToken).approve(address(this), 0);
         }
     }
 
     // Allow contract to receive Ether
     receive() external payable {}
 
-    // Allow the owner to withdraw Ether
-    function withdrawEther(address payable to, uint256 amount) external onlyOwner {
-        to.transfer(amount);
-    }
+    // // Allow the owner to withdraw Ether
+    // function withdrawEther(address payable to, uint256 amount) external onlyOwner {
+    //    to.transfer(amount);
+    // } 
 }

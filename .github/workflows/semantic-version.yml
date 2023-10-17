@@ -8,7 +8,9 @@ on:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
       - "**/runtime-upgrade-t0rn.yml"
+      - "collator.*.Dockerfile"
       - "specs/*.raw.json"
+      - ".dockerignore"
 
 permissions:
   pull-requests: write
