@@ -1,0 +1,28 @@
+{
+  "name": "submitter",
+  "version": "1.0.0",
+  "description": "submit batch of orders to t3rn's Vacuum",
+  "main": "vacuumBatchSubmit.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/t3rn/t3rn.git"
+  },
+  "keywords": [
+    "submit",
+    "orders",
+    "sfx",
+    "cross-chain"
+  ],
+  "author": "t3rn team",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/t3rn/t3rn/issues"
+  },
+  "homepage": "https://github.com/t3rn/t3rn#readme",
+  "dependencies": {
+    "@polkadot/api": "^10.9.1"
+  }
+}

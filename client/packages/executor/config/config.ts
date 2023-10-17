@@ -1,34 +1,5 @@
-import { BiddingStrategy } from "src/bidding";
-import { SfxStrategy, XtxStrategy } from "src/index";
 
-/**
- * The gateway configuration for the executor.
- *
- * @group Configuration
- */
-export type Gateway = {
-  /** Name of the gateway. */
-  name: string;
-  /** Id of the gateway as stored in circuit. */
-  id: string;
-  /** Rpc endpoint to connect to. */
-  rpc: string;
-  /** Gateway type, currently only Substrate */
-  type: string;
-  /** The native ID of the gateway within its consensus system. e.g. paraId in polkadot */
-  nativeId?: any;
-  /** The assets the executor is willing to execute on the target. Matches the key used in assets */
-  signerKey?: string;
-  /** The account prefix used by the target */
-  accountPrefix: number;
-};
-
-/**
- * The circuit settings
- *
- * @group Configuration
- */
-export type Circuit = {
+export type Ethereum = {
   /** Name of the chain */
   name: string;
   /** Endpoint */
@@ -126,6 +97,8 @@ export type Strategy = {
 export type Config = {
   name: string;
   circuit: Circuit;
+  ethereum: Circuit;
+  ethereum: Circuit;
   /** The gateways that are being tracked */
   gateways: Gateway[];
 
@@ -252,6 +225,18 @@ export const config: Config = {
         id: "tether",
       },
     ],
+    SEP: [
+      {
+        priceSource: "coingecko",
+        id: "ethereum",
+      },
+    ],
+    USDC: [
+      {
+        priceSource: "coingecko",
+        id: "usdc",
+      },
+    ],
   },
   strategies: {
     ksm: {
@@ -291,6 +276,17 @@ export const config: Config = {
       supportedAssets: ["BSX"],
       sfx: {
         minProfitUsd: 3,
+        minYield: 0.05,
+      },
+      xtx: {
+        minInsuranceAmountUsd: 1,
+        minInsuranceShare: 0.1,
+      },
+    },
+    sepl: {
+      supportedAssets: ["SEP"],
+      sfx: {
+        minProfitUsd: 2,
         minYield: 0.05,
       },
       xtx: {

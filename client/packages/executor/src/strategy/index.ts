@@ -22,6 +22,8 @@ export type XtxStrategy = {
 export type SfxStrategy = {
   /** Minimum profit in USD that a SFX should have to be considered profitable. */
   minProfitUsd?: number;
+  /** Minimum profit in target's asset that a SFX should have to be considered profitable. */
+  minProfitTargetAssetAmount?: number;
   /** A percentage value for the minimum yield that a SFX should have Yield is defined by (minProfit / totalCost) */
   minYield?: number;
   /** The max tx costs in USD for an execution. This can be useful to prevent executions during network congestion. */
@@ -143,6 +145,19 @@ export class StrategyEngine {
     return 0;
   }
 
+  /**
+   * Returns minProfitUsd constraint from the SFX strategy for a given target.
+   *
+   * @param sfx Object of SFX to be evaluated
+   * @returns MinProfitUsd constraint from the SFX strategy for a given target
+   */
+  getMinProfitTargetAsset(sfx: SideEffect): number {
+    const strategy = this.sfxStrategies[sfx.target];
+    if (strategy.minProfitTargetAssetAmount) {
+      return strategy.minProfitTargetAssetAmount;
+    }
+    return 0;
+  }
   /**
    * Evaluates the minProfitUsd constraint from the SFX strategy for a given SFX.
    *

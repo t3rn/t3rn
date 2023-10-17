@@ -20,7 +20,7 @@ export const Targets = {
  * An execution action
  */
 
-export type Action = "tass" | "cevm"
+export type Action = "tass" | "cevm" | "loca" | "inst";
 export const Actions = {
   TransferAsset: "tass",
   CallEvm: "cevm"

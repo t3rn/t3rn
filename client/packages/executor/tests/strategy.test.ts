@@ -15,4 +15,9 @@ describe("Basic StrategyEngine setup", () => {
   it('should have a method called "getMinProfitUsd"', () => {
     expect(se).to.have.property("getMinProfitUsd");
   });
+
+  it('should have a method called "getMinProfitTargetAsset"', () => {
+    expect(se).to.have.property("getMinProfitTargetAsset");
+  });
 });
+

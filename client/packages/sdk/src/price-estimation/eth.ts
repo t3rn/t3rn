@@ -4,6 +4,9 @@ import { Action as SfxAction } from './index'
 
 // DECLARE GAS AMOUNT
 export const ETH_TRANSFER_GAS_AMOUNT = 21000;
+export const ERC20_TRANSFER_GAS_AMOUNT = 50000;
+export const EXECUTE_LOCAL_GAS_AMOUNT_ERC_20 = 71791;
+export const EXECUTE_INSTANT_SFX_GAS_AMOUNT = 170000;
 
 export type SpeedMode = "rapid" | "fast" | "standard" | "slow";
 export const SpeedModes = {
@@ -13,10 +16,13 @@ export const SpeedModes = {
   Slow: "slow",
 } as const;
 
-export type Action = "transfer" | "cevm";
+export type Action = "transfer" | "cevm" | "localLocal" | "instantSfx" | "transferErc20";
 export const Actions = {
   Transfer: "transfer",
-  CallEvm: "cevm"
+  CallEvm: "cevm",
+  LocalLocal: "localLocal",
+  InstantSfx: "instantSfx",
+  TransferErc20: "transferErc20"
 } as const;
 
 export type GasPrice = {
@@ -45,9 +51,13 @@ export const Targets = {
 export const mapSfxActionToEthAction = (action: SfxAction) => {
   switch (action) {
     case "tass":
-      return Actions.Transfer;
+      return Actions.TransferErc20;
     case "cevm":
-      return Actions.CallEvm
+      return Actions.CallEvm;
+    case "loca":
+        return Actions.LocalLocal;
+    case "inst":
+        return Actions.InstantSfx;
     default:
       throw new Error("Unable to map sfx action to eth action");
   }
@@ -90,9 +100,16 @@ export const getGasPrice = async (target: Target) => {
 
 export const getGasAmount = (action: Action) => {
   switch (action) {
+    case Actions.TransferErc20:
+        return ERC20_TRANSFER_GAS_AMOUNT;
+    case Actions.LocalLocal:
+        return EXECUTE_LOCAL_GAS_AMOUNT_ERC_20;
+    case Actions.InstantSfx:
+        return EXECUTE_INSTANT_SFX_GAS_AMOUNT;
     case Actions.Transfer:
-    default:
       return ETH_TRANSFER_GAS_AMOUNT;
+    default:
+      return ERC20_TRANSFER_GAS_AMOUNT;
   }
 };
 
