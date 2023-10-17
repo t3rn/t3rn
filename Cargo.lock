@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-mock-runtime"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
@@ -1035,7 +1035,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-pallets"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1070,7 +1070,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.63.1-rc.0",
+ "pallet-contracts 1.63.2-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
@@ -1128,7 +1128,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-types"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -1141,7 +1141,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-node"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-standalone-runtime",
  "clap",
@@ -1193,7 +1193,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-runtime"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -1218,7 +1218,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.63.1-rc.0",
+ "pallet-contracts 1.63.2-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
@@ -3381,7 +3381,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "evm",
  "frame-support",
@@ -6441,7 +6441,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-3vm"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "frame-benchmarking",
@@ -6474,7 +6474,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-account-manager"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6676,7 +6676,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6731,7 +6731,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-clock"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata 15.1.0",
@@ -6770,7 +6770,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "array-bytes",
  "assert_matches",
@@ -6883,7 +6883,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "frame-benchmarking",
@@ -6920,7 +6920,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry-rpc-runtime-api"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "pallet-contracts-registry",
  "parity-scale-codec",
@@ -7039,7 +7039,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "environmental",
  "evm",
@@ -7067,7 +7067,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7344,7 +7344,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7376,7 +7376,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-portal-rpc-runtime-api",
@@ -7392,7 +7392,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc-runtime-api"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "pallet-portal",
  "parity-scale-codec",
@@ -7740,7 +7740,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7770,7 +7770,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-xdns-rpc-runtime-api",
@@ -7785,7 +7785,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc-runtime-api"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
@@ -7796,7 +7796,7 @@ dependencies = [
 
 [[package]]
 name = "parachain-collator"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -9364,7 +9364,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-util"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "fp-evm",
  "pallet-evm",
@@ -13088,7 +13088,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "parachain-collator",
  "sc-cli",
@@ -13097,7 +13097,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -13136,7 +13136,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.63.1-rc.0",
+ "pallet-contracts 1.63.2-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
@@ -13195,7 +13195,7 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-collator"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -13337,7 +13337,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-abi"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13411,7 +13411,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-collator"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "parachain-collator",
  "sc-cli",
@@ -13484,7 +13484,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-primitives"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13548,7 +13548,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "1.63.1-rc.0"
+version = "1.63.2-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
