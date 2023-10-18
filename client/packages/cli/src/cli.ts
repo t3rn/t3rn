@@ -50,6 +50,7 @@ withExportMode(
     .command("purgeGateway")
     .argument("gateway")
     .description("Purge a gateway")
+    .option("-f, --force", "Force on live chain")
     .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
 )
 
@@ -58,6 +59,7 @@ withExportMode(
     .command("purgeToken")
     .argument("token")
     .description("Purge a token")
+    .option("-f, --force", "Force on live chain")
     .action(wrapCryptoWaitReady(handlePurgeTokenCommand)),
 )
 
