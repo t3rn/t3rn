@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>t3rn Executor</title>
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'"
+    />
+    <meta
+      http-equiv="X-Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'"
+    />
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+    
+  </head>
+  <body>
+      <div class="tabs">
+        <div class="tab">Execution</div>
+        <div class="tab">Strategy</div>
+        <div class="tab">Accounts</div>
+        <div class="tab">Config</div>
+        <div class="tab">About</div>
+      </div>
+      <div class="content">
+        <h1>Executor</h1>
+        We are using Node.js <span id="node-version"></span>, Chromium
+        <span id="chrome-version"></span>, and Electron
+        <span id="electron-version"></span>.
+      </div>
+      <script src="./dist/renderer.js"></script>
+      <script src="./dist/executor.js"></script>
+  </body>
+</html>

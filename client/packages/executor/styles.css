@@ -1,0 +1,24 @@
+      body {
+        background-color: black;
+        color: white;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+    
+      .tabs {
+        background-color: #333;
+        display: flex;
+      }
+    
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+      }
+    
+      .tab:hover {
+        background-color: #555;
+      }
+    
+      .content {
+        padding: 20px;
+      }
