@@ -176,6 +176,11 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_withdraw_teleport::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_withdraw_teleport::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -222,6 +227,7 @@ construct_runtime!(
         DmpQueue: cumulus_pallet_dmp_queue = 33,
         // XBIPortal: pallet_xbi_portal = 34,
         AssetRegistry: pallet_asset_registry = 35,
+        WithdrawTeleport: pallet_withdraw_teleport = 36,
 
         // t3rn pallets
         XDNS: pallet_xdns = 100,

@@ -6518,7 +6518,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-registry"
 version = "0.0.1"
-source = "git+https://github.com/paritytech/trappist?branch=main#9b15c1bf1135b6e1e7d7b13afeb30ef47fec81fd"
+source = "git+https://github.com/paritytech/trappist?rev=8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2#8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7685,6 +7685,24 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std 8.0.0",
+]
+
+[[package]]
+name = "pallet-withdraw-teleport"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/trappist?rev=8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2#8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-xcm",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -13159,6 +13177,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
+ "pallet-withdraw-teleport",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -15460,7 +15479,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.0.1"
-source = "git+https://github.com/paritytech/trappist?branch=main#9b15c1bf1135b6e1e7d7b13afeb30ef47fec81fd"
+source = "git+https://github.com/paritytech/trappist?rev=8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2#8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2"
 dependencies = [
  "frame-support",
  "sp-runtime",
