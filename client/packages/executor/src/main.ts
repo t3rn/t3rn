@@ -1,29 +1,61 @@
-import { config } from "../config/config";
-import { AttestationManager } from "./attestationManager";
-import { Executor } from "./executor.class";
-import { logger } from "./logging";
-import { Prometheus } from "./prometheus";
+import { app, BrowserWindow } from "electron";
+import * as path from "path";
 
-async function main() {
-  logger.info("Starting prometheus");
-  const prometheus = new Prometheus();
+function createWindow() {
+  // Create the browser window.
+  const mainWindow = new BrowserWindow({
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+    width: 800,
+  });
 
-  logger.info("Starting executor");
-  const instance = new Executor(prometheus);
-  await instance.setup();
+  // and load the index.html of the app.
+  mainWindow.loadFile(path.join(__dirname, "../index.html"));
+  
+  const { spawn } = require('child_process');
+  const scriptPath = path.join(__dirname, 'executor.js'); // Adjust the path accordingly
+  const script = spawn('node', [scriptPath]);
 
-  if (config.attestations.ethereum.privateKey === undefined) {
-    logger.warn("Ethereum private key is not defined. Skipping Attestations.");
-  } else {
-    const attestationManager = new AttestationManager(
-      instance.circuitClient,
-      prometheus,
-    );
-    if (config.attestations.processBatches) {
-      logger.info("Processing Attestation Batches");
-      await attestationManager.processAttestationBatches();
-    }
-  }
+  script.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  script.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  script.on('close', (code) => {
+    console.log(`Child process exited with code ${code}`);
+  });
+
+
+  // Open the DevTools.
+  // mainWindow.webContents.openDevTools();
 }
 
-main();
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on("activate", function () {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+// In this file you can include the rest of your app"s specific main process
+// code. You can also put them in separate files and require them here.

@@ -9,6 +9,7 @@ import { Logger } from "pino";
 import { Prometheus } from "./prometheus";
 import { logger } from "./logging";
 
+
 /** An executor instance. */
 export class Executor {
   name: string;
@@ -29,6 +30,11 @@ export class Executor {
     this.prometheus = prometheus;
     this.config = config;
   }
+
+  getInstance() {
+    return this;
+  }
+
 
   /**
    * Sets up and configures an executor instance.

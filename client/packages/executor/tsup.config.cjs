@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/main.ts"],
+  entry: ["src/**/*.ts"], // Include all TypeScript files in the "src" directory
   splitting: false,
   sourcemap: false,
   clean: true,
