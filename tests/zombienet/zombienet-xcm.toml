@@ -23,7 +23,7 @@ ws_port = 9936
 extra_args = [ "-lparachain=debug" ]
 
 [[parachains]]
-chain          = "asset-hub-kusama-local"
+chain          = "asset-hub-westend-local"
 add_to_genesis = true
 cumulus_based  = true
 id             = 1000
