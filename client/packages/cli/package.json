@@ -25,7 +25,7 @@
     "@chainsafe/ssz": "^0.11.1",
     "@lodestar/config": "^1.9.2",
     "@lodestar/types": "^1.9.2",
-    "@t3rn/sdk": "^0.4.1",
+    "@t3rn/sdk": "^0.4.3",
     "@t3rn/types": "^0.1.10",
     "chalk": "^4.1.2",
     "clean-stack": "^3.0.1",
