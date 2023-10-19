@@ -58,7 +58,7 @@ export const XcmTransferParameters: ICreateXcmParameters = {
       let parentValue: u8 = api.registry.createType("u8", 1)
       if ((originType == "relay" && assetType == "ROC")  || (originType == "system" && assetType == "USDT")
           || (originType == "t0rn" && assetType == "TRN") ) {
-         const parentValue = api.registry.createType("u8", 0)
+          parentValue = api.registry.createType("u8", 0)
       }
       let assetInterior: InteriorMultiLocation
       switch (assetType) {
