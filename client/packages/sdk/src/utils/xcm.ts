@@ -60,7 +60,6 @@ export const XcmTransferParameters: ICreateXcmParameters = {
           || (originType == "t0rn" && assetType == "TRN") ) {
          const parentValue = api.registry.createType("u8", 0)
       }
-      const
       let assetInterior: InteriorMultiLocation
       switch (assetType) {
          case "USDT":
