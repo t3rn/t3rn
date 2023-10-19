@@ -134,6 +134,10 @@ jobs:
     name: Zombienet Test
     runs-on: [self-hosted, rust]
     needs: [changes, build-test]
+    strategy:
+      matrix:
+        parachain: [t0rn, t1rn]
+
     # zombienet is always run before runtime upgrade so any additional run on development is superfluous
     if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
@@ -151,12 +155,7 @@ jobs:
       - name: 📼 Run zombienet smoke tests
         continue-on-error: false
         working-directory: tests/zombienet
-        run: ./zombienet.sh smoke t0rn
-
-      - name: 📼 Run zombienet smoke tests
-        continue-on-error: false
-        working-directory: tests/zombienet
-        run: ./zombienet.sh smoke t1rn
+        run: ./zombienet.sh smoke ${{ matrix.parachain }}
 
       - name: Print sccache stats
         working-directory: tests/zombienet

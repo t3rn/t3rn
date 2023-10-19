@@ -182,7 +182,7 @@ upgrade_local() {
     
     [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
     
-    echo "Testing real upgrade for parachain: ${parachain}"
+    echo "⏳ Testing real upgrade for parachain: ${parachain}"
     
     # Fetch latest release binary from Github
     git fetch --all --tags -f || true > /dev/null
