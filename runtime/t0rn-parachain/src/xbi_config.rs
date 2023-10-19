@@ -3,8 +3,8 @@ use crate::{
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     WeightToFee, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
-use cumulus_primitives_core::ParaId;
 use circuit_runtime_types::default_fee_per_second;
+use cumulus_primitives_core::ParaId;
 
 use cumulus_primitives_core::GetChannelInfo;
 use frame_support::{
@@ -16,8 +16,8 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
-use xcm::latest::prelude::*;
 use sp_std::{marker::PhantomData, vec::Vec};
+use xcm::latest::prelude::*;
 
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
@@ -27,7 +27,7 @@ use xcm_builder::{
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
-    WithComputedOrigin
+    WithComputedOrigin,
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
@@ -105,9 +105,9 @@ parameter_types! {
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(3333).into();
     pub UniversalLocation: InteriorMultiLocation = (
-		GlobalConsensus(NetworkId::Rococo),
-		Parachain(ParachainInfo::parachain_id().into()),
-	).into();
+        GlobalConsensus(NetworkId::Rococo),
+        Parachain(ParachainInfo::parachain_id().into()),
+    ).into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
     pub AssetsPalletLocation: MultiLocation =
         PalletInstance(12u8).into();
@@ -137,7 +137,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 >;
 
 pub type TrustBackedAssetsConvertedConcreteId =
-assets_common::TrustBackedAssetsConvertedConcreteId<AssetsPalletLocation, Balance>;
+    assets_common::TrustBackedAssetsConvertedConcreteId<AssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
@@ -293,15 +293,15 @@ match_types! {
 
 parameter_types! {
     pub AssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
-	pub const T0rnNative: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(MultiLocation::here()) });
-	pub AssetHubTrustedTeleporter: (MultiAssetFilter, MultiLocation) = (T0rnNative::get(), AssetHubLocation::get());
+    pub const T0rnNative: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(MultiLocation::here()) });
+    pub AssetHubTrustedTeleporter: (MultiAssetFilter, MultiLocation) = (T0rnNative::get(), AssetHubLocation::get());
     pub RUsdtPerSecond: (xcm::v3::AssetId, u128, u128) = (
-		MultiLocation::new(1, X3(Parachain(1000), PalletInstance(50), GeneralIndex(1984))).into(),
-		default_fee_per_second() * 10,
-		0u128
-	);
+        MultiLocation::new(1, X3(Parachain(1000), PalletInstance(50), GeneralIndex(1984))).into(),
+        default_fee_per_second() * 10,
+        0u128
+    );
     /// Roc = 7 Rococo USDT
-	pub RocPerSecond: (xcm::v3::AssetId, u128,u128) = (MultiLocation::new(1,Here).into(), default_fee_per_second() * 70, 0u128);
+    pub RocPerSecond: (xcm::v3::AssetId, u128,u128) = (MultiLocation::new(1,Here).into(), default_fee_per_second() * 70, 0u128);
 }
 
 pub struct ReserveAssetsFrom<T>(PhantomData<T>);
@@ -319,11 +319,16 @@ impl Contains<(MultiLocation, Vec<MultiAsset>)> for OnlyTeleportNative {
         t.1.iter().any(|asset| {
             log::trace!(target: "xcm::OnlyTeleportNative", "Asset to be teleported: {:?}", asset);
 
-            if let MultiAsset { id: xcm::latest::AssetId::Concrete(asset_loc), fun: Fungible(_a) } =
-                asset
+            if let MultiAsset {
+                id: xcm::latest::AssetId::Concrete(asset_loc),
+                fun: Fungible(_a),
+            } = asset
             {
                 match asset_loc {
-                    MultiLocation { parents: 0, interior: Here } => true,
+                    MultiLocation {
+                        parents: 0,
+                        interior: Here,
+                    } => true,
                     _ => false,
                 }
             } else {
@@ -339,11 +344,10 @@ pub type Traders = (
     // ROC
     FixedRateOfFungible<RocPerSecond, ()>,
     // Everything else
-    UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>,//ToAuthor<Runtime>>,
+    UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>, //ToAuthor<Runtime>>,
 );
 pub type Reserves = (NativeAsset, ReserveAssetsFrom<AssetHubLocation>);
 pub type TrustedTeleporters = (xcm_builder::Case<AssetHubTrustedTeleporter>,);
-
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
