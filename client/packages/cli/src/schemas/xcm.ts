@@ -9,7 +9,7 @@ export const XcmTransferSchema = z.object({
         invalid_type_error: "XCM transfer type must be a string",
         required_error: "XCM transfer type is required",
     })
-    .max(5),
+    .max(6),
     endpoint: z.string({
         invalid_type_error: "Enpoint must be a string",
         required_error: "Endpoint is required",

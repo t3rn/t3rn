@@ -3,28 +3,31 @@ use crate::{
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     WeightToFee, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
+use circuit_runtime_types::default_fee_per_second;
 use cumulus_primitives_core::ParaId;
 
 use cumulus_primitives_core::GetChannelInfo;
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    traits::{ConstU32, Contains, ContainsPair, Everything, Get, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
+use sp_std::{marker::PhantomData, vec::Vec};
 use xcm::latest::prelude::*;
 
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-    FixedWeightBounds, FungiblesAdapter, IsConcrete, NativeAsset, NoChecking, ParentAsSuperuser,
-    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete, NativeAsset, NoChecking,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
+    WithComputedOrigin,
 };
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
@@ -101,7 +104,10 @@ parameter_types! {
 
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(3333).into();
-    pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+    pub UniversalLocation: InteriorMultiLocation = (
+        GlobalConsensus(NetworkId::Rococo),
+        Parachain(ParachainInfo::parachain_id().into()),
+    ).into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
     pub AssetsPalletLocation: MultiLocation =
         PalletInstance(12u8).into();
@@ -167,15 +173,26 @@ match_types! {
 }
 
 // FIXME: should be using asset_registry
-pub type Barrier = (
+pub type Barrier = TrailingSetTopicAsId<(
     TakeWeightCredit,
+    // Expected responses are OK.
     AllowKnownQueryResponses<PolkadotXcm>,
-    AllowTopLevelPaidExecutionFrom<Everything>,
-    AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-    AllowSubscriptionsFrom<ParentOrSiblings>,
-    // ^^^ Parent and its exec plurality get free execution
-    // AssetRegistry,
-);
+    // Allow XCMs with some computed origins to pass through.
+    WithComputedOrigin<
+        (
+            // If the message is one that immediately attemps to pay for execution, then
+            // allow it.
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            // Parent, its pluralities (i.e. governance bodies), and the Fellows plurality
+            // get free execution.
+            AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+            // Subscriptions for version tracking are OK.
+            AllowSubscriptionsFrom<ParentOrSiblings>,
+        ),
+        UniversalLocation,
+        ConstU32<8>,
+    >,
+)>;
 
 parameter_types! {
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
@@ -274,6 +291,64 @@ match_types! {
     };
 }
 
+parameter_types! {
+    pub AssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+    pub const T0rnNative: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(MultiLocation::here()) });
+    pub AssetHubTrustedTeleporter: (MultiAssetFilter, MultiLocation) = (T0rnNative::get(), AssetHubLocation::get());
+    pub RUsdtPerSecond: (xcm::v3::AssetId, u128, u128) = (
+        MultiLocation::new(1, X3(Parachain(1000), PalletInstance(50), GeneralIndex(1984))).into(),
+        default_fee_per_second() * 10,
+        0u128
+    );
+    /// Roc = 7 Rococo USDT
+    pub RocPerSecond: (xcm::v3::AssetId, u128,u128) = (MultiLocation::new(1,Here).into(), default_fee_per_second() * 70, 0u128);
+}
+
+pub struct ReserveAssetsFrom<T>(PhantomData<T>);
+impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for ReserveAssetsFrom<T> {
+    fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+        let prefix = T::get();
+        log::trace!(target: "xcm::AssetsFrom", "prefix: {:?}, origin: {:?}, asset: {:?}", prefix, origin, asset);
+        &prefix == origin
+    }
+}
+
+pub struct OnlyTeleportNative;
+impl Contains<(MultiLocation, Vec<MultiAsset>)> for OnlyTeleportNative {
+    fn contains(t: &(MultiLocation, Vec<MultiAsset>)) -> bool {
+        t.1.iter().any(|asset| {
+            log::trace!(target: "xcm::OnlyTeleportNative", "Asset to be teleported: {:?}", asset);
+
+            if let MultiAsset {
+                id: xcm::latest::AssetId::Concrete(asset_loc),
+                fun: Fungible(_a),
+            } = asset
+            {
+                match asset_loc {
+                    MultiLocation {
+                        parents: 0,
+                        interior: Here,
+                    } => true,
+                    _ => false,
+                }
+            } else {
+                false
+            }
+        })
+    }
+}
+
+pub type Traders = (
+    // Rococo USDT
+    FixedRateOfFungible<RUsdtPerSecond, ()>,
+    // ROC
+    FixedRateOfFungible<RocPerSecond, ()>,
+    // Everything else
+    UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>, //ToAuthor<Runtime>>,
+);
+pub type Reserves = (NativeAsset, ReserveAssetsFrom<AssetHubLocation>);
+pub type TrustedTeleporters = (xcm_builder::Case<AssetHubTrustedTeleporter>,);
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type Aliasers = Nothing;
@@ -285,11 +360,8 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = Barrier;
     type CallDispatcher = RuntimeCall;
     type FeeManager = ();
-    type IsReserve = NativeAsset;
-    type IsTeleporter = (
-        NativeAsset,
-        // IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
-    );
+    type IsReserve = Reserves;
+    type IsTeleporter = TrustedTeleporters;
     type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
     type MessageExporter = ();
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
@@ -298,7 +370,7 @@ impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type SafeCallFilter = Everything;
     type SubscriptionService = PolkadotXcm;
-    type Trader = UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>;
+    type Trader = Traders;
     type UniversalAliases = Nothing;
     type UniversalLocation = UniversalLocation;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
@@ -357,7 +429,7 @@ impl pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type XcmReserveTransferFilter = Everything;
     type XcmRouter = XcmRouter;
-    type XcmTeleportFilter = Everything;
+    type XcmTeleportFilter = OnlyTeleportNative;
 
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
