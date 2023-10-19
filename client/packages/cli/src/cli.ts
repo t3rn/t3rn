@@ -11,6 +11,7 @@ import { handleEstimateMaxReward } from "./commands/estimate.ts"
 import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
+import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -45,11 +46,19 @@ withExportMode(
     .action(wrapCryptoWaitReady(handleRebootCommand)),
 )
 
+program
+  .command("resetGateway")
+  .argument("gateway")
+  .description("Reset gateway")
+  .option("-f, --force", "Force on live chain")
+  .action(wrapCryptoWaitReady(handleResetGatewayCommand)),
+
 withExportMode(
   program
     .command("purgeGateway")
     .argument("gateway")
     .description("Purge a gateway")
+    .option("-f, --force", "Force on live chain")
     .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
 )
 
@@ -58,6 +67,7 @@ withExportMode(
     .command("purgeToken")
     .argument("token")
     .description("Purge a token")
+    .option("-f, --force", "Force on live chain")
     .action(wrapCryptoWaitReady(handlePurgeTokenCommand)),
 )
 
