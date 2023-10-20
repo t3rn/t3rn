@@ -1,0 +1,31 @@
+{
+  "name": "@t3rn/eth2-proof",
+  "version": "0.2.1",
+  "main": "./dist/proof-generator.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t3rn/t3rn"
+  },
+  "scripts": {
+    "preinstall": "npm exec -- only-allow pnpm",
+    "clean": "rm -rf ./dist",
+    "build": "pnpm run clean && tsc --pretty",
+    "fmt": "prettier --write src",
+    "fmt:check": "prettier --check src"
+  },
+  "dependencies": {
+    "merkle-patricia-tree": "^4.2.4",
+    "rlp": "^3.0.0",
+    "web3": "^4.1.2",
+    "web3-eth-accounts": "^4.0.6",
+    "web3-types": "^1.2.0",
+    "web3-utils": "^4.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.1",
+    "prettier": "^3.0.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
+  }
+}
