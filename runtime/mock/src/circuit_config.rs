@@ -162,9 +162,9 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
             GatewayVendor::Ethereum => Ok(Box::new(
                 pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
             )),
-            GatewayVendor::Sepolia => Ok(Box::new(
-                pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
-            )),
+            GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_finality_verifier::Pallet::<
+                Runtime,
+            >(PhantomData))),
             _ => Err(PortalError::<Runtime>::LightClientNotFoundByVendor),
         }
     }
@@ -363,14 +363,14 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
     type WeightInfo = ();
 }
 
-// impl pallet_sepolia_finality_verifier::Config for Runtime {
-//     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
-//     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-//     type GenesisValidatorRoot = GenesisValidatorsRoot;
-//     type HeadersToStore = HeadersToStoreEth;
-//     type LightClientAsyncAPI = XDNS;
-//     type RuntimeEvent = RuntimeEvent;
-//     type SlotsPerEpoch = SlotsPerEpoch;
-//     type SyncCommitteeSize = SyncCommitteeSize;
-//     type WeightInfo = ();
-// }
+impl pallet_sepolia_finality_verifier::Config for Runtime {
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
+}
