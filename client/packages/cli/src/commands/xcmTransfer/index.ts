@@ -46,7 +46,6 @@ export const handleXcmTransferCommand = async (
         const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
         const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
 
-
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
             ? keyring.addFromUri(args.signer)
@@ -113,6 +112,7 @@ export const handleXcmTransferCommand = async (
                 })
         }
         else {
+
             await targetApi.tx.polkadotXcm
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
                 .signAndSend(signer, ({ status, events }) => {

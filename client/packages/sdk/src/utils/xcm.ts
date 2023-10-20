@@ -65,19 +65,19 @@ export const XcmTransferParameters: ICreateXcmParameters = {
          case "USDT":
             if (originType == "system") {
                assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X2: {
-                     PalletInstance: 50,
-                     GeneralIndex: 1984,
-                  },
+                  X2: [
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
                })
             }
             else {
                assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X3: {
-                     parachain: 1000,
-                     PalletInstance: 50,
-                     GeneralIndex: 1984,
-                  },
+                  X3: [
+                     { Parachain: 1000 },
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
                })
             }
             break
