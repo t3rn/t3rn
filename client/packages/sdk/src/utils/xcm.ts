@@ -82,18 +82,11 @@ export const XcmTransferParameters: ICreateXcmParameters = {
             }
             break
          case "TRN":
-            if (originType == "t0rn") {
-               assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X1: {
-                     parachain: 3333,
-                  },
-               })
-            }
-            else {
-               assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  Here: '',
-               })
-            }
+            assetInterior = api.registry.createType('InteriorMultiLocation', {
+               X1: {
+                  parachain: 3333,
+               },
+            })
             break
          default:
             assetInterior = api.registry.createType('InteriorMultiLocation', {

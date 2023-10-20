@@ -111,8 +111,34 @@ export const handleXcmTransferCommand = async (
                     }
                 })
         }
-        else {
+        else if (args.type == "system" && args.targetAsset == "TRN") {
+            await targetApi.tx.polkadotXcm
+                .teleportAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .signAndSend(signer, ({ status, events }) => {
+                    if (status.isInBlock || status.isFinalized) {
+                        events
+                            // find/filter for failed events
+                            .filter(({ event }) =>
+                                api.events.system.ExtrinsicFailed.is(event)
+                            )
+                            // we know that data for system.ExtrinsicFailed is
+                            // (DispatchError, DispatchInfo)
+                            .forEach(({ event: { data: [error, info] } }) => {
+                                if (error.isModule) {
+                                    // for module errors, we have the section indexed, lookup
+                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const { docs, method, section } = decoded
 
+                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
+                                } else {
+                                    // Other, CannotLookup, BadOrigin, no extra info
+                                    console.log(error.toString())
+                                }
+                            })
+                    }
+                })
+        }
+        else {
             await targetApi.tx.polkadotXcm
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
                 .signAndSend(signer, ({ status, events }) => {
