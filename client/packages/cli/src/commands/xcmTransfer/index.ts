@@ -45,6 +45,7 @@ export const handleXcmTransferCommand = async (
         const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
         const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
         const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
+        const xcmWeightLimitParam = XcmTransferParameters.createWeightLimit(targetApi)
 
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
@@ -57,7 +58,13 @@ export const handleXcmTransferCommand = async (
         }
         if (args.type == "relay") {
             await targetApi.tx.xcmPallet
-                .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .limitedReserveTransferAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
                 .signAndSend(signer, ({ status, events }) => {
                     if (status.isInBlock || status.isFinalized) {
                         events
@@ -113,7 +120,13 @@ export const handleXcmTransferCommand = async (
         }
         else if (args.type == "system" && args.targetAsset == "TRN") {
             await targetApi.tx.polkadotXcm
-                .teleportAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .limitedTeleportAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
                 .signAndSend(signer, ({ status, events }) => {
                     if (status.isInBlock || status.isFinalized) {
                         events
@@ -140,7 +153,13 @@ export const handleXcmTransferCommand = async (
         }
         else {
             await targetApi.tx.polkadotXcm
-                .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .limitedReserveTransferAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
                 .signAndSend(signer, ({ status, events }) => {
                     if (status.isInBlock || status.isFinalized) {
                         events
