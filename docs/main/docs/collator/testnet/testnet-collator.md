@@ -39,7 +39,7 @@ mkdir -p {data,keystore,specs}
 Install the `subkey` tool:
 
 ```sh
-cargo install subkey --git https://github.com/paritytech/substrate
+cargo install subkey --git https://github.com/paritytech/polkadot-sdk
 ```
 
 ### Fetch Chain Specs

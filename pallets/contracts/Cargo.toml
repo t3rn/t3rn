@@ -58,7 +58,7 @@ wat = "1"
 # Substrate Dependencies
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
-pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false, package = "pallet-insecure-randomness-collective-flip" }
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0', default-features = false, package = "pallet-insecure-randomness-collective-flip" }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true, features = ["std"] }
 sp-keystore = { workspace = true }
