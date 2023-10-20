@@ -26,7 +26,7 @@ use codec::Decode;
 use frame_support::pallet_prelude::Weight;
 
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
-use sp_core::crypto::AccountId32;
+use sp_core::{crypto::AccountId32, H256};
 use sp_runtime::{print, DispatchError};
 use t3rn_primitives::{
     circuit::SecurityLvl::{Escrow, Optimistic},
@@ -378,12 +378,12 @@ fn adds_remote_order_addresses_on_sudo_permission() {
             assert_ok!(XDNS::add_remote_order_address(
                 Origin::root(),
                 [3, 3, 3, 3],
-                vec![1, 2, 3, 4]
+                H256::repeat_byte(1),
             ));
 
             assert_eq!(
                 XDNS::get_remote_order_contract_address([3, 3, 3, 3]),
-                Ok(vec![1, 2, 3, 4])
+                Ok(H256::repeat_byte(1))
             );
         });
 }

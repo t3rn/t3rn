@@ -6,7 +6,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::{BlockNumberFor, OriginFor};
 use scale_info::TypeInfo;
-use sp_core::H160;
+use sp_core::{H160, H256};
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
@@ -281,7 +281,7 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     fn mint(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
     fn burn(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
     fn is_target_active(gateway_id: TargetId, security_lvl: &SecurityLvl) -> bool;
-    fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<Vec<u8>, DispatchError>;
+    fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<H256, DispatchError>;
     fn get_token_by_eth_address(
         gateway_id: TargetId,
         eth_address: H160,
