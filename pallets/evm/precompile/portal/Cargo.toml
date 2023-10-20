@@ -7,10 +7,10 @@ version = "1.5.0-rc.0"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0", default-features = false }
 
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.2.0" }
-frame-system  = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.2.0" }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", default-features = false, tag = "polkadot-v1.2.0" }
+frame-system  = { git = "https://github.com/paritytech/polkadot-sdk.git", default-features = false, tag = "polkadot-v1.2.0" }
 
 fp-evm        = { path = "../../primitives", default-features = false }
 pallet-evm    = { path = "../..", default-features = false }

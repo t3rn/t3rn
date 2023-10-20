@@ -20,9 +20,9 @@ jsonrpsee-types         = "0.2.0"
 pallet-circuit-portal   = { path = "../pallets/circuit-portal" }
 relay-substrate-client  = { path = "../relayers/client-substrate" }
 
-sp-core    = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = 'polkadot-v0.9.13' }
-sp-std     = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = 'polkadot-v0.9.13' }
-sp-version = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = 'polkadot-v0.9.13' }
+sp-core    = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", branch = 'polkadot-v0.9.13' }
+sp-std     = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", branch = 'polkadot-v0.9.13' }
+sp-version = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", branch = 'polkadot-v0.9.13' }
 
 t3rn-primitives         = { default-features = false, path = "../primitives" }
 t3rn-types              = { default-features = false, path = "../types" }

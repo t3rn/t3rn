@@ -66,12 +66,12 @@ pallet-grandpa = { workspace = true }
 
 # Polkadot
 pallet-xcm                 = { workspace = true }
-polkadot-parachain         = { workspace = true }
+polkadot-parachain-primitives         = { workspace = true }
 polkadot-runtime-common    = { workspace = true }
 polkadot-runtime-constants = { workspace = true }
-xcm                        = { workspace = true }
-xcm-builder                = { workspace = true }
-xcm-executor               = { workspace = true }
+staging-xcm                        = { workspace = true }
+staging-xcm-builder                = { workspace = true }
+staging-xcm-executor               = { workspace = true }
 
 # Cumulus
 cumulus-pallet-aura-ext             = { workspace = true }
@@ -170,7 +170,7 @@ std = [
   "parachains-common/std",
   "pallet-xcm/std",
   "parachain-info/std",
-  "polkadot-parachain/std",
+  "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
   "smallvec/write",
   "sp-api/std",
@@ -185,9 +185,9 @@ std = [
   "sp-std/std",
   "sp-transaction-pool/std",
   "sp-version/std",
-  "xcm-builder/std",
-  "xcm-executor/std",
-  "xcm/std",
+  "staging-xcm-builder/std",
+  "staging-xcm-executor/std",
+  "staging-xcm/std",
   "pallet-randomness-collective-flip/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
@@ -218,7 +218,7 @@ runtime-benchmarks = [
   "pallet-timestamp/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
-  "xcm-builder/runtime-benchmarks",
+  "staging-xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
   "cumulus-pallet-parachain-system/runtime-benchmarks",
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
@@ -243,9 +243,9 @@ runtime-benchmarks = [
   "pallet-attesters/runtime-benchmarks",
   "pallet-rewards/runtime-benchmarks",
   "pallet-vacuum/runtime-benchmarks",
-  "polkadot-parachain/runtime-benchmarks",
+  "polkadot-parachain-primitives/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
-  "xcm-executor/runtime-benchmarks",
+  "staging-xcm-executor/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
