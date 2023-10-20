@@ -196,13 +196,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             order_remote_proof: Vec<u8>,
             remote_target_id: TargetId,
+            speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
-            // Assume finalized speed mode to remote order operations to avoid disputes in events of chain reorgs.
-            #[cfg(feature = "test-skip-verification")]
-            let speed_mode = SpeedMode::Fast;
-            #[cfg(not(feature = "test-skip-verification"))]
-            let speed_mode = SpeedMode::Finalized;
 
             let verified_event_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
                 remote_target_id,
@@ -1250,6 +1246,7 @@ mod tests {
                 RuntimeOrigin::signed(executor.clone()),
                 rlp_encoded_remote_order_local_reward_event.encode(),
                 ETHEREUM_TARGET,
+                SpeedMode::Fast,
             ));
 
             let xtx_id = expect_last_event_to_emit_xtx_id();
@@ -1327,6 +1324,7 @@ mod tests {
                 RuntimeOrigin::signed(executor.clone()),
                 rlp_encoded_remote_order_local_reward_event.encode(),
                 ETHEREUM_TARGET,
+                SpeedMode::Fast,
             ));
 
             // Check that assets were minted according to the bridge order formula:
