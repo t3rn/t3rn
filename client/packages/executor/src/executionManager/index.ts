@@ -27,31 +27,31 @@ import { getBalanceWithDecimals } from "../utils";
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
 /**
- * The queue type is used to track the incoming SFXs throughout their life-cycle. Each gateway has its own queue, tracking its height on the
- * light-client. When an SFX was executed, it is moved to the isConfirming queue. Once the gateway has reached the required block height,
+ * The State type is used to track the incoming SFXs throughout their life-cycle. Each gateway has its own state, tracking its height on the
+ * light-client. When an SFX was executed, it is moved to the isConfirming state. Once the gateway has reached the required block height,
  * the SFXs can be confirmed.
  *
  * @group Execution Manager
  */
-export type Queue = {
-  /** Each gateway has its own queue, which can be accessed via gateway id */
+export type State = {
+  /** Each gateway has its own state, which can be accessed via gateway id */
   gateways: {
     /** Stores the latest block height know by the corresponding circuit light client */
     blockHeight: number;
     /** SFXs that are currently in bidding stage */
-    isBidding: string[];
+    isBidding: Set<string>;
     /** SFXs that are currently being executed */
-    isExecuting: string[];
+    isExecuting: Set<string>;
     /** SFXs that are waiting to be confirmed */
     isConfirming: {
-      [block: number]: string[];
+      [block: number]: Set<string>;
     };
     /** SFXs that are completed */
-    completed: string[];
+    completed: Set<string>;
     /** SFXs that are dropped */
-    dropped: string[];
+    dropped: Set<string>;
     /** SFXs that are reverted */
-    reverted: string[];
+    reverted: Set<string>;
   };
 };
 
@@ -62,9 +62,9 @@ export type Queue = {
  * @group Execution Manager
  */
 export class ExecutionManager {
-  // we map the current state in the queue
-  /** Queue used to track SFXs and gateways height */
-  queue: Queue = <Queue>{};
+  // we map the current state in the state
+  /** State used to track SFXs and gateways height */
+  state: State = <State>{};
   // maps xtxId to Execution instance
   /** Maps XTX id to their corresponding Execution instance */
   xtx: {
@@ -125,9 +125,9 @@ export class ExecutionManager {
         .map(([, gtwy]) => gtwy.id)
         .every(
           (gtwyId) =>
-            manager.queue[gtwyId].isBidding.length === 0 &&
-            manager.queue[gtwyId].isExecuting.length === 0 &&
-            manager.queue[gtwyId].isConfirming.length === 0,
+            manager.state[gtwyId].isBidding.length === 0 &&
+            manager.state[gtwyId].isExecuting.length === 0 &&
+            manager.state[gtwyId].isConfirming.length === 0,
         );
 
       if (done) {
@@ -147,7 +147,7 @@ export class ExecutionManager {
 
   initializeVendors(vendors: string[]) {
     for (let i = 0; i < vendors.length; i++) {
-      this.queue[vendors[i]] = {
+      this.state[vendors[i]] = {
         blockHeight: 0,
         isBidding: [],
         isExecuting: [],
@@ -196,12 +196,12 @@ export class ExecutionManager {
                 this.removeFromQueue("isExecuting", eventData.sfxId, vendor);
 
                 // create array if first for block
-                if (!this.queue[vendor].isConfirming[eventData.blockNumber]) {
-                  this.queue[vendor].isConfirming[eventData.blockNumber] = [];
+                if (!this.state[vendor].isConfirming[eventData.blockNumber]) {
+                  this.state[vendor].isConfirming[eventData.blockNumber] = [];
                 }
 
-                // adds to queue
-                this.queue[vendor].isConfirming[eventData.blockNumber].push(
+                // adds to state
+                this.state[vendor].isConfirming[eventData.blockNumber].add(
                   eventData.sfxId,
                 );
 
@@ -380,14 +380,14 @@ export class ExecutionManager {
       );
       return;
     }
-    logger.info({ xtxId: xtx.id }, `Received XTX 🌱`); // XTX is valid for execution
+    logger.info({ xtxId: xtx.id }, `XTX is valid for execution 🌱`);
 
     // add XTX and init required event listeners
     this.xtx[xtx.id] = xtx;
     for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
       this.initSfxListeners(sfx);
       this.sfxToXtx[sfxId] = xtx.id;
-      this.queue[sfx.vendor].isBidding.push(sfxId);
+      this.state[sfx.vendor].isBidding.add(sfxId);
       await this.addRiskRewardParameters(sfx);
     }
     logger.info({ xtxId: xtx.id }, "XTX initialized");
@@ -464,9 +464,9 @@ export class ExecutionManager {
         logger.info({ xtxId: xtxId }, `Won bid 🏆`);
       }
       for (const sfx of ready) {
-        // move on the queue
+        // move on the state
         this.removeFromQueue("isBidding", sfx.id, sfx.vendor);
-        this.queue[sfx.vendor].isExecuting.push(sfx.id);
+        this.state[sfx.vendor].isExecuting.add(sfx.id);
         // execute
         this.relayers[sfx.target].executeTx(sfx).then();
       }
@@ -476,7 +476,7 @@ export class ExecutionManager {
   // New header range was submitted on circuit
   // update local params and check which SideEffects can be confirmed
   /**
-   * Update the vendor height in the queue. This is triggered by an incoming circuit event. Next, this will trigger the confirmation of
+   * Update the vendor height in the state. This is triggered by an incoming circuit event. Next, this will trigger the confirmation of
    * SFX that have been executed.
    *
    * @param vendor Id of the gateway
@@ -491,15 +491,15 @@ export class ExecutionManager {
       "Update Gateway Height",
     );
 
-    if (this.queue[vendor]) {
-      this.queue[vendor].blockHeight = blockHeight;
+    if (this.state[vendor]) {
+      this.state[vendor].blockHeight = blockHeight;
       this.executeConfirmationQueue(vendor);
     }
   }
 
   // checks which executed SideEffects can be confirmed on circuit
   /**
-   * Trigger the confirmation of SFX that have been executed. When the gateway height is updated, this will check the isConfirming queue
+   * Trigger the confirmation of SFX that have been executed. When the gateway height is updated, this will check the isConfirming state
    * for the gateway. The confirmation of any waiting SFXs is now triggered. Requirement for the confirmation is that the circuit has
    * received the corresponding headers, the SFXs where included in.
    *
@@ -508,15 +508,15 @@ export class ExecutionManager {
   async executeConfirmationQueue(vendor: string) {
     // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
     let readyByHeight: string[] = [];
-    // stores the block height of the SideEffects that are ready to be confirmed. Needed for clearing the queue
+    // stores the block height of the SideEffects that are ready to be confirmed. Needed for clearing the state
     const batchBlocks: string[] = [];
-    const queuedBlocks = Object.keys(this.queue[vendor].isConfirming);
+    const queuedBlocks = Object.keys(this.state[vendor].isConfirming);
     // we check which headers are available and collect the SFX ids
     for (let i = 0; i < queuedBlocks.length; i++) {
-      if (parseInt(queuedBlocks[i]) <= this.queue[vendor].blockHeight) {
-        batchBlocks.push(queuedBlocks[i]);
+      if (parseInt(queuedBlocks[i]) <= this.state[vendor].blockHeight) {
+        batchBlocks.add(queuedBlocks[i]);
         readyByHeight = readyByHeight.concat(
-          this.queue[vendor].isConfirming[queuedBlocks[i]],
+          this.state[vendor].isConfirming[queuedBlocks[i]],
         );
       }
     }
@@ -537,7 +537,7 @@ export class ExecutionManager {
       if (!sfx) continue;
 
       if (sfx.phase === this.xtx[sfx.xtxId].currentPhase) {
-        readyByStep.push(sfx);
+        readyByStep.add(sfx);
       }
     }
 
@@ -550,7 +550,7 @@ export class ExecutionManager {
           queuedBlocks,
           batchBlocks,
           readyByHeight,
-          blockHeight: this.queue[vendor].blockHeight,
+          blockHeight: this.state[vendor].blockHeight,
         },
         "SFXs ready for confirmation",
       );
@@ -586,7 +586,7 @@ export class ExecutionManager {
               );
             }
           }
-          // remove from queue and update status
+          // remove from state and update status
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
           logger.info(
             {
@@ -611,12 +611,12 @@ export class ExecutionManager {
     }
   }
 
-  // updates queue and sfx state after confirmation batch was submitted. This always has the same target
+  // updates state and sfx state after confirmation batch was submitted. This always has the same target
   /**
-   * Update the queue and SFX state after a confirmation batch was submitted.
+   * Update the state and SFX state after a confirmation batch was submitted.
    *
    * @param sfxs Array of sfx objects
-   * @param batchBlocks Array of block heights of the sfxs where confirmed for. Needed for cleaning up the queue
+   * @param batchBlocks Array of block heights of the sfxs where confirmed for. Needed for cleaning up the state
    * @param gatewayId Id of the gateway
    */
   processConfirmationBatch(
@@ -624,14 +624,14 @@ export class ExecutionManager {
     batchBlocks: string[],
     gatewayId: string,
   ) {
-    // remove from queue
+    // remove from state
     batchBlocks.forEach((block) => {
-      delete this.queue[gatewayId].isConfirming[block];
+      delete this.state[gatewayId].isConfirming[block];
     });
 
-    // add to completed queue and update status
+    // add to completed state and update status
     for (const sfx of sfxs) {
-      this.queue[gatewayId].completed.push(sfx.id);
+      this.state[gatewayId].completed.add(sfx.id);
       sfx.confirmedOnCircuit(); // maybe we leave this part and trigger via event, which is done in any case
     }
   }
@@ -700,7 +700,7 @@ export class ExecutionManager {
   }
 
   /**
-   * Update XTX status after it was dropped on circuit. Cleans up queue and updates the SFXs
+   * Update XTX status after it was dropped on circuit. Cleans up state and updates the SFXs
    *
    * @param xtxId Id of XTX that was dropped
    */
@@ -710,13 +710,13 @@ export class ExecutionManager {
       xtx.droppedAtBidding();
       for (const sfx of xtx.sideEffects.values()) {
         this.removeFromQueue("isBidding", sfx.id, sfx.vendor);
-        this.queue[sfx.vendor].dropped.push(sfx.id);
+        this.state[sfx.vendor].dropped.add(sfx.id);
       }
     }
   }
 
   /**
-   * Update XTX status after it was reverted on circuit. Cleans up queue and updates the SFXs
+   * Update XTX status after it was reverted on circuit. Cleans up state and updates the SFXs
    *
    * @param xtxId Id of XTX that was reverted
    */
@@ -727,7 +727,7 @@ export class ExecutionManager {
         // sfx could either be in isExecuting or isConfirming
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
-          this.queue[sfx.vendor].isConfirming[
+          this.state[sfx.vendor].isConfirming[
             sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
@@ -736,18 +736,18 @@ export class ExecutionManager {
           confirmBatch.splice(index, 1);
         }
 
-        // add to reverted queue
-        this.queue[sfx.vendor].reverted.push(sfx.id);
+        // add to reverted state
+        this.state[sfx.vendor].reverted.add(sfx.id);
       }
       this.xtx[xtxId].revertTimeout();
     }
   }
 
-  // removes sfx from queue
-  private removeFromQueue(queue: string, id: string, gatewayId: string) {
-    const index = this.queue[gatewayId][queue].indexOf(id);
+  // removes sfx from state
+  private removeFromQueue(status: string, id: string, gatewayId: string) {
+    const index = this.state[gatewayId][status].indexOf(id);
     if (index > -1) {
-      this.queue[gatewayId][queue].splice(index, 1);
+      this.state[gatewayId][status].splice(index, 1);
     }
     this.biddingEngine.cleanUp(id);
   }
