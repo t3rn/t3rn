@@ -46,12 +46,12 @@ pallet-xdns                      = { path = "../xdns" }
 
 rlp = { workspace = true }
 # Substrate Dependencies
-pallet-assets                     = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
-pallet-balances                   = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0', package = "pallet-insecure-randomness-collective-flip" }
-pallet-sudo                       = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
-pallet-timestamp                  = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
-pallet-utility                    = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
+pallet-assets                     = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
+pallet-balances                   = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0", package = "pallet-insecure-randomness-collective-flip" }
+pallet-sudo                       = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
+pallet-timestamp                  = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
+pallet-utility                    = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
 
 [features]
 default = [ "std" ]

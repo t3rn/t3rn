@@ -73,7 +73,7 @@ t3rn-primitives            = { path = "../../primitives" }
 t3rn-types                 = { path = "../../types" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0' }
+substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
 
 [features]
 default            = [  ]

@@ -31,7 +31,7 @@ pallet-timestamp = { workspace = true }
 t3rn-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
 
 circuit-mock-runtime = { path = "../../runtime/mock" }
 

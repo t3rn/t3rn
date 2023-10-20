@@ -31,15 +31,15 @@ t3rn-types      = { default-features = false, path = "../../types", features = [
 [dev-dependencies]
 hex              = "0.4.2"
 hex-literal      = "0.2.1"
-pallet-balances  = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
-pallet-sudo      = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", tag = 'polkadot-v1.2.0' }
+pallet-balances  = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
+pallet-sudo      = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.2.0" }
 pallet-xdns      = { path = "../../pallets/xdns" }
 serde_json       = "1.0.41"
-sp-core          = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0' }
-sp-io            = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0' }
-sp-runtime       = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0' }
-sp-version       = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0' }
+sp-core          = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+sp-io            = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+sp-runtime       = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+sp-version       = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
 
 pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.1", features = [ "testing" ] }
 

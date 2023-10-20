@@ -21,7 +21,7 @@ t3rn-parachain-collator = { path = "../parachain", features = [ "t3rn" ], packag
 sc-cli                  = { workspace = true }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = 'polkadot-v1.2.0' }
+substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
 
 [features]
 default            = [  ]
