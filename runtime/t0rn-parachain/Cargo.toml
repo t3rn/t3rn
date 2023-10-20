@@ -189,6 +189,7 @@ std = [
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",
+  "polkadot-core-primitives/std",
   "smallvec/write",
   "sp-api/std",
   "sp-block-builder/std",
