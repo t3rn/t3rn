@@ -364,6 +364,31 @@ fn mints_and_burns_registered_token_on_ownership_permissions() {
 }
 
 #[test]
+fn adds_remote_order_addresses_on_sudo_permission() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_err!(
+                XDNS::get_remote_order_contract_address([3, 3, 3, 3]),
+                pallet_xdns::Error::<Runtime>::RemoteOrderAddressNotFound
+            );
+
+            assert_ok!(XDNS::add_remote_order_address(
+                Origin::root(),
+                [3, 3, 3, 3],
+                vec![1, 2, 3, 4]
+            ));
+
+            assert_eq!(
+                XDNS::get_remote_order_contract_address([3, 3, 3, 3]),
+                Ok(vec![1, 2, 3, 4])
+            );
+        });
+}
+
+#[test]
 fn should_purge_token_and_destroy_asset_as_root_successfully() {
     ExtBuilder::default()
         .with_standard_sfx_abi()

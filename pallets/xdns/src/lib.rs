@@ -504,11 +504,10 @@ pub mod pallet {
         pub fn add_remote_order_address(
             origin: OriginFor<T>,
             target_id: TargetId,
-            speed_mode: SpeedMode,
             remote_address: Bytes,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin.clone())?;
-            <RemoteOrderAddresses<T>>::insert(target_id, speed_mode, remote_address.clone());
+            <RemoteOrderAddresses<T>>::insert(target_id, remote_address.clone());
             Ok(().into())
         }
 
@@ -737,7 +736,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn remote_order_addresses)]
     pub type RemoteOrderAddresses<T: Config> =
-        StorageDoubleMap<_, Identity, TargetId, Identity, SpeedMode, Bytes, OptionQuery>;
+        StorageMap<_, Identity, TargetId, Bytes, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn per_target_asset_estimates)]
@@ -1337,11 +1336,8 @@ pub mod pallet {
             }
         }
 
-        fn get_remote_order_contract_address(
-            gateway_id: TargetId,
-            speed_mode: &SpeedMode,
-        ) -> Result<Bytes, DispatchError> {
-            <RemoteOrderAddresses<T>>::get(gateway_id, speed_mode)
+        fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<Bytes, DispatchError> {
+            <RemoteOrderAddresses<T>>::get(gateway_id)
                 .ok_or(Error::<T>::RemoteOrderAddressNotFound.into())
         }
 
