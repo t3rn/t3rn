@@ -79,7 +79,10 @@ fn decodes_eth2_ingress_event_log_out_of_usdt_erc20_transfer() {
 }
 
 use bytes::{Buf, Bytes};
-use frame_support::{ensure, log, log::error};
+use frame_support::{
+    __private::{log, log::error},
+    ensure,
+};
 use rlp::{Decodable, Encodable};
 
 pub struct RecodeRlp;

@@ -5,7 +5,7 @@ name    = "pallet-evm-precompile-3vm-dispatch"
 version = { workspace = true }
 
 [dependencies]
-frame-support = { version = "4.0.0-dev", workspace = true }
+frame-support = { workspace = true }
 
 fp-evm     = { path = "../../primitives", default-features = false }
 pallet-evm = { path = "../..", default-features = false }

@@ -6,7 +6,7 @@ use crate::{
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
-use frame_support::{ensure, log};
+use frame_support::{__private::log, ensure};
 use scale_info::TypeInfo;
 use sp_core::{
     crypto::{AccountId32, ByteArray},

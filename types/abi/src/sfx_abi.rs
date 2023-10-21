@@ -5,7 +5,7 @@ use crate::{
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
-use frame_support::log;
+use frame_support::__private::log;
 
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
