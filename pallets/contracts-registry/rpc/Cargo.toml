@@ -18,11 +18,11 @@ jsonrpsee = { workspace = true, features = [ "client-core", "server", "macros" ]
 
 serde = { version = "1.0", features = [ "derive" ] }
 
-frame-system                              = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+frame-system                              = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 pallet-contracts-registry                 = { path = ".." }
 pallet-contracts-registry-rpc-runtime-api = { path = "runtime-api" }
-sp-api                                    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-blockchain                             = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-core                                   = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-rpc                                    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-runtime                                = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+sp-api                                    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-blockchain                             = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-core                                   = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-rpc                                    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-runtime                                = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }

@@ -34,10 +34,10 @@ serde_json  = "1.0.41"
 rlp-derive = "0.1.0"
 
 # for mini-mock events
-pallet-assets    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-balances  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+pallet-assets    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-balances  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
 

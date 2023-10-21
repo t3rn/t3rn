@@ -17,17 +17,17 @@ num-traits = { version = "0.2" }
 scale-info = { version = "2.1.1", features = [ "derive" ] }
 serde      = { version = "1.0", features = [ "derive" ] }
 
-sp-core    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-io      = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-std     = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+sp-core    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-io      = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-std     = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 
-frame-support     = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-frame-system      = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-aura       = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+frame-support     = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+frame-system      = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-aura       = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 
-pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 
 rlp = { version = "0.5.2", features = [ "derive" ] }
 
@@ -41,13 +41,13 @@ t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }
 
 # for mini-mock events
-pallet-assets    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-balances  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+pallet-assets    = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-balances  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 
 # for mini-mock runtime
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
-pallet-treasury  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.2.0" }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
+pallet-treasury  = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
 
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager" }
