@@ -22,8 +22,8 @@ use crate::{
     BalanceOf, Config, Error, Inspect, Origin, Pallet, System,
 };
 use codec::Encode;
+use core::fmt::Debug;
 use frame_support::{
-    dispatch::{fmt::Debug, DispatchError},
     ensure,
     traits::{
         tokens::{Fortitude::Polite, Preservation::Protect, WithdrawConsequence},
@@ -34,7 +34,7 @@ use frame_support::{
 use pallet_contracts_primitives::StorageDeposit as Deposit;
 use sp_runtime::{
     traits::{Saturating, Zero},
-    FixedPointNumber, FixedU128,
+    DispatchError, FixedPointNumber, FixedU128,
 };
 use sp_std::{marker::PhantomData, vec::Vec};
 

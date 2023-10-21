@@ -41,13 +41,9 @@ use crate::{
     PristineCode, Schedule, Weight, LOG_TARGET,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-    dispatch::{DispatchError, DispatchResult},
-    ensure,
-    traits::ReservableCurrency,
-};
+use frame_support::{dispatch::DispatchResult, ensure, traits::ReservableCurrency};
 use sp_core::Get;
-use sp_runtime::{traits::Zero, RuntimeDebug};
+use sp_runtime::{traits::Zero, DispatchError, RuntimeDebug};
 use sp_std::prelude::*;
 use t3rn_primitives::{
     contract_metadata::ContractType, contracts_registry::AuthorInfo, threevm::ModuleOperations,

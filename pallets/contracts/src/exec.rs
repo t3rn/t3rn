@@ -21,11 +21,10 @@ use crate::{
     BalanceOf, CodeHash, Config, ContractInfo, ContractInfoOf, DebugBufferVec, Determinism, Error,
     Event, Nonce, Origin, Pallet as Contracts, Schedule, System, LOG_TARGET,
 };
+use core::fmt::Debug;
 use frame_support::{
     crypto::ecdsa::ECDSAExt,
-    dispatch::{
-        fmt::Debug, DispatchError, DispatchResult, DispatchResultWithPostInfo, Dispatchable,
-    },
+    dispatch::{DispatchResult, DispatchResultWithPostInfo},
     storage::{with_transaction, TransactionOutcome},
     traits::{
         tokens::{Fortitude::Polite, Preservation::Expendable},
@@ -42,7 +41,10 @@ use sp_core::{
     sr25519::{Public as SR25519Public, Signature as SR25519Signature},
 };
 use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::blake2_256};
-use sp_runtime::traits::{Convert, Hash, Zero};
+use sp_runtime::{
+    traits::{Convert, Dispatchable, Hash, Zero},
+    DispatchError,
+};
 use sp_std::{marker::PhantomData, mem, prelude::*, vec::Vec};
 
 pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;

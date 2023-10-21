@@ -16,10 +16,10 @@
 // limitations under the License.
 
 use crate::{exec::ExecError, Config, Error};
+use sp_runtime::DispatchError;
+
 use frame_support::{
-    dispatch::{
-        DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo,
-    },
+    dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo},
     weights::Weight,
     DefaultNoBound,
 };

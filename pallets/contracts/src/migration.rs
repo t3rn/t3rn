@@ -64,7 +64,7 @@ pub mod v9;
 use crate::{weights::WeightInfo, Config, Error, MigrationInProgress, Pallet, Weight, LOG_TARGET};
 use codec::{Codec, Decode};
 use frame_support::{
-    codec,
+    __private::codec,
     pallet_prelude::*,
     traits::{ConstU32, OnRuntimeUpgrade},
 };

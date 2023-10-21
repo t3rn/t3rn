@@ -28,7 +28,7 @@ use crate::{
 use codec::{Decode, Encode};
 use core::cmp::{max, min};
 use frame_support::{
-    codec,
+    __private::codec,
     pallet_prelude::*,
     storage_alias,
     traits::{
