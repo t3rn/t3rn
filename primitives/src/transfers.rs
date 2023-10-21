@@ -1,9 +1,10 @@
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::{DispatchError, DispatchResult},
+    dispatch::DispatchResult,
     traits::{Currency, ExistenceRequirement},
 };
 use sp_core::H256;
+use sp_runtime::DispatchError;
 
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 

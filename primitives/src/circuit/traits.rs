@@ -3,7 +3,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
+    dispatch::{DispatchResult, DispatchResultWithPostInfo},
     weights::Weight,
 };
 use frame_system::{
@@ -11,6 +11,7 @@ use frame_system::{
     Config as ConfigSystem,
 };
 use sp_core::H256;
+use sp_runtime::DispatchError;
 use sp_std::{fmt::Debug, vec::Vec};
 
 use crate::{circuit::AdaptiveTimeout, light_client::InclusionReceipt};

@@ -4,7 +4,6 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchError;
 use frame_system::{pallet_prelude::BlockNumberFor, Config};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -12,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{hexdisplay::AsBytesRef, Hasher};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
-use sp_runtime::{traits::Zero, RuntimeDebug};
+use sp_runtime::{traits::Zero, DispatchError, RuntimeDebug};
 use sp_std::{convert::TryInto, default::Default, fmt::Debug, prelude::*};
 use t3rn_types::sfx::TargetId;
 pub use t3rn_types::sfx::{FullSideEffect, SecurityLvl, SideEffect};

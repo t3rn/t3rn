@@ -7,7 +7,7 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::Weight;
+use frame_support::weights::Weight;
 use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
