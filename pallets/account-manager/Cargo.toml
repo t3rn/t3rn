@@ -29,7 +29,7 @@ sp-std     = { workspace = true }
 sp-version = { workspace = true }
 
 circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
-substrate-abi         = { workspace = true }
+#substrate-abi         = { workspace = true }
 t3rn-primitives       = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
@@ -49,7 +49,7 @@ std = [
   "frame-system/std",
   "log/std",
   "scale-info/std",
-  "substrate-abi/std",
+#  "substrate-abi/std",
   "serde/std",
   "sp-io/std",
   "sp-version/std",
