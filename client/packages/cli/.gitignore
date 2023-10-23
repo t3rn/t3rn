@@ -1,3 +1,4 @@
 transfer.json
 exports
 *.log
+.env
