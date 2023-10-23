@@ -16,7 +16,7 @@ export const createCircuitContext = async (
     process.env.CIRCUIT_SIGNER_KEY === undefined
       ? keyring.addFromUri("//Alice")
       : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
-  const circuitWs = process.env.CIRCUIT_WS_ENDPOINT || "ws://localhost:9944"
+  const circuitWs = process.env.CIRCUIT_WS_ENDPOINT || "ws://127.0.0.1:9944"
   const sdk = new Sdk(circuitWs, signer, exportMode)
   const circuit = await sdk.init()
 
