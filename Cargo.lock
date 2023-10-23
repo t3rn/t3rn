@@ -1439,7 +1439,7 @@ dependencies = [
  "pallet-contracts 1.64.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
@@ -1458,7 +1458,6 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-xbi-portal",
  "pallet-xcm 1.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -1587,7 +1586,7 @@ dependencies = [
  "pallet-contracts 1.64.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
@@ -7133,7 +7132,6 @@ dependencies = [
  "sp-runtime 24.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
  "sp-std 8.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
  "sp-version 22.0.0 (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
- "substrate-abi",
  "t3rn-primitives",
 ]
 
@@ -7362,7 +7360,6 @@ dependencies = [
  "num-traits",
  "pallet-grandpa-finality-verifier",
  "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
- "pallet-xbi-portal",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -7643,42 +7640,6 @@ dependencies = [
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
 source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1#cc661e1d08e5e9f6746cfd1060f7b2063e9682ae"
-dependencies = [
- "eth_trie",
- "ethereum-types",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "hash-db 0.15.2",
- "hex-literal 0.3.4",
- "keccak-hash 0.10.0",
- "log",
- "milagro_bls",
- "num-traits",
- "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "pallet-sudo 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "parity-scale-codec",
- "rand 0.8.5",
- "rlp",
- "rustc-hex",
- "scale-info",
- "serde",
- "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-io 23.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-state-machine 0.28.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-trie 22.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "ssz-rs",
- "ssz-rs-derive",
- "t3rn-primitives",
- "typenum",
-]
-
-[[package]]
-name = "pallet-eth2-finality-verifier"
-version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes#03476e36f46fcc65676468c4fc4ee651ff7b7a6d"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -8030,7 +7991,7 @@ dependencies = [
  "hex-literal 0.2.2",
  "log",
  "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-grandpa-finality-verifier",
  "pallet-sudo 4.0.0-dev (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
  "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
@@ -8158,7 +8119,6 @@ dependencies = [
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
  "hash-db 0.15.2",
- "hex-literal 0.3.4",
  "keccak-hash 0.10.0",
  "log",
  "milagro_bls",
@@ -8167,7 +8127,6 @@ dependencies = [
  "pallet-sudo 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
  "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
  "parity-scale-codec",
- "rand 0.8.5",
  "rlp",
  "rustc-hex",
  "scale-info",
@@ -8415,36 +8374,6 @@ dependencies = [
  "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
  "xcm",
  "xcm-executor",
-]
-
-[[package]]
-name = "pallet-xbi-portal"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "impl-trait-for-tuples",
- "log",
- "pallet-contracts-primitives 24.0.0",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic 16.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-io 23.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "substrate-abi",
- "substrate-contracts-abi",
- "t3rn-primitives",
- "xcm",
- "xp-channel",
- "xp-format",
- "xp-xcm",
- "xs-channel",
 ]
 
 [[package]]
@@ -14369,19 +14298,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "substrate-abi"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
-]
-
-[[package]]
 name = "substrate-bip39"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14411,20 +14327,6 @@ dependencies = [
 name = "substrate-build-script-utils"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0#2cde7725e2d709a7e5f888c793b601491486daf6"
-
-[[package]]
-name = "substrate-contracts-abi"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "substrate-abi",
-]
 
 [[package]]
 name = "substrate-frame-rpc-system"
@@ -14634,7 +14536,7 @@ dependencies = [
  "pallet-contracts 1.64.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-evm",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -14881,12 +14783,10 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes)",
  "pallet-grandpa-finality-verifier",
  "pallet-insecure-randomness-collective-flip",
  "pallet-portal",
  "pallet-rewards",
- "pallet-sepolia-finality-verifier",
  "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-parachains-v1.2.0)",
  "pallet-treasury",
  "pallet-xdns",
@@ -17008,67 +16908,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.38",
-]
-
-[[package]]
-name = "xp-channel"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "xcm",
- "xp-format",
-]
-
-[[package]]
-name = "xp-format"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "substrate-abi",
- "substrate-contracts-abi",
-]
-
-[[package]]
-name = "xp-xcm"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "parity-scale-codec",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "xs-channel"
-version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi?branch=build/update-v1#c0f2c98d3e449441c61afa0a8489635c0e2e9e3e"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-io 23.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0)",
- "xp-channel",
- "xp-format",
- "xp-xcm",
 ]
 
 [[package]]

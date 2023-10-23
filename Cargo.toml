@@ -163,12 +163,12 @@ assets-common                       = { git = 'https://github.com/paritytech/pol
 
 ## TODO: t3rn dependencies
 #pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
-pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
-substrate-abi         = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
-xp-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
-xp-format             = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
-xp-xcm                = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
-xs-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#substrate-abi         = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#xp-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#xp-format             = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#xp-xcm                = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
+#xs-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 
 # ====== std ======
 frame-benchmarking-cli         = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-parachains-v1.2.0" }
