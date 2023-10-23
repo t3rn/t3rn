@@ -79,7 +79,10 @@ export class SubstrateRelayer extends EventEmitter {
     switch (sideEffect.action) {
       case SfxType.Transfer: {
         const data = sideEffect.execute();
-        return this.client.tx.balances.transfer(data[0] as string, data[1]);
+        return this.client.tx.balances.transferKeepAlive(
+          data[0] as string,
+          data[1],
+        );
       }
       default:
         return;

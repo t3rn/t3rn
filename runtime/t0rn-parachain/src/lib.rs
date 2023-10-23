@@ -78,11 +78,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 164,
-    spec_version: 165,
-    impl_version: 163,
+    authoring_version: 167,
+    spec_version: 168,
+    impl_version: 166,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 164,
+    transaction_version: 167,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -176,6 +176,11 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_withdraw_teleport::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_withdraw_teleport::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -222,6 +227,7 @@ construct_runtime!(
         DmpQueue: cumulus_pallet_dmp_queue = 33,
         // XBIPortal: pallet_xbi_portal = 34,
         AssetRegistry: pallet_asset_registry = 35,
+        WithdrawTeleport: pallet_withdraw_teleport = 36,
 
         // t3rn pallets
         XDNS: pallet_xdns = 100,

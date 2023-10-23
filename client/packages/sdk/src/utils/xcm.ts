@@ -4,7 +4,7 @@ import type {
    VersionedMultiAssets,
    VersionedMultiLocation,
 } from '@polkadot/types/interfaces'
-import {u8, u32} from '@polkadot/types'
+import {u8, u32, u128} from '@polkadot/types'
 type ORIGIN = "relay" | "para" | "system" | "t0rn"
 type ASSET  = "ROC" | "USDT" | "TRN"
 
@@ -13,6 +13,7 @@ interface ICreateXcmParameters {
    createBeneficiary: (api: ApiPromise, beneficiaryAddress: string) => VersionedMultiLocation
    createAssets: (api: ApiPromise, assetType: ASSET, originType: ORIGIN, amount: string) => VersionedMultiAssets
    createFeeAssetItem: (api: ApiPromise, feeAssetItem: number) => u32
+   createNativeAssetAmount: (api: ApiPromise, amount: number) => u128
    //createWeightLimit: (api: ApiPromise, isLimited: bool, weight: u32) => u32
 }
 
@@ -57,18 +58,28 @@ export const XcmTransferParameters: ICreateXcmParameters = {
       let parentValue: u8 = api.registry.createType("u8", 1)
       if ((originType == "relay" && assetType == "ROC")  || (originType == "system" && assetType == "USDT")
           || (originType == "t0rn" && assetType == "TRN") ) {
-         parentValue = api.registry.createType("u8", 0)
+          parentValue = api.registry.createType("u8", 0)
       }
       let assetInterior: InteriorMultiLocation
       switch (assetType) {
          case "USDT":
-            assetInterior = api.registry.createType('InteriorMultiLocation', {
-               X3: {
-                  parachain: 1000,
-                  PalletInstance: 50,
-                  GeneralIndex: 140,
-               },
-            })
+            if (originType == "system") {
+               assetInterior = api.registry.createType('InteriorMultiLocation', {
+                  X2: {
+                     PalletInstance: 50,
+                     GeneralIndex: 1984,
+                  },
+               })
+            }
+            else {
+               assetInterior = api.registry.createType('InteriorMultiLocation', {
+                  X3: {
+                     parachain: 1000,
+                     PalletInstance: 50,
+                     GeneralIndex: 1984,
+                  },
+               })
+            }
             break
          case "TRN":
             if (originType == "t0rn") {
@@ -106,5 +117,8 @@ export const XcmTransferParameters: ICreateXcmParameters = {
    },
    createFeeAssetItem: (api: ApiPromise, feeAssetItem: number): u32 => {
       return api.registry.createType("u32", feeAssetItem)
+   },
+   createNativeAssetAmount: (api: ApiPromise, amount: number): u128 => {
+      return api.registry.createType("u128", amount)
    }
 }

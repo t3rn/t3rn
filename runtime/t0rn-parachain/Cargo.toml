@@ -115,6 +115,7 @@ pallet-maintenance-mode          = { path = "../../pallets/maintenance-mode", de
 # Trappist
 xcm-primitives                   = { workspace = true }
 pallet-asset-registry            = { workspace = true }
+pallet-withdraw-teleport         = { workspace = true }
 
 #pallet-xbi-portal     = { workspace = true }
 
@@ -224,6 +225,7 @@ std = [
   # Trappist pallets
   "xcm-primitives/std",
   "pallet-asset-registry/std",
+  "pallet-withdraw-teleport/std"
 ]
 
 runtime-benchmarks = [
@@ -246,6 +248,7 @@ runtime-benchmarks = [
   "pallet-treasury/runtime-benchmarks",
   "pallet-3vm/runtime-benchmarks",
   "pallet-asset-registry/runtime-benchmarks",
+  "pallet-withdraw-teleport/runtime-benchmarks",
   "pallet-assets/runtime-benchmarks",
   "pallet-circuit/runtime-benchmarks",
   "pallet-clock/runtime-benchmarks",
@@ -270,6 +273,7 @@ runtime-benchmarks = [
   "pallet-asset-tx-payment/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
   "assets-common/runtime-benchmarks",
+
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -281,6 +285,7 @@ try-runtime = [
   "pallet-3vm/try-runtime",
   "pallet-account-manager/try-runtime",
   "pallet-asset-registry/try-runtime",
+  "pallet-withdraw-teleport/try-runtime",
   "pallet-asset-tx-payment/try-runtime",
   "pallet-assets/try-runtime",
   "pallet-aura/try-runtime",

@@ -4,16 +4,12 @@ import "@t3rn/types"
 import ora from "ora"
 import { colorLogMsg } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
-import {
-  //@ts-ignore - TS doesn't know about the type
-  T3rnPrimitivesGatewayVendor,
-} from "@polkadot/types/lookup"
-import { createType } from "@t3rn/types"
 
 export const spinner = ora()
 
 export const handlePurgeGatewayCommand = async (
   args: Args<"gateway" | "export">,
+  options: { [key: string]: any },
 ) => {
   log("INFO", `Purging ${args} gateway...`)
 
@@ -24,7 +20,7 @@ export const handlePurgeGatewayCommand = async (
 
   const { circuit, sdk, endpoint, signer } = await createCircuitContext()
 
-  if (endpoint != "ws://localhost:9944") {
+  if (endpoint != "ws://localhost:9944" && !options.force) {
     log(
       "ERROR",
       `Circuit endpoint is not localhost:9944. We don't want to purge live gateway! Aborting.`,

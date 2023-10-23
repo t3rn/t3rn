@@ -43,9 +43,7 @@ export const handleXcmTransferCommand = async (
         })
         const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(targetApi, args.recipient)
         const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
-        console.log("Asset\n")
         const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
-        console.log("Destination\n")
         const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
 
 
@@ -61,6 +59,35 @@ export const handleXcmTransferCommand = async (
         if (args.type == "relay") {
             await targetApi.tx.xcmPallet
                 .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .signAndSend(signer, ({ status, events }) => {
+                    if (status.isInBlock || status.isFinalized) {
+                        events
+                            // find/filter for failed events
+                            .filter(({ event }) =>
+                                api.events.system.ExtrinsicFailed.is(event)
+                            )
+                            // we know that data for system.ExtrinsicFailed is
+                            // (DispatchError, DispatchInfo)
+                            .forEach(({ event: { data: [error, info] } }) => {
+                                if (error.isModule) {
+                                    // for module errors, we have the section indexed, lookup
+                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const { docs, method, section } = decoded
+
+                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
+                                } else {
+                                    // Other, CannotLookup, BadOrigin, no extra info
+                                    console.log(error.toString())
+                                }
+                            })
+                    }
+                })
+        }
+        else if (args.type == "para" && args.targetAsset == "TRN") {
+            const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
+            const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, "ROC", args.type, 2000000000000)
+            await targetApi.tx.withdrawTeleport
+                .withdrawAndTeleport(xcmDestParam, xcmBeneficiaryParam, xcmNativeAssetAmount, xcmFeeAsset)
                 .signAndSend(signer, ({ status, events }) => {
                     if (status.isInBlock || status.isFinalized) {
                         events

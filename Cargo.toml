@@ -26,7 +26,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.63.2-rc.0"
+version    = "1.65.0-rc.0"
 
 workspace.resolver = "2"
 
@@ -201,8 +201,9 @@ substrate-wasm-builder         = { git = "https://github.com/paritytech/substrat
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
 # Trappist dependencies
-xcm-primitives                 = { git = "https://github.com/paritytech/trappist", branch = "main", default-features = false }
-pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", branch = "main", default-features = false }
+xcm-primitives                 = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
+pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
+pallet-withdraw-teleport       = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
 
 jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 

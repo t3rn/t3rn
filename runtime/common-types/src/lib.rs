@@ -121,25 +121,22 @@ parameter_types! {
     // Allows for t3 prefix in addresses
     pub const SS58Prefix: u16 = 9935;
     pub const SS58PrefixT1rn: u16 = 4815;
-
-    // TO DO: Abstract these values in the future (e.g. using assset registry)
-    // AssetHub Parachain ID - 1000
-    pub AssetHubLocationROC: MultiLocation = MultiLocation::new(
-        1u8,
-        X1(Parachain(1000))
-    );
-
-    // AssetHub Parachain ID - 1000; AssetHub pallet_assets Index - 50; AssetHub USDT index - 140
-    pub AssetHubLocationUSDT: MultiLocation = MultiLocation::new(
-        1,
-        X3(Parachain(1000), PalletInstance(50), GeneralIndex(140))
-    );
 }
 
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+
+pub fn base_tx_fee() -> Balance {
+    MILLIUNIT / 10
+}
+
+pub fn default_fee_per_second() -> u128 {
+    let base_weight = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+    let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
+    base_tx_per_second * base_tx_fee()
+}
 
 #[test]
 fn fixed_block_time_12s() {
