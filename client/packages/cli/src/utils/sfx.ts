@@ -80,12 +80,11 @@ export const submitSfx = async (
       typeof circuit.tx.circuit.onExtrinsicTrigger
     >[0],
     transactionArgs.speed_mode,
-    "Optimistic",
+    "Optimistic"
   )
-  const response =
-    await sdk.circuit.tx[
-      sendType === SfxSendType.Raw ? "signAndSendRaw" : "signAndSendSafe"
-    ](transaction)
+  const response = await sdk.circuit.tx[
+    sendType === SfxSendType.Raw ? "signAndSendRaw" : "signAndSendSafe"
+  ](transaction)
 
   return response
 }

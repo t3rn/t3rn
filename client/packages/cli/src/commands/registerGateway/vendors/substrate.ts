@@ -81,14 +81,16 @@ const fetchPortalConsensusData = async (
   const registrationHeader = await target.rpc.chain.getHeader(
     await target.rpc.chain.getBlockHash(registrationHeight),
   )
-  const finalityProof =
-    await target.rpc.grandpa.proveFinality(registrationHeight)
+  const finalityProof = await target.rpc.grandpa.proveFinality(
+    registrationHeight,
+  )
   const authorities =
     Encodings.Substrate.Decoders.extractAuthoritySetFromFinalityProof(
       finalityProof,
     )
-  const registratationHeaderHash =
-    await target.rpc.chain.getBlockHash(registrationHeight)
+  const registratationHeaderHash = await target.rpc.chain.getBlockHash(
+    registrationHeight,
+  )
   const targetAt = await target.at(registratationHeaderHash)
   const authoritySetId = await targetAt.query.grandpa.currentSetId()
   return {

@@ -22,13 +22,7 @@ export const handleRebootCommand = async (args: Args<"vendor" | "export">) => {
 
   const { circuit, sdk, endpoint } = await createCircuitContext()
 
-  if (
-    ![
-      "ws://localhost:9944",
-      "ws://0.0.0.0:9944",
-      "ws://127.0.0.1:9944",
-    ].includes(endpoint)
-  ) {
+  if (endpoint != "ws://localhost:9944") {
     log(
       "ERROR",
       `Circuit endpoint is not localhost:9944. We don't want to reboot live gateway! Aborting.`,

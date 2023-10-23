@@ -7,9 +7,7 @@ import transferTemplate from "@/templates/transfer.ts"
 import xTransferTemplate from "@/templates/xtransfer.ts"
 import { Args } from "@/types.ts"
 
-export const handleInitCmd = async (
-  args: Args<"config" | "transfer" | "xtransfer">,
-) => {
+export const handleInitCmd = async (args: Args<"config" | "transfer" | "xtransfer">) => {
   if (Object.keys(args).length === 0) {
     log("ERROR", "No arguments provided")
     process.exit(1)
@@ -19,7 +17,8 @@ export const handleInitCmd = async (
 
   if (args.transfer) {
     initTransferFile(args.transfer)
-  } else if (args.xtransfer) {
+  }
+  else if (args.xtransfer) {
     initXcmTransferFile(args.xtransfer)
   }
 }
@@ -43,8 +42,7 @@ export const initXcmTransferFile = (filePath: string | true) => {
   const template = JSON.stringify(xTransferTemplate, null, 2)
 
   try {
-    const file =
-      filePath === true ? path.join("./", "xtransfer.json") : filePath
+    const file = filePath === true ? path.join("./", "xtransfer.json") : filePath
     writeFileSync(file, template)
     log("SUCCESS", `${file} XCM transfer template generated!`)
   } catch (e) {
