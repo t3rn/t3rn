@@ -2,7 +2,8 @@ all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; pnpm install;
-	cd executor; pnpm install; 
+	cd executor; pnpm install; pnpm build; 
+	cd executor-gui; pnpm install;
 	cd attester; pnpm install;
 	cd grandpa-ranger; pnpm install;
 
@@ -10,7 +11,8 @@ dev:
 	cd types; yarn; yarn link; yarn build; yarn load:meta:t0rn; yarn generate:all;
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; pnpm add ../sdk; pnpm install;
-	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install; 
+	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install; pnpm build;
+	cd executor-gui; pnpm install;
 	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
 	cd grandpa-ranger; pnpm add ../sdk; pnpm install;
 
@@ -19,11 +21,15 @@ update-lock:
 	cd sdk; yarn;
 	cd cli; pnpm pnpm install;
 	cd executor; pnpm install;
+	cd executor-gui; pnpm install;
 	cd attester; pnpm install;
 	cd grandpa-ranger; pnpm install;
 
 executor:
-	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install;
+	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install; pnpm build;
+
+executor-gui:
+	cd executor-gui; pnpm install;
 
 attester:
 	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;

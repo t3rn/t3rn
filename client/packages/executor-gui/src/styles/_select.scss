@@ -1,0 +1,69 @@
+.select-input {
+  &.menu-open {
+    .select__control {
+      border-color: transparent !important;
+    }
+  }
+
+  &.no-focus-indicator {
+    .select__control {
+      border-color: transparent !important;
+    }
+  }
+}
+
+.select {
+  &__input {
+    color: theme("colors.white") !important;
+  }
+
+  &__placeholder {
+    color: theme("colors.gray.400") !important;
+  }
+
+  &__control {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid theme("colors.gray.700") !important;
+    border-radius: 0 !important;
+    transition: all ease 0.25s;
+
+    &--is-focused {
+      box-shadow: none !important;
+    }
+  }
+
+  &__single-value {
+    color: theme("colors.white") !important;
+  }
+
+  &__indicator-separator {
+    display: none !important;
+  }
+
+  &__menu {
+    background: theme("colors.dropdown") !important;
+    border: 1px solid theme("colors.gray.700") !important;
+    box-shadow:
+      rgba(255, 82, 67, 0.2) 0px 8px 24px 0px,
+      rgba(67, 183, 255, 0.2) 0px -8px 24px 0px !important;
+    border-radius: 10px !important;
+    padding: 10px;
+    transition: all ease 0.25s;
+  }
+
+  &__option {
+    color: theme("colors.dropdown-border") !important;
+    transition: all ease 0.25s;
+    background: transparent !important;
+    cursor: pointer !important;
+
+    &--is-selected {
+      color: theme("colors.white") !important;
+    }
+
+    &:hover {
+      color: theme("colors.white") !important;
+    }
+  }
+}

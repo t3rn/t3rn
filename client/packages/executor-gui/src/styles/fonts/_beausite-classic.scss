@@ -1,0 +1,40 @@
+@font-face {
+  font-family: "Beausite Classic";
+  src:
+    local("Beausite Classic Light"),
+    local("BeausiteClassic-Light"),
+    url("fonts/BeausiteClassicWeb-Light.woff2") format("woff2"),
+    url("fonts/BeausiteClassicWeb-Light.woff") format("woff");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "Beausite Classic";
+  src:
+    local("Beausite Classic Bold"),
+    local("BeausiteClassic-Bold"),
+    url("fonts/BeausiteClassicWeb-Bold.woff2") format("woff2"),
+    url("fonts/BeausiteClassicWeb-Bold.woff") format("woff");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Beausite Classic";
+  src:
+    local("Beausite Classic BoldItalic"),
+    local("BeausiteClassic-BoldItalic"),
+    url("fonts/BeausiteClassicWeb-BoldItalic.woff2") format("woff2"),
+    url("fonts/BeausiteClassicWeb-BoldItalic.woff") format("woff");
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Beausite Classic";
+  src:
+    local("Beausite Classic Clear"),
+    local("BeausiteClassic-Clear"),
+    url("fonts/BeausiteClassicWeb-Clear.woff2") format("woff2"),
+    url("fonts/BeausiteClassicWeb-Clear.woff") format("woff");
+  font-weight: 400;
+}

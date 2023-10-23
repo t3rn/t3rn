@@ -32,7 +32,7 @@ workspace.resolver = "2"
 
 # Dependencies are split into 2 groups: wasm and client.
 # - "nostd" dependencies requires to be no_std compatible, which often requires
-#   `default-features = false`. When used in a client-side crate the "std" feature should be enabled
+#   `default-features = false`. When used in a client-side create the "std" feature should be enabled
 #   there if it exists.
 # - "std" dependencies are only used in the client, and thus don't need to be no_std compatible.
 [workspace.dependencies]
@@ -262,6 +262,7 @@ members = [
   "sdk/crates/sdk",
   "types",
   "types/abi",
+  "client/packages/executor-gui/src-tauri"
 ]
 
 #[patch."https://github.com/paritytech/cumulus"]
