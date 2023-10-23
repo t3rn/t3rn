@@ -157,11 +157,13 @@ impl GatewayVendor {
                 SpeedMode::Fast => 4u32.into(),
                 SpeedMode::Rational => 6u32.into(),
                 SpeedMode::Finalized => 8u32.into(),
+                SpeedMode::Instant => 1u32.into(),
             },
             GatewayVendor::Ethereum | GatewayVendor::Sepolia => match speed_mode {
                 SpeedMode::Fast => 1u32.into(),
                 SpeedMode::Rational => 2u32.into(),
                 SpeedMode::Finalized => 3u32.into(),
+                SpeedMode::Instant => 1u32.into(),
             },
         }
     }
@@ -344,6 +346,7 @@ pub enum SpeedMode {
     Rational,
     #[default]
     Finalized,
+    Instant,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
