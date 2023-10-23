@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.65.1-rc.0] - 2023-10-23
+### :wrench: Chores
+- [`2b1fbc3`](https://github.com/t3rn/t3rn/commit/2b1fbc3528d70a0a7367f70be52dcca57b83f7db) - add extra SpeedMode::Instant *(PR [#1371](https://github.com/t3rn/t3rn/pull/1371) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.65.0-rc.0] - 2023-10-22
 ### :sparkles: New Features
 - [`b68ad72`](https://github.com/t3rn/t3rn/commit/b68ad72468b98ea299d159152387b3688013bbe3) - eth2-proof npm package *(PR [#1374](https://github.com/t3rn/t3rn/pull/1374) by [@3h4x](https://github.com/3h4x))*
@@ -1776,3 +1781,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.64.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.63.2-rc.0...v1.64.0-rc.0
 [v1.64.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.0-rc.0...v1.64.1-rc.0
 [v1.65.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.1-rc.0...v1.65.0-rc.0
+[v1.65.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.0-rc.0...v1.65.1-rc.0
