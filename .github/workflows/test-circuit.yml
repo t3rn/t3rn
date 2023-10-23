@@ -150,14 +150,16 @@ jobs:
         run: sccache --show-stats
 
       - name: 📼 Run zombienet smoke tests t0rn
-        continue-on-error: false
         working-directory: tests/zombienet
         run: ./zombienet.sh smoke t0rn
 
       - name: 📼 Run zombienet smoke tests t1rn
-        continue-on-error: false
         working-directory: tests/zombienet
         run: ./zombienet.sh smoke t1rn
+
+      - name: 📼 Run zombienet upgrade tests t0rn
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade_local t0rn
 
       - name: Print sccache stats
         working-directory: tests/zombienet

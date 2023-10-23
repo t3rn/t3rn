@@ -201,7 +201,7 @@ upgrade_local() {
     
     parachain=$2
     
-    [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
+    # [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
     
     echo "⏳ Testing real upgrade for parachain: ${parachain}"
     
