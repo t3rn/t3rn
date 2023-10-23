@@ -169,6 +169,27 @@ upgrade() {
     echo "Upgrade tests succeed!"
 }
 
+upgrade_local() {
+    if [[ $# -ne 2 ]]; then
+        echo "Expecting exactly 2 arguments"
+        echo $@
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
+        return 1
+    fi
+    
+    parachain=$2
+    
+    echo "Testing real upgrade for parachain: ${parachain}"
+    
+    # Fetch latest release binary from Github
+    $working_dir/download_previous_collator.sh "$parachain"
+    
+    # Run collator and upgrade with built WASM binary
+    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
+    
+    echo "Upgrade tests succeed!"
+}
+
 
 upgrade_local() {
     if [[ $# -ne 2 ]]; then
