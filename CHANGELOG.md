@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.65.0-rc.0] - 2023-10-22
+### :sparkles: New Features
+- [`b68ad72`](https://github.com/t3rn/t3rn/commit/b68ad72468b98ea299d159152387b3688013bbe3) - eth2-proof npm package *(PR [#1374](https://github.com/t3rn/t3rn/pull/1374) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`cac2a09`](https://github.com/t3rn/t3rn/commit/cac2a09f9907f311b86ab8cc72dc722d6d61f233) - decrease CommitteeMajorityThresholdSepolia for sepolia ranger *(PR [#1379](https://github.com/t3rn/t3rn/pull/1379) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.64.1-rc.0] - 2023-10-19
 ### :bug: Bug Fixes
 - [`60fe33a`](https://github.com/t3rn/t3rn/commit/60fe33a391e3dbf36724bfe191d84cf40bc53e1c) - **executor**: error with transfer on rococo *(PR [#1376](https://github.com/t3rn/t3rn/pull/1376) by [@3h4x](https://github.com/3h4x))*
@@ -1767,3 +1775,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.63.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.63.0-rc.0...v1.63.1-rc.0
 [v1.64.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.63.2-rc.0...v1.64.0-rc.0
 [v1.64.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.0-rc.0...v1.64.1-rc.0
+[v1.65.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.1-rc.0...v1.65.0-rc.0
