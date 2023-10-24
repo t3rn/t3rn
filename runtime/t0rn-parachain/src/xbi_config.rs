@@ -350,11 +350,11 @@ pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
 /// Logic for the author to get a portion of fees.
 pub struct ToAuthor<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToAuthor<R>
-    where
-        R: pallet_balances::Config + pallet_collator_selection::Config,
-        AccountIdOf<R>: From<polkadot_core_primitives::v2::AccountId>
+where
+    R: pallet_balances::Config + pallet_collator_selection::Config,
+    AccountIdOf<R>: From<polkadot_core_primitives::v2::AccountId>
         + Into<polkadot_core_primitives::v2::AccountId>,
-        <R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
+    <R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
 {
     fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
         let author = <pallet_collator_selection::Pallet<R>>::account_id();

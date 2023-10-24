@@ -45,7 +45,7 @@ export const handleXcmTransferCommand = async (
         const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
         const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
         const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
-
+        const xcmWeightLimitParam = XcmTransferParameters.createWeightLimit(targetApi)
 
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
@@ -58,7 +58,13 @@ export const handleXcmTransferCommand = async (
         }
         if (args.type == "relay") {
             await targetApi.tx.xcmPallet
-                .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .limitedReserveTransferAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
                 .signAndSend(signer, ({ status, events }) => {
                     if (status.isInBlock || status.isFinalized) {
                         events
@@ -112,9 +118,47 @@ export const handleXcmTransferCommand = async (
                     }
                 })
         }
+        else if (args.type == "system" && args.targetAsset == "TRN") {
+            await targetApi.tx.polkadotXcm
+                .limitedTeleportAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
+                .signAndSend(signer, ({ status, events }) => {
+                if (status.isInBlock || status.isFinalized) {
+                    events
+                        // find/filter for failed events
+                        .filter(({ event }) =>
+                            api.events.system.ExtrinsicFailed.is(event)
+                        )
+                        // we know that data for system.ExtrinsicFailed is
+                        // (DispatchError, DispatchInfo)
+                        .forEach(({ event: { data: [error, info] } }) => {if (error.isModule) {
+                            // for module errors, we have the section indexed, lookup
+                            const decoded = api.registry.findMetaError(error.asModule)
+                            const { docs, method, section } = decoded
+
+                            console.log(`${section}.${method}: ${docs.join(' ')}`)
+                        } else {
+                            // Other, CannotLookup, BadOrigin, no extra info
+                            console.log(error.toString())
+                        }
+                        })
+                }
+                })
+        }
         else {
             await targetApi.tx.polkadotXcm
-                .reserveTransferAssets(xcmDestParam,xcmBeneficiaryParam, xcmAssetsParam, xcmAssetFeeItem)
+                .limitedReserveTransferAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
                 .signAndSend(signer, ({ status, events }) => {
                     if (status.isInBlock || status.isFinalized) {
                         events
