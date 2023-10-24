@@ -6575,6 +6575,7 @@ dependencies = [
  "frame-system",
  "hex",
  "hex-literal 0.2.2",
+ "libsecp256k1",
  "log",
  "parity-scale-codec",
  "scale-info",
