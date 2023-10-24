@@ -145,8 +145,8 @@ smoke() {
 }
 
 runtime_upgrade() {
-    if [[ $# -ne 2 ]]; then
-        echo "Expecting exactly 2 arguments"
+    if [[ $# -lt 2 ]]; then
+        echo "Expecting 2 or more arguments"
         echo $@
         echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn> [local/github]"
         return 1
