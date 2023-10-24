@@ -1,13 +1,13 @@
-import pino from "pino"
+import pino from 'pino'
 
 // Determine if pretty printing is enabled based on the PROFILE environment variable
 const isPrettyPrintEnabled =
-  process.env.PROFILE === "local" || process.env.LOG_PRETTY === "true"
+  process.env.PROFILE === 'local' || process.env.LOG_PRETTY === 'true'
 
 const loggerConfig = {
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || 'info',
   formatters: {
-    level: label => {
+    level: (label) => {
       return { level: label }
     },
   },
@@ -15,7 +15,7 @@ const loggerConfig = {
   stream: process.stdout,
   transport: isPrettyPrintEnabled
     ? {
-        target: "pino-pretty",
+        target: 'pino-pretty',
       }
     : undefined,
 }

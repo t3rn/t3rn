@@ -1,10 +1,10 @@
-import { generateRange } from "./collect"
+import { generateRange } from './collect'
 
-require("dotenv").config()
-import { Connection } from "./connection"
-import { cryptoWaitReady } from "@t3rn/sdk"
-import { Prometheus } from "./prometheus"
-import { logger } from "./logging"
+require('dotenv').config()
+import { Connection } from './connection'
+import { cryptoWaitReady } from '@t3rn/sdk'
+import { Prometheus } from './prometheus'
+import { logger } from './logging'
 
 class GrandpaRanger {
   circuit: Connection
@@ -35,7 +35,7 @@ class GrandpaRanger {
       this.config.circuit.rpc2,
       true,
       this.prometheus,
-      "circuit"
+      'circuit'
     )
     this.circuit.connect()
     this.target = new Connection(
@@ -57,19 +57,19 @@ class GrandpaRanger {
       this.target,
       this.prometheus,
       this.config.targetGatewayId
-    ).catch(e => {
+    ).catch((e) => {
       logger.error(e)
       // potentially we want to introduce a retry logic here
       return resolve()
     })
 
     if (!batches) {
-      logger.warn("Failed to generate batches")
+      logger.warn('Failed to generate batches')
       return resolve()
     }
 
     if (batches.length == 0) {
-      logger.warn("No batches to submit")
+      logger.warn('No batches to submit')
       return resolve()
     }
 
@@ -84,7 +84,7 @@ class GrandpaRanger {
     )
 
     await this.submitToCircuit(batches)
-      .then(res => {
+      .then((res) => {
         logger.info(
           {
             size: totalElements,
@@ -94,7 +94,7 @@ class GrandpaRanger {
 
         this.prometheus.submissions.inc({
           target: this.config.targetGatewayId,
-          status: "success",
+          status: 'success',
         })
         // Update latest circuit height
         const latestHeight = parseInt(
@@ -103,10 +103,10 @@ class GrandpaRanger {
         this.prometheus.height.set(latestHeight)
         return resolve()
       })
-      .catch(e => {
+      .catch((e) => {
         logger.error(e)
         this.prometheus.submissions.inc(
-          { target: this.config.targetGatewayId, status: "error" },
+          { target: this.config.targetGatewayId, status: 'error' },
           1
         )
       })
@@ -154,14 +154,14 @@ class GrandpaRanger {
   private createTxBatch(range: any[]) {
     let tx
     tx = this.circuit.sdk?.circuit.tx.createBatch(
-      range.map(args => {
+      range.map((args) => {
         let submit
         // select the correct submit function based on the targetGatewayId
-        if (this.config.targetGatewayId === "roco") {
+        if (this.config.targetGatewayId === 'roco') {
           submit = this.circuit.client.tx.rococoBridge.submitHeaders
-        } else if (this.config.targetGatewayId === "kusm") {
+        } else if (this.config.targetGatewayId === 'kusm') {
           submit = this.circuit.client.tx.kusamaBridge.submitHeaders
-        } else if (this.config.targetGatewayId === "pdot") {
+        } else if (this.config.targetGatewayId === 'pdot') {
           submit = this.circuit.client.tx.polkadotBridge.submitHeaders
         } else {
           throw new Error(
@@ -177,7 +177,7 @@ class GrandpaRanger {
 
   private createTx(range: any[]) {
     let tx
-    logger.debug("Batches disabled")
+    logger.debug('Batches disabled')
     logger.debug(
       `Size of range: ${Math.floor(
         Buffer.from(JSON.stringify(range[0].range)).length / 1024
@@ -193,19 +193,19 @@ class GrandpaRanger {
         Buffer.from(JSON.stringify(range[0].justification)).length / 1024
       )}kB`
     )
-    if (this.config.targetGatewayId === "roco") {
+    if (this.config.targetGatewayId === 'roco') {
       tx = this.circuit.client.tx.rococoBridge.submitHeaders(
         range[0].range,
         range[0].signed_header,
         range[0].justification
       )
-    } else if (this.config.targetGatewayId === "kusm") {
+    } else if (this.config.targetGatewayId === 'kusm') {
       tx = this.circuit.client.tx.kusamaBridge.submitHeaders(
         range[0].range,
         range[0].signed_header,
         range[0].justification
       )
-    } else if (this.config.targetGatewayId === "pdot") {
+    } else if (this.config.targetGatewayId === 'pdot') {
       tx = this.circuit.client.tx.polkadotBridge.submitHeaders(
         range[0].range,
         range[0].signed_header,
@@ -236,8 +236,8 @@ class GrandpaRanger {
     config = require(`../config/${process.env.PROFILE}.ts`).default
     logger.info(`Using ${process.env.PROFILE}.ts profile`)
   } catch {
-    config = require("../config/local.ts").default
-    logger.info("Using local profile")
+    config = require('../config/local.ts').default
+    logger.info('Using local profile')
   }
 
   const grandpaRanger = new GrandpaRanger(config)
