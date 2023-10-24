@@ -70,6 +70,7 @@ pallet-xcm                 = { workspace = true }
 polkadot-parachain         = { workspace = true }
 polkadot-runtime-common    = { workspace = true }
 polkadot-runtime-constants = { workspace = true }
+polkadot-core-primitives   = { workspace = true }
 xcm                        = { workspace = true }
 xcm-builder                = { workspace = true }
 xcm-executor               = { workspace = true }
@@ -188,6 +189,7 @@ std = [
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",
+  "polkadot-core-primitives/std",
   "smallvec/write",
   "sp-api/std",
   "sp-block-builder/std",

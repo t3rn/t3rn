@@ -13184,6 +13184,7 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",

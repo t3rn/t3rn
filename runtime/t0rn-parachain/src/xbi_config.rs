@@ -9,7 +9,7 @@ use cumulus_primitives_core::ParaId;
 use cumulus_primitives_core::GetChannelInfo;
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Contains, ContainsPair, Everything, Get, Nothing},
+    traits::{ConstU32, Contains, ContainsPair, Currency, Everything, Get, Nothing, OnUnbalanced},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -302,6 +302,7 @@ parameter_types! {
     );
     /// Roc = 7 Rococo USDT
     pub RocPerSecond: (xcm::v3::AssetId, u128,u128) = (MultiLocation::new(1,Here).into(), default_fee_per_second() * 70, 0u128);
+    pub SelfReserve: MultiLocation = MultiLocation { parents:0, interior: Here };
 }
 
 pub struct ReserveAssetsFrom<T>(PhantomData<T>);
@@ -338,13 +339,36 @@ impl Contains<(MultiLocation, Vec<MultiAsset>)> for OnlyTeleportNative {
     }
 }
 
+/// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+    <T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
+
+/// Type alias to conveniently refer to `frame_system`'s `Config::AccountId`.
+pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
+
+/// Logic for the author to get a portion of fees.
+pub struct ToAuthor<R>(PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for ToAuthor<R>
+    where
+        R: pallet_balances::Config + pallet_collator_selection::Config,
+        AccountIdOf<R>: From<polkadot_core_primitives::v2::AccountId>
+        + Into<polkadot_core_primitives::v2::AccountId>,
+        <R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
+{
+    fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
+        let author = <pallet_collator_selection::Pallet<R>>::account_id();
+        <pallet_balances::Pallet<R>>::resolve_creating(&author, amount);
+    }
+}
+
 pub type Traders = (
     // Rococo USDT
     FixedRateOfFungible<RUsdtPerSecond, ()>,
     // ROC
     FixedRateOfFungible<RocPerSecond, ()>,
     // Everything else
-    UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>, //ToAuthor<Runtime>>,
+    UsingComponents<WeightToFee, SelfReserve, AccountId, Balances, ToAuthor<Runtime>>,
 );
 pub type Reserves = (NativeAsset, ReserveAssetsFrom<AssetHubLocation>);
 pub type TrustedTeleporters = (xcm_builder::Case<AssetHubTrustedTeleporter>,);
