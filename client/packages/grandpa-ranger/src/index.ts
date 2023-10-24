@@ -1,4 +1,4 @@
-import { generateRange } from './collect'
+import { generateRange, setCheckpointMetrics } from './collect'
 
 require('dotenv').config()
 import { Connection } from './connection'
@@ -25,6 +25,8 @@ class GrandpaRanger {
     await this.connectClients()
     await new Promise((resolve, _reject) => setTimeout(resolve, 2000)) // wait for the clients to connect
     await this.collectAndSubmit(() => {})
+
+    this.scheduleHeightMonitoring()
     this.scheduleRangeSubmission()
   }
 
@@ -55,7 +57,6 @@ class GrandpaRanger {
       this.config,
       this.circuit,
       this.target,
-      this.prometheus,
       this.config.targetGatewayId
     ).catch((e) => {
       logger.error(e)
@@ -215,6 +216,23 @@ class GrandpaRanger {
       throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
     }
     return tx
+  }
+
+  async scheduleHeightMonitoring() {
+    while (true) {
+      await new Promise((resolve, _reject) => {
+        logger.info(`Starting new range submission loop`)
+        setTimeout(() => {
+          setCheckpointMetrics(
+            this.config,
+            this.circuit,
+            this.target,
+            this.prometheus
+          ).catch((e) => resolve),
+            this.config.rangeInterval * 1000
+        })
+      })
+    }
   }
 
   async scheduleRangeSubmission() {

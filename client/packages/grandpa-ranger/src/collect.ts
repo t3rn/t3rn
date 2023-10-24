@@ -4,11 +4,26 @@ const axios = require('axios').default
 import { Prometheus } from './prometheus'
 import { logger } from './logging'
 
+export const setCheckpointMetrics = async (
+  config: any,
+  circuitConnection: Connection,
+  targetConnection: Connection,
+  prometheus: Prometheus
+) => {
+  const circuitHeight = await currentGatewayHeight(
+    circuitConnection,
+    config.targetGatewayId
+  )
+  let targetHeight = await currentTargetHeight(targetConnection)
+
+  prometheus.heightDiff = targetHeight - circuitHeight
+  prometheus.height.set({ target: 'circuit' }, circuitHeight)
+}
+
 export const generateRange = async (
   config: any,
   circuitConnection: Connection,
   targetConnection: Connection,
-  prometheus: Prometheus,
   target: string
 ): Promise<any[]> => {
   return new Promise(async (resolve, reject) => {
@@ -26,8 +41,6 @@ export const generateRange = async (
         },
         'Current heights'
       )
-      prometheus.heightDiff = targetHeight - circuitHeight
-      prometheus.height.set({ target: 'circuit' }, circuitHeight)
 
       if (targetHeight > circuitHeight) {
         let batches = await generateBatchProof(
