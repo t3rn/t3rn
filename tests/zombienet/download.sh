@@ -5,6 +5,9 @@ echo
 echo ⬇️ Downloading binaries for $1
 echo
 
+# Make sure we have all recent tags
+git fetch --all --tags -f || true > /dev/null
+
 case "$1" in
     t0rn*)
         new_version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*" | head -n 1)
