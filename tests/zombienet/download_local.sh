@@ -2,23 +2,17 @@
 bin_dir=../../bin
 
 case "$1" in
-  t0rn*)
-    echo "=========== T0RN ==========="
-    new_version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*" | head -n 1)
-    echo New version: "$new_version"
-
-    ./download_previous_collator.sh "t0rn"
-    cp ../../target/release/wbuild/t0rn-parachain-runtime/${1}_parachain_runtime.compact.compressed.wasm  ${bin_dir}/parachain_runtime.compact.compressed.wasm
+    t0rn*)
+        new_version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*" | head -n 1)
     ;;
-  t3rn*)
-    echo "=========== T3RN ==========="
-    new_version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9].[0-9]" | head -n 1)
-    echo Tags: "$tags_list"
-    echo New version: "$new_version"
-
-    ./download_previous_collator.sh "t3rn"
-    cp ../../target/release/wbuild/t0rn-parachain-runtime/${1}_parachain_runtime.compact.compressed.wasm  ${bin_dir}/parachain_runtime.compact.compressed.wasm
+    t3rn*)
+        new_version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9].[0-9]" | head -n 1)
     ;;
-  *)        
-  exit 1;;
+    *)
 esac
+echo New version: "$new_version"
+
+./download_previous_collator.sh $1
+../../scripts/build_wasm.sh $1
+../../scripts/update_specs.sh $1
+cp ../../target/release/wbuild/${1}-parachain-runtime/${1}_parachain_runtime.compact.compressed.wasm  ${bin_dir}/parachain_runtime.compact.compressed.wasm
