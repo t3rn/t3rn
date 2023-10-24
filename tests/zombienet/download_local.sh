@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-bin_dir=../../bin
+set -e
+DIR=$(git rev-parse --show-toplevel)
+BIN_DIR=$DIR/bin
 
 case "$1" in
     t0rn*)
@@ -12,7 +14,7 @@ case "$1" in
 esac
 echo New version: "$new_version"
 
-./download_previous_collator.sh $1
-../../scripts/build_wasm.sh $1
-../../scripts/update_specs.sh $1
-cp ../../target/release/wbuild/${1}-parachain-runtime/${1}_parachain_runtime.compact.compressed.wasm  ${bin_dir}/parachain_runtime.compact.compressed.wasm
+./download_collator.sh $1
+$DIR/scripts/update_parachain_versions.sh $1
+$DIR/scripts/build_wasm.sh $1
+cp $DIR/target/release/wbuild/${1}-parachain-runtime/${1}_parachain_runtime.compact.compressed.wasm  ${BIN_DIR}/parachain_runtime.compact.compressed.wasm
