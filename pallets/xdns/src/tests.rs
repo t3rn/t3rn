@@ -26,7 +26,7 @@ use codec::Decode;
 use frame_support::pallet_prelude::Weight;
 
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
-use sp_core::crypto::AccountId32;
+use sp_core::{crypto::AccountId32, H256};
 use sp_runtime::{print, DispatchError};
 use t3rn_primitives::{
     circuit::SecurityLvl::{Escrow, Optimistic},
@@ -360,6 +360,31 @@ fn mints_and_burns_registered_token_on_ownership_permissions() {
             // Check that the balance can be burned
             assert_ok!(XDNS::burn(authorize_asset, beneficiary.clone(), 888));
             assert_eq!(Assets::balance(authorize_asset, &beneficiary), 111);
+        });
+}
+
+#[test]
+fn adds_remote_order_addresses_on_sudo_permission() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_err!(
+                XDNS::get_remote_order_contract_address([3, 3, 3, 3]),
+                pallet_xdns::Error::<Runtime>::RemoteOrderAddressNotFound
+            );
+
+            assert_ok!(XDNS::add_remote_order_address(
+                Origin::root(),
+                [3, 3, 3, 3],
+                H256::repeat_byte(1),
+            ));
+
+            assert_eq!(
+                XDNS::get_remote_order_contract_address([3, 3, 3, 3]),
+                Ok(H256::repeat_byte(1))
+            );
         });
 }
 

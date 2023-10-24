@@ -66,12 +66,12 @@ pallet-grandpa = { workspace = true }
 
 # Polkadot
 pallet-xcm                 = { workspace = true }
-polkadot-parachain         = { workspace = true }
+polkadot-parachain-primitives         = { workspace = true }
 polkadot-runtime-common    = { workspace = true }
 polkadot-runtime-constants = { workspace = true }
-xcm                        = { workspace = true }
-xcm-builder                = { workspace = true }
-xcm-executor               = { workspace = true }
+staging-xcm                        = { workspace = true }
+staging-xcm-builder                = { workspace = true }
+staging-xcm-executor               = { workspace = true }
 
 # Cumulus
 cumulus-pallet-aura-ext             = { workspace = true }
@@ -101,12 +101,12 @@ pallet-contracts-registry        = { path = "../../pallets/contracts-registry", 
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
-pallet-xbi-portal                = { workspace = true }
+#pallet-xbi-portal                = { workspace = true }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.1", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.4", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.3", default-features = false }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.6", default-features = false }
 pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 
 # Smart contracts VMs
@@ -163,14 +163,14 @@ std = [
   "pallet-sudo/std",
   "pallet-membership/std",
   "pallet-clock/std",
-  "pallet-xbi-portal/std",
+#  "pallet-xbi-portal/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
   "parachains-common/std",
   "pallet-xcm/std",
   "parachain-info/std",
-  "polkadot-parachain/std",
+  "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
   "smallvec/write",
   "sp-api/std",
@@ -185,9 +185,9 @@ std = [
   "sp-std/std",
   "sp-transaction-pool/std",
   "sp-version/std",
-  "xcm-builder/std",
-  "xcm-executor/std",
-  "xcm/std",
+  "staging-xcm-builder/std",
+  "staging-xcm-executor/std",
+  "staging-xcm/std",
   "pallet-randomness-collective-flip/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
@@ -218,7 +218,7 @@ runtime-benchmarks = [
   "pallet-timestamp/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
-  "xcm-builder/runtime-benchmarks",
+  "staging-xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
   "cumulus-pallet-parachain-system/runtime-benchmarks",
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
@@ -238,14 +238,14 @@ runtime-benchmarks = [
   "pallet-scheduler/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
-  "pallet-xbi-portal/runtime-benchmarks",
+#  "pallet-xbi-portal/runtime-benchmarks",
   "pallet-xdns/runtime-benchmarks",
   "pallet-attesters/runtime-benchmarks",
   "pallet-rewards/runtime-benchmarks",
   "pallet-vacuum/runtime-benchmarks",
-  "polkadot-parachain/runtime-benchmarks",
+  "polkadot-parachain-primitives/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
-  "xcm-executor/runtime-benchmarks",
+  "staging-xcm-executor/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",

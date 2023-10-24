@@ -23,10 +23,11 @@ use crate::{
     schedule::HostFnWeights,
     BalanceOf, CodeHash, Config, DebugBufferVec, Error, SENTINEL,
 };
+use sp_runtime::{DispatchError, RuntimeDebug};
 
 use bitflags::bitflags;
 use codec::{Decode, DecodeLimit, Encode, MaxEncodedLen};
-use frame_support::{dispatch::DispatchError, ensure, traits::Get, weights::Weight, RuntimeDebug};
+use frame_support::{ensure, traits::Get, weights::Weight};
 use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
 use pallet_contracts_proc_macro::define_env;
 use sp_io::hashing::{blake2_128, blake2_256, keccak_256, sha2_256};

@@ -35,6 +35,7 @@ t3rn-primitives = { path = "../../primitives", default-features = false }
 hex                    = "0.4.2"
 hex-literal            = "0.2.1"
 t3rn-mini-mock-runtime = { path = "../../runtime/mini-mock" }
+libsecp256k1 = { version = "0.7.1", features = ["static-context"] }
 
 [features]
 default = [ "std" ]

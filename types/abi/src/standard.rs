@@ -62,7 +62,7 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
             (b"amount".to_vec(), true),
         ],
         ingress_abi_descriptors: PerCodecAbiDescriptors {
-            // assume all indexed in topics ("+")
+            // assume all indexed in topics ("+") //  event Transfer(address indexed from, address indexed to, uint tokens);
             for_rlp:
                 b"Transfer:Log(from+:Account20,to+:Account20,amount:Value256)"
                     .to_vec(),

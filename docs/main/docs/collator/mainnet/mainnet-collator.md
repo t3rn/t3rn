@@ -13,7 +13,7 @@ Make sure to have your machine setup for [Rust and Substrate development](https:
 Install the `subkey` tool:
 
 ```sh
-cargo install subkey --git https://github.com/paritytech/substrate
+cargo install subkey --git https://github.com/paritytech/polkadot-sdk
 ```
 
 To generate a new generic Substrate keypair just run:

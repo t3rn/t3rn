@@ -2394,7 +2394,7 @@ pub mod attesters_test {
 
         let signature: Vec<u8> = match key_type {
             ECDSA_ATTESTER_KEY_TYPE_ID => ecdsa::Pair::from_seed(&secret_key)
-                .sign(latest_batch_hash.as_ref())
+                .sign_prehashed(&latest_batch_hash.0)
                 .encode(),
             ED25519_ATTESTER_KEY_TYPE_ID => ed25519::Pair::from_seed(&secret_key)
                 .sign(latest_batch_hash.as_ref())
@@ -2565,7 +2565,7 @@ pub mod attesters_test {
             );
 
             let same_signature_again = ecdsa::Pair::from_seed(&[1u8; 32])
-                .sign(message_hash.as_ref())
+                .sign_prehashed(&message_hash.0)
                 .encode();
 
             assert_err!(
@@ -3007,7 +3007,7 @@ pub mod attesters_test {
             // Sign both of the late batches now by adding 1 missing attestation to each of them
             let late_attester = AccountId::from([22u8; 32]);
             let late_first_signature = ecdsa::Pair::from_seed(&[22u8; 32])
-                .sign(first_pending_batch.message_hash().as_ref())
+                .sign_prehashed(&first_pending_batch.message_hash().0)
                 .encode();
 
             assert_ok!(Attesters::submit_attestation(
@@ -3018,7 +3018,7 @@ pub mod attesters_test {
             ));
 
             let late_second_signature = ecdsa::Pair::from_seed(&[22u8; 32])
-                .sign(second_pending_batch.message_hash().as_ref())
+                .sign_prehashed(&second_pending_batch.message_hash().0)
                 .encode();
 
             assert_ok!(Attesters::submit_attestation(

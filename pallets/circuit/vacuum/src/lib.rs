@@ -196,21 +196,14 @@ pub mod pallet {
             origin: OriginFor<T>,
             order_remote_proof: Vec<u8>,
             remote_target_id: TargetId,
+            speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin.clone())?;
-            // Assume finalized speed mode to remote order operations to avoid disputes in events of chain reorgs.
-            #[cfg(feature = "test-skip-verification")]
-            let speed_mode = SpeedMode::Fast;
-            #[cfg(not(feature = "test-skip-verification"))]
-            let speed_mode = SpeedMode::Finalized;
 
             let verified_event_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
                 remote_target_id,
                 speed_mode.clone(),
-                Some([
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150, 80, 46, 240, 61, 236, 212, 170, 189,
-                    54, 140, 196, 111, 92, 44, 34, 166, 69, 148, 140,
-                ]), // replace with proper mapper to remoteOrder contract's address
+                Some(T::Xdns::get_remote_order_contract_address(remote_target_id)?.0),
                 order_remote_proof, // 0,150,80,46,240,61,236,212,170,189,54,140,196,111,92,44,34,166,69,148,140
             )?
             .message;
@@ -367,6 +360,7 @@ mod tests {
     use codec::{Decode, Encode};
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
+    use sp_core::H256;
     use sp_runtime::{traits::Keccak256, AccountId32};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
@@ -1242,6 +1236,15 @@ mod tests {
                 ASSET_ETH,
             );
 
+            // Add remote order address to XDNS
+            assert_ok!(
+                XDNS::add_remote_order_address(
+                    RuntimeOrigin::root(),
+                    ETHEREUM_TARGET,
+                    H256::from([0,0,0,0,0,0,0,0,0,0,0,0,150,80,46,240,61,236,212,170,189,54,140,196,111,92,44,34,166,69,148,140]),
+                )
+            );
+
             assert!(hotswap_latest_receipt_header_root(hex!("76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966").into()));
 
             activate_all_light_clients();
@@ -1250,6 +1253,7 @@ mod tests {
                 RuntimeOrigin::signed(executor.clone()),
                 rlp_encoded_remote_order_local_reward_event.encode(),
                 ETHEREUM_TARGET,
+                SpeedMode::Fast,
             ));
 
             let xtx_id = expect_last_event_to_emit_xtx_id();
@@ -1287,6 +1291,14 @@ mod tests {
             // 
             //   value: '02f902cc018354abeab9010000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000004000000000000000000000001000000000020000000000000000000800000000000000000000000000000000000000000000000004010000000000000000000000000000000000002000000000000000000000000000000000200000000000000400000000060000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000008f901c1f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064',
             //   event: 'f901be9496502ef03decd4aabd368cc46f5c2c22a645948cf884a07f1c6663f3b95396ee5e22d3f5fff2058cf091e620a0b1907eda0138b382c8b6a0e2da230e52caecf528190bb0f28767e3e02a2df185bcd070c3f019537e4d5844a00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000f85a57d965aecd289c625cae6161d0ab5141bc66b90120000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e003030303000000000000000000000000000000000000000000000000000000000000e80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000064'
+
+            assert_ok!(
+                XDNS::add_remote_order_address(
+                    RuntimeOrigin::root(),
+                    ETHEREUM_TARGET,
+                    H256::from([0,0,0,0,0,0,0,0,0,0,0,0,150,80,46,240,61,236,212,170,189,54,140,196,111,92,44,34,166,69,148,140]),
+                )
+            );
 
             // Enroll asset as mintable
             assert_ok!(XDNS::enroll_bridge_asset(
@@ -1327,6 +1339,7 @@ mod tests {
                 RuntimeOrigin::signed(executor.clone()),
                 rlp_encoded_remote_order_local_reward_event.encode(),
                 ETHEREUM_TARGET,
+                SpeedMode::Fast,
             ));
 
             // Check that assets were minted according to the bridge order formula:

@@ -25,6 +25,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_consensus_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{generic::OpaqueDigestItemId, traits::Header as HeaderT, RuntimeDebug};
+
 pub mod justification;
 
 /// A type that can be used as a parameter in a dispatchable function.
@@ -119,7 +120,7 @@ impl<H: Default, E> HeaderChain<H, E> for () {
 }
 
 /// Abstract finality proof that is justifying block finality.
-pub trait FinalityProof<Number>: Clone + Send + Sync + Debug {
+pub trait FinalityProof<Number>: Clone + Send + Sync {
     /// Return number of header that this proof is generated for.
     fn target_header_number(&self) -> Number;
 }

@@ -1,6 +1,6 @@
 use crate::types::*;
 use codec::{Decode, Encode};
-use frame_support::log;
+use frame_support::__private::log;
 use sp_std::iter::Peekable;
 
 use scale_info::prelude::string::String;

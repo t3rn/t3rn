@@ -1,12 +1,15 @@
 use codec::{Decode, Encode};
 use frame_support::{
+    __private::log,
     assert_ok,
     dispatch::DispatchResultWithPostInfo,
-    log,
     traits::{fungibles::Destroy, AsEnsureOriginWithArg, FindAuthor},
-    Blake2_128Concat, RuntimeDebug, StorageHasher,
+    Blake2_128Concat, StorageHasher,
 };
 use frame_system::EnsureSigned;
+use sp_runtime::RuntimeDebug;
+use t3rn_primitives::light_client::LightClientAsyncAPI;
+
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, AttestersAgreements, BatchMessage,
     BatchStatus, Batches, CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee,
@@ -14,9 +17,9 @@ pub use pallet_attesters::{
     NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
     PreviousCommittee, SortedNominatedAttesters,
 };
-pub use pallet_eth2_finality_verifier::{
-    types::EthereumEventInclusionProof, ExecutionHeaderMap as Eth2ExecutionHeaderMap,
-};
+// pub use pallet_eth2_finality_verifier::{
+//     types::EthereumEventInclusionProof, ExecutionHeaderMap as Eth2ExecutionHeaderMap,
+// };
 use sp_runtime::BuildStorage;
 use std::marker::PhantomData;
 
@@ -25,7 +28,7 @@ pub use pallet_circuit::{
     SFX2XTXLinksMap, XExecSignals,
 };
 pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
-use pallet_eth2_finality_verifier::types::Root;
+// use pallet_eth2_finality_verifier::types::Root;
 mod hooks;
 mod treasuries_config;
 pub use hooks::GlobalOnInitQueues;
@@ -106,8 +109,8 @@ frame_support::construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
-        EthereumBridge: pallet_eth2_finality_verifier = 132,
-        SepoliaBridge: pallet_sepolia_finality_verifier = 133,
+        // EthereumBridge: pallet_eth2_finality_verifier = 132,
+        // SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
     }
 );
@@ -387,12 +390,12 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
                 select_grandpa_light_client_instance::<MiniRuntime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
-            GatewayVendor::Ethereum => Ok(Box::new(pallet_eth2_finality_verifier::Pallet::<
-                MiniRuntime,
-            >(PhantomData))),
-            GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_finality_verifier::Pallet::<
-                MiniRuntime,
-            >(PhantomData))),
+            // GatewayVendor::Ethereum => Ok(Box::new(pallet_eth2_finality_verifier::Pallet::<
+            //     MiniRuntime,
+            // >(PhantomData))),
+            // GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_finality_verifier::Pallet::<
+            //     MiniRuntime,
+            // >(PhantomData))),
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }
     }
@@ -407,35 +410,35 @@ parameter_types! {
     pub const HeadersToStoreEth: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
     pub const SessionLength: u64 = 5;
     pub const SyncCommitteeSize: u32 = 26;
-    pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    // pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteePeriod: u32 = 6;
     pub const CommitteeMajorityThreshold: u32 = 80;
 }
 
-impl pallet_eth2_finality_verifier::Config for MiniRuntime {
-    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
-    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
-    type HeadersToStore = HeadersToStoreEth;
-    type LightClientAsyncAPI = XDNS;
-    type RuntimeEvent = RuntimeEvent;
-    type SlotsPerEpoch = SlotsPerEpoch;
-    type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
-}
-
-impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
-    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
-    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
-    type HeadersToStore = HeadersToStoreEth;
-    type LightClientAsyncAPI = XDNS;
-    type RuntimeEvent = RuntimeEvent;
-    type SlotsPerEpoch = SlotsPerEpoch;
-    type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
-}
+// impl pallet_eth2_finality_verifier::Config for MiniRuntime {
+//     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+//     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+//     type GenesisValidatorRoot = GenesisValidatorsRoot;
+//     type HeadersToStore = HeadersToStoreEth;
+//     type LightClientAsyncAPI = XDNS;
+//     type RuntimeEvent = RuntimeEvent;
+//     type SlotsPerEpoch = SlotsPerEpoch;
+//     type SyncCommitteeSize = SyncCommitteeSize;
+//     type WeightInfo = ();
+// }
+//
+// impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
+//     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+//     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+//     type GenesisValidatorRoot = GenesisValidatorsRoot;
+//     type HeadersToStore = HeadersToStoreEth;
+//     type LightClientAsyncAPI = XDNS;
+//     type RuntimeEvent = RuntimeEvent;
+//     type SlotsPerEpoch = SlotsPerEpoch;
+//     type SyncCommitteeSize = SyncCommitteeSize;
+//     type WeightInfo = ();
+// }
 
 impl pallet_timestamp::Config for MiniRuntime {
     type MinimumPeriod = MinimumPeriod;
@@ -1062,10 +1065,10 @@ impl ExtBuilder {
         ext
     }
 }
-use pallet_eth2_finality_verifier::{
-    mock::{generate_epoch_update, generate_initialization},
-    LightClientAsyncAPI,
-};
+// use pallet_eth2_finality_verifier::{
+//     mock::{generate_epoch_update, generate_initialization},
+//     LightClientAsyncAPI,
+// };
 
 pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
     use t3rn_primitives::portal::Portal as PortalT;
@@ -1124,56 +1127,56 @@ pub fn prepare_ext_builder_playground() -> TestExternalities {
 
     ext
 }
-
-pub fn hotswap_latest_receipt_header_root(hotswap_receipt_root: [u8; 32]) -> bool {
-    if Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values().count() == 0 {
-        return false
-    }
-
-    let mut last_header = Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values()
-        .last()
-        .unwrap();
-
-    last_header.receipts_root = hotswap_receipt_root;
-
-    Eth2ExecutionHeaderMap::<MiniRuntime>::insert(last_header.number, last_header.clone());
-
-    println!(
-        "Hotswap latest receipt header root to {:?} -- {:?}",
-        hotswap_receipt_root, last_header.number
-    );
-
-    true
-}
-pub fn initialize_eth2_with_3rd_epoch() {
-    use t3rn_primitives::portal::Portal as PortalT;
-
-    let init = generate_initialization(None, None);
-
-    assert_ok!(Portal::initialize(
-        RuntimeOrigin::root(),
-        ETHEREUM_TARGET,
-        init.encode()
-    ));
-
-    let submission_data = generate_epoch_update(
-        0,
-        3,
-        Some(
-            init.checkpoint
-                .attested_beacon
-                .hash_tree_root::<MiniRuntime>()
-                .unwrap(),
-        ),
-        None,
-        None,
-    );
-
-    assert_ok!(Portal::submit_encoded_headers(
-        ETHEREUM_TARGET,
-        submission_data.encode()
-    ));
-}
+//
+// pub fn hotswap_latest_receipt_header_root(hotswap_receipt_root: [u8; 32]) -> bool {
+//     if Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values().count() == 0 {
+//         return false
+//     }
+//
+//     let mut last_header = Eth2ExecutionHeaderMap::<MiniRuntime>::iter_values()
+//         .last()
+//         .unwrap();
+//
+//     last_header.receipts_root = hotswap_receipt_root;
+//
+//     Eth2ExecutionHeaderMap::<MiniRuntime>::insert(last_header.number, last_header.clone());
+//
+//     println!(
+//         "Hotswap latest receipt header root to {:?} -- {:?}",
+//         hotswap_receipt_root, last_header.number
+//     );
+//
+//     true
+// }
+// pub fn initialize_eth2_with_3rd_epoch() {
+//     use t3rn_primitives::portal::Portal as PortalT;
+//
+//     let init = generate_initialization(None, None);
+//
+//     assert_ok!(Portal::initialize(
+//         RuntimeOrigin::root(),
+//         ETHEREUM_TARGET,
+//         init.encode()
+//     ));
+//
+//     let submission_data = generate_epoch_update(
+//         0,
+//         3,
+//         Some(
+//             init.checkpoint
+//                 .attested_beacon
+//                 .hash_tree_root::<MiniRuntime>()
+//                 .unwrap(),
+//         ),
+//         None,
+//         None,
+//     );
+//
+//     assert_ok!(Portal::submit_encoded_headers(
+//         ETHEREUM_TARGET,
+//         submission_data.encode()
+//     ));
+// }
 
 pub fn reboot_and_link_assets(ext: &mut TestExternalities) {
     reboot_gateway(ext);

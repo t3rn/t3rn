@@ -21,7 +21,6 @@ use t3rn_primitives::{
 };
 
 use crate::monetary::Monetary;
-use substrate_abi::{SubstrateAbiConverter as Sabi, Value256};
 use t3rn_primitives::circuit::OrderOrigin;
 
 pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
@@ -88,8 +87,7 @@ impl<T: Config>
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
-        let xtx_id: Value256 = Sabi::convert(execution_id);
-        let charge_id = Decode::decode(&mut &xtx_id.encode()[..])
+        let charge_id = Decode::decode(&mut &execution_id.encode()[..])
             .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
 
         Self::no_charge_or_fail(charge_id)?;

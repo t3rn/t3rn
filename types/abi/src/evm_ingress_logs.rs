@@ -1,7 +1,8 @@
-use crate::types::TargetId;
+use crate::types::{Bytes, TargetId};
 use codec::{Decode, Encode, Input};
 use scale_info::TypeInfo;
 use sp_core::{crypto::AccountId32, H160, H256, U256};
+use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
 // emit OrderCreated(id, destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward, nonce);
@@ -56,11 +57,139 @@ impl Decode for RemoteEVMOrderLog {
     }
 }
 
+pub fn get_instant_order_commit_abi_descriptor() -> Vec<u8> {
+    b"OrderCommitted:Log(sfxId+:H256,to+:Account20,amount:Value256,empty32Bytes:H256,signatureLength:Value32,signaturePart1:H256,signaturePart2:H256,signaturePart3:H256)".to_vec()
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, TypeInfo)]
+pub struct RemoteEVMInstantOrderCommitLog {
+    pub sfx_id: H256,
+    pub to: H160, // this must be set to the address of User on the remote evm
+    pub amount: U256,
+    pub signature: Bytes,
+}
+
+impl RemoteEVMInstantOrderCommitLog {
+    pub fn trim_signature(event_bytes: Vec<u8>) -> Result<Bytes, DispatchError> {
+        // Cut off and trim the bytes of SFX ID as well
+        let mut event_bytes = event_bytes;
+        // assert event_bytes length is correct and matches the length of the event 32 * 5 = 160
+        assert!(event_bytes.len() > 192);
+        // repeat the bytes of Amount on the last 32 bytes overriding last 32 bytes of signature
+        let amount_bytes = event_bytes[event_bytes.len() - 192..event_bytes.len() - 160].to_vec();
+        event_bytes.truncate(event_bytes.len() - 32);
+        event_bytes.extend_from_slice(&amount_bytes[..]);
+
+        // trim last 32 * 5 = 160 bytes out of data
+        Ok(event_bytes)
+    }
+}
+
+// Implement custom Scale decoding for RemoteEVMInstantOrderCommitLog
+impl Decode for RemoteEVMInstantOrderCommitLog {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        // Skip first byte
+        input.read_byte()?;
+
+        let sfx_id = H256::decode(input)?;
+        let to = H160::decode(input)?;
+        let amount = U256::decode(input)?;
+        let empty_32_bytes = H256::decode(input)?;
+        let signature_length = u32::decode(input)?;
+        let signature_part_1 = H256::decode(input)?;
+        let signature_part_2 = H256::decode(input)?;
+        let signature_part_3 = H256::decode(input)?;
+        let mut signature = vec![];
+        signature.extend_from_slice(&signature_part_1[..]);
+        signature.extend_from_slice(&signature_part_2[..]);
+        signature.extend_from_slice(&signature_part_3[..1]);
+
+        // assert signature length is correct and matches the length of the signature 65
+        assert_eq!(signature_length, 65);
+
+        Ok(RemoteEVMInstantOrderCommitLog {
+            sfx_id,
+            to,
+            amount,
+            signature,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{recode::recode_bytes_with_descriptor, Codec};
+    use frame_support::assert_ok;
     use hex_literal::hex;
+
+    #[test]
+    fn test_remote_instant_commit_order_log_recodes_from_raw_rlp_event_bytes() {
+        // 🧮proof-calculated receipts root vs block receipts root:  0x7cf22a8b118f8ac7b23ae22af92c9580b362791b25aba105e34513c1404096cd 0x7cf22a8b118f8ac7b23ae22af92c9580b362791b25aba105e34513c1404096cd
+        // Proof generated
+        // {
+        //   proof: [
+        //     'f8d1a013f4e094a48f767db2a4b041e2754899ac3cb98cfc0c3567ee117557b7ca9b14a0b97c3a374bb6265f16a54e0e56ac0d5ded98c02c687d36b0bb3704e576b10173a084d2c3e64b39142a387ab77398779f29d0d12fbfbd56250c23afb0eeff07cca3a0dd1bdfae88e83cd2139abaaad042fb942bb39eb83377334ed17dfc407f4ebfb3a0765deb5c64ff9e1f0d13024a383178239017ac0c0cb10d94974466c6a890561d808080a0b42b62d56e675514d7a65c84d126e7329fee8c32f736e81c8228a18595fc9c208080808080808080',
+        //     'f90211a0577f52ca97aca0a7f4751de42c8e2c90da59ae3f04f0d45f416429421e994120a048e5b59cfa22b444a94e0ed85701d0744a2f3251c8a47bc83cd3a9f5e883b4b3a0b33fcc09acb4368a6104c5cb53ace3ac90027a5f5b1acda4cf269e6f1c00b75fa0a4256b08b3e7e1be2b5e90fd86f5068ceb4465b2c9b554cc93dbe7cfc5fe31f8a0a69597bc3d185903ebcffcbec100cc597d27d1e67a3be674bdb58e3785100109a020cdaad17c24e2d5f1637f1a521ad45880fb810e05881677e546b0335194c5b4a09c5e1404ec211714e54289905ca13d61f4e8961cb732148a9a5cc61bb77ba8e0a07d6a13e376d1fba3f0781a616148384387df1b64813c02282c593083cb25afdaa00034928b893a5b9b788ce811a87e8b5a3c9d208d773364e9f482848f5075351da09347fd8eeaa1157aa9c46056c652ff1ce50cafcd0437dd6859473b4679743a83a0367d316122e7a57b0fb0c6d77d27902d89e3c77a55d15b98aa24cf65c154893aa0b6b0b712bcf8039693ea164760cda5edcb49943973f11417e1183beaa83c3004a07d1a208d5b22c4702c99267f194bdca44e3744301243c55b262fe801fbce7fada0950ac5664cfb6f605f5577e9a12f5f35af446d3702765fb0b53cf5cc583a2b55a0800b2f9850caeb3b84c9e72d4ff15a4604ecb0c08f4d078873758ae1ddd467f7a0d06602f91358bb55f6b1aa50065292bf780c91246514921d947d337c9a68fd3680',
+        //     'f9025220b9024e02f9024a01836fe439b9010000000000000000000000000400000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000200000000000000000000000000000000000000000000000000000000000000010001000000000000000000000000000000002000000000000000000010000000000020000000000000000000000000000000000000000000000000000200000000000000000f9013ff9013c94842c115d11539c5af7f1dc171296f44f20ce7fdcf863a0839abeb554b654da2186e0f964e98da21e676b0c3177f2560b4c97671a2f7ea0a00909090909090909090909090909090909090909090909090909090909090909a0000000000000000000000000f61fa39fb137710b4383e0f1268bb1b09c6a7e8db8c0000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000041d56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c00000000000000000000000000000000000000000000000000000000000000'
+        //   ],
+        //   root: '7cf22a8b118f8ac7b23ae22af92c9580b362791b25aba105e34513c1404096cd',
+        //   index: Uint8Array(1) [ 54 ],
+        //   value: '02f9024a01836fe439b9010000000000000000000000000400000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000200000000000000000000000000000000000000000000000000000000000000010001000000000000000000000000000000002000000000000000000010000000000020000000000000000000000000000000000000000000000000000200000000000000000f9013ff9013c94842c115d11539c5af7f1dc171296f44f20ce7fdcf863a0839abeb554b654da2186e0f964e98da21e676b0c3177f2560b4c97671a2f7ea0a00909090909090909090909090909090909090909090909090909090909090909a0000000000000000000000000f61fa39fb137710b4383e0f1268bb1b09c6a7e8db8c0000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000041d56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c00000000000000000000000000000000000000000000000000000000000000',
+        //   event: 'f9013c94842c115d11539c5af7f1dc171296f44f20ce7fdcf863a0839abeb554b654da2186e0f964e98da21e676b0c3177f2560b4c97671a2f7ea0a00909090909090909090909090909090909090909090909090909090909090909a0000000000000000000000000f61fa39fb137710b4383e0f1268bb1b09c6a7e8db8c0000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000041d56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c00000000000000000000000000000000000000000000000000000000000000'
+        // }
+
+        let encoded_event: Vec<u8> = hex!("f9013c94842c115d11539c5af7f1dc171296f44f20ce7fdcf863a0839abeb554b654da2186e0f964e98da21e676b0c3177f2560b4c97671a2f7ea0a00909090909090909090909090909090909090909090909090909090909090909a0000000000000000000000000f61fa39fb137710b4383e0f1268bb1b09c6a7e8db8c0000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000041d56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c00000000000000000000000000000000000000000000000000000000000000").into();
+
+        let recoded_message = recode_bytes_with_descriptor(
+            encoded_event.clone(),
+            get_instant_order_commit_abi_descriptor(),
+            Codec::Rlp,
+            Codec::Scale,
+        );
+
+        assert_ok!(recoded_message.clone());
+        let recoded_message = recoded_message.unwrap();
+
+        let decoded_remote_instant_commit_order_log =
+            RemoteEVMInstantOrderCommitLog::decode(&mut &recoded_message[..]);
+
+        assert_ok!(decoded_remote_instant_commit_order_log.clone());
+
+        const GWEI: u128 = 1_000_000_000u128;
+
+        assert_eq!(
+            decoded_remote_instant_commit_order_log,
+            Ok(RemoteEVMInstantOrderCommitLog {
+                sfx_id: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+                to: hex!("f61fa39fb137710b4383e0f1268bb1b09c6a7e8d").into(),
+                amount: U256::from(100 * GWEI), // 100gwei (gwei is 10^9 wei)
+                signature: hex!("d56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c").to_vec(),
+            })
+        );
+
+        let decoded_remote_instant_commit_order_log =
+            decoded_remote_instant_commit_order_log.unwrap();
+        // Trimming signature goes okey
+        let trimmed_signature =
+            RemoteEVMInstantOrderCommitLog::trim_signature(encoded_event.clone());
+
+        assert_ok!(trimmed_signature.clone());
+        let trimmed_signature = trimmed_signature.unwrap();
+
+        assert_ok!(crate::standard::get_sfx_transfer_asset_abi()
+            .validate_arguments_against_received(
+                &vec![
+                    0u32.encode(), // empty asset id
+                    hex!("000000000000000000000000f61fa39fb137710b4383e0f1268bb1b09c6a7e8d")
+                        .to_vec(), // to
+                    (100u128 * GWEI).encode(), // amount
+                ],
+                trimmed_signature,
+                &Codec::Scale,
+                &Codec::Rlp,
+            ));
+    }
 
     #[test]
     fn test_remote_order_log_recodes_from_raw_rlp_event_bytes() {
