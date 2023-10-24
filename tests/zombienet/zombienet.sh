@@ -144,11 +144,11 @@ smoke() {
     echo "::endgroup::"
 }
 
-upgrade() {
-    if [[ $# -ne 2 ]]; then
-        echo "Expecting exactly 2 arguments"
+runtime_upgrade() {
+    if [[ $# -lt 2 ]]; then
+        echo "Expecting 2 or more arguments"
         echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn> [local/github]"
         return 1
     fi
     
@@ -156,43 +156,31 @@ upgrade() {
     
     [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
     
-    echo "Testing real upgrade for parachain: ${parachain}"
-    
-    # Fetch latest release binary from Github
-    git fetch --all --tags -f || true > /dev/null
-    
-    $working_dir/download.sh "$parachain"
-    
-    # Run collator and upgrade with built WASM binary
-    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
-    
-    echo "Upgrade tests succeed!"
-}
-
-
-upgrade_local() {
-    if [[ $# -ne 2 ]]; then
-        echo "Expecting exactly 2 arguments"
-        echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn>"
-        return 1
-    fi
-    
-    parachain=$2
-    
-    [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
+    echo "🧹 Cleaning bin dir"
+    rm -f ${bin_dir}/*collator*
+    rm -f ${bin_dir}/*.wasm
     
     echo "⏳ Testing real upgrade for parachain: ${parachain}"
-    
-    # Fetch latest release binary from Github
-    git fetch --all --tags -f || true > /dev/null
-    
-    $working_dir/download_local.sh "$parachain"
+    echo "::group::Building..."
+    if [[ "$3" == "local" ]]; then
+        echo "Using local WASM binaries"
+        $working_dir/download_local.sh "$parachain"
+        
+    else
+        echo "Using Github WASM binaries from latest release"
+        
+        # Fetch latest release binary from Github
+        $working_dir/download.sh "$parachain"
+    fi
+    subwasm info ${bin_dir}/parachain_runtime.compact.compressed.wasm
+    echo "::endgroup::"
     
     # Run collator and upgrade with built WASM binary
+    echo "::group::Zombienet tests..."
     zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
+    echo "::endgroup::"
     
-    echo "Upgrade tests succeed!"
+    echo "✅ Upgrade tests succeed!"
 }
 
 confirm_sfx() {
@@ -233,11 +221,7 @@ case "$1" in
         make_bin_dir
         fetch_zombienet
         build_polkadot
-        upgrade $@
-    ;;
-    "upgrade_local")
-        setup
-        upgrade_local $@
+        runtime_upgrade $@
     ;;
     "spawn")
         setup
