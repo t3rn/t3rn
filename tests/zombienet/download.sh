@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
+set -e
 bin_dir=../../bin
 
 echo
 echo ⬇️ Downloading binaries for $1
 echo
+
+# Make sure we have all recent tags
+git fetch --all --tags -f || true > /dev/null
 
 case "$1" in
     t0rn*)
