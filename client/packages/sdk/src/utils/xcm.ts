@@ -8,8 +8,9 @@ import type {
 import {u8, u32, u128} from '@polkadot/types'
 type ORIGIN = "relay" | "para" | "system" | "t0rn"
 type ASSET  = "ROC" | "USDT" | "TRN"
+
 /*
-type WeightLimt = {
+type WeightLimit = {
    refTime: string,
    proofSize: string,
 }
@@ -72,35 +73,28 @@ export const XcmTransferParameters: ICreateXcmParameters = {
          case "USDT":
             if (originType == "system") {
                assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X2: {
-                     PalletInstance: 50,
-                     GeneralIndex: 1984,
-                  },
+                  X2: [
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
                })
             }
             else {
                assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X3: {
-                     parachain: 1000,
-                     PalletInstance: 50,
-                     GeneralIndex: 1984,
-                  },
+                  X3: [
+                     { Parachain: 1000 },
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
                })
             }
             break
          case "TRN":
-            if (originType == "t0rn") {
-               assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X1: {
-                     parachain: 3333,
-                  },
-               })
-            }
-            else {
-               assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  Here: '',
-               })
-            }
+            assetInterior = api.registry.createType('InteriorMultiLocation', {
+               X1: {
+                  parachain: 3333,
+               },
+            })
             break
          default:
             assetInterior = api.registry.createType('InteriorMultiLocation', {
