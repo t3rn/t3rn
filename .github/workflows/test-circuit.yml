@@ -159,7 +159,7 @@ jobs:
 
       - name: 📼 Run zombienet upgrade tests t0rn
         working-directory: tests/zombienet
-        run: ./zombienet.sh upgrade_local t0rn
+        run: ./zombienet.sh upgrade t0rn local
 
       - name: Print sccache stats
         working-directory: tests/zombienet
