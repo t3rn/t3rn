@@ -157,6 +157,7 @@ runtime_upgrade() {
     [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
     
     echo "⏳ Testing real upgrade for parachain: ${parachain}"
+    echo "::group::Building..."
     if [[ "$3" == "local" ]]; then
         echo "Using local WASM binaries"
         $working_dir/download_local.sh "$parachain"
@@ -166,6 +167,7 @@ runtime_upgrade() {
         # Fetch latest release binary from Github
         $working_dir/download.sh "$parachain"
     fi
+    echo "::endgroup::"
     
     # Run collator and upgrade with built WASM binary
     echo "::group::Zombienet tests..."
