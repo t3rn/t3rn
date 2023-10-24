@@ -157,8 +157,8 @@ runtime_upgrade() {
     [[ "$machine" = "macos" ]] && echo "We release binaries on Github only for x86" && exit 1
     
     echo "🧹 Cleaning bin dir"
-    rm ${bin_dir}/*collator*
-    rm ${bin_dir}/*.wasm
+    rm -f ${bin_dir}/*collator*
+    rm -f ${bin_dir}/*.wasm
     
     echo "⏳ Testing real upgrade for parachain: ${parachain}"
     echo "::group::Building..."
