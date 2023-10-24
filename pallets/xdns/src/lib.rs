@@ -50,8 +50,8 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use sp_core::H256;
     use sp_runtime::{traits::CheckedDiv, SaturatedConversion};
-
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
@@ -504,11 +504,10 @@ pub mod pallet {
         pub fn add_remote_order_address(
             origin: OriginFor<T>,
             target_id: TargetId,
-            speed_mode: SpeedMode,
-            remote_address: Bytes,
+            remote_address: H256,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin.clone())?;
-            <RemoteOrderAddresses<T>>::insert(target_id, speed_mode, remote_address.clone());
+            <RemoteOrderAddresses<T>>::insert(target_id, remote_address);
             Ok(().into())
         }
 
@@ -736,8 +735,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn remote_order_addresses)]
-    pub type RemoteOrderAddresses<T: Config> =
-        StorageDoubleMap<_, Identity, TargetId, Identity, SpeedMode, Bytes, OptionQuery>;
+    pub type RemoteOrderAddresses<T: Config> = StorageMap<_, Identity, TargetId, H256, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn per_target_asset_estimates)]
@@ -1337,11 +1335,8 @@ pub mod pallet {
             }
         }
 
-        fn get_remote_order_contract_address(
-            gateway_id: TargetId,
-            speed_mode: &SpeedMode,
-        ) -> Result<Bytes, DispatchError> {
-            <RemoteOrderAddresses<T>>::get(gateway_id, speed_mode)
+        fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<H256, DispatchError> {
+            <RemoteOrderAddresses<T>>::get(gateway_id)
                 .ok_or(Error::<T>::RemoteOrderAddressNotFound.into())
         }
 
