@@ -33,8 +33,8 @@ pallet-vacuum                             = { path = "../../pallets/circuit/vacu
 pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 #pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
-pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.3", default-features = false }
-pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.6", default-features = false }
+pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.4", default-features = false }
+pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.7", default-features = false }
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                             = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
