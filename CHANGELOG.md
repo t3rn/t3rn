@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.66.1-rc.0] - 2023-10-25
+### :bug: Bug Fixes
+- [`1716b0b`](https://github.com/t3rn/t3rn/commit/1716b0bff04c7b6466c8be5602040338e8acc716) - normalise ecdsa signature's recovery id for libsecp256k1 & ethereum *(PR [#1391](https://github.com/t3rn/t3rn/pull/1391) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`8ea57fa`](https://github.com/t3rn/t3rn/commit/8ea57faea90da5109f0b3ed09941c0671048c3f3) - update cli for local circuit node run *(PR [#1388](https://github.com/t3rn/t3rn/pull/1388) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.66.0-rc.0] - 2023-10-25
 ### :sparkles: New Features
 - [`2cd87e7`](https://github.com/t3rn/t3rn/commit/2cd87e7ff8359931a79e1044d5c0b9f45edd15d5) - Grandpa Ranger Height Diff Loop *(PR [#1389](https://github.com/t3rn/t3rn/pull/1389) by [@coun7zero](https://github.com/coun7zero))*
@@ -1793,3 +1801,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.65.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.1-rc.0...v1.65.0-rc.0
 [v1.65.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.1-rc.0...v1.65.2-rc.0
 [v1.66.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.2-rc.0...v1.66.0-rc.0
+[v1.66.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.0-rc.0...v1.66.1-rc.0
