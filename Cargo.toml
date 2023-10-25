@@ -26,7 +26,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.65.1-rc.0"
+version    = "1.66.0-rc.0"
 
 workspace.resolver = "2"
 
@@ -144,6 +144,7 @@ pallet-xcm                 = { git = "https://github.com/paritytech/polkadot", b
 polkadot-parachain         = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0", default-features = false }
 polkadot-runtime-common    = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0", default-features = false }
 polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0", default-features = false }
+polkadot-core-primitives   = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v1.0.0" }
 xcm                        = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0", default-features = false }
 xcm-builder                = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0", default-features = false }
 xcm-executor               = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0", default-features = false }

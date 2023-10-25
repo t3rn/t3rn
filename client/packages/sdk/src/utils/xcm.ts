@@ -3,10 +3,18 @@ import type {
    InteriorMultiLocation,
    VersionedMultiAssets,
    VersionedMultiLocation,
+   WeightLimitV2,
 } from '@polkadot/types/interfaces'
 import {u8, u32, u128} from '@polkadot/types'
 type ORIGIN = "relay" | "para" | "system" | "t0rn"
 type ASSET  = "ROC" | "USDT" | "TRN"
+
+/*
+type WeightLimit = {
+   refTime: string,
+   proofSize: string,
+}
+ */
 
 interface ICreateXcmParameters {
    createDestination: (api: ApiPromise, destChainId: string, originType: ORIGIN) => VersionedMultiLocation
@@ -14,7 +22,7 @@ interface ICreateXcmParameters {
    createAssets: (api: ApiPromise, assetType: ASSET, originType: ORIGIN, amount: string) => VersionedMultiAssets
    createFeeAssetItem: (api: ApiPromise, feeAssetItem: number) => u32
    createNativeAssetAmount: (api: ApiPromise, amount: number) => u128
-   //createWeightLimit: (api: ApiPromise, isLimited: bool, weight: u32) => u32
+   createWeightLimit: (api: ApiPromise/*, isLimited: bool, weightLimit: WeightLimit*/) => WeightLimitV2
 }
 
 export const XcmTransferParameters: ICreateXcmParameters = {
@@ -65,35 +73,28 @@ export const XcmTransferParameters: ICreateXcmParameters = {
          case "USDT":
             if (originType == "system") {
                assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X2: {
-                     PalletInstance: 50,
-                     GeneralIndex: 1984,
-                  },
+                  X2: [
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
                })
             }
             else {
                assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X3: {
-                     parachain: 1000,
-                     PalletInstance: 50,
-                     GeneralIndex: 1984,
-                  },
+                  X3: [
+                     { Parachain: 1000 },
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
                })
             }
             break
          case "TRN":
-            if (originType == "t0rn") {
-               assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  X1: {
-                     parachain: 3333,
-                  },
-               })
-            }
-            else {
-               assetInterior = api.registry.createType('InteriorMultiLocation', {
-                  Here: '',
-               })
-            }
+            assetInterior = api.registry.createType('InteriorMultiLocation', {
+               X1: {
+                  parachain: 3333,
+               },
+            })
             break
          default:
             assetInterior = api.registry.createType('InteriorMultiLocation', {
@@ -120,5 +121,20 @@ export const XcmTransferParameters: ICreateXcmParameters = {
    },
    createNativeAssetAmount: (api: ApiPromise, amount: number): u128 => {
       return api.registry.createType("u128", amount)
+   },
+   createWeightLimit: (api: ApiPromise/*, isLimited: bool, weightLimit: WeightLimit*/): WeightLimitV2 => {
+      // if (!isLimited) {
+      return api.registry.createType('XcmV3WeightLimit', {
+         Unlimited: null
+      })
+      //}
+      //else {
+      //   return api.registry.createType('XcmV3WeightLimit', {
+      //      Limited: {
+      //         refTime: weightLimit.refTime,
+      //         proofSize: weightLimit.proofSize,
+      //      }
+      //  })
+      //}
    }
 }

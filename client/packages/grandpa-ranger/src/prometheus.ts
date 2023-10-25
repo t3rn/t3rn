@@ -1,6 +1,6 @@
-import client from "prom-client"
-import { logger } from "./logging"
-import http from "http"
+import client from 'prom-client'
+import { logger } from './logging'
+import http from 'http'
 
 export class Prometheus {
   disconnects: any
@@ -23,38 +23,38 @@ export class Prometheus {
     const collectDefaultMetrics = client.collectDefaultMetrics
     collectDefaultMetrics({ register: this.register })
     this.height = new client.Gauge({
-      name: "height",
-      help: "The current header height",
+      name: 'height',
+      help: 'The current header height',
       registers: [this.register],
-      labelNames: ["target"],
+      labelNames: ['target'],
     })
 
     this.submissions = new client.Counter({
-      name: "submissions_total",
-      help: "Number of successful submissions",
+      name: 'submissions_total',
+      help: 'Number of successful submissions',
       registers: [this.register],
-      labelNames: ["target", "status"],
+      labelNames: ['target', 'status'],
     })
 
     this.disconnects = new client.Counter({
-      name: "disconnects_total",
-      help: "Information on disconnections",
+      name: 'disconnects_total',
+      help: 'Information on disconnections',
       registers: [this.register],
-      labelNames: ["endpoint", "target"],
+      labelNames: ['endpoint', 'target'],
     })
 
     this.rangeInterval = new client.Counter({
-      name: "range_interval",
-      help: "The number of seconds between each range submission",
+      name: 'range_interval',
+      help: 'The number of seconds between each range submission',
       registers: [this.register],
-      labelNames: ["target"],
+      labelNames: ['target'],
     })
 
     this.txSize = new client.Gauge({
-      name: "tx_size",
-      help: "Size of the tx",
+      name: 'tx_size',
+      help: 'Size of the tx',
       registers: [this.register],
-      labelNames: ["target"],
+      labelNames: ['target'],
     })
 
     this.startServer()
@@ -63,12 +63,12 @@ export class Prometheus {
   startServer() {
     const server = http.createServer(async (req, res) => {
       try {
-        if (req.url === "/metrics") {
-          res.setHeader("Content-Type", this.register.contentType)
+        if (req.url === '/metrics') {
+          res.setHeader('Content-Type', this.register.contentType)
           const metrics = await this.register.metrics()
           res.end(metrics)
-        } else if (req.url === "/status") {
-          res.setHeader("Content-Type", "text/plain")
+        } else if (req.url === '/status') {
+          res.setHeader('Content-Type', 'text/plain')
           res.statusCode = this.heightDiff > 250 ? 500 : res.statusCode
           res.end(
             JSON.stringify({
@@ -77,7 +77,7 @@ export class Prometheus {
           )
         } else {
           res.statusCode = 404
-          res.end("Not found.")
+          res.end('Not found.')
         }
       } catch (error) {
         res.statusCode = 500

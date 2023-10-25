@@ -19,6 +19,7 @@ docs/attester
 # local
 .direnv
 .envrc
+.env
 **/node_modules
 **/parachains-integration-tests
 .idea

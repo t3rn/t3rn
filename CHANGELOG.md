@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.66.0-rc.0] - 2023-10-25
+### :sparkles: New Features
+- [`2cd87e7`](https://github.com/t3rn/t3rn/commit/2cd87e7ff8359931a79e1044d5c0b9f45edd15d5) - Grandpa Ranger Height Diff Loop *(PR [#1389](https://github.com/t3rn/t3rn/pull/1389) by [@coun7zero](https://github.com/coun7zero))*
+- [`ea65d18`](https://github.com/t3rn/t3rn/commit/ea65d18c1aca0ffa296b9fd55965217567196b60) - make Vacuum use remote order addresses added to XDNS *(PR [#1394](https://github.com/t3rn/t3rn/pull/1394) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`33a29c4`](https://github.com/t3rn/t3rn/commit/33a29c46718284f3ae9876430250cdd8102e5516) - updated CLI config to use latest SDK version *(PR [#1397](https://github.com/t3rn/t3rn/pull/1397) by [@chexware](https://github.com/chexware))*
+- [`51d5843`](https://github.com/t3rn/t3rn/commit/51d58430e6ad309cf7dbaa20ab2a3379396c93df) - rewrite scheduleHeightMonitoring method *(PR [#1396](https://github.com/t3rn/t3rn/pull/1396) by [@coun7zero](https://github.com/coun7zero))*
+
+
+## [v1.65.2-rc.0] - 2023-10-25
+### :bug: Bug Fixes
+- [`87d1882`](https://github.com/t3rn/t3rn/commit/87d1882c411a10575ebddfbad16c0dbe7daedde4) - successful USDT and TRN XCM transfers using CLI *(PR [#1392](https://github.com/t3rn/t3rn/pull/1392) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.65.0-rc.0] - 2023-10-22
 ### :sparkles: New Features
 - [`b68ad72`](https://github.com/t3rn/t3rn/commit/b68ad72468b98ea299d159152387b3688013bbe3) - eth2-proof npm package *(PR [#1374](https://github.com/t3rn/t3rn/pull/1374) by [@3h4x](https://github.com/3h4x))*
@@ -1776,3 +1791,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.64.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.63.2-rc.0...v1.64.0-rc.0
 [v1.64.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.0-rc.0...v1.64.1-rc.0
 [v1.65.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.64.1-rc.0...v1.65.0-rc.0
+[v1.65.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.1-rc.0...v1.65.2-rc.0
+[v1.66.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.2-rc.0...v1.66.0-rc.0
