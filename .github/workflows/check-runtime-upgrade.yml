@@ -14,16 +14,16 @@ jobs:
 
       - name: Check t0rn
         run: |
-          ./check_runtime.sh t0rn 2>/dev/null
+          ./scripts/check_runtime.sh t0rn 2>/dev/null
 
       - name: Check t1rn
         continue-on-error: true
         timeout-minutes: 1
         run: |
-          ./check_runtime.sh t1rn 2>/dev/null
+          ./scripts/check_runtime.sh t1rn 2>/dev/null
 
       - name: Check t3rn
         continue-on-error: true
         timeout-minutes: 1
         run: |
-          ./check_runtime.sh t3rn 2>/dev/null
+          ./scripts/check_runtime.sh t3rn 2>/dev/null
