@@ -1,6 +1,6 @@
-import { Sdk, ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
-import { Prometheus } from "./prometheus"
-import { logger } from "./logging"
+import { Sdk, ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
+import { Prometheus } from './prometheus'
+import { logger } from './logging'
 
 export class Connection {
   client: ApiPromise
@@ -31,11 +31,11 @@ export class Connection {
     this.isCircuit = isCircuit
     this.prometheus = prometheus
     this.target = target
-    const keyring = new Keyring({ type: "sr25519" })
+    const keyring = new Keyring({ type: 'sr25519' })
     if (isCircuit) {
       this.signer =
         process.env.CIRCUIT_SIGNER_KEY === undefined
-          ? keyring.addFromUri("//Alice")
+          ? keyring.addFromUri('//Alice')
           : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
       logger.info(`Using signer ${this.signer.address} for ${this.rpc1.ws}`)
     }
@@ -48,9 +48,9 @@ export class Connection {
     const keepAlive = async () => {
       try {
         await this.client.rpc.system.health()
-        logger.debug({ endpoint: this.endpoint }, "Connection Alive")
+        logger.debug({ endpoint: this.endpoint }, 'Connection Alive')
       } catch (err) {
-        logger.error({ error: err.message }, "Connection error")
+        logger.error({ error: err.message }, 'Connection error')
         this.usingPrimaryRpc = !this.usingPrimaryRpc
         this.prometheus.disconnects.inc({
           target: this.target,
@@ -78,7 +78,7 @@ export class Connection {
         } else {
           this.client = await ApiPromise.create({ provider: this.provider })
           // We can only subscribe to new blocks on the target
-          this.client.derive.chain.subscribeNewHeads(header => {
+          this.client.derive.chain.subscribeNewHeads((header) => {
             this.prometheus.height.set(
               { target: this.target },
               header.number.toNumber()
@@ -91,7 +91,7 @@ export class Connection {
         logger.warn(`Error from ${this.currentProvider().ws}: ${error}`)
 
         // Add a delay before attempting to reconnect (adjust as needed)
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        await new Promise((resolve) => setTimeout(resolve, 5000))
 
         // Attempt reconnection
         connect()
@@ -99,9 +99,9 @@ export class Connection {
     }
 
     return new Promise((resolve, reject) => {
-      this.provider.on("connected", connect)
+      this.provider.on('connected', connect)
 
-      this.provider.on("disconnected", () => {
+      this.provider.on('disconnected', () => {
         this.isActive = false
         logger.warn(`Disconnected from provider ${this.currentProvider().ws}`)
 
@@ -111,7 +111,7 @@ export class Connection {
         }, 5000)
       })
 
-      this.provider.on("error", () => {
+      this.provider.on('error', () => {
         this.isActive = false
         logger.warn(`Error from provider ${this.currentProvider().ws}`)
 
