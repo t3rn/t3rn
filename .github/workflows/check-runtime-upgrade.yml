@@ -1,0 +1,34 @@
+name: Runtime Upgrade Check
+
+on:
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: [self-hosted]
+    name: Check if Parachains have latest changes from Github Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check t0rn
+        timeout-minutes: 30
+        run: |
+          ./scripts/check_runtime.sh t0rn 2>/dev/null
+
+      - name: Check t1rn
+        continue-on-error: true
+        timeout-minutes: 1
+        run: |
+          ./scripts/check_runtime.sh t1rn 2>/dev/null
+
+      - name: Check t3rn
+        continue-on-error: true
+        timeout-minutes: 1
+        run: |
+          ./scripts/check_runtime.sh t3rn 2>/dev/null

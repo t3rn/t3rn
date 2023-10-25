@@ -10,7 +10,6 @@ use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
 
 pub use t3rn_abi::{evm_ingress_logs::*, recode::recode_bytes_with_descriptor, Codec};
-
 // Key types for attester crypto
 pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
 pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
@@ -165,7 +164,6 @@ fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethe
         commission: Percent::from_percent(0),
         index: 0,
     };
-
     // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature ethers sign message
     let signature: [u8; 65] = hex!("3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c");
 
@@ -287,6 +285,10 @@ pub fn verify_secp256k1_ecdsa_signature(
     signature: &[u8],
     compressed_ecdsa_pk: &[u8; 33],
 ) -> Result<bool, libsecp256k1::Error> {
+    // Check signature length is 65 bytes
+    if signature.len() != 65 {
+        return Err(libsecp256k1::Error::InvalidSignature)
+    }
     // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
     // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
     // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
@@ -299,10 +301,6 @@ pub fn verify_secp256k1_ecdsa_signature(
         Some(id) => id,
         None => return Err(libsecp256k1::Error::InvalidSignature),
     };
-    // Check signature length is 65 bytes
-    if signature.len() != 65 {
-        return Err(libsecp256k1::Error::InvalidSignature)
-    }
     let signature = Signature::from_slice(&signature[..64])
         .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
     let recovered_pk: PublicKey =
