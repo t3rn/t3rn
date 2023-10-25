@@ -17,13 +17,13 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [dependencies]
 codec                 = { workspace = true, package = "parity-scale-codec" }
 finality-grandpa      = { version = "0.16", default-features = false, features = [ "derive-codec" ] }
-hex-literal           = { version = "0.3.4", optional = true }
+hex-literal           = { version = "0.4.1", optional = true }
 impl-trait-for-tuples = "0.2.2"
 log                   = { workspace = true }
 scale-info            = { workspace = true }
 num-traits            = { workspace = true }
 serde                 = { workspace = true, optional = true, features = [ "derive" ] }
-smallvec              = { version = "1.6.1", default-features = false }
+smallvec              = { version = "1.11.1", default-features = false }
 
 # Substrate
 frame-benchmarking           = { workspace = true, optional = true }

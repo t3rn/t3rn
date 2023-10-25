@@ -36,7 +36,7 @@ k256                  = { workspace = true, default_features = false }
 
 #bridges
 finality-grandpa    = { version = "0.16", default-features = false }
-hash-db             = { version = "0.15.2", default-features = false }
+hash-db             = { version = "0.16.0", default-features = false }
 num-traits          = { workspace = true }
 sp-api              = { workspace = true }
 sp-consensus-grandpa = { workspace = true }
@@ -51,7 +51,7 @@ circuit-runtime-types = { path = "../runtime/common-types", default-features = f
 
 [dev-dependencies]
 hex         = "0.4"
-hex-literal = { version = '0.3.1' }
+hex-literal = { version = '0.4.1' }
 serde_json  = "1.0.41"
 mini-mock =  { path = "../runtime/mini-mock", package = "t3rn-mini-mock-runtime" }
 

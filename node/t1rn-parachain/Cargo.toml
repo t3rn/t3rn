@@ -17,11 +17,11 @@ path = "src/main.rs"
 
 [dependencies]
 # Extras
-clap = { version = "4.0.32", features = ["derive"] }
+clap = { version = "4.4.7", features = ["derive"] }
 log = "0.4.17"
 codec = { workspace = true, features = ["std"] }
 serde = { workspace = true, features = ["derive"] }
-jsonrpsee = { version = "0.16.2", features = ["server"] }
+jsonrpsee = { version = "0.17.1", features = ["server"] }
 hex-literal            = "0.4"
 futures = "0.3.28"
 color-print = "0.3.4"
