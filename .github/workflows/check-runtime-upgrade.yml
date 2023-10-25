@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check t0rn
+        timeout-minutes: 30
         run: |
           ./scripts/check_runtime.sh t0rn 2>/dev/null
 
