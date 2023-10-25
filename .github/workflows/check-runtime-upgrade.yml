@@ -4,10 +4,14 @@ on:
   pull_request:
   merge_group:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: [self-hosted]
-    name: Check if t0rn has latest changes from Github Release
+    name: Check if Parachains have latest changes from Github Release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
