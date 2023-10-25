@@ -4,14 +4,21 @@ use frame_support::pallet_prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_core::{H160, H256, H512};
+use sp_core::{ecdsa::Public, H160, H256, H512};
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
+
 // Key types for attester crypto
 pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
 pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
 pub const SR25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"srat");
+
+// "\x19Ethereum Signed Message:\n32" encoded in hex!("19457468657265756d205369676e6564204d6573736167653a0a3332") -> [ 25,69,116,104,101,114,101,117,109,32,83,105,103,110,101,100,32,77,101,115,115,97,103,101,58,10,51,50 ]
+pub const ETH_SIGNED_MESSAGE_PREFIX: [u8; 28] = [
+    25, 69, 116, 104, 101, 114, 101, 117, 109, 32, 83, 105, 103, 110, 101, 100, 32, 77, 101, 115,
+    115, 97, 103, 101, 58, 10, 51, 50,
+];
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 pub struct AttesterInfo {
@@ -73,6 +80,48 @@ fn test_ecdsa_pubkey_to_eth_address() {
 }
 
 #[test]
+fn test_remote_instant_commit_order_verifies_ecdsa_signature_correctly() {
+    use frame_support::assert_ok;
+    use hex_literal::hex;
+    let message = hex!("0909090909090909090909090909090909090909090909090909090909090909");
+    let message = [&ETH_SIGNED_MESSAGE_PREFIX[..], &message[..]].concat();
+    // Hash message with keccak with default Ethereum prefix (0x19)
+    let mut hasher = Keccak::v256();
+    hasher.update(&message);
+    let mut output = [0u8; 32];
+    hasher.finalize(&mut output);
+    let message = output;
+
+    let address = hex!("F85A57d965aEcD289c625Cae6161d0Ab5141bC66");
+
+    let compressed_ecdsa_pub_key: [u8; 33] =
+        hex!("02d3d7fb07d45d22fe31db2c95220c77b578cf07b3dfeb630d8d074fc9631bf841");
+
+    let attester_info = AttesterInfo {
+        key_ed: [0u8; 32],
+        key_ec: compressed_ecdsa_pub_key,
+        key_sr: [0u8; 32],
+        commission: Percent::from_percent(0),
+        index: 0,
+    };
+
+    // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature escsign
+    // 0xd56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c
+    let signature: [u8; 65] = hex!("d56e34aca5ad513434d73c9f5af25c72e3eb2dcd009696a49d9b3419c452250707ff4b564062c1982eb07fb540f1ed42279a7a467a591ded8e75a59969663e4f1c");
+
+    let verify_result = attester_info.verify_attestation_signature(
+        ECDSA_ATTESTER_KEY_TYPE_ID,
+        &message.to_vec(),
+        signature.as_ref(),
+        address.to_vec(),
+        &GatewayVendor::Ethereum,
+    );
+
+    assert_ok!(verify_result);
+    assert_eq!(verify_result, Ok(true));
+}
+
+#[test]
 fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethers_sign_message() {
     use hex_literal::hex;
 
@@ -89,6 +138,13 @@ fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethe
 
     let message: [u8; 32] =
         hex!("58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd");
+    let message = [&ETH_SIGNED_MESSAGE_PREFIX[..], &message[..]].concat();
+    // Hash message with keccak with default Ethereum prefix (0x19)
+    let mut hasher = Keccak::v256();
+    hasher.update(&message);
+    let mut output = [0u8; 32];
+    hasher.finalize(&mut output);
+    let message = output;
 
     let address_res = ecdsa_pubkey_to_eth_address(&compressed_ecdsa_pub_key);
 
@@ -107,7 +163,6 @@ fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethe
         commission: Percent::from_percent(0),
         index: 0,
     };
-
     // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature ethers sign message
     let signature: [u8; 65] = hex!("3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c");
 
@@ -118,6 +173,13 @@ fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethe
         address.to_vec(),
         &GatewayVendor::Ethereum,
     );
+
+    frame_support::assert_ok!(verify_result);
+    assert_eq!(verify_result, Ok(true));
+
+    // Double check - verify directly with verify_secp256k1_ecdsa_signature
+    let verify_result =
+        verify_secp256k1_ecdsa_signature(&message.to_vec(), &signature, &compressed_ecdsa_pub_key);
 
     frame_support::assert_ok!(verify_result);
     assert_eq!(verify_result, Ok(true));
@@ -185,14 +247,15 @@ impl AttesterInfo {
     ) -> Result<bool, DispatchError> {
         match key_type {
             ECDSA_ATTESTER_KEY_TYPE_ID => {
-                let ecdsa_sig = ecdsa::Signature::from_slice(signature)
-                    .ok_or::<DispatchError>("InvalidSignature".into())?;
-                let ecdsa_public = ecdsa::Public::from_raw(self.key_ec);
                 if target_finality == &GatewayVendor::Ethereum {
                     let recovered_address = ecdsa_pubkey_to_eth_address(&self.key_ec)?;
-                    return Ok(recovered_address.to_vec() == attested_recoverable)
+                    // Return error here already if addresses won't match
+                    if recovered_address.to_vec() != attested_recoverable {
+                        return Err("RecoveredAddressMismatch".into())
+                    }
                 }
-                Ok(ecdsa_public.verify(message, &ecdsa_sig))
+                verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec)
+                    .map_err(|e| "InvalidSecp256k1Signature".into())
             },
             ED25519_ATTESTER_KEY_TYPE_ID => {
                 let ed25519_sig = ed25519::Signature::from_slice(signature)
@@ -209,6 +272,45 @@ impl AttesterInfo {
             _ => Err("InvalidKeyTypeId".into()),
         }
     }
+}
+
+use k256::{
+    ecdsa::{RecoveryId, Signature, VerifyingKey},
+    elliptic_curve::sec1::ToEncodedPoint,
+    PublicKey,
+};
+pub fn verify_secp256k1_ecdsa_signature(
+    message: &Vec<u8>,
+    signature: &[u8],
+    compressed_ecdsa_pk: &[u8; 33],
+) -> Result<bool, libsecp256k1::Error> {
+    // Check signature length is 65 bytes
+    if signature.len() != 65 {
+        return Err(libsecp256k1::Error::InvalidSignature)
+    }
+    // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
+    // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
+    // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
+    let recovery_id = if signature[64] > 26 {
+        signature[64] - 27
+    } else {
+        signature[64]
+    };
+    let recovery_id = match RecoveryId::from_byte(recovery_id) {
+        Some(id) => id,
+        None => return Err(libsecp256k1::Error::InvalidSignature),
+    };
+    let signature = Signature::from_slice(&signature[..64])
+        .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
+    let recovered_pk: PublicKey =
+        match VerifyingKey::recover_from_prehash(&message[..], &signature, recovery_id) {
+            Ok(verification_key) => verification_key.into(),
+            Err(_) => return Err(libsecp256k1::Error::InvalidSignature),
+        };
+    let encoded_pk = recovered_pk.to_encoded_point(/* compress = */ true);
+    let recovery_pubkey_compare_result = &encoded_pk.as_bytes()[..] == compressed_ecdsa_pk;
+
+    Ok(recovery_pubkey_compare_result)
 }
 
 pub type Signature65b = [u8; 65];
