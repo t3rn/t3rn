@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.67.0-rc.0] - 2023-10-25
+### :sparkles: New Features
+- [`a251d6d`](https://github.com/t3rn/t3rn/commit/a251d6dada3d59e4b18adb14bda0121bc021ab33) - include extra SpeedMode::Instant (only) *(PR [#1393](https://github.com/t3rn/t3rn/pull/1393) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.66.1-rc.0] - 2023-10-25
 ### :bug: Bug Fixes
 - [`1716b0b`](https://github.com/t3rn/t3rn/commit/1716b0bff04c7b6466c8be5602040338e8acc716) - normalise ecdsa signature's recovery id for libsecp256k1 & ethereum *(PR [#1391](https://github.com/t3rn/t3rn/pull/1391) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1802,3 +1807,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.65.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.1-rc.0...v1.65.2-rc.0
 [v1.66.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.2-rc.0...v1.66.0-rc.0
 [v1.66.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.0-rc.0...v1.66.1-rc.0
+[v1.67.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.1-rc.0...v1.67.0-rc.0
