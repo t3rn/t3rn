@@ -58,14 +58,14 @@
     "standard": "^17.1.0",
     "ts-mockito": "^2.6.1",
     "types": "link:@polkadot/keyring/types",
-    "web3": "^4.1.2"
+    "web3": "^4.2.0"
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.23.0",
     "@types/bn.js": "^5.1.2",
-    "@typescript-eslint/eslint-plugin": "^6.7.3",
-    "@typescript-eslint/parser": "^6.7.3",
-    "eslint": "^8.51.0",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint": "^8.52.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
     "ts-node": "^10.9.1",
     "tsup": "^7.2.0",
