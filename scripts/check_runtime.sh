@@ -70,8 +70,8 @@ while true; do
     WASM_HASH_RELAYCHAIN=$(npm exec -- ${POLKADOT_CLI_VERSION} --ws ${RPC_RELAYCHAIN} query.paras.currentCodeHash ${PARACHAIN_ID} | jq -r .currentCodeHash)
     echo
     echo "🫧 Check WASM artifact..."
-    echo "🔢 WASM parachain hash: $WASM_HASH"
-    echo "🔢 WASM relaychain hash: $WASM_HASH_RELAYCHAIN"
+    echo "🔢 WASM hash in Github Release: $WASM_HASH"
+    echo "🔢 WASM hash on Relaychain: $WASM_HASH_RELAYCHAIN"
     
     if [[ "$WASM_HASH" != "$WASM_HASH_RELAYCHAIN" ]]; then
         echo
