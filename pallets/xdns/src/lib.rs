@@ -50,8 +50,8 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use sp_core::H256;
     use sp_runtime::{traits::CheckedDiv, SaturatedConversion};
-
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
@@ -500,6 +500,17 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn add_remote_order_address(
+            origin: OriginFor<T>,
+            target_id: TargetId,
+            remote_address: H256,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+            <RemoteOrderAddresses<T>>::insert(target_id, remote_address);
+            Ok(().into())
+        }
+
         /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
         pub fn purge_supported_bridging_asset(
@@ -529,6 +540,11 @@ pub mod pallet {
             if !<Gateways<T>>::contains_key(gateway_id) {
                 Err(Error::<T>::XdnsRecordNotFound.into())
             } else {
+                // Get associated finality verifier
+                let verifier = <Gateways<T>>::get(gateway_id)
+                    .expect("Ensured by Gateways::contains_key() above during purge_gateway_record")
+                    .verification_vendor;
+
                 <Gateways<T>>::remove(gateway_id);
 
                 let token_ids = GatewayTokens::<T>::get(gateway_id);
@@ -547,6 +563,17 @@ pub mod pallet {
                 <AllGatewayIds<T>>::mutate(|all_gateway_ids| {
                     all_gateway_ids.retain(|&id| id != gateway_id);
                 });
+
+                let current_block = <frame_system::Pallet<T>>::block_number();
+
+                let latest_heartbeat = T::Portal::get_latest_heartbeat_by_vendor(verifier.clone());
+                let epoch = latest_heartbeat.last_finalized_height;
+                let weight = Self::process_single_verifier_overview(
+                    current_block,
+                    verifier,
+                    epoch,
+                    latest_heartbeat,
+                );
 
                 Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, gateway_id));
                 Ok(().into())
@@ -630,6 +657,8 @@ pub mod pallet {
         XdnsRecordNotFound,
         /// Escrow account not found
         EscrowAccountNotFound,
+        /// Escrow account not found
+        RemoteOrderAddressNotFound,
         /// Stored token has already been added before
         TokenRecordAlreadyExists,
         /// XDNS Token not found in assets overlay
@@ -703,6 +732,10 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn all_gateway_ids)]
     pub type AllGatewayIds<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn remote_order_addresses)]
+    pub type RemoteOrderAddresses<T: Config> = StorageMap<_, Identity, TargetId, H256, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn per_target_asset_estimates)]
@@ -1300,6 +1333,11 @@ pub mod pallet {
                 Some(activity) => activity.security_lvl >= *security_lvl && activity.is_active,
                 None => false,
             }
+        }
+
+        fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<H256, DispatchError> {
+            <RemoteOrderAddresses<T>>::get(gateway_id)
+                .ok_or(Error::<T>::RemoteOrderAddressNotFound.into())
         }
 
         fn mint(asset_id: AssetId, user: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {

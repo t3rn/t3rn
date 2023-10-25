@@ -26,7 +26,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.65.2-rc.0"
+version    = "1.67.0-rc.0"
 
 workspace.resolver = "2"
 
@@ -43,7 +43,9 @@ bytes                 = { version = "1.2.1", default-features = false }
 tiny-keccak           = { version = "2.0.2" }
 
 ed25519-dalek         = { version = "1.0.1", features = [ "u64_backend" ], default-features = false }
-libsecp256k1          = { version = "0.7.1", default-features = false }
+libsecp256k1          = { version = "0.7", default-features = false }
+k256                  = { version = "0.13.1", features = ["ecdsa"], default_features = false }
+
 bn                    = { package = "substrate-bn", version = "0.6", default-features = false }
 ethereum              = { version = "0.14.0", default-features = false }
 ethereum-types        = { version = "0.14.1", default-features = false }
