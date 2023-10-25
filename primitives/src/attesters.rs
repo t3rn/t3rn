@@ -284,6 +284,10 @@ pub fn verify_secp256k1_ecdsa_signature(
     signature: &[u8],
     compressed_ecdsa_pk: &[u8; 33],
 ) -> Result<bool, libsecp256k1::Error> {
+    // Check signature length is 65 bytes
+    if signature.len() != 65 {
+        return Err(libsecp256k1::Error::InvalidSignature)
+    }
     // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
     // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
     // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
@@ -296,10 +300,6 @@ pub fn verify_secp256k1_ecdsa_signature(
         Some(id) => id,
         None => return Err(libsecp256k1::Error::InvalidSignature),
     };
-    // Check signature length is 65 bytes
-    if signature.len() != 65 {
-        return Err(libsecp256k1::Error::InvalidSignature)
-    }
     let signature = Signature::from_slice(&signature[..64])
         .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
     let recovered_pk: PublicKey =
