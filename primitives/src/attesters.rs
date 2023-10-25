@@ -284,10 +284,6 @@ pub fn verify_secp256k1_ecdsa_signature(
     signature: &[u8],
     compressed_ecdsa_pk: &[u8; 33],
 ) -> Result<bool, libsecp256k1::Error> {
-    // Check signature length is 65 bytes
-    if signature.len() != 65 {
-        return Err(libsecp256k1::Error::InvalidSignature)
-    }
     // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
     // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
     // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
@@ -296,33 +292,23 @@ pub fn verify_secp256k1_ecdsa_signature(
     } else {
         signature[64]
     };
-
-    // Create mutable copy of signature
-    let mut signature_recovery_vec: Vec<u8> = vec![0u8; 65];
-    signature_recovery_vec.copy_from_slice(signature);
-    signature_recovery_vec[64] = recovery_id;
-
-    if message.len() != 32 {
-        return Err(libsecp256k1::Error::InvalidMessage)
+    let recovery_id = match RecoveryId::from_byte(recovery_id) {
+        Some(id) => id,
+        None => return Err(libsecp256k1::Error::InvalidSignature),
+    };
+    // Check signature length is 65 bytes
+    if signature.len() != 65 {
+        return Err(libsecp256k1::Error::InvalidSignature)
     }
-
-    let ecdsa_sig = ecdsa::Signature::from_slice(signature_recovery_vec.as_slice())
-        .ok_or(libsecp256k1::Error::InvalidSignature)?;
-
-    let ecdsa_public = ecdsa::Public::from_raw(compressed_ecdsa_pk.clone());
-
-    let mut message_32b = [0u8; 32];
-    message_32b.copy_from_slice(message);
-
-    let recovery_id = RecoveryId::from_byte(recovery_id).expect("recovery id is invalid");
-    let signature = Signature::from_slice(&signature_recovery_vec[..64])
-        .expect("signature encoding is invalid");
+    let signature = Signature::from_slice(&signature[..64])
+        .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
     let recovered_pk: PublicKey =
-        VerifyingKey::recover_from_prehash(&message_32b[..], &signature, recovery_id)
-            .expect("signature is invalid")
-            .into();
+        match VerifyingKey::recover_from_prehash(&message[..], &signature, recovery_id) {
+            Ok(verification_key) => verification_key.into(),
+            Err(_) => return Err(libsecp256k1::Error::InvalidSignature),
+        };
     let encoded_pk = recovered_pk.to_encoded_point(/* compress = */ true);
-    let recovery_pubkey_compare_result = &encoded_pk.as_bytes()[..] == &ecdsa_public.0;
+    let recovery_pubkey_compare_result = &encoded_pk.as_bytes()[..] == compressed_ecdsa_pk;
 
     Ok(recovery_pubkey_compare_result)
 }
