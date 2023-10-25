@@ -50,6 +50,22 @@ class GrandpaRanger {
     this.target.connect()
   }
 
+  async submitMetrics(resolve: any) {
+    setCheckpointMetrics(
+      this.config,
+      this.circuit,
+      this.target,
+      this.prometheus
+    )
+      .then(() => {
+        return resolve()
+      })
+      .catch((e) => {
+        logger.error(e)
+        return resolve()
+      })
+  }
+
   async collectAndSubmit(resolve: any) {
     if (!this.circuit.isActive || !this.target.isActive) return resolve() // skip if either client is not active
 
@@ -221,16 +237,9 @@ class GrandpaRanger {
   async scheduleHeightMonitoring() {
     while (true) {
       await new Promise((resolve, _reject) => {
-        logger.info(`Starting new range submission loop`)
         setTimeout(() => {
-          setCheckpointMetrics(
-            this.config,
-            this.circuit,
-            this.target,
-            this.prometheus
-          ).catch((e) => resolve),
-            this.config.rangeInterval * 1000
-        })
+          this.submitMetrics(resolve).catch((e) => resolve)
+        }, this.config.rangeInterval * 1000)
       })
     }
   }
