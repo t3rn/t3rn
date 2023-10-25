@@ -9,6 +9,7 @@ use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
 
+pub use t3rn_abi::{evm_ingress_logs::*, recode::recode_bytes_with_descriptor, Codec};
 // Key types for attester crypto
 pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
 pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
@@ -255,7 +256,7 @@ impl AttesterInfo {
                     }
                 }
                 verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec)
-                    .map_err(|e| "InvalidSecp256k1Signature".into())
+                    .map_err(|_| "InvalidSecp256k1Signature".into())
             },
             ED25519_ATTESTER_KEY_TYPE_ID => {
                 let ed25519_sig = ed25519::Signature::from_slice(signature)

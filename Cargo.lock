@@ -1073,7 +1073,7 @@ dependencies = [
  "pallet-contracts 1.66.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
@@ -1221,7 +1221,7 @@ dependencies = [
  "pallet-contracts 1.66.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
@@ -6969,43 +6969,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1#cc661e1d08e5e9f6746cfd1060f7b2063e9682ae"
-dependencies = [
- "eth_trie",
- "ethereum-types",
- "frame-support",
- "frame-system",
- "hash-db 0.15.2",
- "hex-literal 0.3.4",
- "keccak-hash 0.10.0",
- "log",
- "milagro_bls",
- "num-traits",
- "pallet-balances",
- "pallet-sudo",
- "pallet-timestamp",
- "parity-scale-codec",
- "rand 0.8.5",
- "rlp",
- "rustc-hex",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std 8.0.0",
- "sp-trie",
- "ssz-rs",
- "ssz-rs-derive",
- "t3rn-primitives",
- "typenum",
-]
-
-[[package]]
-name = "pallet-eth2-finality-verifier"
-version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes#03476e36f46fcc65676468c4fc4ee651ff7b7a6d"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.4#a4b4023a39ad66fd76295561f65cd219ddbdcf8e"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -7357,7 +7321,7 @@ dependencies = [
  "hex-literal 0.2.2",
  "log",
  "pallet-balances",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-grandpa-finality-verifier",
  "pallet-sudo",
  "pallet-timestamp",
@@ -7477,7 +7441,7 @@ dependencies = [
 [[package]]
 name = "pallet-sepolia-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.4#57a43de829237db81638abd11ce677a1cfac7b97"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.7#a04c2beebac4736ba534e267f5aff3986d7e8f5b"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -13158,7 +13122,7 @@ dependencies = [
  "pallet-contracts 1.66.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.1)",
+ "pallet-eth2-finality-verifier",
  "pallet-evm",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -13406,7 +13370,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
- "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=generate_hashes)",
+ "pallet-eth2-finality-verifier",
  "pallet-grandpa-finality-verifier",
  "pallet-insecure-randomness-collective-flip",
  "pallet-portal",
