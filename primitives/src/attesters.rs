@@ -274,6 +274,11 @@ impl AttesterInfo {
     }
 }
 
+use k256::{
+    ecdsa::{RecoveryId, Signature, VerifyingKey},
+    elliptic_curve::sec1::ToEncodedPoint,
+    PublicKey,
+};
 pub fn verify_secp256k1_ecdsa_signature(
     message: &Vec<u8>,
     signature: &[u8],
@@ -283,6 +288,9 @@ pub fn verify_secp256k1_ecdsa_signature(
     if signature.len() != 65 {
         return Err(libsecp256k1::Error::InvalidSignature)
     }
+    // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
+    // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
+    // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
     let recovery_id = if signature[64] > 26 {
         signature[64] - 27
     } else {
@@ -306,10 +314,15 @@ pub fn verify_secp256k1_ecdsa_signature(
     let mut message_32b = [0u8; 32];
     message_32b.copy_from_slice(message);
 
-    let recovery_pubkey_compare_result = match ecdsa_sig.recover_prehashed(&message_32b) {
-        Some(recovered_pubkey) => recovered_pubkey == ecdsa_public,
-        None => false,
-    };
+    let recovery_id = RecoveryId::from_byte(recovery_id).expect("recovery id is invalid");
+    let signature = Signature::from_slice(&signature_recovery_vec[..64])
+        .expect("signature encoding is invalid");
+    let recovered_pk: PublicKey =
+        VerifyingKey::recover_from_prehash(&message_32b[..], &signature, recovery_id)
+            .expect("signature is invalid")
+            .into();
+    let encoded_pk = recovered_pk.to_encoded_point(/* compress = */ true);
+    let recovery_pubkey_compare_result = &encoded_pk.as_bytes()[..] == &ecdsa_public.0;
 
     Ok(recovery_pubkey_compare_result)
 }

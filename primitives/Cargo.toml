@@ -32,6 +32,8 @@ sp-runtime            = { workspace = true }
 sp-std                = { workspace = true }
 sp-version            = { workspace = true }
 
+k256 = { version = "=0.13.1", features = ["ecdsa"], default_features = false }
+
 #bridges
 finality-grandpa    = { version = "0.16", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
@@ -56,6 +58,7 @@ mini-mock =  { path = "../runtime/mini-mock", package = "t3rn-mini-mock-runtime"
 [features]
 default = [ "std" ]
 std = [
+  "k256/std",
   "bytes/std",
   "ed25519-dalek/std",
   "libsecp256k1/std",
