@@ -277,34 +277,43 @@ impl AttesterInfo {
     }
 }
 
+use k256::{
+    ecdsa::{RecoveryId, Signature, VerifyingKey},
+    elliptic_curve::sec1::ToEncodedPoint,
+    PublicKey,
+};
 pub fn verify_secp256k1_ecdsa_signature(
     message: &Vec<u8>,
     signature: &[u8],
     compressed_ecdsa_pk: &[u8; 33],
 ) -> Result<bool, libsecp256k1::Error> {
+    // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
+    // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
+    // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
+    let recovery_id = if signature[64] > 26 {
+        signature[64] - 27
+    } else {
+        signature[64]
+    };
+    let recovery_id = match RecoveryId::from_byte(recovery_id) {
+        Some(id) => id,
+        None => return Err(libsecp256k1::Error::InvalidSignature),
+    };
     // Check signature length is 65 bytes
     if signature.len() != 65 {
         return Err(libsecp256k1::Error::InvalidSignature)
     }
-    let rid = libsecp256k1::RecoveryId::parse(if signature[64] > 26 {
-        signature[64] - 27
-    } else {
-        signature[64]
-    } as u8)?;
+    let signature = Signature::from_slice(&signature[..64])
+        .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
+    let recovered_pk: PublicKey =
+        match VerifyingKey::recover_from_prehash(&message[..], &signature, recovery_id) {
+            Ok(verification_key) => verification_key.into(),
+            Err(_) => return Err(libsecp256k1::Error::InvalidSignature),
+        };
+    let encoded_pk = recovered_pk.to_encoded_point(/* compress = */ true);
+    let recovery_pubkey_compare_result = &encoded_pk.as_bytes()[..] == compressed_ecdsa_pk;
 
-    // Convert message from Bytes vector to 32 bytes array
-    let message32b: [u8; 32] = message[..32]
-        .try_into()
-        .map_err(|_| libsecp256k1::Error::InvalidMessage)?;
-
-    let sig = libsecp256k1::Signature::parse_overflowing_slice(&signature[..64])?;
-
-    let msg = libsecp256k1::Message::parse(&message32b);
-
-    match libsecp256k1::recover(&msg, &sig, &rid) {
-        Ok(actual) => Ok(compressed_ecdsa_pk == &actual.serialize_compressed()[..]),
-        _ => Ok(false),
-    }
+    Ok(recovery_pubkey_compare_result)
 }
 
 pub type Signature65b = [u8; 65];
