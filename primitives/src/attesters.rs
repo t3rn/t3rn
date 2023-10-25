@@ -306,11 +306,12 @@ pub fn verify_secp256k1_ecdsa_signature(
     let mut message_32b = [0u8; 32];
     message_32b.copy_from_slice(message);
 
-    Ok(ecdsa::Pair::verify_prehashed(
-        &ecdsa_sig,
-        &message_32b,
-        &ecdsa_public,
-    ))
+    let recovery_pubkey_compare_result = match ecdsa_sig.recover_prehashed(&message_32b) {
+        Some(recovered_pubkey) => recovered_pubkey == ecdsa_public,
+        None => false,
+    };
+
+    Ok(recovery_pubkey_compare_result)
 }
 
 pub type Signature65b = [u8; 65];
