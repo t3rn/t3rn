@@ -254,10 +254,8 @@ impl AttesterInfo {
                         return Err("RecoveredAddressMismatch".into())
                     }
                 }
-                verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec).map_err(|e| {
-                    println!("InvalidSecp256k1Signature {:?}", e);
-                    "InvalidSecp256k1Signature".into()
-                })
+                verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec)
+                    .map_err(|e| "InvalidSecp256k1Signature".into())
             },
             ED25519_ATTESTER_KEY_TYPE_ID => {
                 let ed25519_sig = ed25519::Signature::from_slice(signature)

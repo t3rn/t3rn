@@ -113,7 +113,7 @@ pallet-treasury                            = { git = "https://github.com/parityt
 pallet-utility                             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
 pallet-proxy                               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
 sp-api                                     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
-sp-application-crypto                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
+sp-application-crypto                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', features = ["full_crypto"], default-features = false }
 sp-block-builder                           = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
 sp-blockchain                              = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
 sp-consensus-aura                          = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
