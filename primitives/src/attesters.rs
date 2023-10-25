@@ -163,7 +163,6 @@ fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethe
         commission: Percent::from_percent(0),
         index: 0,
     };
-
     // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature ethers sign message
     let signature: [u8; 65] = hex!("3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c");
 
@@ -255,8 +254,10 @@ impl AttesterInfo {
                         return Err("RecoveredAddressMismatch".into())
                     }
                 }
-                verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec)
-                    .map_err(|_| "InvalidSecp256k1Signature".into())
+                verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec).map_err(|e| {
+                    println!("InvalidSecp256k1Signature {:?}", e);
+                    "InvalidSecp256k1Signature".into()
+                })
             },
             ED25519_ATTESTER_KEY_TYPE_ID => {
                 let ed25519_sig = ed25519::Signature::from_slice(signature)
@@ -275,35 +276,43 @@ impl AttesterInfo {
     }
 }
 
-fn verify_secp256k1_ecdsa_signature(
+pub fn verify_secp256k1_ecdsa_signature(
     message: &Vec<u8>,
     signature: &[u8],
     compressed_ecdsa_pk: &[u8; 33],
 ) -> Result<bool, libsecp256k1::Error> {
-    Ok(true)
-    // // Check signature length is 65 bytes
-    // if signature.len() != 65 {
-    //     return Err(libsecp256k1::Error::InvalidSignature)
-    // }
-    // let rid = libsecp256k1::RecoveryId::parse(if signature[64] > 26 {
-    //     signature[64] - 27
-    // } else {
-    //     signature[64]
-    // } as u8)?;
-    //
-    // // Convert message from Bytes vector to 32 bytes array
-    // let message32b: [u8; 32] = message[..32]
-    //     .try_into()
-    //     .map_err(|_| libsecp256k1::Error::InvalidMessage)?;
-    //
-    // let sig = libsecp256k1::Signature::parse_overflowing_slice(&signature[..64])?;
-    //
-    // let msg = libsecp256k1::Message::parse(&message32b);
-    //
-    // match libsecp256k1::recover(&msg, &sig, &rid) {
-    //     Ok(actual) => Ok(compressed_ecdsa_pk == &actual.serialize_compressed()[..]),
-    //     _ => Ok(false),
-    // }
+    // Check signature length is 65 bytes
+    if signature.len() != 65 {
+        return Err(libsecp256k1::Error::InvalidSignature)
+    }
+    let recovery_id = if signature[64] > 26 {
+        signature[64] - 27
+    } else {
+        signature[64]
+    };
+
+    // Create mutable copy of signature
+    let mut signature_recovery_vec: Vec<u8> = vec![0u8; 65];
+    signature_recovery_vec.copy_from_slice(signature);
+    signature_recovery_vec[64] = recovery_id;
+
+    if message.len() != 32 {
+        return Err(libsecp256k1::Error::InvalidMessage)
+    }
+
+    let ecdsa_sig = ecdsa::Signature::from_slice(signature_recovery_vec.as_slice())
+        .ok_or(libsecp256k1::Error::InvalidSignature)?;
+
+    let ecdsa_public = ecdsa::Public::from_raw(compressed_ecdsa_pk.clone());
+
+    let mut message_32b = [0u8; 32];
+    message_32b.copy_from_slice(message);
+
+    Ok(ecdsa::Pair::verify_prehashed(
+        &ecdsa_sig,
+        &message_32b,
+        &ecdsa_public,
+    ))
 }
 
 pub type Signature65b = [u8; 65];
