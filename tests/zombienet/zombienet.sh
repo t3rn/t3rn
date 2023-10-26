@@ -131,6 +131,14 @@ setup() {
     build_collator
 }
 
+setup_xcm() {
+    make_bin_dir
+    fetch_zombienet
+    build_polkadot
+    build_asset_hub
+    build_collator
+}
+
 smoke() {
     echo "Running smoke tests.."
     # TODO[Optimisation]: loop through directory and test all
@@ -190,9 +198,17 @@ confirm_sfx() {
     docker-compose down
 }
 
+xcm() {
+    echo "Running XCM tests.."
+    echo "::group::Zombienet tests..."
+
+    time zombienet --provider="$provider" test $working_dir/xcm/xcm.zndsl
+
+    echo "::endgroup::"
+}
+
 spawn_xcm() {
-    setup
-    build_asset_hub
+    setup_xcm
     echo "Spawning zombienet using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet-xcm.toml
 }
@@ -222,6 +238,10 @@ case "$1" in
         fetch_zombienet
         build_polkadot
         runtime_upgrade $@
+    ;;
+    "xcm")
+          setup
+          xcm
     ;;
     "spawn")
         setup
