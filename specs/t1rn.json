@@ -19,7 +19,7 @@
     "tokenSymbol": "TIN"
   },
   "relay_chain": "kusama",
-  "para_id": 3333,
+  "para_id": 3334,
   "bad_blocks": null,
   "codeSubstitutes": {},
   "genesis": {
