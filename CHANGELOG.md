@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.67.1-rc.0] - 2023-10-26
+### :bug: Bug Fixes
+- [`53e0586`](https://github.com/t3rn/t3rn/commit/53e0586ff0019d405af99d7b888eb9e5d5fb6d75) - update t1rn specs and remove obsoleted wasm binaries *(PR [#1400](https://github.com/t3rn/t3rn/pull/1400) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.67.0-rc.0] - 2023-10-25
 ### :sparkles: New Features
 - [`a251d6d`](https://github.com/t3rn/t3rn/commit/a251d6dada3d59e4b18adb14bda0121bc021ab33) - include extra SpeedMode::Instant (only) *(PR [#1393](https://github.com/t3rn/t3rn/pull/1393) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1808,3 +1813,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.66.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.65.2-rc.0...v1.66.0-rc.0
 [v1.66.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.0-rc.0...v1.66.1-rc.0
 [v1.67.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.1-rc.0...v1.67.0-rc.0
+[v1.67.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.67.0-rc.0...v1.67.1-rc.0
