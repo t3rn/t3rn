@@ -5,9 +5,9 @@ use frame_support::{
     pallet_prelude::*,
     traits::{Currency, ReservableCurrency},
 };
-
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
+use sp_runtime::traits::Zero;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use t3rn_primitives::{
     circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
@@ -186,6 +186,78 @@ pub mod pallet {
                 sp_std::vec![side_effect],
                 speed_mode,
                 SecurityLvl::Optimistic,
+            )?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000)]
+        pub fn double_trouble(
+            origin: OriginFor<T>,
+            source: TargetId,             // source chain on which user offers reward
+            destination: TargetId,        // destination chain on which user wants to move assets
+            asset: Asset,                 // which asset user intents to see
+            amount: BalanceOf<T>,         // how much of the asset user intents to see
+            reward_asset: Asset,          // which asset user puts down as reward on a source chain
+            max_reward: BalanceOf<T>,     // how much of the reward asset user puts down as reward
+            insurance: BalanceOf<T>,      // insurance binding both user and executor for this path
+            target_account: T::AccountId, // target account on destination chain of user's posession
+            speed_mode: SpeedMode,        // ordered speed mode
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin.clone())?;
+            let current_block_number = <frame_system::Pallet<T>>::block_number();
+            let mut current_block_number_encoded: [u8; 4] = [0u8; 4];
+            current_block_number_encoded.clone_from_slice(&current_block_number.encode());
+            let current_block_number_u32 = u32::from_le_bytes(current_block_number_encoded);
+            let escrow_account_on_target = T::Xdns::get_escrow_account(&destination)?;
+            // todo: return get_escrow_account as ExecutionSource
+            // cast escrow_account_on_target into T::AccountId
+            let escrow_account_localized = T::AccountId::decode(&mut &escrow_account_on_target[..])
+                .map_err(|e| {
+                    "Can't decode T::Account out of T::Xdns::get_escrow_account(&destination)"
+                })?;
+
+            let sfx_order_to_executor =
+                OrderSFX::<T::AccountId, Asset, BalanceOf<T>, TargetId, Vec<u8>, BalanceOf<T>> {
+                    sfx_action: SFXAction::Transfer(
+                        destination,
+                        asset,
+                        escrow_account_localized,
+                        amount,
+                    ),
+                    max_reward: Zero::zero(),
+                    insurance,
+                    reward_asset, // should be none really
+                    remote_origin_nonce: Some(current_block_number_u32),
+                };
+
+            // assign default receiver at for the time when executor's address is unknown
+            let default_self_receiver = target_account;
+            let sfx_self_order_to_user =
+                OrderSFX::<T::AccountId, Asset, BalanceOf<T>, TargetId, Vec<u8>, BalanceOf<T>> {
+                    sfx_action: SFXAction::Transfer(
+                        source,
+                        reward_asset,
+                        default_self_receiver,
+                        max_reward,
+                    ),
+                    max_reward: Zero::zero(),
+                    insurance,
+                    reward_asset, // should be none really
+                    remote_origin_nonce: Some(current_block_number_u32),
+                };
+
+            let remote_origin: OrderOrigin<T::AccountId> =
+                OrderOrigin::from_remote_nonce(current_block_number_u32);
+
+            let on_remote_circuit_order_res = T::CircuitSubmitAPI::on_remote_origin_trigger(
+                origin.clone(),
+                remote_origin.to_account_id(),
+                vec![
+                    sfx_order_to_executor.try_into()?,
+                    sfx_self_order_to_user.try_into()?,
+                ],
+                speed_mode,
             )?;
 
             Ok(().into())

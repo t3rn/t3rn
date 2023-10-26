@@ -37,13 +37,6 @@ impl<T: Config> Escrow<T> {
     ) -> Result<(), &'static str> {
         match encoded_type {
             b"tran" => Transfer::<T>::exec(encoded_args, escrow_account, executor),
-            // b"mult" => TransferMulti::exec(encoded_args, escrow_account, executor),
-            // b"swap" => Swap::exec(encoded_args, escrow_account, executor),
-            // b"aliq" => AddLiquidity::exec(encoded_args, escrow_account, executor),
-            // b"call" => Call::exec(encoded_args, escrow_account, executor),
-            // b"wasm" => CallWasm::exec(encoded_args, escrow_account, executor),
-            // b"cevm" => CallEvm::exec(encoded_args, escrow_account, executor),
-            // b"comp" => CallComposable::exec(encoded_args, escrow_account, executor),
             &_ => Err("Can't match escrow exec with any side effect id"),
         }
     }
@@ -56,13 +49,6 @@ impl<T: Config> Escrow<T> {
     ) -> Result<(), &'static str> {
         match encoded_type {
             b"tran" => Transfer::<T>::commit(encoded_args, escrow_account, executor),
-            // b"mult" => TransferMulti::commit(encoded_args, escrow_account, executor),
-            // b"swap" => Swap::commit(encoded_args, escrow_account, executor),
-            // b"aliq" => AddLiquidity::commit(encoded_args, escrow_account, executor),
-            // b"call" => Call::commit(encoded_args, escrow_account, executor),
-            // b"wasm" => CallWasm::commit(encoded_args, escrow_account, executor),
-            // b"cevm" => CallEvm::commit(encoded_args, escrow_account, executor),
-            // b"comp" => CallComposable::commit(encoded_args, escrow_account, executor),
             &_ => Err("Can't match escrow exec with any side effect id"),
         }
     }
