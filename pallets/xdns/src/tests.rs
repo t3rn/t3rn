@@ -273,6 +273,44 @@ fn should_add_standard_sfx_abi() {
 }
 
 #[test]
+fn should_enroll_new_abi_to_selected_gateway() {
+    use t3rn_abi::SFXAbi;
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(pallet_xdns::StandardSFXABIs::<Runtime>::iter().count(), 9);
+
+            let mut tran_sfx_abi = pallet_xdns::StandardSFXABIs::<Runtime>::get(b"tran").unwrap();
+            tran_sfx_abi.maybe_prefix_memo = Some(2);
+            let initial_target_abi: Vec<([u8; 4], SFXAbi)> =
+                pallet_xdns::SFXABIRegistry::<Runtime>::iter_prefix(b"gate").collect();
+
+            assert_eq!(initial_target_abi, vec![(*b"tran", tran_sfx_abi.clone())]);
+
+            let mut tass_sfx_abi = pallet_xdns::StandardSFXABIs::<Runtime>::get(b"tass").unwrap();
+            tass_sfx_abi.maybe_prefix_memo = Some(2);
+
+            assert_ok!(XDNS::enroll_new_abi_to_selected_gateway(
+                Origin::root(),
+                *b"gate",
+                *b"tass",
+                None,
+                None
+            ));
+
+            let updated_target_abi: Vec<([u8; 4], SFXAbi)> =
+                pallet_xdns::SFXABIRegistry::<Runtime>::iter_prefix(b"gate").collect();
+
+            assert_eq!(
+                updated_target_abi,
+                vec![(*b"tran", tran_sfx_abi), (*b"tass", tass_sfx_abi)]
+            );
+        });
+}
+
+#[test]
 fn should_not_add_a_new_xdns_record_if_it_already_exists() {
     ExtBuilder::default()
         .with_standard_sfx_abi()

@@ -501,6 +501,49 @@ pub mod pallet {
         }
 
         #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn enroll_new_abi_to_selected_gateway(
+            origin: OriginFor<T>,
+            target_id: ChainId,
+            sfx_4b_id: Sfx4bId,
+            sfx_expected_abi: Option<SFXAbi>,
+            maybe_pallet_id: Option<u8>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            if let Some(abi) = sfx_expected_abi {
+                <SFXABIRegistry<T>>::insert(target_id, sfx_4b_id, abi);
+            } else {
+                let mut assume_known_abi = <StandardSFXABIs<T>>::get(sfx_4b_id)
+                    .ok_or(Error::<T>::SideEffectABINotFound)?;
+                assume_known_abi.maybe_prefix_memo = maybe_pallet_id;
+                <SFXABIRegistry<T>>::insert(target_id, sfx_4b_id, assume_known_abi);
+            }
+
+            let updated_abi_list = <SFXABIRegistry<T>>::iter_prefix(target_id).collect();
+
+            Self::override_sfx_abi(target_id, updated_abi_list)?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn unroll_sfx_abi(
+            origin: OriginFor<T>,
+            target_id: ChainId,
+            sfx_4b_id: Sfx4bId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            <SFXABIRegistry<T>>::remove(target_id, sfx_4b_id);
+
+            let updated_abi_list = <SFXABIRegistry<T>>::iter_prefix(target_id).collect();
+
+            Self::override_sfx_abi(target_id, updated_abi_list)?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
         pub fn add_remote_order_address(
             origin: OriginFor<T>,
             target_id: TargetId,
@@ -1198,14 +1241,22 @@ pub mod pallet {
         }
 
         fn override_sfx_abi(
-            origin: OriginFor<T>,
             gateway_id: ChainId,
             new_sfx_abis: Vec<(Sfx4bId, SFXAbi)>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
             if !<Gateways<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
+            // mutate allowed side effects field in gateway record
+            let mut gateway_record =
+                <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::XdnsRecordNotFound)?;
+
+            gateway_record.allowed_side_effects = new_sfx_abis
+                .iter()
+                .map(|(sfx_4b_id, abi)| (*sfx_4b_id, abi.maybe_prefix_memo))
+                .collect();
+
+            <Gateways<T>>::insert(gateway_id, gateway_record);
 
             for (sfx_4b_id, sfx_expected_abi) in new_sfx_abis {
                 <SFXABIRegistry<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| {

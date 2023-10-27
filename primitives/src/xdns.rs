@@ -314,11 +314,8 @@ pub trait Xdns<T: frame_system::Config, Balance> {
         sfx_expected_abi: SFXAbi,
     ) -> DispatchResult;
 
-    fn override_sfx_abi(
-        origin: OriginFor<T>,
-        gateway_id: ChainId,
-        new_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
-    ) -> DispatchResult;
+    fn override_sfx_abi(gateway_id: ChainId, new_sfx_abi: Vec<(Sfx4bId, SFXAbi)>)
+        -> DispatchResult;
 
     fn get_all_sfx_abi(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)>;
 
