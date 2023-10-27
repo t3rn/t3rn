@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # How to Become an Executor
 
-This documentation describes how to become an executor. It assumes that you have accounts with the correct funds for the desired blockchains, and that you also have substrate installed (needed for generating keys with subkey) - we’ll share the resources to these steps.
+This documentation covers how to become an Executor on the t3rn network. It assumes that you have accounts with the correct funds for the desired blockchains, and that you have Substrate installed, which is needed for generating keys with subkey; we will share the resources to complete these steps.
 
 ## Step 1 - Clone repo
 
@@ -24,13 +24,13 @@ Clone the [t3rn repo](https://github.com/t3rn/t3rn/tree/development/client/packa
 
 ## Step 3 - Configure your Executor
 
-Configure your executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc` and using with [direnv](https://github.com/direnv/direnv#how-it-works).
+Configure your Executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc` and using with [direnv](https://github.com/direnv/direnv#how-it-works).
 
 <p align="center">
     <img height="150" src="/img/envrc.png?raw=true"/>
 </p>
 
-## Step 4 - Run executor
+## Step 4 - Run Executor
 
 If you’ve configured your `.envrc` file, then simply run `pnpm start`.
 
@@ -53,4 +53,4 @@ If this error **‘RpcError: 1010: Invalid Transaction: Inability to pay some fe
 
 #### Generate keys with subkey:
 
-[Install subkey](https://docs.substrate.io/reference/command-line-tools/subkey/) to generate keys. Send the correct tokens to the account(s) depending on the networks they will operate on.
+[Install Subkey](https://docs.substrate.io/reference/command-line-tools/subkey/) to generate keys. Send the correct tokens to the account(s) depending on the networks they will operate on.
