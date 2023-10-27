@@ -11,6 +11,7 @@ import { handleEstimateMaxReward } from "./commands/estimate.ts"
 import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
+import { handleAssetRegistrationCommand } from "./commands/registerAsset/index.ts"
 import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
 
 const withExportMode = (program: Command) =>
@@ -138,6 +139,19 @@ withExportMode(
         .requiredOption("--target-amount <amount>", "The amount of the target asset")
         .action(handleXcmTransferCommand)
 
+)
+
+withExportMode(
+    program
+        .command("registerAsset")
+        .description("Registering asset on AssetHub or t0rn")
+        .requiredOption("--endpoint <string>", "The RPC endpoint from which the asset will be registered")
+        .requiredOption("--dest <string>", "The destination - Local/AssetHub")
+        .requiredOption("--name <string>", "The name of the asset.")
+        .requiredOption("--symbol <string>", "The symbol of the asset - ROC/TRN/USDT")
+        .requiredOption("--decimals <amount>", "The amount of decimals the token has")
+        //.requiredOption("--sufficient <>", "Flags whether to create sufficient or non-sufficient asset")
+        .action(handleAssetRegistrationCommand)
 )
 
 program.parse(process.argv)
