@@ -91,7 +91,7 @@ class GrandpaRanger {
     }
 
     if (batches.length > this.config.batches_max) {
-      batches.slice(0, this.config.batches_max)
+      batches = batches.slice(0, this.config.batches_max)
     }
 
     // calculate the total number of elements in the batches elements
@@ -131,11 +131,6 @@ class GrandpaRanger {
   }
 
   async submitToCircuit(range: any[]) {
-    // limit batches per tx
-    if (range.length > 10) {
-      range = range.slice(0, 10)
-    }
-
     return new Promise(async (resolve, reject) => {
       try {
         if (this.circuit.sdk && this.circuit.isActive) {
