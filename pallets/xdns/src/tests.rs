@@ -273,7 +273,7 @@ fn should_add_standard_sfx_abi() {
 }
 
 #[test]
-fn should_enroll_new_abi_to_selected_gateway() {
+fn should_enroll_and_unroll_new_abi_to_selected_gateway() {
     use t3rn_abi::SFXAbi;
     ExtBuilder::default()
         .with_standard_sfx_abi()
@@ -297,7 +297,7 @@ fn should_enroll_new_abi_to_selected_gateway() {
                 *b"gate",
                 *b"tass",
                 None,
-                None
+                Some(2)
             ));
 
             let updated_target_abi: Vec<([u8; 4], SFXAbi)> =
@@ -305,8 +305,16 @@ fn should_enroll_new_abi_to_selected_gateway() {
 
             assert_eq!(
                 updated_target_abi,
-                vec![(*b"tran", tran_sfx_abi), (*b"tass", tass_sfx_abi)]
+                vec![(*b"tass", tass_sfx_abi), (*b"tran", tran_sfx_abi.clone())]
             );
+
+            assert_ok!(XDNS::unroll_abi_of_selected_gateway(
+                Origin::root(),
+                *b"gate",
+                *b"tass",
+            ));
+
+            assert_eq!(initial_target_abi, vec![(*b"tran", tran_sfx_abi.clone())]);
         });
 }
 

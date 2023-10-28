@@ -527,7 +527,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
-        pub fn unroll_sfx_abi(
+        pub fn unroll_abi_of_selected_gateway(
             origin: OriginFor<T>,
             target_id: ChainId,
             sfx_4b_id: Sfx4bId,
