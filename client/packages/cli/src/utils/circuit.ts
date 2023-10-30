@@ -10,7 +10,6 @@ export type CircuitContext = {
 export const createCircuitContext = async (
   exportMode = false,
 ): Promise<CircuitContext> => {
-
   const keyring = new Keyring({ type: "sr25519" })
   const signer =
     process.env.CIRCUIT_SIGNER_KEY === undefined
