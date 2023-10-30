@@ -3,7 +3,7 @@ import type {
     VersionedMultiLocation,
     MultiAddress
 } from '@polkadot/types/interfaces'
-import {u32, u128} from '@polkadot/types'
+import {u8, u32, u128} from '@polkadot/types'
 type DESTINATION = "local" | "AssetHub"
 
 interface IRegisterAsset {
@@ -11,6 +11,7 @@ interface IRegisterAsset {
     createAssetId: (api: ApiPromise, id: number) => u32
     createMinimumBalance: (api: ApiPromise) => u128
     createAdmin: (api: ApiPromise, address: string) => MultiAddress
+    createDecimals: (api: ApiPromise, decimals: number) => u8
 }
 
 export const AssetRegistrationParameters: IRegisterAsset = {
@@ -24,5 +25,8 @@ export const AssetRegistrationParameters: IRegisterAsset = {
         return api.registry.createType("MultiAddress", {
             Id:  address
         })
+    },
+    createDecimals: (api: ApiPromise, decimals: number): u8 => {
+        return api.registry.createType("u8", decimals)
     }
 }

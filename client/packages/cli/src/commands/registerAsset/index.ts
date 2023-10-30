@@ -41,10 +41,10 @@ export const handleAssetRegistrationCommand = async (
         const api = await ApiPromise.create({
             provider: new WsProvider(args.endpoint),
         })
-        const adminId = await api.query.sudo.key();
+        const adminId = await api.query.sudo.key()
         const keyring = new Keyring({ type: "sr25519" })
         const signer = keyring.addFromUri("//Alice")
-        const adminPair = keyring.getPair(adminId.toString());
+        const adminPair = keyring.getPair(adminId.toString())
 
         const assetId = AssetRegistrationParameters.createAssetId(api, args.id)
         const assetAdmin = AssetRegistrationParameters.createAdmin(
@@ -52,11 +52,15 @@ export const handleAssetRegistrationCommand = async (
             "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
         )
         const assetIsSufficient = true
-        const assetMinimumBalance = AssetRegistrationParameters. createMinimumBalance(api)
+        const assetMinimumBalance = AssetRegistrationParameters.createMinimumBalance(api)
+        const assetDecimals = AssetRegistrationParameters.createDecimals(api, args.decimals)
 
-        // Create Asset
         const create = await api.tx.sudo.sudo(
-            api.tx.assets.forceCreate(assetId, assetAdmin, assetIsSufficient, assetMinimumBalance)
+            api.tx.utility.batch([
+                api.tx.assets.forceCreate(assetId, assetAdmin, assetIsSufficient, assetMinimumBalance),
+                api.tx.assets.forceSetMetadata(assetId, args.name, args.symbol, assetDecimals, false )
+                //api.tx.assetRegistry.registerReserveAsset(assetId, )
+            ])
         ).signAndSend(adminPair, ({ status, events }) => {
                 if (status.isInBlock || status.isFinalized) {
                     events
@@ -68,27 +72,25 @@ export const handleAssetRegistrationCommand = async (
                         .forEach(({ event : { data: [result] } }) => {
                             // Now we look to see if the extrinsic was actually successful or not...
                             if (result.isError) {
-                                let error = result.asError;
+                                let error = result.asError
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule);
-                                    const { docs, name, section } = decoded;
+                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const { docs, name, section } = decoded
 
-                                    console.log(`${section}.${name}: ${docs.join(' ')}`);
+                                    console.log(`${section}.${name}: ${docs.join(' ')}`)
                                 } else {
                                     // Other, CannotLookup, BadOrigin, no extra info
-                                    console.log(error.toString());
+                                    console.log(error.toString())
                                 }
                             }
-                        });
-                    create();
+                        })
+                    create()
                 }
             }
         )
         console.log("Asset Created!\n")
 
-        console.log("(TO DO)Set Asset Metadata...\n")
-        // TO DO: setAssetMetadata
         console.log("(TO DO)Register Asset MultiLocation...\n")
         // TO DO: registerAsset - sudo command
 
