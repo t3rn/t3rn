@@ -102,7 +102,7 @@ export const XcmTransferParameters: ICreateXcmParameters = {
             })
             break
          default:
-
+            throw new Error('Unsupported Asset!')
       }
 
       return api.registry.createType('XcmVersionedMultiAssets', {
