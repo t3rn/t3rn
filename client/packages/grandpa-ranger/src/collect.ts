@@ -91,6 +91,15 @@ const generateBatchProof = async (
       // Only one block in epoch missing
       signed_header = await getHeader(targetClient, from)
       from = parseInt(signed_header.number) + 1
+    } else if (headers.length > 500) {
+      signed_header = await getHeader(targetClient, from)
+
+      const blockHash = await targetClient.rpc.chain.getBlockHash(from)
+      const signedBlock = await targetClient.rpc.chain.getBlock(blockHash)
+      justification = signedBlock.justifications.registry.createdAtHash
+
+      headers = [signed_header]
+      from = parseInt(signed_header.number) + 1
     } else {
       signed_header = headers.pop()
       headers = [await getHeader(targetClient, from), ...headers]
