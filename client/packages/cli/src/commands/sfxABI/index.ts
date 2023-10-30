@@ -74,7 +74,7 @@ export const handleAddSfxAbiCommand = async (
       tx = targetApi.tx.xdns.enrollNewAbiToSelectedGateway(
         args.target,
         args.sfxId,
-        args.sfxAbi,
+        JSON.parse(args.sfxAbi),
         args.palletId,
       )
     } else {
@@ -86,8 +86,10 @@ export const handleAddSfxAbiCommand = async (
         )
       } else {
         console.log(
-          `SFX ABI descriptor is not provided, but SFX ID is known - using the built-in ABI descriptor ${isKnownABI}`,
+          `SFX ABI descriptor is not provided, but SFX ID is known - using the built-in ABI descriptor:`,
         )
+        console.log(JSON.stringify(isKnownABI, null, 2))
+
         tx = targetApi.tx.xdns.enrollNewAbiToSelectedGateway(
           args.target,
           args.sfxId,
@@ -121,8 +123,7 @@ export const handleAddSfxAbiCommand = async (
         } else if (
           status.isInBlock ||
           status.isFinalized ||
-          status.isReady ||
-          status.asInBlock
+          status.isReady
         ) {
           // check if we have an error event in a custom module
           events.forEach((eventEntry) => {
