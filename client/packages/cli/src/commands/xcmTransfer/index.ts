@@ -164,7 +164,7 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                .events.system.ExtrinsicFailed.is(event)
+                                targetApi.events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
