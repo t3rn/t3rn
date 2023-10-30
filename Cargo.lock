@@ -4455,6 +4455,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ink_allocator"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "870914970470fd77a3f42d3c5d1918b562817af127fd063ee8b1d9fbf59aa1fe"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "ink_engine"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4470,6 +4479,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ink_engine"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "722ec3a5eb557124b001c60ff8f961079f6d566af643edea579f152b15822fe5"
+dependencies = [
+ "blake2",
+ "derive_more",
+ "ink_primitives 4.3.0",
+ "parity-scale-codec",
+ "secp256k1 0.27.0",
+ "sha2 0.10.7",
+ "sha3",
+]
+
+[[package]]
 name = "ink_env"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4479,9 +4503,9 @@ dependencies = [
  "blake2",
  "cfg-if",
  "derive_more",
- "ink_allocator",
- "ink_engine",
- "ink_metadata",
+ "ink_allocator 3.4.0",
+ "ink_engine 3.4.0",
+ "ink_metadata 3.0.0",
  "ink_prelude 3.0.0",
  "ink_primitives 3.0.0",
  "num-traits",
@@ -4497,12 +4521,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "ink_env"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "584e73bc0982f6f1a067bb63ebc75262f6dc54ed2a17060efa73eaba84dc9308"
+dependencies = [
+ "arrayref",
+ "blake2",
+ "cfg-if",
+ "derive_more",
+ "ink_allocator 4.3.0",
+ "ink_engine 4.3.0",
+ "ink_prelude 4.3.0",
+ "ink_primitives 4.3.0",
+ "ink_storage_traits",
+ "num-traits",
+ "parity-scale-codec",
+ "paste",
+ "rlibc",
+ "scale-decode",
+ "scale-encode",
+ "scale-info",
+ "secp256k1 0.27.0",
+ "sha2 0.10.7",
+ "sha3",
+ "static_assertions",
+]
+
+[[package]]
 name = "ink_eth_compatibility"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "224fae62b21dd2baa12682f308659c0907cacccf66d21bd2425db30d567cd40a"
 dependencies = [
- "ink_env",
+ "ink_env 3.0.0",
  "libsecp256k1",
 ]
 
@@ -4513,10 +4565,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21d9fbc1628dc1cdeba5d81b99cc8cfc4015d0f1926a561abc85eea3d237e23a"
 dependencies = [
  "derive_more",
- "ink_env",
+ "ink_env 3.0.0",
  "ink_eth_compatibility",
  "ink_lang_macro",
- "ink_metadata",
+ "ink_metadata 3.0.0",
  "ink_prelude 3.0.0",
  "ink_primitives 3.0.0",
  "ink_storage",
@@ -4585,6 +4637,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ink_metadata"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fddff95ce3e01f42002fdaf96edda691dbccb08c9ae76d7101daa1fa634e601"
+dependencies = [
+ "derive_more",
+ "impl-serde 0.4.0",
+ "ink_prelude 4.3.0",
+ "ink_primitives 4.3.0",
+ "scale-info",
+ "serde",
+]
+
+[[package]]
 name = "ink_prelude"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4638,8 +4704,8 @@ dependencies = [
  "array-init",
  "cfg-if",
  "derive_more",
- "ink_env",
- "ink_metadata",
+ "ink_env 3.0.0",
+ "ink_metadata 3.0.0",
  "ink_prelude 3.0.0",
  "ink_primitives 3.0.0",
  "ink_storage_derive",
@@ -4657,6 +4723,19 @@ dependencies = [
  "quote",
  "syn 1.0.109",
  "synstructure",
+]
+
+[[package]]
+name = "ink_storage_traits"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8dcb50f70377ac35c28d63b06383a0a3cbb79542ea4cdc5b00e3e2b3de4a549"
+dependencies = [
+ "ink_metadata 4.3.0",
+ "ink_prelude 4.3.0",
+ "ink_primitives 4.3.0",
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
@@ -11621,6 +11700,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "secp256k1"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25996b82292a7a57ed3508f052cfff8640d38d32018784acd714758b43da9c8f"
+dependencies = [
+ "secp256k1-sys 0.8.1",
+]
+
+[[package]]
 name = "secp256k1-sys"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11634,6 +11722,15 @@ name = "secp256k1-sys"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83080e2c2fc1006e625be82e5d1eb6a43b7fd9578b617fcc55814daf286bba4b"
+dependencies = [
+ "cc",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70a129b9e9efbfb223753b9163c4ab3b13cff7fd9c7f010fbac25ab4099fa07e"
 dependencies = [
  "cc",
 ]
@@ -13511,7 +13608,7 @@ name = "t3rn-sdk"
 version = "0.0.1-rc.8"
 dependencies = [
  "cfg-if",
- "ink_env",
+ "ink_env 4.3.0",
  "ink_lang",
  "ink_prelude 3.0.0",
  "ink_primitives 4.3.0",
