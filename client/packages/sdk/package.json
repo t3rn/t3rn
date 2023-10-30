@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/sdk",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "t3rn's client side SDK",
   "files": [
     "dist/**/*"
@@ -22,6 +22,7 @@
     "build": "yarn clean:build && tsup",
     "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk",
     "test": "jest",
+    "fmt": "prettier --write src",
     "lint": "eslint src --ext .ts"
   },
   "keywords": [
@@ -39,8 +40,8 @@
   "homepage": "https://github.com/t3rn/t3rn",
   "dependencies": {
     "@polkadot/api": "^8.9.1",
-    "dotenv": "^16.0.3",
     "@polkadot/types": "^8.9.1",
+    "dotenv": "^16.0.3",
     "node-fetch": "2",
     "web3": "^4.0.3"
   },
@@ -116,6 +117,7 @@
     "babel-jest": "^29.5.0",
     "eslint": "^8.43.0",
     "jest": "^29.5.0",
+    "prettier": "^3.0.3",
     "ts-jest": "^29.1.0",
     "tsup": "^6.7.0",
     "typedoc": "^0.23.21",

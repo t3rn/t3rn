@@ -1,5 +1,5 @@
-const { u8aToHex, isHex, isString, isNumber } = require("@polkadot/util");
-import * as BN from "bn.js";
+const { u8aToHex, isHex, isString, isNumber } = require("@polkadot/util")
+import * as BN from "bn.js"
 
 /**
  * This class is used for doing amount conversions of different types. When dealing with circuit, there are three main encodings are used for representing amounts:
@@ -12,9 +12,9 @@ import * as BN from "bn.js";
  */
 
 export class AmountConverter {
-  value: BN;
-  decimals: number;
-  valueTypeSize: number;
+  value: BN
+  decimals: number
+  valueTypeSize: number
 
   /**
    * Construct an AmountConverter, ensuring that only integers or LittleEndian values are passed.
@@ -41,35 +41,35 @@ export class AmountConverter {
    */
 
   constructor(args: {
-    value?: number | BN | string;
-    decimals?: number;
-    valueTypeSize?: number;
+    value?: number | BN | string
+    decimals?: number
+    valueTypeSize?: number
   }) {
     // Set defaults
-    if (!args.decimals) args.decimals = 12;
-    if (!args.valueTypeSize) args.valueTypeSize = 16;
+    if (!args.decimals) args.decimals = 12
+    if (!args.valueTypeSize) args.valueTypeSize = 16
 
-    this.decimals = args.decimals;
-    this.valueTypeSize = args.valueTypeSize;
+    this.decimals = args.decimals
+    this.valueTypeSize = args.valueTypeSize
 
     if (args.value) {
       // interpret string values correctly
       if (isString(args.value)) {
         if (isHex(args.value)) {
-          this.value = fromLeEncoding(args.value as string);
+          this.value = fromLeEncoding(args.value as string)
         } else {
-          this.value = new BN.BN(args.value, 10);
+          this.value = new BN.BN(args.value, 10)
         }
       } else if (isNumber(args.value)) {
         if (Math.floor(args.value as number) !== args.value) {
           throw new Error(
-            "AmountConverter: Float values not supported! Please convert to Integer!"
-          );
+            "AmountConverter: Float values not supported! Please convert to Integer!",
+          )
         } else {
-          this.value = new BN.BN(args.value, 10);
+          this.value = new BN.BN(args.value, 10)
         }
       } else {
-        this.value = args.value as BN;
+        this.value = args.value as BN
       }
     }
   }
@@ -79,7 +79,7 @@ export class AmountConverter {
    */
 
   toFloat(): number {
-    return bnToFloat(this.toBn(), this.decimals);
+    return bnToFloat(this.toBn(), this.decimals)
   }
 
   /**
@@ -87,7 +87,7 @@ export class AmountConverter {
    */
 
   toBn(): BN {
-    return this.value as BN;
+    return this.value as BN
   }
 
   /**
@@ -96,7 +96,7 @@ export class AmountConverter {
    */
 
   floatToBn(value: number): BN {
-    return floatToBn(value, this.decimals);
+    return floatToBn(value, this.decimals)
   }
 
   /**
@@ -104,7 +104,7 @@ export class AmountConverter {
    */
 
   toLeArray(): number[] {
-    return toLeEncoding(this.value as BN, this.valueTypeSize);
+    return toLeEncoding(this.value as BN, this.valueTypeSize)
   }
 
   /**
@@ -112,7 +112,7 @@ export class AmountConverter {
    */
 
   toLeHex(): string {
-    return u8aToHex(this.toLeArray());
+    return u8aToHex(this.toLeArray())
   }
 }
 
@@ -122,8 +122,8 @@ export class AmountConverter {
  */
 
 export const fromLeEncoding = (number: string): BN => {
-  return new BN.BN(number.split("0x")[1], 16, "le");
-};
+  return new BN.BN(number.split("0x")[1], 16, "le")
+}
 
 /**
  * Encode number to LE array
@@ -133,13 +133,13 @@ export const fromLeEncoding = (number: string): BN => {
 
 export const toLeEncoding = (
   number: BN,
-  valueTypeSize: number | undefined
+  valueTypeSize: number | undefined,
 ): number[] => {
   if (valueTypeSize === undefined) {
-    valueTypeSize = 16 as number;
+    valueTypeSize = 16 as number
   }
-  return new BN.BN(number).toArray("le", valueTypeSize);
-};
+  return new BN.BN(number).toArray("le", valueTypeSize)
+}
 
 /**
  * Converts decimal number to uint as BigNumber. BN.js takes care of correct rounding here
@@ -148,8 +148,8 @@ export const toLeEncoding = (
  */
 
 export const floatToBn = (number: number, decimals: number): BN => {
-  return new BN.BN(number * Math.pow(10, decimals));
-};
+  return new BN.BN(number * Math.pow(10, decimals))
+}
 
 /**
  * Converts uint to a human readable decimal
@@ -158,8 +158,8 @@ export const floatToBn = (number: number, decimals: number): BN => {
  */
 
 export const bnToFloat = (number: BN, decimals: number): number => {
-  return number.toNumber() / Math.pow(10, decimals);
-};
+  return number.toNumber() / Math.pow(10, decimals)
+}
 
 /**
  * Generate the optional insurance construct.
@@ -169,11 +169,11 @@ export const bnToFloat = (number: BN, decimals: number): number => {
 
 export const optionalInsurance = (
   insurance: number | BN | string,
-  reward: number | BN | string
+  reward: number | BN | string,
 ) => {
   const encodedInsurance = new AmountConverter({
     value: insurance,
-  }).toLeArray();
-  const encodedReward = new AmountConverter({ value: reward }).toLeArray();
-  return u8aToHex([...encodedInsurance, ...encodedReward]);
-};
+  }).toLeArray()
+  const encodedReward = new AmountConverter({ value: reward }).toLeArray()
+  return u8aToHex([...encodedInsurance, ...encodedReward])
+}
