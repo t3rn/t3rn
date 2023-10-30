@@ -1,17 +1,17 @@
 import type {
     InteriorMultiLocation,
-    VersionedMultiLocation,
+    XcmV3MultiLocation,
     MultiAddress
 } from '@polkadot/types/interfaces'
 import {u8, u32, u128} from '@polkadot/types'
 type DESTINATION = "local" | "AssetHub"
 
 interface IRegisterAsset {
-    //createAssetMultiLocation: (api: ApiPromise, assetSymbol) => VersionedMultiLocation
     createAssetId: (api: ApiPromise, id: number) => u32
     createMinimumBalance: (api: ApiPromise) => u128
     createAdmin: (api: ApiPromise, address: string) => MultiAddress
     createDecimals: (api: ApiPromise, decimals: number) => u8
+    createAssetMultiLocation: (api: ApiPromise, assetSymbol: string) => XcmV3MultiLocation
 }
 
 export const AssetRegistrationParameters: IRegisterAsset = {
@@ -28,5 +28,38 @@ export const AssetRegistrationParameters: IRegisterAsset = {
     },
     createDecimals: (api: ApiPromise, decimals: number): u8 => {
         return api.registry.createType("u8", decimals)
+    },
+    createAssetMultiLocation: (api: ApiPromise, assetSymbol: string): XcmV3MultiLocation => {
+        const parentValue: u8 = api.registry.createType("u8", 1)
+        let assetInterior: InteriorMultiLocation
+        switch (assetSymbol) {
+            case "ROC":
+                assetInterior = api.registry.createType('InteriorMultiLocation', {
+                    Here: '',
+                })
+                break
+            case "USDT":
+                assetInterior = api.registry.createType('InteriorMultiLocation', {
+                    X3: [
+                        { Parachain: 1000 },
+                        { PalletInstance: 50 },
+                        { GeneralIndex: 1984 },
+                    ],
+                })
+                break
+            case "TRN":
+                return api.registry.createType('InteriorMultiLocation', {
+                    X1: {
+                        parachain: 3333,
+                    },
+                })
+                break
+            default:
+                throw new Error('Unsupported Asset!')
+        }
+        return api.registry.createType('XcmV3MultiLocation', {
+                interior: assetInterior,
+                parents: parentValue,
+        })
     }
 }

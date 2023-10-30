@@ -54,12 +54,13 @@ export const handleAssetRegistrationCommand = async (
         const assetIsSufficient = true
         const assetMinimumBalance = AssetRegistrationParameters.createMinimumBalance(api)
         const assetDecimals = AssetRegistrationParameters.createDecimals(api, args.decimals)
+        const assetMultiLocation = AssetRegistrationParameters.createAssetMultiLocation(api, args.symbol)
 
         const create = await api.tx.sudo.sudo(
             api.tx.utility.batch([
                 api.tx.assets.forceCreate(assetId, assetAdmin, assetIsSufficient, assetMinimumBalance),
-                api.tx.assets.forceSetMetadata(assetId, args.name, args.symbol, assetDecimals, false )
-                //api.tx.assetRegistry.registerReserveAsset(assetId, )
+                api.tx.assets.forceSetMetadata(assetId, args.name, args.symbol, assetDecimals, false ),
+                api.tx.assetRegistry.registerReserveAsset(assetId, assetMultiLocation)
             ])
         ).signAndSend(adminPair, ({ status, events }) => {
                 if (status.isInBlock || status.isFinalized) {
@@ -90,10 +91,6 @@ export const handleAssetRegistrationCommand = async (
             }
         )
         console.log("Asset Created!\n")
-
-        console.log("(TO DO)Register Asset MultiLocation...\n")
-        // TO DO: registerAsset - sudo command
-
 
         spinner.stop()
         process.exit(0)
