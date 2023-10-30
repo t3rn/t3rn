@@ -96,10 +96,13 @@ export const XcmTransferParameters: ICreateXcmParameters = {
                },
             })
             break
-         default:
+         case "ROC":
             assetInterior = api.registry.createType('InteriorMultiLocation', {
                Here: '',
             })
+            break
+         default:
+
       }
 
       return api.registry.createType('XcmVersionedMultiAssets', {

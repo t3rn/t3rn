@@ -52,7 +52,7 @@ program
   .argument("gateway")
   .description("Reset gateway")
   .option("-f, --force", "Force on live chain")
-  .action(wrapCryptoWaitReady(handleResetGatewayCommand)),
+  .action(wrapCryptoWaitReady(handleResetGatewayCommand))
 
 withExportMode(
   program
@@ -124,7 +124,7 @@ program
     "The percentage of the target amount to be used as a profit margin",
   )
   .description("Estimate the max reward for an execution")
-  .action(handleEstimateMaxReward),
+  .action(handleEstimateMaxReward)
 
 withExportMode(
     program

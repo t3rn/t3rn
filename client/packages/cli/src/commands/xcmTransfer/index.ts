@@ -70,14 +70,14 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                api.events.system.ExtrinsicFailed.is(event)
+                                targetApi.events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
                             .forEach(({ event: { data: [error, info] } }) => {
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
                                     const { docs, method, section } = decoded
 
                                     console.log(`${section}.${method}: ${docs.join(' ')}`)
@@ -99,14 +99,14 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                api.events.system.ExtrinsicFailed.is(event)
+                                targetApi.events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
                             .forEach(({ event: { data: [error, info] } }) => {
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
                                     const { docs, method, section } = decoded
 
                                     console.log(`${section}.${method}: ${docs.join(' ')}`)
@@ -132,13 +132,13 @@ export const handleXcmTransferCommand = async (
                     events
                         // find/filter for failed events
                         .filter(({ event }) =>
-                            api.events.system.ExtrinsicFailed.is(event)
+                            targetApi.events.system.ExtrinsicFailed.is(event)
                         )
                         // we know that data for system.ExtrinsicFailed is
                         // (DispatchError, DispatchInfo)
                         .forEach(({ event: { data: [error, info] } }) => {if (error.isModule) {
                             // for module errors, we have the section indexed, lookup
-                            const decoded = api.registry.findMetaError(error.asModule)
+                            const decoded = targetApi.registry.findMetaError(error.asModule)
                             const { docs, method, section } = decoded
 
                             console.log(`${section}.${method}: ${docs.join(' ')}`)
@@ -164,14 +164,14 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                api.events.system.ExtrinsicFailed.is(event)
+                                .events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
                             .forEach(({ event: { data: [error, info] } }) => {
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
                                     const { docs, method, section } = decoded
 
                                     console.log(`${section}.${method}: ${docs.join(' ')}`)

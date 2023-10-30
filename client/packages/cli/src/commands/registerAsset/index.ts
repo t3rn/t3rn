@@ -43,7 +43,7 @@ export const handleAssetRegistrationCommand = async (
         })
         const adminId = await api.query.sudo.key()
         const keyring = new Keyring({ type: "sr25519" })
-        const signer = keyring.addFromUri("//Alice")
+       // const signer = keyring.addFromUri("//Alice")
         const adminPair = keyring.getPair(adminId.toString())
 
         const assetId = AssetRegistrationParameters.createAssetId(api, args.id)
@@ -73,7 +73,7 @@ export const handleAssetRegistrationCommand = async (
                         .forEach(({ event : { data: [result] } }) => {
                             // Now we look to see if the extrinsic was actually successful or not...
                             if (result.isError) {
-                                let error = result.asError
+                                const error = result.asError
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
                                     const decoded = api.registry.findMetaError(error.asModule)

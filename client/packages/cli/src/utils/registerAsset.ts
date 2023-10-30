@@ -4,7 +4,7 @@ import type {
     MultiAddress
 } from '@polkadot/types/interfaces'
 import {u8, u32, u128} from '@polkadot/types'
-type DESTINATION = "local" | "AssetHub"
+//type DESTINATION = "local" | "AssetHub"
 
 interface IRegisterAsset {
     createAssetId: (api: ApiPromise, id: number) => u32
@@ -48,7 +48,7 @@ export const AssetRegistrationParameters: IRegisterAsset = {
                 })
                 break
             case "TRN":
-                return api.registry.createType('InteriorMultiLocation', {
+                assetInterior = api.registry.createType('InteriorMultiLocation', {
                     X1: {
                         parachain: 3333,
                     },
