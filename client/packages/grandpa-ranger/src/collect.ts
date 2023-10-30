@@ -28,7 +28,7 @@ export const generateRange = async (
 ): Promise<any[]> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const circuitHeight = await currentGatewayHeight(
+      let circuitHeight = await currentGatewayHeight(
         circuitConnection,
         config.targetGatewayId
       )
@@ -43,6 +43,12 @@ export const generateRange = async (
       )
 
       if (targetHeight > circuitHeight) {
+        // @t3rn/sdk": "^0.2.5":
+        // The submitted GrandpaJustification is not valid"
+        // if (targetHeight - circuitHeight > 100) {
+        //   circuitHeight = targetHeight - 100
+        // }
+
         let batches = await generateBatchProof(
           circuitConnection.client,
           targetConnection.client,
@@ -91,16 +97,26 @@ const generateBatchProof = async (
       // Only one block in epoch missing
       signed_header = await getHeader(targetClient, from)
       from = parseInt(signed_header.number) + 1
-    } else if (headers.length > 500) {
-      signed_header = await getHeader(targetClient, from)
+    }
+    // @t3rn/sdk": "^0.2.5":
+    // The submitted GrandpaJustification is not valid"
+    // else if (headers.length > 10) {
+    //   const blockNumber = to - 10
+    //   const finalityProof = await targetClient.rpc.grandpa.proveFinality(
+    //     blockNumber
+    //   )
+    //   const decodedFinalityProof =
+    //     Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
 
-      const blockHash = await targetClient.rpc.chain.getBlockHash(from)
-      const signedBlock = await targetClient.rpc.chain.getBlock(blockHash)
-      justification = signedBlock.justifications.registry.createdAtHash
+    //   justification = decodedFinalityProof.justification
+    //   headers = decodedFinalityProof.headers
 
-      headers = [signed_header]
-      from = parseInt(signed_header.number) + 1
-    } else {
+    //   signed_header = headers.pop()
+    //   headers = [await getHeader(targetClient, blockNumber), ...headers]
+    //   from = parseInt(signed_header.number.toJSON()) + 1
+    // }
+    //
+    else {
       signed_header = headers.pop()
       headers = [await getHeader(targetClient, from), ...headers]
       from = parseInt(signed_header.number.toJSON()) + 1
