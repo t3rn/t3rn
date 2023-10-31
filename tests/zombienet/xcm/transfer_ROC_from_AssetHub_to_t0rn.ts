@@ -19,8 +19,8 @@ async function run(nodeName, networkInfo) {
        `
     const transferRocToParachainCommand = `pnpm cli xcmTransfer
         --signer "//Bob"
-        --type "relay"
-        --endpoint "ws://127.0.0.1:9933"
+        --type "system"
+        --endpoint "ws://127.0.0.1:9946"
         --dest "3333"
         --recipient "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"
         --target-asset "ROC"
