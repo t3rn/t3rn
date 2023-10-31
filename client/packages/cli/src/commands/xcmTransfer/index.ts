@@ -158,21 +158,19 @@ export const handleXcmTransferCommand = async (
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
-                            .forEach(({ event: { data: [error, info] } }) => {
-                                if (error.isModule) {
-                                    // for module errors, we have the section indexed, lookup
-                                    const decoded = targetApi.registry.findMetaError(error.asModule)
-                                    const { docs, method, section } = decoded
+                            .forEach(({ event: { data: [error, info] } }) => {if (error.isModule) {
+                                // for module errors, we have the section indexed, lookup
+                                const decoded = targetApi.registry.findMetaError(error.asModule)
+                                const { docs, method, section } = decoded
 
-                    console.log(`${section}.${method}: ${docs.join(" ")}`)
-                  } else {
-                    // Other, CannotLookup, BadOrigin, no extra info
-                    console.log(error.toString())
-                  }
-                },
-              )
-          }
-        })
+                                console.log(`${section}.${method}: ${docs.join(' ')}`)
+                            } else {
+                                // Other, CannotLookup, BadOrigin, no extra info
+                                console.log(error.toString())
+                            }
+                            })
+                    }
+                })
     } else {
       await targetApi.tx.polkadotXcm
         .limitedReserveTransferAssets(
