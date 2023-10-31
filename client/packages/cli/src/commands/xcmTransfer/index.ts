@@ -140,7 +140,7 @@ export const handleXcmTransferCommand = async (
                 }
                 })
         }
-        else if {
+        else {
             await targetApi.tx.polkadotXcm
                 .limitedReserveTransferAssets(
                     xcmDestParam,
