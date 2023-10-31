@@ -36,7 +36,7 @@ export const handleXcmTransferCommand = async (
 
   spinner.text = "Submitting XCM Transaction... \n"
   spinner.start()
-
+  try {
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
             ? keyring.addFromUri(args.signer)
