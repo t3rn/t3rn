@@ -3,7 +3,6 @@ import { ExtrinsicExport } from "../export"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SignerOptions } from "@polkadot/api/types/submittable"
 import { EventRecord } from "@polkadot/types/interfaces"
-import {cryptoWaitReady} from "@polkadot/util-crypto";
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
