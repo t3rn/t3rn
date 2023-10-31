@@ -240,7 +240,7 @@ case "$1" in
         runtime_upgrade $@
     ;;
     "xcm")
-          setup
+          setup_xcm
           xcm
     ;;
     "spawn")
