@@ -9,6 +9,8 @@ use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
 
+pub use t3rn_abi::{evm_ingress_logs::*, recode::recode_bytes_with_descriptor, Codec};
+
 // Key types for attester crypto
 pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
 pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
@@ -163,6 +165,7 @@ fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethe
         commission: Percent::from_percent(0),
         index: 0,
     };
+
     // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature ethers sign message
     let signature: [u8; 65] = hex!("3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c");
 
@@ -255,7 +258,7 @@ impl AttesterInfo {
                     }
                 }
                 verify_secp256k1_ecdsa_signature(message, &signature, &self.key_ec)
-                    .map_err(|e| "InvalidSecp256k1Signature".into())
+                    .map_err(|_| "InvalidSecp256k1Signature".into())
             },
             ED25519_ATTESTER_KEY_TYPE_ID => {
                 let ed25519_sig = ed25519::Signature::from_slice(signature)
@@ -274,11 +277,6 @@ impl AttesterInfo {
     }
 }
 
-use k256::{
-    ecdsa::{RecoveryId, Signature, VerifyingKey},
-    elliptic_curve::sec1::ToEncodedPoint,
-    PublicKey,
-};
 pub fn verify_secp256k1_ecdsa_signature(
     message: &Vec<u8>,
     signature: &[u8],
@@ -288,29 +286,25 @@ pub fn verify_secp256k1_ecdsa_signature(
     if signature.len() != 65 {
         return Err(libsecp256k1::Error::InvalidSignature)
     }
-    // The Ethereum community decided on a convention where this recovery ID (v) is either 27 or 28.
-    // But, internally, libraries like libsecp256k1 expect this ID to be 0 or 1.
-    // Therefore, when interfacing with Ethereum tools adjust this value by subtracting 27.
-    let recovery_id = if signature[64] > 26 {
+    let rid = libsecp256k1::RecoveryId::parse(if signature[64] > 26 {
         signature[64] - 27
     } else {
         signature[64]
-    };
-    let recovery_id = match RecoveryId::from_byte(recovery_id) {
-        Some(id) => id,
-        None => return Err(libsecp256k1::Error::InvalidSignature),
-    };
-    let signature = Signature::from_slice(&signature[..64])
-        .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
-    let recovered_pk: PublicKey =
-        match VerifyingKey::recover_from_prehash(&message[..], &signature, recovery_id) {
-            Ok(verification_key) => verification_key.into(),
-            Err(_) => return Err(libsecp256k1::Error::InvalidSignature),
-        };
-    let encoded_pk = recovered_pk.to_encoded_point(/* compress = */ true);
-    let recovery_pubkey_compare_result = &encoded_pk.as_bytes()[..] == compressed_ecdsa_pk;
+    } as u8)?;
 
-    Ok(recovery_pubkey_compare_result)
+    // Convert message from Bytes vector to 32 bytes array
+    let message32b: [u8; 32] = message[..32]
+        .try_into()
+        .map_err(|_| libsecp256k1::Error::InvalidMessage)?;
+
+    let sig = libsecp256k1::Signature::parse_overflowing_slice(&signature[..64])?;
+
+    let msg = libsecp256k1::Message::parse(&message32b);
+
+    match libsecp256k1::recover(&msg, &sig, &rid) {
+        Ok(actual) => Ok(compressed_ecdsa_pk == &actual.serialize_compressed()[..]),
+        _ => Ok(false),
+    }
 }
 
 pub type Signature65b = [u8; 65];
