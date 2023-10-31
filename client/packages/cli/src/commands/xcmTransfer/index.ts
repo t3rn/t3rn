@@ -37,6 +37,31 @@ export const handleXcmTransferCommand = async (
   spinner.text = "Submitting XCM Transaction... \n"
   spinner.start()
   try {
+      const targetApi = await ApiPromise.create({
+          provider: new WsProvider(args.endpoint),
+      })
+      const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(
+          targetApi,
+          args.recipient,
+      )
+      const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(
+          targetApi,
+          0,
+      )
+      const xcmAssetsParam = XcmTransferParameters.createAssets(
+          targetApi,
+          args.targetAsset,
+          args.type,
+          args.targetAmount,
+      )
+      const xcmDestParam = XcmTransferParameters.createDestination(
+          targetApi,
+          args.dest,
+          args.type,
+      )
+      const xcmWeightLimitParam =
+          XcmTransferParameters.createWeightLimit(targetApi)
+
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
             ? keyring.addFromUri(args.signer)
