@@ -1,6 +1,8 @@
 const assert = require("assert")
+const { exec } = require('child_process')
 const path = require('path')
-import {ApiPromise, WsProvider, Keyring} from "@t3rn/sdk"
+
+//import {ApiPromise, WsProvider, Keyring} from "@t3rn/sdk"
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
@@ -25,31 +27,20 @@ async function checkEvent(api) {
     });
 }
 
-async function registerAsset(api, owner, assetMetadata)
-
-
-
-async function run(nodeName, networkInfo, args) {
+async function run(nodeName, networkInfo) {
     const { wsUri, userDefinedTypes } = networkInfo.nodesByName[nodeName]
     const api = await zombie.connect(wsUri, userDefinedTypes)
+    const cliPath = path.join(__dirname, '../../../client/packages/cli')
 
-    try {
-
-        // Register ROc on t0rn
-        const keyring = new Keyring({ type: "sr25519" })
-        const signer = keyring.addFromUri("//Alice")
-        //await api.tx.assets.createAsset()
-    } catch (err) {
-        console.error(err);
-        process.exit(1)
-    }
-
-    return 1
-    //const result = await checkEvent(api);
-    //return result;
-
-    /*
-       const command = `pnpm cli xcmTransfer
+    const registerAssetsCommand = `pnpm cli registerAsset
+        --endpoint "ws://127.0.0.1:9947"
+        --dest "local"
+        --id 1
+        --name "Rococo ROC"
+        --symbol "ROC" 
+        --decimals 12
+       `
+    const transferRocToParachainCommand = `pnpm cli xcmTransfer
         --signer "//Bob"
         --type "relay"
         --endpoint "ws://127.0.0.1:9933"
@@ -58,24 +49,27 @@ async function run(nodeName, networkInfo, args) {
         --target-asset "ROC"
         --target-amount 2000000000000'
        `
-       const cliPath = path.join(__dirname, '../../../client/packages/cli')
 
-       try {
-           exec(command, { cwd: cliPath }, (error) => {
-             if (error) {
-               console.error(`Error executing command "${command}": ${error}`);
-               process.exit(1)
-             }
-           });
-       } catch (err) {
-           console.error(err);
-           process.exit(1)
-       }
+    try {
+        exec(registerAssetsCommand, { cwd: cliPath }, (error) => {
+            if (error) {
+                console.error(`Error executing command "${registerAssetsCommand}": ${error}`)
+                process.exit(1)
+            }
+        })
+    } catch (err) {
+        console.error(err)
+        process.exit(1)
+    }
+    assert.ok(await api.query.assets.asset(1) != null, "Asset not created. Aborting!")
+    assert.ok(
+        await api.query.assetRegistry.assetIdMultiLocation(1) != null,
+        "Asset MultiLocation not registered. Aborting!"
+    )
+    return 1
+    //const result = await checkEvent(api);
+    //return result;
 
-       const result = await checkEvent(api);
-       return result;
-   }
-   */
 }
 
 module.exports = { run }
