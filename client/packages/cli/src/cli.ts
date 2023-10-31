@@ -11,6 +11,7 @@ import { handleEstimateMaxReward } from "./commands/estimate.ts"
 import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
+import { handleAssetRegistrationCommand } from "./commands/registerAsset/index.ts"
 import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
 import { handleAddSfxAbiCommand } from "@/commands/sfxABI/index.js"
 
@@ -123,8 +124,9 @@ program
     "The percentage of the target amount to be used as a profit margin",
   )
   .description("Estimate the max reward for an execution")
-  .action(handleEstimateMaxReward),
-  withExportMode(
+  .action(handleEstimateMaxReward)
+
+withExportMode(
     program
       .command("xcmTransfer")
       .description("Cross-chain transfer of assets using XCM")
@@ -171,6 +173,20 @@ withExportMode(
       "Optional, default false. Purge SFX ABI from the gateway",
     )
     .action(handleAddSfxAbiCommand),
+)
+
+withExportMode(
+    program
+        .command("registerAsset")
+        .description("Registering asset on AssetHub or t0rn")
+        .requiredOption("--endpoint <string>", "The RPC endpoint from which the asset will be registered")
+        .requiredOption("--dest <string>", "The destination - Local/AssetHub")
+        .requiredOption("--id <number>", "The ID OF the token")
+        .requiredOption("--name <string>", "The name of the asset.")
+        .requiredOption("--symbol <string>", "The symbol of the asset - ROC/TRN/USDT")
+        .requiredOption("--decimals <number>", "The amount of decimals the token has")
+        //.requiredOption("--sufficient <>", "Flags whether to create sufficient or non-sufficient asset")
+        .action(handleAssetRegistrationCommand)
 )
 
 program.parse(process.argv)
