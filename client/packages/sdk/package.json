@@ -17,6 +17,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
+    "preinstall": "npm exec -- only-allow yarn",
     "ci": "rm -rf node_modules && yarn",
     "clean:build": "rm -rf ./dist",
     "build": "yarn clean:build && tsup",
