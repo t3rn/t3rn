@@ -12,6 +12,7 @@ import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
 import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
+import { handleAddSfxAbiCommand } from "@/commands/sfxABI/index.js"
 import { handleFastWriterCommand } from "./commands/fastWriter/index.ts"
 
 const withExportMode = (program: Command) =>
@@ -52,15 +53,16 @@ program
   .argument("gateway")
   .description("Reset gateway")
   .option("-f, --force", "Force on live chain")
-  .action(wrapCryptoWaitReady(handleResetGatewayCommand)),
-  withExportMode(
-    program
-      .command("purgeGateway")
-      .argument("gateway")
-      .description("Purge a gateway")
-      .option("-f, --force", "Force on live chain")
-      .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
-  )
+  .action(wrapCryptoWaitReady(handleResetGatewayCommand))
+
+withExportMode(
+program
+  .command("purgeGateway")
+  .argument("gateway")
+  .description("Purge a gateway")
+  .option("-f, --force", "Force on live chain")
+  .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
+)
 
 withExportMode(
   program
@@ -123,27 +125,56 @@ program
     "The percentage of the target amount to be used as a profit margin",
   )
   .description("Estimate the max reward for an execution")
-  .action(handleEstimateMaxReward),
-  withExportMode(
-    program
-      .command("xcmTransfer")
-      .description("Cross-chain transfer of assets using XCM")
-      .requiredOption("--signer <string>", "The signer of the transaction")
-      .requiredOption("--type <string>", "The type of XCM transfer")
-      .requiredOption(
-        "--endpoint <string>",
-        "The RPC endpoint from which the XCM transaction will be submitted",
-      )
-      .requiredOption("--dest <string>", "The destination chain")
-      .requiredOption("--recipient <string>", "The recipient address")
-      .requiredOption("--target-asset <symbol>", "The target asset")
-      .requiredOption(
-        "--target-amount <amount>",
-        "The amount of the target asset",
-      )
-      .action(handleXcmTransferCommand),
-  )
+  .action(handleEstimateMaxReward)
 
+withExportMode(
+    program
+        .command("xcmTransfer")
+        .description("Cross-chain transfer of assets using XCM")
+        .requiredOption("--signer <string>", "The signer of the transaction")
+        .requiredOption("--type <string>", "The type of XCM transfer")
+        .requiredOption(
+            "--endpoint <string>",
+            "The RPC endpoint from which the XCM transaction will be submitted",
+        )
+        .requiredOption("--dest <string>", "The destination chain")
+        .requiredOption("--recipient <string>", "The recipient address")
+        .requiredOption("--target-asset <symbol>", "The target asset")
+        .requiredOption(
+            "--target-amount <amount>",
+            "The amount of the target asset",
+        )
+        .action(handleXcmTransferCommand),
+)
+
+withExportMode(
+  program
+    .command("sfxAbi")
+    .description("Add SFX ABI to the gateway via XDNS")
+    .requiredOption("-s, --signer <string>", "The signer of the transaction")
+    .requiredOption(
+      "-e, --endpoint <string>",
+      "The RPC endpoint from which the XCM transaction will be submitted",
+    )
+    .requiredOption("-t, --target <string>", "The destination chain")
+    .requiredOption(
+      "-id, --sfx-id <string>",
+      "SFX ID on the destination chain - 4bytes hex string, like 'tass' or 'tran'",
+    )
+    .option(
+      "-abi, --sfx-abi <string>",
+      "SFX ABI descriptor is required - optional, but required if SFX ID is non-standard (not one of the built-in SFXs)",
+    )
+    .option(
+      "-p, --pallet-id <number>",
+      "Pallet ID on the destination chain that is responsible for generating events confirming SFX execution, e.g. 2 for Balances Pallet (must read from the runtime config",
+    )
+    .option(
+      "-d, --purge",
+      "Optional, default false. Purge SFX ABI from the gateway",
+    )
+    .action(handleAddSfxAbiCommand),
+)
 
 // example of a new command
 //  pnpm writer --signer //Alice --target-account //Bob --target-asset 1000 --target-amount 100000000000 --reward-asset 0 --max-reward 40 --insurance 0.1 --speed-mode Fast --endpoint ws://localhost:9944 --dest 3333 --repeat 1 --repeat-interval 1
@@ -174,6 +205,7 @@ withExportMode(
         "--repeat-interval <number>",
         "Repeat the transaction every x seconds",
       )
-      .action(handleFastWriterCommand)
+      .action(handleFastWriterCommand),
 )
+
 program.parse(process.argv)
