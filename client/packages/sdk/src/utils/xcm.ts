@@ -75,6 +75,12 @@ export const XcmTransferParameters: ICreateXcmParameters = {
             Here: "",
         })
     }
+    return api.registry.createType("XcmVersionedMultiLocation", {
+        V3: {
+            parents: parentValue,
+            interior: destinationInterior,
+        },
+    })
    },
    createAssets: (api: ApiPromise, assetType: ASSET, originType: ORIGIN, amount: string)
        : VersionedMultiAssets => {
