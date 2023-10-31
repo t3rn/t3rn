@@ -140,7 +140,7 @@ export const handleXcmTransferCommand = async (
                 }
                 })
         }
-        else {
+        else if {
             await targetApi.tx.polkadotXcm
                 .limitedReserveTransferAssets(
                     xcmDestParam,
@@ -171,44 +171,6 @@ export const handleXcmTransferCommand = async (
                             })
                     }
                 })
-    } else {
-      await targetApi.tx.polkadotXcm
-        .limitedReserveTransferAssets(
-          xcmDestParam,
-          xcmBeneficiaryParam,
-          xcmAssetsParam,
-          xcmAssetFeeItem,
-          xcmWeightLimitParam,
-        )
-        .signAndSend(signer, ({ status, events }) => {
-          if (status.isInBlock || status.isFinalized) {
-            events
-              // find/filter for failed events
-              .filter(({ event }) =>
-                api.events.system.ExtrinsicFailed.is(event),
-              )
-              // we know that data for system.ExtrinsicFailed is
-              // (DispatchError, DispatchInfo)
-              .forEach(
-                ({
-                  event: {
-                    data: [error, info],
-                  },
-                }) => {
-                  if (error.isModule) {
-                    // for module errors, we have the section indexed, lookup
-                    const decoded = api.registry.findMetaError(error.asModule)
-                    const { docs, method, section } = decoded
-
-                    console.log(`${section}.${method}: ${docs.join(" ")}`)
-                  } else {
-                    // Other, CannotLookup, BadOrigin, no extra info
-                    console.log(error.toString())
-                  }
-                },
-              )
-          }
-        })
     }
     console.log("XCM Transfer Completed\n")
     spinner.stop()
