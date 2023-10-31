@@ -161,6 +161,10 @@ jobs:
         working-directory: tests/zombienet
         run: ./zombienet.sh smoke t1rn
 
+      - name: 📼 Run zombienet XCM integration tests
+        working-directory: tests/zombienet
+        run: ./zombienet.sh xcm
+
       - name: Print sccache stats
         working-directory: tests/zombienet
         run: sccache --show-stats
