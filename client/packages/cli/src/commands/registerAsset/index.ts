@@ -4,7 +4,7 @@ import {validate} from "@/utils/fns.js"
 import {AssetRegistrationSchema} from "@/schemas/registerAsset.ts"
 import {colorLogMsg} from "@/utils/log.js"
 import {ApiPromise, WsProvider, Keyring} from "@t3rn/sdk"
-import {AssetRegistrationParameters} from "@/utils/registerAsset.ts"
+import {AssetRegistrationParameters} from "@t3rn/sdk/utils"
 
 export const spinner = ora()
 
@@ -43,7 +43,7 @@ export const handleAssetRegistrationCommand = async (
         })
         const adminId = await api.query.sudo.key()
         const keyring = new Keyring({ type: "sr25519" })
-       // const signer = keyring.addFromUri("//Alice")
+        const signer = keyring.addFromUri("//Alice")
         const adminPair = keyring.getPair(adminId.toString())
 
         const assetId = AssetRegistrationParameters.createAssetId(api, args.id)

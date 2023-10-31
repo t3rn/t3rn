@@ -1,9 +1,10 @@
 import type {
     InteriorMultiLocation,
-    XcmV3MultiLocation,
+    MultiLocation,
     MultiAddress
 } from '@polkadot/types/interfaces'
-import {u8, u32, u128} from '@polkadot/types'
+import { ApiPromise } from '@polkadot/api'
+import { u8, u32, u128 } from '@polkadot/types'
 //type DESTINATION = "local" | "AssetHub"
 
 interface IRegisterAsset {
@@ -11,7 +12,7 @@ interface IRegisterAsset {
     createMinimumBalance: (api: ApiPromise) => u128
     createAdmin: (api: ApiPromise, address: string) => MultiAddress
     createDecimals: (api: ApiPromise, decimals: number) => u8
-    createAssetMultiLocation: (api: ApiPromise, assetSymbol: string) => XcmV3MultiLocation
+    createAssetMultiLocation: (api: ApiPromise, assetSymbol: string) => MultiLocation
 }
 
 export const AssetRegistrationParameters: IRegisterAsset = {
@@ -29,7 +30,7 @@ export const AssetRegistrationParameters: IRegisterAsset = {
     createDecimals: (api: ApiPromise, decimals: number): u8 => {
         return api.registry.createType("u8", decimals)
     },
-    createAssetMultiLocation: (api: ApiPromise, assetSymbol: string): XcmV3MultiLocation => {
+    createAssetMultiLocation: (api: ApiPromise, assetSymbol: string): MultiLocation => {
         const parentValue: u8 = api.registry.createType("u8", 1)
         let assetInterior: InteriorMultiLocation
         switch (assetSymbol) {
