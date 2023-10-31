@@ -3,12 +3,12 @@ import {
   T3rnPrimitivesXdnsFullGatewayRecord,
   // @ts-ignore
   T3rnTypesSideEffect,
-} from "@polkadot/types/lookup";
-import * as BN from "bn.js";
-import { AmountConverter } from "../converters/amounts";
-import * as Address from "../converters/address";
-import { toU8aId } from "../converters/utils";
-import { createSfx } from "../side-effects";
+} from "@polkadot/types/lookup"
+import * as BN from "bn.js"
+import { AmountConverter } from "../converters/amounts"
+import * as Address from "../converters/address"
+import { toU8aId } from "../converters/utils"
+import { createSfx } from "../side-effects"
 
 /**
  * A Gateway type enum
@@ -24,19 +24,19 @@ export enum GatewayType {
  */
 
 export class Gateway {
-  id: string;
-  rpc: string;
-  vendor: string;
-  executionVendor: string;
-  gatewayType: any;
-  ticker: string;
-  decimals: number;
-  tokenId: number;
-  valueTypeSize: number;
-  allowedSideEffects: string[];
-  createSfx: {} = {};
-  tokens: [] = [];
-  record: T3rnPrimitivesXdnsFullGatewayRecord;
+  id: string
+  rpc: string
+  vendor: string
+  executionVendor: string
+  gatewayType: any
+  ticker: string
+  decimals: number
+  tokenId: number
+  valueTypeSize: number
+  allowedSideEffects: string[]
+  createSfx: {} = {}
+  tokens: [] = []
+  record: T3rnPrimitivesXdnsFullGatewayRecord
 
   /**
    * Create a Gateway instance
@@ -44,27 +44,27 @@ export class Gateway {
    */
 
   constructor(record: T3rnPrimitivesXdnsFullGatewayRecord) {
-    this.id = record.gateway_record.gateway_id.toHuman();
-    this.record = record;
-    this.vendor = record.gateway_record.verification_vendor.toHuman();
-    this.executionVendor = record.gateway_record.execution_vendor.toHuman();
-    let tokens: any[] = record.tokens.map((token) => token.toHuman());
+    this.id = record.gateway_record.gateway_id.toHuman()
+    this.record = record
+    this.vendor = record.gateway_record.verification_vendor.toHuman()
+    this.executionVendor = record.gateway_record.execution_vendor.toHuman()
+    let tokens: any[] = record.tokens.map((token) => token.toHuman())
 
-    let nativeToken = tokens.filter((token) => token.gateway_id === this.id)[0];
+    let nativeToken = tokens.filter((token) => token.gateway_id === this.id)[0]
     // @ts-ignore
-    this.ticker = Object.values(nativeToken.token_props)[0].symbol;
+    this.ticker = Object.values(nativeToken.token_props)[0].symbol
     this.decimals = parseInt(
       // @ts-ignore
-      Object.values(nativeToken.token_props)[0].decimals
-    );
+      Object.values(nativeToken.token_props)[0].decimals,
+    )
     this.tokenId = parseInt(
       // @ts-ignore
-      Object.values(nativeToken.token_props)[0].id
-    );
+      Object.values(nativeToken.token_props)[0].id,
+    )
     this.allowedSideEffects = record.gateway_record.allowed_side_effects
       .toHuman()
-      .map((entry) => entry[0]);
-    this.setSfxBindings();
+      .map((entry) => entry[0])
+    this.setSfxBindings()
   }
 
   /**
@@ -81,25 +81,25 @@ export class Gateway {
    */
 
   createTransferSfx = (args: {
-    from: string;
-    to: string;
-    value: number | BN | string;
-    maxReward: number | BN | string;
-    insurance: number | BN | string;
-    nonce: number;
-    signature?: string;
-    enforceExecutioner?: string;
+    from: string
+    to: string
+    value: number | BN | string
+    maxReward: number | BN | string
+    insurance: number | BN | string
+    nonce: number
+    signature?: string
+    enforceExecutioner?: string
   }): T3rnTypesSideEffect => {
     const encodedArgs: string[] = this.encodeTransferArgs(
       args.from,
       args.to,
       args.value,
       args.insurance,
-      args.maxReward
-    );
+      args.maxReward,
+    )
 
-    const maxReward = new AmountConverter({ value: args.maxReward }).toBn();
-    const insurance = new AmountConverter({ value: args.insurance }).toBn();
+    const maxReward = new AmountConverter({ value: args.maxReward }).toBn()
+    const insurance = new AmountConverter({ value: args.insurance }).toBn()
 
     return createSfx({
       target: toU8aId(this.id),
@@ -110,9 +110,9 @@ export class Gateway {
       action: "tran",
       signature: args.signature,
       enforceExecutioner: args.enforceExecutioner,
-    });
-  };
-/*
+    })
+  }
+  /*
   createXTransferSfx = (args: {
     from: string;
     beneficiary: string;
@@ -164,21 +164,21 @@ export class Gateway {
     to: string,
     value: number | BN | string,
     insurance: number | BN | string,
-    reward: number | BN | string
+    reward: number | BN | string,
   ): string[] {
     if (!this.allowedSideEffects.includes("tran"))
-      throw new Error(`Transfer Sfx not supported for ${this.id}`);
+      throw new Error(`Transfer Sfx not supported for ${this.id}`)
     // ensure we pass the correct address encoding (e.g. pub key for substrate)
-    to = this.validateAddress(to);
+    to = this.validateAddress(to)
 
     // convert value to LittleEndian
     const encodedAmount = new AmountConverter({
       value,
       decimals: this.decimals,
       valueTypeSize: this.valueTypeSize,
-    }).toLeHex();
+    }).toLeHex()
 
-    return [to, encodedAmount];
+    return [to, encodedAmount]
   }
 
   /*
@@ -214,10 +214,10 @@ export class Gateway {
   validateAddress(addr: string) {
     switch (this.executionVendor) {
       case "Substrate":
-        return Address.Substrate.addrToPub(addr);
-        break;
+        return Address.Substrate.addrToPub(addr)
+        break
       default:
-        return addr;
+        return addr
     }
   }
 
@@ -230,7 +230,7 @@ export class Gateway {
     return new AmountConverter({
       decimals: this.decimals,
       valueTypeSize: this.valueTypeSize,
-    }).floatToBn(value);
+    }).floatToBn(value)
   }
 
   /**
@@ -243,7 +243,7 @@ export class Gateway {
       value,
       decimals: this.decimals,
       valueTypeSize: this.valueTypeSize,
-    }).toBn();
+    }).toBn()
   }
 
   /**
@@ -256,7 +256,7 @@ export class Gateway {
       value,
       decimals: this.decimals,
       valueTypeSize: this.valueTypeSize,
-    }).toFloat();
+    }).toFloat()
   }
 
   /**
@@ -266,9 +266,9 @@ export class Gateway {
 
   getType(vendor: string) {
     if (["Rococo", "Kusama", "Polkadot"].includes(vendor)) {
-      return GatewayType.Substrate;
+      return GatewayType.Substrate
     } else if (vendor === "Ethereum") {
-      return GatewayType.Evm;
+      return GatewayType.Evm
     }
   }
 
@@ -280,7 +280,7 @@ export class Gateway {
     for (let i = 0; i < this.allowedSideEffects.length; i++) {
       switch (this.allowedSideEffects[i]) {
         case "tran":
-          this.createSfx["tran"] = this.createTransferSfx;
+          this.createSfx["tran"] = this.createTransferSfx
       }
     }
   }

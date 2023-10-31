@@ -97,6 +97,19 @@ Options:
 - **-x, --export**: Export extrinsic data to a file
 
 
+### add SFX ABI
+First ensure that there's a target gateway registered on Circuit. Then run the following command to add the SFX ABI to the chain.
+If there's no target gateway registered, try to register one using the `register` command.
+
+example for adding the SFX ABI for the `transfer asset` action:
+```bash
+pnpm cli sfxAbi --signer //Alice --target roco --sfx-id tass --endpoint ws://127.0.0.1:9944   
+```
+undoing above operation would be:
+```bash
+pnpm cli sfxAbi --signer //Alice --target roco --sfx-id tass --endpoint ws://127.0.0.1:9944 --purge  
+```
+
 ### estimate
 
 The `estimate` command is used to estimate the max reward with a given target amount.

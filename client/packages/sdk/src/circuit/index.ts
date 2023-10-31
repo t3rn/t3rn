@@ -1,20 +1,20 @@
-import { ApiPromise } from "@polkadot/api";
-import BN from "bn.js";
-import { AmountConverter } from "../converters/amounts";
-import { Tx } from "./tx";
+import { ApiPromise } from "@polkadot/api"
+import BN from "bn.js"
+import { AmountConverter } from "../converters/amounts"
+import { Tx } from "./tx"
 
-const DECIMALS = 12;
-const VALUE_TYPE_SIZE = 16;
+const DECIMALS = 12
+const VALUE_TYPE_SIZE = 16
 /**
  * The circuit class holds the signer object, exposes amount conversion and exposes the Tx class, which can then be used to submit.
  *
  */
 
 export class Circuit {
-  api: ApiPromise;
+  api: ApiPromise
   // TODO get correct type
-  signer: any;
-  tx: Tx;
+  signer: any
+  tx: Tx
 
   /**
    * @param api - The ApiPromise instance
@@ -23,9 +23,9 @@ export class Circuit {
    */
 
   constructor(api: ApiPromise, signer: any, exportMode: boolean) {
-    this.api = api;
-    this.signer = signer;
-    this.tx = new Tx(this.api, this.signer, exportMode);
+    this.api = api
+    this.signer = signer
+    this.tx = new Tx(this.api, this.signer, exportMode)
   }
 
   /**
@@ -35,7 +35,7 @@ export class Circuit {
    */
 
   floatToBn(value: number): BN {
-    return floatToBn(value);
+    return floatToBn(value)
   }
 
   /**
@@ -45,7 +45,7 @@ export class Circuit {
    */
 
   toFloat(value: BN | number): number {
-    return toFloat(value);
+    return toFloat(value)
   }
 }
 
@@ -60,8 +60,8 @@ export const toFloat = (value: BN | number): number => {
     value,
     decimals: DECIMALS,
     valueTypeSize: VALUE_TYPE_SIZE,
-  }).toFloat();
-};
+  }).toFloat()
+}
 
 /**
  * Converts a BN to a float with the circuits decimal precision
@@ -73,7 +73,7 @@ export const floatToBn = (value: number): BN => {
   return new AmountConverter({
     decimals: DECIMALS,
     valueTypeSize: VALUE_TYPE_SIZE,
-  }).floatToBn(value);
-};
+  }).floatToBn(value)
+}
 
-export { Tx };
+export { Tx }
