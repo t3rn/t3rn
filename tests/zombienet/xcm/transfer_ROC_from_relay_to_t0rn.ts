@@ -57,6 +57,12 @@ async function run(nodeName, networkInfo) {
                 process.exit(1)
             }
         })
+        exec(transferRocToParachainCommand { cwd: cliPath }, (error) => {
+            if (error) {
+                console.error(`Error executing command "${transferRocToParachainCommand}": ${error}`)
+                process.exit(1)
+            }
+        })
     } catch (err) {
         console.error(err)
         process.exit(1)
@@ -66,6 +72,7 @@ async function run(nodeName, networkInfo) {
         await api.query.assetRegistry.assetIdMultiLocation(1) != null,
         "Asset MultiLocation not registered. Aborting!"
     )
+    assert.ok(await api.query.assets.account(1,BOB) != null, "Failed ROC Transfer From Rococo to t0rn. Aborting!")
     return 1
     //const result = await checkEvent(api);
     //return result;
