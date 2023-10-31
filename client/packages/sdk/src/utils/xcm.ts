@@ -71,9 +71,10 @@ export const XcmTransferParameters: ICreateXcmParameters = {
         },
       })
     } else {
-      destinationInterior = api.registry.createType("InteriorMultiLocation", {
-        Here: "",
-      })
+        destinationInterior = api.registry.createType("InteriorMultiLocation", {
+            Here: "",
+        })
+    }
    },
    createAssets: (api: ApiPromise, assetType: ASSET, originType: ORIGIN, amount: string)
        : VersionedMultiAssets => {

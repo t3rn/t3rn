@@ -43,7 +43,7 @@ export const handleAssetRegistrationCommand = async (
         })
         const adminId = await api.query.sudo.key()
         const keyring = new Keyring({ type: "sr25519" })
-        const signer = keyring.addFromUri("//Alice")
+        keyring.addFromUri("//Alice")
         const adminPair = keyring.getPair(adminId.toString())
 
         const assetId = AssetRegistrationParameters.createAssetId(api, args.id)
