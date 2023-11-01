@@ -1,0 +1,25 @@
+# This action assumes that version in package.json is already bumped
+name: SDK
+
+on:
+  pull_request:
+    paths:
+      - client/packages/sdk/**
+      - .github/workflows/sdk.yml
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        working-directory: client/packages/sdk
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: yarn ci
+      - run: yarn build

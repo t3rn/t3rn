@@ -11,6 +11,7 @@ import { handleEstimateMaxReward } from "./commands/estimate.ts"
 import { handlePurgeGatewayCommand } from "./commands/purgeGateway/index.ts"
 import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
+import { handleAssetRegistrationCommand } from "./commands/registerAsset/index.ts"
 import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
 import { handleAddSfxAbiCommand } from "@/commands/sfxABI/index.js"
 import {
@@ -131,24 +132,24 @@ program
   .action(handleEstimateMaxReward)
 
 withExportMode(
-  program
-    .command("xcmTransfer")
-    .description("Cross-chain transfer of assets using XCM")
-    .requiredOption("--signer <string>", "The signer of the transaction")
-    .requiredOption("--type <string>", "The type of XCM transfer")
-    .requiredOption(
-      "--endpoint <string>",
-      "The RPC endpoint from which the XCM transaction will be submitted",
-    )
-    .requiredOption("--dest <string>", "The destination chain")
-    .requiredOption("--recipient <string>", "The recipient address")
-    .requiredOption("--target-asset <symbol>", "The target asset")
-    .requiredOption(
-      "--target-amount <amount>",
-      "The amount of the target asset",
-    )
-    .action(handleXcmTransferCommand),
-)
+    program
+      .command("xcmTransfer")
+      .description("Cross-chain transfer of assets using XCM")
+      .requiredOption("--signer <string>", "The signer of the transaction")
+      .requiredOption("--type <string>", "The type of XCM transfer")
+      .requiredOption(
+        "--endpoint <string>",
+        "The RPC endpoint from which the XCM transaction will be submitted",
+      )
+      .requiredOption("--dest <string>", "The destination chain")
+      .requiredOption("--recipient <string>", "The recipient address")
+      .requiredOption("--target-asset <symbol>", "The target asset")
+      .requiredOption(
+        "--target-amount <amount>",
+        "The amount of the target asset",
+      )
+      .action(handleXcmTransferCommand),
+  )
 
 withExportMode(
   program
@@ -177,6 +178,20 @@ withExportMode(
       "Optional, default false. Purge SFX ABI from the gateway",
     )
     .action(handleAddSfxAbiCommand),
+)
+
+withExportMode(
+    program
+        .command("registerAsset")
+        .description("Registering asset on AssetHub or t0rn")
+        .requiredOption("--endpoint <string>", "The RPC endpoint from which the asset will be registered")
+        .requiredOption("--dest <string>", "The destination - Local/AssetHub")
+        .requiredOption("--id <number>", "The ID OF the token")
+        .requiredOption("--name <string>", "The name of the asset.")
+        .requiredOption("--symbol <string>", "The symbol of the asset - ROC/TRN/USDT")
+        .requiredOption("--decimals <number>", "The amount of decimals the token has")
+        //.requiredOption("--sufficient <>", "Flags whether to create sufficient or non-sufficient asset")
+        .action(handleAssetRegistrationCommand)
 )
 
 // example of a new command

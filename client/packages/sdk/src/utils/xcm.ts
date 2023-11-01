@@ -71,60 +71,60 @@ export const XcmTransferParameters: ICreateXcmParameters = {
         },
       })
     } else {
-      destinationInterior = api.registry.createType("InteriorMultiLocation", {
-        Here: "",
-      })
+        destinationInterior = api.registry.createType("InteriorMultiLocation", {
+            Here: "",
+        })
     }
     return api.registry.createType("XcmVersionedMultiLocation", {
-      V3: {
-        parents: parentValue,
-        interior: destinationInterior,
-      },
+        V3: {
+            parents: parentValue,
+            interior: destinationInterior,
+        },
     })
-  },
-  createAssets: (
-    api: ApiPromise,
-    assetType: ASSET,
-    originType: ORIGIN,
-    amount: string,
-  ): VersionedMultiAssets => {
-    let parentValue: u8 = api.registry.createType("u8", 1)
-    if (
-      (originType == "relay" && assetType == "ROC") ||
-      (originType == "system" && assetType == "USDT") ||
-      (originType == "t0rn" && assetType == "TRN")
-    ) {
-      parentValue = api.registry.createType("u8", 0)
-    }
-    let assetInterior: InteriorMultiLocation
-    switch (assetType) {
-      case "USDT":
-        if (originType == "system") {
-          assetInterior = api.registry.createType("InteriorMultiLocation", {
-            X2: [{ PalletInstance: 50 }, { GeneralIndex: 1984 }],
-          })
-        } else {
-          assetInterior = api.registry.createType("InteriorMultiLocation", {
-            X3: [
-              { Parachain: 1000 },
-              { PalletInstance: 50 },
-              { GeneralIndex: 1984 },
-            ],
-          })
-        }
-        break
-      case "TRN":
-        assetInterior = api.registry.createType("InteriorMultiLocation", {
-          X1: {
-            parachain: 3333,
-          },
-        })
-        break
-      default:
-        assetInterior = api.registry.createType("InteriorMultiLocation", {
-          Here: "",
-        })
-    }
+   },
+   createAssets: (api: ApiPromise, assetType: ASSET, originType: ORIGIN, amount: string)
+       : VersionedMultiAssets => {
+      let parentValue: u8 = api.registry.createType("u8", 1)
+      if ((originType == "relay" && assetType == "ROC")  || (originType == "system" && assetType == "USDT")
+          || (originType == "t0rn" && assetType == "TRN") ) {
+          parentValue = api.registry.createType("u8", 0)
+      }
+      let assetInterior: InteriorMultiLocation
+      switch (assetType) {
+         case "USDT":
+            if (originType == "system") {
+               assetInterior = api.registry.createType('InteriorMultiLocation', {
+                  X2: [
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
+               })
+            }
+            else {
+               assetInterior = api.registry.createType('InteriorMultiLocation', {
+                  X3: [
+                     { Parachain: 1000 },
+                     { PalletInstance: 50 },
+                     { GeneralIndex: 1984 },
+                  ],
+               })
+            }
+            break
+         case "TRN":
+            assetInterior = api.registry.createType('InteriorMultiLocation', {
+               X1: {
+                  parachain: 3333,
+               },
+            })
+            break
+         case "ROC":
+            assetInterior = api.registry.createType('InteriorMultiLocation', {
+               Here: '',
+            })
+            break
+         default:
+            throw new Error('Unsupported Asset!')
+      }
 
     return api.registry.createType("XcmVersionedMultiAssets", {
       V3: [

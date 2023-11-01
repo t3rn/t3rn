@@ -12,16 +12,6 @@ name    = "bob"
 ws_port = 9934
 extra_args = [ "-lparachain=debug" ]
 
-[[relaychain.nodes]]
-name    = "charlie"
-ws_port = 9935
-extra_args = [ "-lparachain=debug" ]
-
-[[relaychain.nodes]]
-name    = "dave"
-ws_port = 9936
-extra_args = [ "-lparachain=debug" ]
-
 [[parachains]]
 chain          = "asset-hub-westend-local"
 add_to_genesis = true
@@ -42,7 +32,7 @@ id             = 3333
 
 [parachains.collator]
 command  = "t0rn-collator"
-name     = "collator"
+name     = "t0rn-collator"
 ws_port  = 9947
 args = ["--log=xcm=trace,pallet-assets=trace"]
 
