@@ -136,7 +136,7 @@ export const handleFastWriterCommand = async (
   if (args.repeatInterval) {
     const repeatInterval = args.repeatInterval * 1000
 
-    if (args.source == "0x03030303") {
+    if (args.source == "roco") {
       spinner.text = `Writing to Vacuum every ${repeatInterval}ms... \n`
       spinner.start()
       setInterval(writeToVacuum, repeatInterval)
@@ -150,7 +150,7 @@ export const handleFastWriterCommand = async (
     spinner.start()
     setInterval(writeToVacuum, repeatInterval)
   } else {
-    if (args.source == "0x03030303") {
+    if (args.source == "roco") {
       await writeToVacuum()
     } else if (args.source == "sepl") {
       console.log("sepl")
@@ -158,6 +158,55 @@ export const handleFastWriterCommand = async (
       console.log("source not supported")
     }
   }
+
+  spinner.stopAndPersist({
+    symbol: "🎉",
+    text: colorLogMsg("SUCCESS", `Parsed arguments: ${JSON.stringify(args)}`),
+  })
+  spinner.stop()
+
+  process.exit(0)
+}
+
+export const handleMockWriterCommand = async (
+  _args: Args<"repeat" | "asSequentialTx" | "asMultiSfx">,
+) => {
+  const args = {
+    ..._args,
+    repeat: _args?.repeat ? parseInt(_args?.repeat) : undefined,
+    single: !!_args?.asSequentialTx,
+    multi: !!_args?.asMultiSfx,
+  }
+
+  spinner.text = "Warm-up checks for Mock Fast Writer... \n"
+  spinner.start()
+
+  spinner.text = "Running on args " + JSON.stringify(args) + "\n"
+
+  await cryptoWaitReady()
+
+  if (args.single) {
+    await mock_test_single_order("ws://localhost:9944", "//Alice", "roco", 0)
+  } else if (args.repeat > 0 && args.multi) {
+    await mock_test_multi_order(
+      "ws://localhost:9944",
+      "//Alice",
+      "roco",
+      0,
+      args.repeat,
+    )
+  } else if (args.repeat > 0) {
+    await mock_test_batch_order(
+      "ws://localhost:9944",
+      "//Alice",
+      "roco",
+      0,
+      args.repeat,
+    )
+  }
+
+  // wait for 30sec for tx to settle
+  await new Promise((resolve) => setTimeout(resolve, 30000))
 
   spinner.stopAndPersist({
     symbol: "🎉",
@@ -203,6 +252,7 @@ export const mock_test_batch_order = async (
   repeat: number,
 ) => {
   const keyring = new Keyring({ type: "sr25519" })
+
   const signer = keyring.addFromMnemonic(signer_in)
   const sdk = new Sdk(endpoint, signer, false)
   const circuit = await sdk.init()

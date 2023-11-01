@@ -13,7 +13,10 @@ import { handlePurgeTokenCommand } from "./commands/purgeToken/index.ts"
 import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
 import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
 import { handleAddSfxAbiCommand } from "@/commands/sfxABI/index.js"
-import { handleFastWriterCommand } from "./commands/fastWriter/index.ts"
+import {
+  handleFastWriterCommand,
+  handleMockWriterCommand,
+} from "./commands/fastWriter/index.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -210,6 +213,29 @@ withExportMode(
       "Repeat the transaction every x seconds",
     )
     .action(handleFastWriterCommand),
+)
+
+// example of a new command
+//  pnpm writer --signer //Alice --target-account //Bob --target-asset 1000 --target-amount 100000000000 --reward-asset 0 --max-reward 40 --insurance 0.1 --speed-mode Fast --endpoint ws://localhost:9944 --dest 3333 --repeat 1 --repeat-interval 1
+withExportMode(
+  program
+    .command("mockWriter")
+    .description(
+      "Mock test Write batches of SideEffects (SFX) to the chain using the Vacuum pallet",
+    )
+    .option(
+      "--repeat <number>",
+      "Repeat the transaction x times as utility::batch calls",
+    )
+    .option(
+      "--as-multi-sfx",
+      "Repeat the transaction x times as utility::batch calls",
+    )
+    .option(
+      "--as-sequential-tx",
+      "Repeat the transaction x times as utility::batch calls",
+    )
+    .action(handleMockWriterCommand),
 )
 
 program.parse(process.argv)
