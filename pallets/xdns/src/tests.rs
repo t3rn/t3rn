@@ -1166,11 +1166,11 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                 FinalityVerifierActivity {
                     verifier: XBI,
                     reported_at: 74,
-                    justified_height: 0,
-                    finalized_height: 0,
-                    updated_height: 0,
+                    justified_height: 74,
+                    finalized_height: 74,
+                    updated_height: 74,
                     epoch: 0,
-                    is_active: false,
+                    is_active: true,
                 },
             ];
 

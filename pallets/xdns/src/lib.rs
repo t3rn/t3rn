@@ -232,9 +232,17 @@ pub mod pallet {
                     });
 
                 if latest_vendor_overview.reported_at + estimated_epoch_length < n {
-                    let latest_heartbeat =
+                    let mut latest_heartbeat =
                         T::Portal::get_latest_heartbeat_by_vendor(verifier.clone());
                     let epoch = latest_heartbeat.last_finalized_height;
+                    if verifier == GatewayVendor::XBI {
+                        let current_block_here = frame_system::Pallet::<T>::block_number();
+                        latest_heartbeat.last_finalized_height = current_block_here;
+                        latest_heartbeat.last_rational_height = current_block_here;
+                        latest_heartbeat.last_fast_height = current_block_here;
+                        latest_heartbeat.last_heartbeat = current_block_here;
+                        latest_heartbeat.ever_initialized = true;
+                    }
                     let weight = Self::process_single_verifier_overview(
                         n,
                         verifier,
