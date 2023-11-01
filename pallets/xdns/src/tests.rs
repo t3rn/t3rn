@@ -172,6 +172,80 @@ fn add_self_as_base_gateway() {
 }
 
 #[test]
+fn should_allow_to_link_token_via_extrinsic_on_sudo_permission() {
+    ExtBuilder::default().build().execute_with(|| {
+        // Add the self-gateway
+        add_self_as_base_gateway();
+
+        assert_ok!(XDNS::add_new_gateway(
+            *b"test",
+            GatewayVendor::Rococo,
+            ExecutionVendor::Substrate,
+            t3rn_abi::Codec::Scale,
+            None,   // registrant
+            None,   // escrow_account
+            vec![], // allowed_side_effects
+        ));
+
+        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 2);
+        assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
+
+        assert_ok!(XDNS::register_new_token(
+            &Origin::root(),
+            u32::from_le_bytes(*b"test"),
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1,
+                symbol: b"test".to_vec(),
+                decimals: 1,
+            })
+        ));
+
+        assert_ok!(XDNS::link_token(
+            Origin::root(),
+            *b"test",
+            u32::from_le_bytes(*b"test"),
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1,
+                symbol: b"test".to_vec(),
+                decimals: 1,
+            })
+        ));
+
+        // no duplicates
+        assert_noop!(
+            XDNS::link_token(
+                Origin::root(),
+                *b"test",
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Substrate(SubstrateToken {
+                    decimals: 18,
+                    symbol: b"test".to_vec(),
+                    id: 5
+                })
+            ),
+            pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
+        );
+
+        // no mismatched execution vendor
+        assert_noop!(
+            XDNS::link_token(
+                Origin::root(),
+                *b"test",
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Ethereum(EthereumToken {
+                    decimals: 18,
+                    symbol: b"test".to_vec(),
+                    address: Some([1; 20])
+                })
+            ),
+            pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
+        );
+
+        assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 2);
+    });
+}
+
+#[test]
 fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
         // Add the self-gateway

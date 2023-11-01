@@ -640,6 +640,20 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn link_token(
+            origin: OriginFor<T>,
+            gateway_id: TargetId,
+            token_id: AssetId,
+            token_props: TokenInfo,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
+
+            Ok(().into())
+        }
+
         /// Removes from all of the registered destinations + the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
         pub fn purge_token_record(
@@ -1102,6 +1116,11 @@ pub mod pallet {
                 }
             });
 
+            // Make sure that the token is added to the list of all tokens
+            if !<AllTokenIds<T>>::get().contains(&token_id) {
+                <AllTokenIds<T>>::append(token_id);
+            }
+
             Self::deposit_event(Event::<T>::NewTokenLinkedToGateway(token_id, gateway_id));
             Ok(())
         }
@@ -1313,7 +1332,10 @@ pub mod pallet {
                     Some(_) => GatewayType::ProgrammableExternal(0),
                     None => GatewayType::TxOnly(0),
                 },
-                None => panic!("Gateway record not found"),
+                None => {
+                    log::error!("Gateway not found for chain_id: {:?}", chain_id);
+                    GatewayType::TxOnly(0)
+                },
             }
         }
 
