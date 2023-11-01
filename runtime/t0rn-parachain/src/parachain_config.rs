@@ -86,7 +86,7 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
     pub const Period: u32 = 1 * HOURS;
-    pub const KickThreshold: u32 = Period * 6;
+    pub const KickThreshold: u32 = 6 * HOURS;
     pub const Offset: u32 = 0;
     pub const MaxAuthorities: u32 = 100_000;
 }
