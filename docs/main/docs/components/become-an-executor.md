@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # How to Become an Executor
 
-This documentation covers how to become an Executor on the t3rn network. It assumes that you have accounts with the correct funds for the desired blockchains, and that you have Substrate installed, which is needed for generating keys with subkey; we will share the resources to complete these steps.
+This documentation covers how to become an Executor on the t3rn network. It assumes that you have accounts with the correct funds for the desired blockchains, and that you have Substrate installed. We're using subkey to generate keys but feel free to skip this part if you already have your keys or using another tool to generate some.
 
 ## Step 1 - Clone repo
 
@@ -32,17 +32,17 @@ Configure your Executor by editing `.envrc-example` and changing the values to y
 
 ## Step 4 - Run Executor
 
-If you’ve configured your `.envrc` file, then simply run `pnpm start`.
-
-<p align="center">
-    <img height="150" src="/img/run-executor.png?raw=true"/>
-</p>
-
-You can also run the command below and add your keys as in the example, if you don’t want to store them unencrypted on the server
+Run the command below and add your keys as in the example.
 Run `CIRCUIT_SIGNER_KEY=abc RELAYCHAIN_SIGNER_KEY=xyz pnpm start`.
 
 <p align="center">
     <img height="150" src="/img/run-executor-w-keys.png?raw=true"/>
+</p>
+
+If you’ve configured your `.envrc` file, then simply run `pnpm start`.
+
+<p align="center">
+    <img height="150" src="/img/run-executor.png?raw=true"/>
 </p>
 
 ## Troubleshooting
@@ -51,6 +51,8 @@ Run `CIRCUIT_SIGNER_KEY=abc RELAYCHAIN_SIGNER_KEY=xyz pnpm start`.
 
 If this error **‘RpcError: 1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low’** is shown it means you need to increase your balance in used accounts, for the specific networks.
 
+Visit [https://faucet.t0rn.io](https://faucet.t0rn.io/) to get some T0RN.
+
 #### Generate keys with subkey:
 
-[Install Subkey](https://docs.substrate.io/reference/command-line-tools/subkey/) to generate keys. Send the correct tokens to the account(s) depending on the networks they will operate on.
+[Install Subkey](https://docs.substrate.io/reference/command-line-tools/subkey/) and run `subkey generate` to generate keys. Send the correct tokens to the account(s) depending on the networks they will operate on.
