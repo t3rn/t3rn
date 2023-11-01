@@ -65,6 +65,75 @@ export const handleFastWriterCommand = async (
   await cryptoWaitReady()
   const { circuit, sdk } = await createCircuitContext(false)
 
+  const writeToVacuum = async () => {
+    if (args.repeat > 0 && args.asUtilityBatch) {
+      await write_batch_single_order(
+        circuit,
+        args.dest,
+        args.targetAsset,
+        args.targetAccount,
+        args.targetAmount,
+        args.rewardAsset,
+        args.maxReward,
+        args.insurance,
+        args.speedMode,
+        args.repeat,
+      )
+    } else if (args.repeat > 0 && args.asMultiSfx) {
+      await write_multi_order(
+        circuit,
+        args.dest,
+        args.targetAsset,
+        args.targetAccount,
+        args.targetAmount,
+        args.rewardAsset,
+        args.maxReward,
+        args.insurance,
+        args.speedMode,
+        args.repeat,
+      )
+    } else {
+      // Submit a single order
+      await write_single_order(
+        circuit,
+        args.dest,
+        args.targetAsset,
+        args.targetAccount,
+        args.targetAmount,
+        args.rewardAsset,
+        args.maxReward,
+        args.insurance,
+        args.speedMode,
+      )
+    }
+  }
+
+  if (args.repeatInterval) {
+    const repeatInterval = args.repeatInterval * 1000
+
+    if (args.source == "0x03030303") {
+      spinner.text = `Writing to Vacuum every ${repeatInterval}ms... \n`
+      spinner.start()
+      setInterval(writeToVacuum, repeatInterval)
+    } else if (args.source == "sepl") {
+      console.log("sepl")
+      // TODO: implement sepl
+    } else {
+      console.log("source not supported")
+    }
+    spinner.text = `Writing to Vacuum every ${repeatInterval}ms... \n`
+    spinner.start()
+    setInterval(writeToVacuum, repeatInterval)
+  } else {
+    if (args.source == "0x03030303") {
+      await writeToVacuum()
+    } else if (args.source == "sepl") {
+      console.log("sepl")
+    } else {
+      console.log("source not supported")
+    }
+  }
+
   spinner.stopAndPersist({
     symbol: "🎉",
     text: colorLogMsg("SUCCESS", `Parsed arguments: ${JSON.stringify(args)}`),
@@ -159,7 +228,7 @@ export const write_single_order = async (
   rewardAsset: number,
   maxReward: number,
   insurance: number,
-  speedMode: number,
+  speedMode: string,
 ) => {
   return signAndSender(
     circuit,
@@ -189,7 +258,7 @@ export const write_batch_single_order = async (
   rewardAsset: number,
   maxReward: number,
   insurance: number,
-  speedMode: number,
+  speedMode: string,
   repeat: number,
 ) => {
   const batchOrders = []
@@ -222,7 +291,7 @@ export const write_multi_order = async (
   rewardAsset: number,
   maxReward: number,
   insurance: number,
-  speedMode: number,
+  speedMode: string,
   repeat: number,
 ) => {
   const batchOrders = []

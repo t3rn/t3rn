@@ -34,7 +34,7 @@ export class Order {
 export function build_tx_vacuum_multi_order(
   circuit: ApiPromise,
   batchOrders: Order[],
-  speedMode: number,
+  speedMode: string,
 ) {
   return circuit.tx.vacuum.order(
     batchOrders.map((order: Order) => {
@@ -60,7 +60,7 @@ export function build_tx_vacuum_multi_order(
 export function build_tx_vacuum_single_order(
   circuit: ApiPromise,
   order: Order,
-  speedMode: number,
+  speedMode: string,
 ) {
   return circuit.tx.vacuum.singleOrder(
     order.dest,
@@ -77,7 +77,7 @@ export function build_tx_vacuum_single_order(
 export function build_tx_batch_single_order(
   circuit: ApiPromise,
   batchOrders: Order[],
-  speedMode: number,
+  speedMode: string,
 ) {
   return circuit.tx.createBatch(
     batchOrders.map((order: Order) => {
