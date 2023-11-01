@@ -15,6 +15,12 @@ export const FastWriterSchema = z.object({
       required_error: "Destination chain ID is required",
     })
     .max(10),
+  source: z
+    .string({
+      invalid_type_error: "Source chain ID must be a string",
+      required_error: "Source chain ID is required",
+    })
+    .max(10),
   targetAsset: z.number({
     invalid_type_error: "Asset ID must be a number (u32)",
     required_error: "Asset ID is required",

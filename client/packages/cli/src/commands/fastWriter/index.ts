@@ -1,7 +1,8 @@
 import ora from "ora"
-import { Args } from "@/types.js"
-import { validate } from "@/utils/fns.js"
-import { colorLogMsg } from "@/utils/log.js"
+import { Args } from "@/types.ts"
+import { validate } from "@/utils/fns.ts"
+import { colorLogMsg } from "@/utils/log.ts"
+
 import {
   ApiPromise,
   WsProvider,
@@ -9,14 +10,14 @@ import {
   cryptoWaitReady,
   Sdk,
 } from "@t3rn/sdk"
-import { FastWriterSchema } from "@/schemas/fastWriter.js"
-import { createCircuitContext } from "@/utils/circuit.js"
+import { FastWriterSchema } from "@/schemas/fastWriter.ts"
+import { createCircuitContext } from "@/utils/circuit.ts"
 import {
   build_tx_batch_single_order,
   Order,
   build_tx_vacuum_single_order,
   build_tx_vacuum_multi_order,
-} from "@/commands/fastWriter/tx_builder.js"
+} from "@/commands/fastWriter/tx_builder.ts"
 import * as assert from "assert"
 
 export const spinner = ora()
@@ -59,6 +60,27 @@ export const handleFastWriterCommand = async (
     process.exit()
   }
 
+  let speedMode = 3
+  if (
+    args.speedMode == "fast" ||
+    args.speedMode == "3" ||
+    args.speedMode == "Fast"
+  ) {
+    speedMode = 0
+  } else if (
+    args.speedMode == "rational" ||
+    args.speedMode == "2" ||
+    args.speedMode == "Rational"
+  ) {
+    speedMode = 1
+  } else if (
+    args.speedMode == "finalized" ||
+    args.speedMode == "1" ||
+    args.speedMode == "Finalized"
+  ) {
+    speedMode = 2
+  }
+
   spinner.text = "Warm-up checks for Fast Writer... \n"
   spinner.start()
 
@@ -68,6 +90,7 @@ export const handleFastWriterCommand = async (
   const writeToVacuum = async () => {
     if (args.repeat > 0 && args.asUtilityBatch) {
       await write_batch_single_order(
+        sdk,
         circuit,
         args.dest,
         args.targetAsset,
@@ -76,11 +99,12 @@ export const handleFastWriterCommand = async (
         args.rewardAsset,
         args.maxReward,
         args.insurance,
-        args.speedMode,
+        speedMode,
         args.repeat,
       )
     } else if (args.repeat > 0 && args.asMultiSfx) {
       await write_multi_order(
+        sdk,
         circuit,
         args.dest,
         args.targetAsset,
@@ -89,12 +113,13 @@ export const handleFastWriterCommand = async (
         args.rewardAsset,
         args.maxReward,
         args.insurance,
-        args.speedMode,
+        speedMode,
         args.repeat,
       )
     } else {
       // Submit a single order
       await write_single_order(
+        sdk,
         circuit,
         args.dest,
         args.targetAsset,
@@ -103,7 +128,7 @@ export const handleFastWriterCommand = async (
         args.rewardAsset,
         args.maxReward,
         args.insurance,
-        args.speedMode,
+        speedMode,
       )
     }
   }
@@ -156,6 +181,7 @@ export const mock_test_multi_order = async (
   const circuit = await sdk.init()
 
   await write_multi_order(
+    sdk,
     circuit,
     dest,
     asset,
@@ -182,6 +208,7 @@ export const mock_test_batch_order = async (
   const circuit = await sdk.init()
 
   await write_batch_single_order(
+    sdk,
     circuit,
     dest,
     asset,
@@ -207,6 +234,7 @@ export const mock_test_single_order = async (
   const circuit = await sdk.init()
 
   await write_single_order(
+    sdk,
     circuit,
     dest,
     asset,
@@ -220,7 +248,8 @@ export const mock_test_single_order = async (
 }
 
 export const write_single_order = async (
-  circuit: ApiPromise,
+  circuitSDK: Sdk,
+  circuitAPI: ApiPromise,
   dest: string,
   targetAsset: number,
   targetAccount: string,
@@ -228,12 +257,12 @@ export const write_single_order = async (
   rewardAsset: number,
   maxReward: number,
   insurance: number,
-  speedMode: string,
+  speedMode: number,
 ) => {
   return signAndSender(
-    circuit,
+    circuitSDK,
     build_tx_vacuum_single_order(
-      circuit,
+      circuitAPI,
       new Order(
         dest,
         targetAsset,
@@ -250,7 +279,8 @@ export const write_single_order = async (
 }
 
 export const write_batch_single_order = async (
-  circuit: ApiPromise,
+  circuitSDK: Sdk,
+  circuitAPI: ApiPromise,
   dest: string,
   targetAsset: number,
   targetAccount: string,
@@ -258,7 +288,7 @@ export const write_batch_single_order = async (
   rewardAsset: number,
   maxReward: number,
   insurance: number,
-  speedMode: string,
+  speedMode: number,
   repeat: number,
 ) => {
   const batchOrders = []
@@ -277,13 +307,14 @@ export const write_batch_single_order = async (
     )
   }
   return signAndSender(
-    circuit,
-    build_tx_batch_single_order(circuit, batchOrders, speedMode),
+    circuitSDK,
+    build_tx_batch_single_order(circuitAPI, circuitSDK, batchOrders, speedMode),
   )
 }
 
 export const write_multi_order = async (
-  circuit: ApiPromise,
+  circuitSDK: Sdk,
+  circuitAPI: ApiPromise,
   dest: string,
   targetAsset: number,
   targetAccount: string,
@@ -291,7 +322,7 @@ export const write_multi_order = async (
   rewardAsset: number,
   maxReward: number,
   insurance: number,
-  speedMode: string,
+  speedMode: number,
   repeat: number,
 ) => {
   const batchOrders = []
@@ -310,16 +341,16 @@ export const write_multi_order = async (
     )
   }
   return signAndSender(
-    circuit,
-    build_tx_vacuum_multi_order(circuit, batchOrders, speedMode),
+    circuitSDK,
+    build_tx_vacuum_multi_order(circuitAPI, batchOrders, speedMode),
   )
 }
 
-export const signAndSender = async (circuit: ApiPromise, tx: any) => {
+export const signAndSender = async (sdk: Sdk, tx: any) => {
   const txSize = Math.floor(tx.encodedLength / 1024)
   console.debug(`writer::signAndSend tx size: ${txSize}kB`)
 
-  const res = await circuit.tx.signAndSendSafe(tx)
+  const res = await sdk.circuit.tx.signAndSendSafe(tx)
   console.debug(`writer::signAndSend response ${res}`)
   assert.ok(res)
 

@@ -1,5 +1,4 @@
-import { ApiPromise } from "@t3rn/sdk"
-
+import { ApiPromise, Sdk } from "@t3rn/sdk"
 export class Order {
   dest: string
   asset: number
@@ -34,8 +33,9 @@ export class Order {
 export function build_tx_vacuum_multi_order(
   circuit: ApiPromise,
   batchOrders: Order[],
-  speedMode: string,
+  speedMode: number,
 ) {
+  // @ts-ignore - augmeneted type from @polkadot/types
   return circuit.tx.vacuum.order(
     batchOrders.map((order: Order) => {
       return {
@@ -60,8 +60,9 @@ export function build_tx_vacuum_multi_order(
 export function build_tx_vacuum_single_order(
   circuit: ApiPromise,
   order: Order,
-  speedMode: string,
+  speedMode: number,
 ) {
+  // @ts-ignore - augmeneted type from @polkadot/types
   return circuit.tx.vacuum.singleOrder(
     order.dest,
     order.asset,
@@ -76,11 +77,13 @@ export function build_tx_vacuum_single_order(
 
 export function build_tx_batch_single_order(
   circuit: ApiPromise,
+  sdk: Sdk,
   batchOrders: Order[],
-  speedMode: string,
+  speedMode: number,
 ) {
-  return circuit.tx.createBatch(
+  return sdk.circuit.tx.createBatch(
     batchOrders.map((order: Order) => {
+      // @ts-ignore - augmeneted type from @polkadot/types
       circuit.tx.vacuum.singleOrder(
         order.dest,
         order.asset,
