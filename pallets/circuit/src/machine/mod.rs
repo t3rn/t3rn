@@ -99,11 +99,7 @@ impl<T: Config> Machine<T> {
             full_side_effects: vec![],
         };
 
-        pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx, preferred_security_lvl)
-            .map_err(|e| {
-                log::error!("Self::validate hit an error -- {e:?}");
-                Error::<T>::SideEffectsValidationFailed
-            })?;
+        pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx, preferred_security_lvl)?;
 
         Ok(local_xtx_ctx)
     }

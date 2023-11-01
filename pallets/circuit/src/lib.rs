@@ -1117,6 +1117,10 @@ pub mod pallet {
         ArithmeticErrorOverflow,
         ArithmeticErrorUnderflow,
         ArithmeticErrorDivisionByZero,
+        ABIOnSelectedTargetNotFoundForSubmittedSFX,
+        ForNowOnlySingleRewardAssetSupportedForMultiSFX,
+        TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight,
+        SideEffectsValidationFailedAgainstABI,
     }
 }
 
@@ -1258,7 +1262,7 @@ impl<T: Config> Pallet<T> {
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         preferred_security_lvl: &SecurityLvl,
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), Error<T>> {
         let mut full_side_effects: Vec<
             FullSideEffect<
                 T::AccountId,
@@ -1266,23 +1270,6 @@ impl<T: Config> Pallet<T> {
                 BalanceOf<T>,
             >,
         > = vec![];
-
-        pub fn determine_security_lvl(
-            gateway_type: GatewayType,
-            sfx_len: usize,
-            preferred_security_lvl: &SecurityLvl,
-        ) -> SecurityLvl {
-            if sfx_len < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
-                return SecurityLvl::Optimistic
-            }
-            if gateway_type == GatewayType::ProgrammableInternal(0)
-                || gateway_type == GatewayType::OnCircuit(0)
-            {
-                SecurityLvl::Escrow
-            } else {
-                SecurityLvl::Optimistic
-            }
-        }
 
         // ToDo: Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
         if side_effects.is_empty() {
@@ -1302,29 +1289,38 @@ impl<T: Config> Pallet<T> {
         );
 
         for (index, sfx) in side_effects.iter().enumerate() {
-            let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
+            let gateway_max_security_lvl =
+                <T as Config>::Xdns::get_gateway_max_security_lvl(&sfx.target);
+
             let security_lvl =
-                determine_security_lvl(gateway_type, side_effects.len(), preferred_security_lvl);
+                if side_effects.len() < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
+                    SecurityLvl::Optimistic
+                } else {
+                    gateway_max_security_lvl
+                };
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
-                None => return Err("SFX not allowed/registered on requested target gateway"),
+                None => return Err(Error::<T>::ABIOnSelectedTargetNotFoundForSubmittedSFX),
             };
             // todo: store the codec info in gateway's records and use it here
-            sfx.validate(sfx_abi, &Codec::Scale)?;
+            sfx.validate(sfx_abi, &Codec::Scale).map_err(|e| {
+                log::error!("sfx.validate against ABI failed: {:?}", e);
+                Error::<T>::SideEffectsValidationFailedAgainstABI
+            })?;
 
             if let Some(next) = side_effects.get(index + 1) {
                 if sfx.reward_asset_id != next.reward_asset_id {
-                    return Err(
-                        "SFX validate failed - enforce all SFX to have the same reward asset field",
-                    )
+                    return Err(Error::<T>::ForNowOnlySingleRewardAssetSupportedForMultiSFX)
                 }
             }
 
-            let submission_target_height = match T::Portal::get_finalized_height(sfx.target)? {
+            let submission_target_height = match T::Portal::get_finalized_height(sfx.target)
+                .map_err(|_| Error::<T>::TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight)?
+            {
                 HeightResult::Height(block_numer) => block_numer,
                 HeightResult::NotActive =>
-                    return Err("SFX validate failed - get_latest_finalized_height returned None"),
+                    return Err(Error::<T>::TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight),
             };
 
             full_side_effects.push(FullSideEffect {

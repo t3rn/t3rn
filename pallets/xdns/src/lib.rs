@@ -1323,20 +1323,13 @@ pub mod pallet {
         }
 
         // todo: this must be removed and functionality replaced
-        fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
+        fn get_gateway_max_security_lvl(chain_id: &ChainId) -> SecurityLvl {
             if chain_id == &[3u8; 4] {
-                return GatewayType::OnCircuit(0)
+                return SecurityLvl::Escrow
             }
-            match <Gateways<T>>::get(chain_id) {
-                Some(rec) => match rec.escrow_account {
-                    Some(_) => GatewayType::ProgrammableExternal(0),
-                    None => GatewayType::TxOnly(0),
-                },
-                None => {
-                    log::error!("Gateway not found for chain_id: {:?}", chain_id);
-                    GatewayType::TxOnly(0)
-                },
-            }
+
+            Self::get_escrow_account(chain_id)
+                .map_or(SecurityLvl::Escrow, |_| SecurityLvl::Optimistic)
         }
 
         /// returns the gateway vendor of a gateway if its available
