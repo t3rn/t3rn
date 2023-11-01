@@ -5,7 +5,9 @@ import { Prometheus } from './prometheus'
 import { Connection } from './connection'
 import { logger } from './logging'
 
-const grandpaRangerConfig = {
+const mockedBatch = { range: [] }
+const mockedHash = 'MOCKED_HASH'
+const mockedConfig = {
   circuit: {
     rpc1: {
       ws: 'ws://localhost',
@@ -31,20 +33,16 @@ const grandpaRangerConfig = {
 }
 
 const generateRangeSpy = jest.spyOn(collectModule, 'generateRange')
+generateRangeSpy.mockImplementation(async () => {
+  return []
+})
 const setCheckpointMetricsSpy = jest.spyOn(
   collectModule,
   'setCheckpointMetrics'
 )
-generateRangeSpy.mockImplementation(
-  async (config, circuit, target, targetGatewayId) => {
-    return []
-  }
-)
-setCheckpointMetricsSpy.mockImplementation(
-  async (config, circuit, target, prometheus) => {
-    return
-  }
-)
+setCheckpointMetricsSpy.mockImplementation(async () => {
+  return
+})
 
 jest.mock('./logging', () => {
   return {
@@ -98,16 +96,14 @@ jest.mock('./connection', () => {
 })
 
 describe('GrandpaRanger class', () => {
-  let grandpaRanger
+  const grandpaRanger = new GrandpaRanger(mockedConfig)
 
   beforeEach(async () => {
-    grandpaRanger = new GrandpaRanger(grandpaRangerConfig)
     await grandpaRanger.start()
   })
 
   afterEach(async () => {
     grandpaRanger.stop()
-    jest.useRealTimers()
   })
 
   it('Should connect to the clients', async () => {
@@ -120,29 +116,65 @@ describe('GrandpaRanger class', () => {
     expect(generateRangeSpy.mock.calls.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('Should slice batches when they are bigger than value in the config', async () => {
-    const myMethodSpy = jest
+  it('Should handle when the batch is empty', async () => {
+    const resolve = jest.fn()
+    await grandpaRanger.collectAndSubmit(resolve)
+
+    expect(resolve).toHaveBeenCalled()
+    expect(logger.warn).toHaveBeenCalledWith('No batches to submit')
+  })
+
+  it('Should handle batch slicing when the batch size exceeds the maximum', async () => {
+    const submitToCircuitSpy = jest
       .spyOn(grandpaRanger, 'submitToCircuit')
-      .mockImplementationOnce(() => Promise.resolve('a'))
+      .mockImplementationOnce(() => Promise.resolve(mockedHash))
 
-    generateRangeSpy.mockImplementationOnce(
-      async (config, circuit, target, targetGatewayId) => {
-        return [
-          { range: [] },
-          { range: [] },
-          { range: [] },
-          { range: [] },
-          { range: [] },
-          { range: [] },
-          { range: [] },
-        ]
-      }
-    )
-
-    await new Promise((resolve, _) => {
-      grandpaRanger.collectAndSubmit(resolve)
+    generateRangeSpy.mockImplementationOnce(async () => {
+      return [mockedBatch, mockedBatch, mockedBatch, mockedBatch, mockedBatch]
     })
 
-    expect(myMethodSpy).toHaveBeenCalledWith([{ range: [] }, { range: [] }])
+    const resolve = jest.fn()
+    await grandpaRanger.collectAndSubmit(resolve)
+
+    expect(resolve).toHaveBeenCalled()
+    expect(submitToCircuitSpy).toHaveBeenCalledWith([mockedBatch, mockedBatch])
+  })
+
+  it('Should handle batch slicing when the batch size is less than the maximum', async () => {
+    const submitToCircuitSpy = jest
+      .spyOn(grandpaRanger, 'submitToCircuit')
+      .mockImplementationOnce(() => Promise.resolve(mockedHash))
+
+    generateRangeSpy.mockImplementationOnce(async () => {
+      return [mockedBatch]
+    })
+
+    const resolve = jest.fn()
+    await grandpaRanger.collectAndSubmit(resolve)
+
+    expect(resolve).toHaveBeenCalled()
+    expect(submitToCircuitSpy).toHaveBeenCalledWith([mockedBatch])
+  })
+
+  it('Should handle errors during range generation', async () => {
+    const mockedError = new Error('Error during range generation')
+    generateRangeSpy.mockImplementationOnce(async () => {
+      throw mockedError
+    })
+
+    const resolve = jest.fn()
+    await grandpaRanger.collectAndSubmit(resolve)
+
+    expect(resolve).toHaveBeenCalled()
+    expect(logger.error).toHaveBeenCalledWith(mockedError)
+  })
+
+  it('Should handle errors during metric collection', async () => {
+    const errorMessage = 'Error during metric collection'
+    setCheckpointMetricsSpy.mockImplementationOnce(async () => {
+      throw new Error(errorMessage)
+    })
+
+    await expect(setCheckpointMetricsSpy).rejects.toThrowError(errorMessage)
   })
 })
