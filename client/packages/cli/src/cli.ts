@@ -56,12 +56,12 @@ program
   .action(wrapCryptoWaitReady(handleResetGatewayCommand))
 
 withExportMode(
-program
-  .command("purgeGateway")
-  .argument("gateway")
-  .description("Purge a gateway")
-  .option("-f, --force", "Force on live chain")
-  .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
+  program
+    .command("purgeGateway")
+    .argument("gateway")
+    .description("Purge a gateway")
+    .option("-f, --force", "Force on live chain")
+    .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
 )
 
 withExportMode(
@@ -128,23 +128,23 @@ program
   .action(handleEstimateMaxReward)
 
 withExportMode(
-    program
-        .command("xcmTransfer")
-        .description("Cross-chain transfer of assets using XCM")
-        .requiredOption("--signer <string>", "The signer of the transaction")
-        .requiredOption("--type <string>", "The type of XCM transfer")
-        .requiredOption(
-            "--endpoint <string>",
-            "The RPC endpoint from which the XCM transaction will be submitted",
-        )
-        .requiredOption("--dest <string>", "The destination chain")
-        .requiredOption("--recipient <string>", "The recipient address")
-        .requiredOption("--target-asset <symbol>", "The target asset")
-        .requiredOption(
-            "--target-amount <amount>",
-            "The amount of the target asset",
-        )
-        .action(handleXcmTransferCommand),
+  program
+    .command("xcmTransfer")
+    .description("Cross-chain transfer of assets using XCM")
+    .requiredOption("--signer <string>", "The signer of the transaction")
+    .requiredOption("--type <string>", "The type of XCM transfer")
+    .requiredOption(
+      "--endpoint <string>",
+      "The RPC endpoint from which the XCM transaction will be submitted",
+    )
+    .requiredOption("--dest <string>", "The destination chain")
+    .requiredOption("--recipient <string>", "The recipient address")
+    .requiredOption("--target-asset <symbol>", "The target asset")
+    .requiredOption(
+      "--target-amount <amount>",
+      "The amount of the target asset",
+    )
+    .action(handleXcmTransferCommand),
 )
 
 withExportMode(
@@ -179,33 +179,36 @@ withExportMode(
 // example of a new command
 //  pnpm writer --signer //Alice --target-account //Bob --target-asset 1000 --target-amount 100000000000 --reward-asset 0 --max-reward 40 --insurance 0.1 --speed-mode Fast --endpoint ws://localhost:9944 --dest 3333 --repeat 1 --repeat-interval 1
 withExportMode(
-    program
-      .command("writer")
-      .description(
-        "Write batches of SideEffects (SFX) to the chain using the Vacuum pallet",
-      )
-      .requiredOption("--signer <string>", "The signer of the transaction")
-      .requiredOption(
-        "--endpoint <string>",
-        "The RPC endpoint from which the XCM transaction will be submitted",
-      )
-      .requiredOption("--dest <string>", "The destination chain")
-      .requiredOption("--target-asset <number>", "Target asset ID (u32)")
-      .requiredOption("--target-account <string>", "The recipient address")
-      .requiredOption("--target-amount <number>", "The amount of the target asset")
-      .requiredOption("--reward-asset <number>", "The reward asset ID (u32)")
-      .requiredOption("--max-reward <number>", "The maximum reward")
-      .requiredOption("--insurance <number>", "The insurance amount")
-      .requiredOption("--speed-mode <string>", "The speed mode")
-      .option("--as-utility-batch", "Send as a utility::batch call")
-      .option("--as-sequential-tx", "Send as a sequence of transactions")
-      .option("--as-multi-sfx", "Send as an XTX containing multiple of SFXs")
-      .option("--repeat <number>", "Repeat the transaction")
-      .option(
-        "--repeat-interval <number>",
-        "Repeat the transaction every x seconds",
-      )
-      .action(handleFastWriterCommand),
+  program
+    .command("writer")
+    .description(
+      "Write batches of SideEffects (SFX) to the chain using the Vacuum pallet",
+    )
+    .requiredOption("--signer <string>", "The signer of the transaction")
+    .requiredOption(
+      "--endpoint <string>",
+      "The RPC endpoint from which the XCM transaction will be submitted",
+    )
+    .requiredOption("--dest <string>", "The destination chain")
+    .requiredOption("--target-asset <number>", "Target asset ID (u32)")
+    .requiredOption("--target-account <string>", "The recipient address")
+    .requiredOption(
+      "--target-amount <number>",
+      "The amount of the target asset",
+    )
+    .requiredOption("--reward-asset <number>", "The reward asset ID (u32)")
+    .requiredOption("--max-reward <number>", "The maximum reward")
+    .requiredOption("--insurance <number>", "The insurance amount")
+    .requiredOption("--speed-mode <string>", "The speed mode")
+    .option("--as-utility-batch", "Send as a utility::batch call")
+    .option("--as-sequential-tx", "Send as a sequence of transactions")
+    .option("--as-multi-sfx", "Send as an XTX containing multiple of SFXs")
+    .option("--repeat <number>", "Repeat the transaction")
+    .option(
+      "--repeat-interval <number>",
+      "Repeat the transaction every x seconds",
+    )
+    .action(handleFastWriterCommand),
 )
 
 program.parse(process.argv)

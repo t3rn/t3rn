@@ -11,6 +11,7 @@ as_multi_sfx=false
 repeat=1  # Default repetition
 repeat_interval=0  # Default interval, 0 means no interval
 remote_reward=false
+source=false
 
 # Function to set the order path
 set_order_path() {
@@ -248,7 +249,7 @@ while true; do
         6)
             # Here you would call the TypeScript CLI with the constructed command
             # Construct the command with the new scheduling options
-            cli_command="pnpm cli writer --signer $signer --target-account $target_account --target-asset $target_asset --target-amount $target_amount --reward-asset $reward_asset --max-reward $max_reward --insurance $insurance --speed-mode $speed_mode --endpoint $endpoint --dest $dest"
+            cli_command="pnpm cli writer --signer $signer --target-account $target_account --target-asset $target_asset --target-amount $target_amount --reward-asset $reward_asset --max-reward $max_reward --insurance $insurance --speed-mode $speed_mode --endpoint $endpoint --dest $dest --source $source"
 
             # Append scheduling options to the command
             [[ "$as_utility_batch" == true ]] && cli_command+=" --as-utility-batch"
