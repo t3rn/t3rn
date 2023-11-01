@@ -21,3 +21,31 @@ jobs:
     - -s
     - transfer.json
     activeDeadlineSeconds: 300
+
+  - name: send-xcm-transfer
+    env:
+      - name: CIRCUIT_WS_ENDPOINT
+        value: wss://rpc.t0rn.io
+      - name: CIRCUIT_RPC_ENDPOINT
+        value: https://rpc.t0rn.io
+      - name: LOG_LEVEL
+        value: debug
+
+    schedule: "*/1 * * * *"
+    args:
+      - xcmTransfer
+      - --signer
+      - "//Circuit"
+      - --type
+      - "relay"
+      - --endpoint
+      - "wss://rococo-rpc.polkadot.io"
+      - --dest
+      - 3333
+      - --recipient
+      - "0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e"
+      - --target-asset
+      - "ROC"
+      - --target-amount
+      - 281500000000 # 0.2815 ROC
+    activeDeadlineSeconds: 300
