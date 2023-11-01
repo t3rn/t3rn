@@ -33,7 +33,7 @@ For example, if a new bid for a Side Effects (SFX) we have bid on is detected, t
 
 ### Pricing Engine:
 
-To be able to evaluate the profitability of a SFX, the Executor needs to have access to a constant stream of asset prices. The PriceEngine takes care of this, tracking prices for assets that need to be tracked. These are then returned as Observable which enables changing prices to automatically be pushed to all instances that are tracking a certain asset.
+To be able to evaluate the profitability of a SFX, the Executor needs to have access to a constant stream of asset prices. The PriceEngine takes care of this, tracking prices for assets that need to be tracked. This enables changing prices to automatically be pushed to all instances that are tracking a certain asset.
 Currently, the PriceEngine is very basic, solely querying prices from CoinGecko. However, it is built with extensibility in mind, allowing new price sources to be added without much configuration.
 
 ### Strategy Engine:
