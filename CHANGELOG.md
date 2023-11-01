@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.69.0-rc.0] - 2023-11-01
+### :sparkles: New Features
+- [`f0da32a`](https://github.com/t3rn/t3rn/commit/f0da32a80070c142f4d8c42dadab152649dc61fe) - registering assets on t0rn through CLI  and integration tests for XCM transfers of ROC *(PR [#1414](https://github.com/t3rn/t3rn/pull/1414) by [@chexware](https://github.com/chexware))*
+
+### :bug: Bug Fixes
+- [`b0da569`](https://github.com/t3rn/t3rn/commit/b0da569e0c9b46c1e494e42c2464fc08499780db) - loosen fail checks in CLI SDK signAndSafeSafe  *(PR [#1411](https://github.com/t3rn/t3rn/pull/1411) by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9515591`](https://github.com/t3rn/t3rn/commit/9515591015134a065e704ab4424b33a5bbf156d3) - **sdk**: add CI and allow only yarn *(PR [#1412](https://github.com/t3rn/t3rn/pull/1412) by [@3h4x](https://github.com/3h4x))*
+- [`6902b9c`](https://github.com/t3rn/t3rn/commit/6902b9cab4a770d3d46c6167c02f3339b6d3d4fc) - updated SDK version in CLI package.json to enable asset registration *(PR [#1415](https://github.com/t3rn/t3rn/pull/1415) by [@chexware](https://github.com/chexware))*
+
+### :wrench: Chores
+- [`d4f9f6d`](https://github.com/t3rn/t3rn/commit/d4f9f6d6ef09758fe9dbbf5e4c6f080c8b81b756) - update sepolia pallet version to tag v1.1.9 *(PR [#1416](https://github.com/t3rn/t3rn/pull/1416) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.68.0-rc.0] - 2023-10-30
 ### :sparkles: New Features
 - [`9259eca`](https://github.com/t3rn/t3rn/commit/9259eca14e81aa3ec86065e444afe767e543429b) - add tx enrolling new sfx abi to selected gateway *(PR [#1402](https://github.com/t3rn/t3rn/pull/1402) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1823,3 +1836,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.67.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.1-rc.0...v1.67.0-rc.0
 [v1.67.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.67.0-rc.0...v1.67.1-rc.0
 [v1.68.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.67.1-rc.0...v1.68.0-rc.0
+[v1.69.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.68.0-rc.0...v1.69.0-rc.0
