@@ -9,7 +9,7 @@ export class NativeAssetMap {
     dot: "dot",
     sepl: null,
     roco: null,
-    t0rn: null
+    t0rn: null,
   }
 
   public static getFor(target: Target) {

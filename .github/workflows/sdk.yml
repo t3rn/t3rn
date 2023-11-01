@@ -1,16 +1,14 @@
 # This action assumes that version in package.json is already bumped
-name: Publish @t3rn/sdk to npmjs
+name: SDK
 
 on:
-  push:
-    branches:
-      - development
+  pull_request:
     paths:
       - client/packages/sdk/**
-      - .github/workflows/npm-sdk.yml
+      - .github/workflows/sdk.yml
 
 jobs:
-  publish:
+  build:
     runs-on: self-hosted
 
     defaults:
@@ -19,12 +17,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v3
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn ci
       - run: yarn build
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,10 +1,10 @@
-import { TypeRegistry, createType } from "@polkadot/types";
+import { TypeRegistry, createType } from "@polkadot/types"
 
-const registry = new TypeRegistry();
+const registry = new TypeRegistry()
 
-const justification = { type: "GrandpaJustification<Header>" };
-const finalityProof = { proof: "(Header::Hash, Vec<u8>, Vec<Header>)" };
-const header = { type: "Header" };
+const justification = { type: "GrandpaJustification<Header>" }
+const finalityProof = { proof: "(Header::Hash, Vec<u8>, Vec<Header>)" }
+const header = { type: "Header" }
 
 /**
  * Decode the finality proof
@@ -12,12 +12,12 @@ const header = { type: "Header" };
  */
 
 export const finalityProofDecode = (data: any) => {
-  registry.register(finalityProof);
+  registry.register(finalityProof)
 
-  const res = createType(registry, finalityProof.proof, data.toJSON()); // toJSON works, toHEX() not
+  const res = createType(registry, finalityProof.proof, data.toJSON()) // toJSON works, toHEX() not
   // @ts-ignore
-  return { latestBlockHash: res[0], justification: res[1], headers: res[2] };
-};
+  return { latestBlockHash: res[0], justification: res[1], headers: res[2] }
+}
 
 /**
  * Decode the header
@@ -25,10 +25,10 @@ export const finalityProofDecode = (data: any) => {
  */
 
 export const justificationDecode = (data: any) => {
-  registry.register(justification);
+  registry.register(justification)
 
-  return createType(registry, justification.type as any, data);
-};
+  return createType(registry, justification.type as any, data)
+}
 
 /**
  * Decode the authority set
@@ -36,12 +36,10 @@ export const justificationDecode = (data: any) => {
  */
 
 export const decodeAuthoritySet = (data: any) => {
-  const justification = justificationDecode(data);
+  const justification = justificationDecode(data)
 
-  return justification.commit.precommits
-    .map((entry) => entry.id.toHex())
-    .sort();
-};
+  return justification.commit.precommits.map((entry) => entry.id.toHex()).sort()
+}
 
 /**
  * Extract the authorities from the finality proof
@@ -49,10 +47,10 @@ export const decodeAuthoritySet = (data: any) => {
  */
 
 export const extractAuthoritySetFromFinalityProof = (finalityProof: any) => {
-  const rawJust = finalityProofDecode(finalityProof).justification;
+  const rawJust = finalityProofDecode(finalityProof).justification
 
-  return decodeAuthoritySet(rawJust);
-};
+  return decodeAuthoritySet(rawJust)
+}
 
 /**
  * Decode the header
@@ -60,7 +58,7 @@ export const extractAuthoritySetFromFinalityProof = (finalityProof: any) => {
  */
 
 export const headerDecode = (data: string) => {
-  registry.register(header);
+  registry.register(header)
 
-  return createType(registry, header.type as any, data);
-};
+  return createType(registry, header.type as any, data)
+}

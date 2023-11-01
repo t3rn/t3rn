@@ -1,51 +1,66 @@
 import ora from "ora"
-import {Args} from "@/types.js"
-import {validate} from "@/utils/fns.js"
-import {XcmTransferSchema} from "@/schemas/xcm.ts"
-import {colorLogMsg} from "@/utils/log.js"
-import {ApiPromise, WsProvider, Keyring} from "@t3rn/sdk"
-import {XcmTransferParameters} from "@t3rn/sdk/utils"
+import { Args } from "@/types.js"
+import { validate } from "@/utils/fns.js"
+import { XcmTransferSchema } from "@/schemas/xcm.ts"
+import { colorLogMsg } from "@/utils/log.js"
+import { ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
+import { XcmTransferParameters } from "@t3rn/sdk/utils"
 
 export const spinner = ora()
 
 export const handleXcmTransferCommand = async (
-    _args: Args<
-        | "signer"
-        | "type"
-        | "endpoint"
-        | "dest"
-        | "recipient"
-        | "targetAsset"
-        | "targetAmount"
-    >,
+  _args: Args<
+    | "signer"
+    | "type"
+    | "endpoint"
+    | "dest"
+    | "recipient"
+    | "targetAsset"
+    | "targetAmount"
+  >,
 ) => {
-    const args = validate(
-        XcmTransferSchema,
-        {
-            ..._args,
-            targetAmount: parseFloat(_args?.targetAmount),
-        },
-        {
-            configFileName: "XCM transfer arguments",
-        },
-    )
+  const args = validate(
+    XcmTransferSchema,
+    {
+      ..._args,
+      targetAmount: parseFloat(_args?.targetAmount),
+    },
+    {
+      configFileName: "XCM transfer arguments",
+    },
+  )
 
-    if (!args) {
-        process.exit()
-    }
+  if (!args) {
+    process.exit()
+  }
 
-    spinner.text = "Submitting XCM Transaction... \n"
-    spinner.start()
-
-    try {
-        const targetApi = await ApiPromise.create({
-            provider: new WsProvider(args.endpoint),
-        })
-        const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(targetApi, args.recipient)
-        const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(targetApi, 0)
-        const xcmAssetsParam = XcmTransferParameters.createAssets(targetApi, args.targetAsset, args.type, args.targetAmount)
-        const xcmDestParam = XcmTransferParameters.createDestination(targetApi, args.dest, args.type)
-        const xcmWeightLimitParam = XcmTransferParameters.createWeightLimit(targetApi)
+  spinner.text = "Submitting XCM Transaction... \n"
+  spinner.start()
+  try {
+      const targetApi = await ApiPromise.create({
+          provider: new WsProvider(args.endpoint),
+      })
+      const xcmBeneficiaryParam = XcmTransferParameters.createBeneficiary(
+          targetApi,
+          args.recipient,
+      )
+      const xcmAssetFeeItem = XcmTransferParameters.createFeeAssetItem(
+          targetApi,
+          0,
+      )
+      const xcmAssetsParam = XcmTransferParameters.createAssets(
+          targetApi,
+          args.targetAsset,
+          args.type,
+          args.targetAmount,
+      )
+      const xcmDestParam = XcmTransferParameters.createDestination(
+          targetApi,
+          args.dest,
+          args.type,
+      )
+      const xcmWeightLimitParam =
+          XcmTransferParameters.createWeightLimit(targetApi)
 
         const keyring = new Keyring({ type: "sr25519" })
         const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
@@ -70,14 +85,14 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                api.events.system.ExtrinsicFailed.is(event)
+                                targetApi.events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
                             .forEach(({ event: { data: [error, info] } }) => {
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
                                     const { docs, method, section } = decoded
 
                                     console.log(`${section}.${method}: ${docs.join(' ')}`)
@@ -99,14 +114,14 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                api.events.system.ExtrinsicFailed.is(event)
+                                targetApi.events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
                             .forEach(({ event: { data: [error, info] } }) => {
                                 if (error.isModule) {
                                     // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule)
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
                                     const { docs, method, section } = decoded
 
                                     console.log(`${section}.${method}: ${docs.join(' ')}`)
@@ -132,13 +147,13 @@ export const handleXcmTransferCommand = async (
                     events
                         // find/filter for failed events
                         .filter(({ event }) =>
-                            api.events.system.ExtrinsicFailed.is(event)
+                            targetApi.events.system.ExtrinsicFailed.is(event)
                         )
                         // we know that data for system.ExtrinsicFailed is
                         // (DispatchError, DispatchInfo)
                         .forEach(({ event: { data: [error, info] } }) => {if (error.isModule) {
                             // for module errors, we have the section indexed, lookup
-                            const decoded = api.registry.findMetaError(error.asModule)
+                            const decoded = targetApi.registry.findMetaError(error.asModule)
                             const { docs, method, section } = decoded
 
                             console.log(`${section}.${method}: ${docs.join(' ')}`)
@@ -164,30 +179,28 @@ export const handleXcmTransferCommand = async (
                         events
                             // find/filter for failed events
                             .filter(({ event }) =>
-                                api.events.system.ExtrinsicFailed.is(event)
+                                targetApi.events.system.ExtrinsicFailed.is(event)
                             )
                             // we know that data for system.ExtrinsicFailed is
                             // (DispatchError, DispatchInfo)
-                            .forEach(({ event: { data: [error, info] } }) => {
-                                if (error.isModule) {
-                                    // for module errors, we have the section indexed, lookup
-                                    const decoded = api.registry.findMetaError(error.asModule)
-                                    const { docs, method, section } = decoded
+                            .forEach(({ event: { data: [error, info] } }) => {if (error.isModule) {
+                                // for module errors, we have the section indexed, lookup
+                                const decoded = targetApi.registry.findMetaError(error.asModule)
+                                const { docs, method, section } = decoded
 
-                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                                } else {
-                                    // Other, CannotLookup, BadOrigin, no extra info
-                                    console.log(error.toString())
-                                }
+                                console.log(`${section}.${method}: ${docs.join(' ')}`)
+                            } else {
+                                // Other, CannotLookup, BadOrigin, no extra info
+                                console.log(error.toString())
+                            }
                             })
                     }
                 })
-        }
-        console.log("XCM Transfer Completed\n")
-        spinner.stop()
-        process.exit(0)
-
-    } catch (e) {
-        spinner.fail(colorLogMsg("ERROR", e))
     }
+    console.log("XCM Transfer Completed\n")
+    spinner.stop()
+    process.exit(0)
+  } catch (e) {
+    spinner.fail(colorLogMsg("ERROR", e))
+  }
 }

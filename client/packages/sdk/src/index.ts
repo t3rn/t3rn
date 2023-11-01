@@ -1,51 +1,55 @@
-import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
-import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
-import { cryptoWaitReady } from '@polkadot/util-crypto';
+import "@polkadot/api-augment" // DO NOT REMOVE THIS LINE
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api"
+import { cryptoWaitReady } from "@polkadot/util-crypto"
 
-import types from "./config/types.json";
-import rpc from "./config/rpc.json";
-import { Gateway, initGateways } from "./gateways";
-import * as Utils from "./utils";
-import * as Types from "./types";
+import types from "./config/types.json"
+import rpc from "./config/rpc.json"
+import { Gateway, initGateways } from "./gateways"
+import * as Utils from "./utils"
+import * as Types from "./types"
 
 // @ts-ignore
-import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
-import * as Encodings from "./encodings";
-import * as Converters from "./converters";
-import { Circuit, Tx } from "./circuit";
+import { T3rnTypesSideEffect } from "@polkadot/types/lookup"
+import * as Encodings from "./encodings"
+import * as Converters from "./converters"
+import { Circuit, Tx } from "./circuit"
 
 /**
  * The main class for the SDK
  */
 
 export class Sdk {
-  provider: WsProvider;
+  provider: WsProvider
   /* ApiPromise instance of the circuit */
-  client: ApiPromise;
+  client: ApiPromise
   /* Mapping for looking up Gateway instances via ID */
   gateways: {
-    [id: string]: Gateway;
-  };
+    [id: string]: Gateway
+  }
   /*Circuit Instance */
-  circuit: Circuit;
+  circuit: Circuit
   /* Circuit signer */
-  signer: any;
-  exportMode: boolean;
-  nonce: number;
+  signer: any
+  exportMode: boolean
+  nonce: number
 
   /**
    * @param provider - RPC url or WsProvider instance of circuit
    * @param circuitSigner - The signer to use for signing transactions
    * @param exportMode
    */
-  constructor(provider: string | WsProvider, circuitSigner: any, exportMode: boolean = false) {
-    this.signer = circuitSigner;
-    if( typeof provider === "string") {
-      this.provider = new WsProvider(provider);
+  constructor(
+    provider: string | WsProvider,
+    circuitSigner: any,
+    exportMode: boolean = false,
+  ) {
+    this.signer = circuitSigner
+    if (typeof provider === "string") {
+      this.provider = new WsProvider(provider)
     } else {
-      this.provider = provider;
+      this.provider = provider
     }
-    this.exportMode = exportMode;
+    this.exportMode = exportMode
   }
 
   /**
@@ -58,12 +62,24 @@ export class Sdk {
       provider: this.provider,
       types: types as any,
       rpc: rpc as any,
-    });
-    this.gateways = await initGateways(this.client);
-    this.circuit = new Circuit(this.client, this.signer, this.exportMode);
+    })
+    this.gateways = await initGateways(this.client)
+    this.circuit = new Circuit(this.client, this.signer, this.exportMode)
 
-    return this.client;
+    return this.client
   }
 }
 
-export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils, ApiPromise, WsProvider, Keyring, cryptoWaitReady};
+export {
+  Encodings,
+  Converters,
+  Types,
+  Gateway,
+  Circuit,
+  Tx,
+  Utils,
+  ApiPromise,
+  WsProvider,
+  Keyring,
+  cryptoWaitReady,
+}

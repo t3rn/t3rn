@@ -6,8 +6,8 @@ import {
   T3rnTypesSfxSideEffect,
   // @ts-ignore
   u128,
-} from "@polkadot/types/lookup";
-import * as BN from "bn.js";
+} from "@polkadot/types/lookup"
+import * as BN from "bn.js"
 
 /**
  * A factory function that creates a side effect
@@ -24,14 +24,14 @@ import * as BN from "bn.js";
  */
 
 export const createSfx = (args: {
-  target: number[];
-  signature: string | undefined;
-  nonce: number;
-  enforceExecutioner: string | undefined;
-  maxReward: BN;
-  insurance: BN;
-  encodedArgs: string[];
-  action: string;
+  target: number[]
+  signature: string | undefined
+  nonce: number
+  enforceExecutioner: string | undefined
+  maxReward: BN
+  insurance: BN
+  encodedArgs: string[]
+  action: string
 }): T3rnTypesSfxSideEffect => {
   const sfx: T3rnTypesSfxSideEffect = {
     target: args.target,
@@ -42,7 +42,7 @@ export const createSfx = (args: {
     signature: args.signature,
     nonce: args.nonce,
     enforceExecutioner: args.enforceExecutioner,
-  };
+  }
 
-  return sfx;
-};
+  return sfx
+}
