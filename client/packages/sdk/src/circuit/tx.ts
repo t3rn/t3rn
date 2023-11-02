@@ -111,42 +111,37 @@ export class Tx {
             exportObj?.addErr(dispatchError).toFile()
             reject(Error(dispatchError.toString()))
           } else if (events.length > 0) {
-              // check if we have an error event in a custom module
-              events.forEach((eventEntry: EventRecord) => {
-                  const eventEntryParsed = JSON.parse(JSON.stringify(eventEntry))
-                  if (
-                      eventEntryParsed &&
-                      eventEntryParsed.event &&
-                      eventEntryParsed.event.data &&
-                      Array.isArray(eventEntryParsed.event.data) &&
-                      eventEntryParsed.event.data.length > 0 &&
-                      eventEntryParsed.event.data[0].err
-                  ) {
-                      const pallet =
-                          eventEntryParsed.event.data[0].err.module.index ||
-                          "Un-parsed pallet index"
-                      const error =
-                          eventEntryParsed.event.data[0].err.module.error ||
-                          "Un-parsed error index"
-                      const moduleErrorMessage = `Pallet of index = ${pallet} returned an error of index = ${error}`
-                      exportObj?.addErr(moduleErrorMessage).toFile()
-                      reject(Error(moduleErrorMessage))
-                  }
-              })
-          }
-          else if (
+            // check if we have an error event in a custom module
+            events.forEach((eventEntry: EventRecord) => {
+              const eventEntryParsed = JSON.parse(JSON.stringify(eventEntry))
+              if (
+                eventEntryParsed &&
+                eventEntryParsed.event &&
+                eventEntryParsed.event.data &&
+                Array.isArray(eventEntryParsed.event.data) &&
+                eventEntryParsed.event.data.length > 0 &&
+                eventEntryParsed.event.data[0].err
+              ) {
+                const pallet =
+                  eventEntryParsed.event.data[0].err.module.index ||
+                  "Un-parsed pallet index"
+                const error =
+                  eventEntryParsed.event.data[0].err.module.error ||
+                  "Un-parsed error index"
+                const moduleErrorMessage = `Pallet of index = ${pallet} returned an error of index = ${error}`
+                exportObj?.addErr(moduleErrorMessage).toFile()
+                reject(Error(moduleErrorMessage))
+              }
+            })
+          } else if (
             status.isDropped ||
             status.isInvalid ||
             status.isUsurped ||
             status.isRetracted
           ) {
             reject(Error(status.type))
-          } else if (
-            status.isInBlock || status.isFinalized
-          ) {
-            resolve(
-              status.type
-            )
+          } else if (status.isInBlock) {
+            resolve(status["inBlock"] || status.asInBlock.toString())
           }
         },
       ),
