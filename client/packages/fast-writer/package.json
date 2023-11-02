@@ -1,23 +1,18 @@
 {
-  "name": "executor",
+  "name": "fast-writer",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
     "preinstall": "npm exec -- only-allow pnpm",
-    "clean": "rm -rf ./dist",
-    "dev": "pnpm run clean && tsc && node dist/src/index.js",
+    "start": "yarn build && node dist/index.js",
+    "dev": "ts-node src/index.ts",
     "build": "tsup",
-    "build:pkg": "rollup -c --bundleConfigAsCjs && pkg ./bin/main.js --out-path ./bin --targets node16-macos-arm64,node16-macos-x64,node16-win-arm64,node16-win-x64,node16-linux-arm64,node16-linux-x64",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
-    "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
     "fmt": "prettier --write src config tests",
     "fmt:check": "prettier --check src config tests",
-    "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "test": "DOTENV_CONFIG_PATH=.env-tests mocha -r ts-node/register 'tests/**/*.ts' --require dotenv/config",
-    "test:attestion": "mocha -r ts-node/register 'tests/**/attest*.ts'",
-    "test-single": "yarn build && mocha -r ts-node/register"
+    "test": "DOTENV_CONFIG_PATH=.env-tests mocha -r ts-node/register 'tests/**/*.ts' --require dotenv/config"
   },
   "exclude": [
     "./tests/"
@@ -50,6 +45,7 @@
     "chai-as-promised": "^7.1.1",
     "debug": "4.3.4",
     "dotenv": "16.3.1",
+    "env-var": "^7.4.1",
     "ethereum-cryptography": "^2.1.2",
     "ethereumjs-abi": "^0.6.8",
     "ethereumjs-util": "^7.1.5",

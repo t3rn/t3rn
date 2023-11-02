@@ -1,10 +1,10 @@
 import { cryptoWaitReady } from '@t3rn/sdk'
-import { sleep } from '../../utils/helpers.js'
-import { logger } from '../../utils/logger.js'
-import { CircuitConnection } from '../circuit/connection.class.js'
-import { CircuitClient } from '../circuit/client.js'
-import { Prometheus } from '../../prometheus.js'
-import { Config } from '../../config/config.js'
+import { sleep } from '../../utils/helpers'
+import { logger } from '../../utils/logger'
+import { CircuitConnection } from '../circuit/connection.class'
+import { CircuitClient } from '../circuit/client'
+import { Prometheus } from '../../prometheus'
+import { Config } from '../../config/config'
 
 export class FastWriter {
   private readonly config: Config
