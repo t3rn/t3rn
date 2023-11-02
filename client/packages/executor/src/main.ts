@@ -12,15 +12,15 @@ async function main() {
   const instance = new Executor(prometheus);
   await instance.setup();
 
-  if (config.attestations.ethereum.privateKey === undefined) {
-    logger.warn("Ethereum private key is not defined. Skipping Attestations.");
-  } else {
-    const attestationManager = new AttestationManager(
-      instance.circuitClient,
-      prometheus,
-    );
-    if (config.attestations.processBatches) {
-      logger.info("Processing Attestation Batches");
+  // TODO: attestions for now should be disabled by default until ready
+  if (config.attestations.enableAttestations) {
+    if (config.attestations.ethereum.privateKey === undefined) {
+      logger.warn("Ethereum private key is not defined. Skipping Attestations.");
+    } else {
+      const attestationManager = new AttestationManager(
+        instance.circuitClient,
+        prometheus,
+      );
       await attestationManager.processAttestationBatches();
     }
   }

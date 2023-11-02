@@ -160,12 +160,12 @@ export type Config = {
   /** Configuration for ethereum */
   attestations: {
     ethereum: {
-      name: string;
-      rpc: string;
-      attestationVerifierAddress: string;
+      name: string | undefined;
+      rpc: string | undefined;
+      attestationVerifierAddress: string | undefined;
       privateKey: string | undefined;
     };
-    processBatches: boolean;
+    enableAttestations: boolean;
   };
 };
 
