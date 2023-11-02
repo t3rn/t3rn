@@ -6,7 +6,7 @@
     "_enum": ["Substrate", "EVM"]
   },
   "SpeedMode": {
-    "_enum": ["Instant", "Fast", "Rational", "Finalized"]
+    "_enum": ["Fast", "Rational", "Finalized", "Instant"]
   },
   "GatewayType": {
     "_enum": {
