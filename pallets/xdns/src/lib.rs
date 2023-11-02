@@ -611,7 +611,7 @@ pub mod pallet {
 
                 let latest_heartbeat = T::Portal::get_latest_heartbeat_by_vendor(verifier.clone());
                 let epoch = latest_heartbeat.last_finalized_height;
-                let weight = Self::process_single_verifier_overview(
+                let _weight = Self::process_single_verifier_overview(
                     current_block,
                     verifier,
                     epoch,
@@ -872,10 +872,10 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            let mut known_gateway_records: Vec<GatewayRecord<T::AccountId>> =
+            let known_gateway_records: Vec<GatewayRecord<T::AccountId>> =
                 Decode::decode(&mut &self.known_gateway_records[..]).unwrap_or_default();
 
-            let mut standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)> =
+            let standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)> =
                 Decode::decode(&mut &self.standard_sfx_abi[..]).unwrap_or_default();
 
             for (sfx_4b_id, sfx_abi) in standard_sfx_abi {
@@ -914,6 +914,18 @@ pub mod pallet {
                 T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
             );
 
+            // Refresh the list of StandardABI based on latest implementation
+            // Purge all standards first
+            if <StandardSFXABIs<T>>::iter().count() > 0 {
+                <StandardSFXABIs<T>>::remove_all(None);
+            }
+            // Re-add all standards
+            t3rn_abi::standard::standard_sfx_abi()
+                .iter()
+                .for_each(|(sfx_4b_id, sfx_abi)| {
+                    <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi.clone());
+                });
+
             let target_id = T::SelfGatewayId::get();
 
             const BALANCES_INDEX: u8 = 10;
@@ -928,15 +940,6 @@ pub mod pallet {
             }
             if <StandardSFXABIs<T>>::contains_key(*b"tass") {
                 allowed_side_effects.push((*b"tran", Some(ASSETS_INDEX)));
-            }
-            if <StandardSFXABIs<T>>::contains_key(*b"swap") {
-                allowed_side_effects.push((*b"swap", Some(BALANCES_INDEX)));
-            }
-            if <StandardSFXABIs<T>>::contains_key(*b"aliq") {
-                allowed_side_effects.push((*b"aliq", Some(BALANCES_INDEX)));
-            }
-            if <StandardSFXABIs<T>>::contains_key(*b"rliq") {
-                allowed_side_effects.push((*b"rliq", Some(BALANCES_INDEX)));
             }
             if <StandardSFXABIs<T>>::contains_key(*b"cevm") {
                 allowed_side_effects.push((*b"cevm", Some(EVM_INDEX)));
@@ -953,7 +956,26 @@ pub mod pallet {
                 Some(admin),
                 None,
                 allowed_side_effects,
-            )
+            )?;
+
+            // If standards are linked to Gateways, refresh them all at once
+            t3rn_abi::standard::standard_sfx_abi().iter_mut().for_each(
+                |(ref sfx_4b_id, ref mut sfx_abi)| {
+                    <SFXABIRegistry<T>>::iter_keys().for_each(|(gateway_id, on_dest_sfx_4b_id)| {
+                        if *sfx_4b_id == on_dest_sfx_4b_id {
+                            <SFXABIRegistry<T>>::mutate(gateway_id, sfx_4b_id, |target_sfx_abi| {
+                                sfx_abi.maybe_prefix_memo = match target_sfx_abi {
+                                    Some(target_sfx_abi) => target_sfx_abi.maybe_prefix_memo,
+                                    None => None,
+                                };
+                                *target_sfx_abi = Some(sfx_abi.clone());
+                            });
+                        }
+                    })
+                },
+            );
+
+            Ok(())
         }
 
         pub fn update_epoch_history(

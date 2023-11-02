@@ -19,15 +19,16 @@
 
 use super::*;
 use circuit_mock_runtime::{
-    pallet_contracts_registry::pallet::Error, ExtBuilder, Portal, RuntimeEvent as Event,
+    ExtBuilder, Portal,
     RuntimeOrigin as Origin, *,
 };
 use codec::Decode;
+
 use frame_support::pallet_prelude::Weight;
 
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
 use sp_core::{crypto::AccountId32, H256};
-use sp_runtime::{print, DispatchError};
+use sp_runtime::{DispatchError};
 use t3rn_primitives::{
     circuit::SecurityLvl::{Escrow, Optimistic},
     clock::OnHookQueues,
@@ -68,7 +69,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
                     .unwrap()
                     .allowed_side_effects
                     .len(),
-                7
+                4
             );
         });
 }
@@ -100,13 +101,39 @@ fn reboot_self_gateway_populates_entry_all_gateway_ids_entry_only_once() {
                     .unwrap()
                     .allowed_side_effects
                     .len(),
-                7
+                4
             );
         });
 }
 
 #[test]
-fn reboot_self_gateway_populates_entry_if_does_not_exist_with_no_sfx() {
+fn reboot_self_gateway_refreshes_entries_of_std_abi_to_other_gateways() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 8);
+            // Manually add and set "tass" to dummy value for "test" gateway
+            let swap_abi = pallet_xdns::StandardSFXABIs::<Runtime>::get(b"swap").unwrap();
+            pallet_xdns::SFXABIRegistry::<Runtime>::insert(*b"gate", *b"tass", swap_abi);
+
+            // set "tass" from standard to variable
+            let tass_abi = pallet_xdns::StandardSFXABIs::<Runtime>::get(*b"tass").unwrap();
+            assert_ok!(XDNS::reboot_self_gateway(
+                Origin::root(),
+                GatewayVendor::Rococo
+            ));
+
+            assert_eq!(
+                pallet_xdns::SFXABIRegistry::<Runtime>::get(*b"gate", *b"tass"),
+                Some(tass_abi)
+            );
+        });
+}
+
+#[test]
+fn reboot_self_gateway_populates_entry_if_does_not_exist_with_std_sfx() {
     ExtBuilder::default().build().execute_with(|| {
         assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
         assert_ok!(XDNS::reboot_self_gateway(
@@ -119,7 +146,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_no_sfx() {
                 .unwrap()
                 .allowed_side_effects
                 .len(),
-            0
+            4
         );
     });
 }
