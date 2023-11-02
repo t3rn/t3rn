@@ -598,7 +598,6 @@ mod tests {
                 EXISTENTIAL_DEPOSIT as Balance
             );
 
-            assert!(false);
         });
     }
 
