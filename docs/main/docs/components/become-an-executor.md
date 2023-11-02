@@ -22,20 +22,13 @@ Clone the [t3rn repo](https://github.com/t3rn/t3rn/tree/development/client/packa
     <img height="150" src="/img/install-executor-dep.png?raw=true"/>
 </p>
 
-## Step 3 - Configure your Executor
+## Step 3 - Run Executor
 
-Configure your Executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc`.
-
-<p align="center">
-    <img height="150" src="/img/envrc.png?raw=true"/>
-</p>
-
-## Step 4 - Run Executor
-
-Now that you’ve configured your `.envrc` file, simply run `pnpm start`.
+Run the command below and add your keys as in the example.
+Run `LOG_PRETTY=true CIRCUIT_WS_ENDPOINT=wss://rpc.t0rn.io CIRCUIT_SIGNER_KEY=0x1234 RELAYCHAIN_SIGNER_KEY=0x1234 pnpm start`.
 
 <p align="center">
-    <img height="150" src="/img/run-executor.png?raw=true"/>
+    <img height="150" src="/img/run-executor-w-keys.png?raw=true"/>
 </p>
 
 ## Troubleshooting
