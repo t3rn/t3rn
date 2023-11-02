@@ -1,36 +1,36 @@
-import { getPriceForSymbol } from "./cg"
+import { getPriceForSymbol } from './cg'
 import {
   estimateActionGasFee as estimateEthActionGasFee,
   EstimateEthActionParams,
   mapSfxActionToEthAction,
-} from "./eth"
+} from './eth'
 import {
   estimateSfxGasFee,
   EstimateSubmittableExtrinsicParams,
-} from "./substrate"
-import { NativeAssetMap } from "./utils"
+} from './substrate'
+import { NativeAssetMap } from './utils'
 
 /**
  * An execution target
  */
 
-export type Target = "dot" | "eth" | "sepl" | "roco" | "t0rn"
+export type Target = 'dot' | 'eth' | 'sepl' | 'roco' | 't0rn'
 export const Targets = {
-  Polkadot: "dot",
-  Ethereum: "eth",
-  Sepolia: "sepl",
-  Rococo: "roco",
-  T0rn: "t0rn",
+  Polkadot: 'dot',
+  Ethereum: 'eth',
+  Sepolia: 'sepl',
+  Rococo: 'roco',
+  T0rn: 't0rn',
 } as const
 
 /**
  * An execution action
  */
 
-export type Action = "tass" | "cevm"
+export type Action = 'tass' | 'cevm'
 export const Actions = {
-  TransferAsset: "tass",
-  CallEvm: "cevm",
+  TransferAsset: 'tass',
+  CallEvm: 'cevm',
 } as const
 
 /**
@@ -100,8 +100,8 @@ export async function estimateGasFee<T extends EstimateParams>({
   args,
 }: Estimate<T>) {
   switch (target) {
-    case "eth":
-    case "sepl":
+    case 'eth':
+    case 'sepl':
       return estimateEthActionGasFee(
         target,
         mapSfxActionToEthAction(action),
@@ -214,4 +214,4 @@ export async function estimateMaxReward<T extends EstimateParams>({
   }
 }
 
-export * from "./eth"
+export * from './eth'

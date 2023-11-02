@@ -10,14 +10,14 @@
 export const toU8aId = (targetId: string | number[]): number[] => {
   let res: any
 
-  if (typeof targetId === "string") {
+  if (typeof targetId === 'string') {
     res = new TextEncoder().encode(targetId)
   } else {
     res = targetId
   }
 
   if (res.length !== 4) {
-    throw new Error("Invalid Id!")
+    throw new Error('Invalid Id!')
   }
 
   return res
@@ -33,7 +33,7 @@ export const toU8aId = (targetId: string | number[]): number[] => {
  */
 
 export const toIdString = (targetId: number[] | string): string => {
-  if (typeof targetId === "string") {
+  if (typeof targetId === 'string') {
     return targetId
   } else {
     return new TextDecoder().decode(Buffer.from(targetId))
@@ -80,7 +80,7 @@ const iterateEncode = (
   let keys = Object.keys(data)
   let result = {}
 
-  if (keys.includes("initialU8aLength")) {
+  if (keys.includes('initialU8aLength')) {
     // this is a polkadot/apiPromise object
     return {
       data: data.toHuman(),
@@ -89,14 +89,14 @@ const iterateEncode = (
     }
   } else {
     for (let i = 0; i < keys.length; i++) {
-      result["encoded_" + toSnakeCase(keys[i])] = data[keys[i]]
+      result['encoded_' + toSnakeCase(keys[i])] = data[keys[i]]
         .toHex()
         .substring(2)
       result[toSnakeCase(keys[i])] = data[keys[i]].toHuman()
     }
 
-    result["transaction_type"] = transactionType
-    result["submission_height"] = submissionHeight
+    result['transaction_type'] = transactionType
+    result['submission_height'] = submissionHeight
 
     return result
   }
@@ -120,4 +120,4 @@ const toSnakeCase = (str: string) =>
   str
     .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
     .map((x) => x.toLowerCase())
-    .join("_")
+    .join('_')

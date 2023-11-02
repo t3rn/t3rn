@@ -1,7 +1,7 @@
-import { ApiPromise } from "@polkadot/api"
+import { ApiPromise } from '@polkadot/api'
 // @ts-ignore
-import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
-import { Gateway } from "./gateway"
+import { T3rnPrimitivesXdnsXdnsRecord } from '@polkadot/types/lookup'
+import { Gateway } from './gateway'
 
 export enum GatewayType {
   Substrate,
@@ -20,7 +20,7 @@ export const initGateways = async (api: ApiPromise) => {
   let res: Record<string, Gateway> = {}
 
   for (let i = 0; i < records.length; i++) {
-    if (records[i].gateway_record.gateway_id.toHuman() !== "0x03030303") {
+    if (records[i].gateway_record.gateway_id.toHuman() !== '0x03030303') {
       const gateway = new Gateway(records[i])
       res[gateway.id] = gateway
     }

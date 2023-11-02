@@ -1,3 +1,3 @@
-import * as Substrate from "./substrate"
+import * as Substrate from './substrate'
 
 export { Substrate }

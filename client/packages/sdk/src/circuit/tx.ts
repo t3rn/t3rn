@@ -1,8 +1,8 @@
-import { ApiPromise } from "@polkadot/api"
-import { ExtrinsicExport } from "../export"
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
-import { SignerOptions } from "@polkadot/api/types/submittable"
-import { EventRecord } from "@polkadot/types/interfaces"
+import { ApiPromise } from '@polkadot/api'
+import { ExtrinsicExport } from '../export'
+import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
+import { SignerOptions } from '@polkadot/api/types/submittable'
+import { EventRecord } from '@polkadot/types/interfaces'
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -106,7 +106,7 @@ export class Tx {
             const err = this.api.registry.findMetaError(dispatchError.asModule)
 
             exportObj?.addErr(dispatchError).toFile()
-            reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`))
+            reject(Error(`${err.section}::${err.name}: ${err.docs.join(' ')}`))
           } else if (dispatchError) {
             exportObj?.addErr(dispatchError).toFile()
             reject(Error(dispatchError.toString()))
@@ -124,10 +124,10 @@ export class Tx {
               ) {
                 const pallet =
                   eventEntryParsed.event.data[0].err.module.index ||
-                  "Un-parsed pallet index"
+                  'Un-parsed pallet index'
                 const error =
                   eventEntryParsed.event.data[0].err.module.error ||
-                  "Un-parsed error index"
+                  'Un-parsed error index'
                 const moduleErrorMessage = `Pallet of index = ${pallet} returned an error of index = ${error}`
                 exportObj?.addErr(moduleErrorMessage).toFile()
                 reject(Error(moduleErrorMessage))
@@ -141,7 +141,7 @@ export class Tx {
           ) {
             reject(Error(status.type))
           } else if (status.isInBlock) {
-            resolve(status["inBlock"] || status.asInBlock.toString())
+            resolve(status['inBlock'] || status.asInBlock.toString())
           }
         },
       ),

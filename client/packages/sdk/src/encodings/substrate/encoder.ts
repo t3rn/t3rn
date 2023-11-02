@@ -1,6 +1,6 @@
-import BN from "bn.js"
-import { u8aConcat, u8aToU8a, u8aToHex } from "@polkadot/util"
-import { xxhashAsU8a } from "@polkadot/util-crypto"
+import BN from 'bn.js'
+import { u8aConcat, u8aToU8a, u8aToHex } from '@polkadot/util'
+import { xxhashAsU8a } from '@polkadot/util-crypto'
 
 /**
  * Creates to correct parachainId encoding for storage proofs
@@ -8,7 +8,7 @@ import { xxhashAsU8a } from "@polkadot/util-crypto"
  */
 
 export const encodeParachainId = (id: number) => {
-  return "0x" + new BN(id).toBuffer("le", 4).toString("hex")
+  return '0x' + new BN(id).toBuffer('le', 4).toString('hex')
 }
 
 /**

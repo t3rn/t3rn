@@ -1,18 +1,18 @@
-import "@polkadot/api-augment" // DO NOT REMOVE THIS LINE
-import { ApiPromise, WsProvider, Keyring } from "@polkadot/api"
-import { cryptoWaitReady } from "@polkadot/util-crypto"
+import '@polkadot/api-augment' // DO NOT REMOVE THIS LINE
+import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
+import { cryptoWaitReady } from '@polkadot/util-crypto'
 
-import types from "./config/types.json"
-import rpc from "./config/rpc.json"
-import { Gateway, initGateways } from "./gateways"
-import * as Utils from "./utils"
-import * as Types from "./types"
+import types from './config/types.json'
+import rpc from './config/rpc.json'
+import { Gateway, initGateways } from './gateways'
+import * as Utils from './utils'
+import * as Types from './types'
 
 // @ts-ignore
-import { T3rnTypesSideEffect } from "@polkadot/types/lookup"
-import * as Encodings from "./encodings"
-import * as Converters from "./converters"
-import { Circuit, Tx } from "./circuit"
+import { T3rnTypesSideEffect } from '@polkadot/types/lookup'
+import * as Encodings from './encodings'
+import * as Converters from './converters'
+import { Circuit, Tx } from './circuit'
 
 /**
  * The main class for the SDK
@@ -44,7 +44,7 @@ export class Sdk {
     exportMode: boolean = false,
   ) {
     this.signer = circuitSigner
-    if (typeof provider === "string") {
+    if (typeof provider === 'string') {
       this.provider = new WsProvider(provider)
     } else {
       this.provider = provider

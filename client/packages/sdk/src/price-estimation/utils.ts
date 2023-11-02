@@ -1,12 +1,12 @@
-import { Target } from "price-estimation"
+import { Target } from 'price-estimation'
 
 export class NativeAssetMap {
-  static DEFAULT_ETH_TARGET_NATIVE_ASSET = "eth"
-  static DEFAULT_SUBSTRATE_TARGET_NATIVE_ASSET = "aca"
+  static DEFAULT_ETH_TARGET_NATIVE_ASSET = 'eth'
+  static DEFAULT_SUBSTRATE_TARGET_NATIVE_ASSET = 'aca'
 
   private static map: Record<Target, string | null> = {
-    eth: "eth",
-    dot: "dot",
+    eth: 'eth',
+    dot: 'dot',
     sepl: null,
     roco: null,
     t0rn: null,
@@ -15,7 +15,7 @@ export class NativeAssetMap {
   public static getFor(target: Target) {
     const value = NativeAssetMap.map[target]
     if (value) return value
-    if (getChainVendor(target) === "substrate") {
+    if (getChainVendor(target) === 'substrate') {
       return NativeAssetMap.DEFAULT_SUBSTRATE_TARGET_NATIVE_ASSET
     }
     return NativeAssetMap.DEFAULT_ETH_TARGET_NATIVE_ASSET
@@ -28,10 +28,10 @@ export class NativeAssetMap {
 
 const getChainVendor = (target: string) => {
   switch (target) {
-    case "eth":
-    case "sepl":
-      return "eth"
+    case 'eth':
+    case 'sepl':
+      return 'eth'
     default:
-      return "substrate"
+      return 'substrate'
   }
 }

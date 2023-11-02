@@ -1,6 +1,6 @@
-import { u8aConcat, u8aToU8a, u8aToHex } from "@polkadot/util"
-import { xxhashAsU8a } from "@polkadot/util-crypto"
-import BN from "bn.js"
+import { u8aConcat, u8aToU8a, u8aToHex } from '@polkadot/util'
+import { xxhashAsU8a } from '@polkadot/util-crypto'
+import BN from 'bn.js'
 const generateArgumentKey = (
   module: string,
   variableName: string,
@@ -12,8 +12,8 @@ const generateArgumentKey = (
 
   if (arg) {
     //if arg is a number, we need to encode it as a hex string
-    if (typeof arg === "number") {
-      arg = "0x" + new BN(arg).toBuffer("le", 4).toString("hex")
+    if (typeof arg === 'number') {
+      arg = '0x' + new BN(arg).toBuffer('le', 4).toString('hex')
     }
 
     let argumentKey = u8aConcat(xxhashAsU8a(arg, 64), u8aToU8a(arg))
