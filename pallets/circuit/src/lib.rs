@@ -1271,23 +1271,6 @@ impl<T: Config> Pallet<T> {
             >,
         > = vec![];
 
-        pub fn determine_security_lvl(
-            gateway_type: GatewayType,
-            sfx_len: usize,
-            preferred_security_lvl: &SecurityLvl,
-        ) -> SecurityLvl {
-            if sfx_len < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
-                return SecurityLvl::Optimistic
-            }
-            if gateway_type == GatewayType::ProgrammableInternal(0)
-                || gateway_type == GatewayType::OnCircuit(0)
-            {
-                SecurityLvl::Escrow
-            } else {
-                SecurityLvl::Optimistic
-            }
-        }
-
         // ToDo: Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
         if side_effects.is_empty() {
             local_ctx.full_side_effects = vec![vec![]];
@@ -1306,9 +1289,15 @@ impl<T: Config> Pallet<T> {
         );
 
         for (index, sfx) in side_effects.iter().enumerate() {
-            let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
+            let gateway_max_security_lvl =
+                <T as Config>::Xdns::get_gateway_max_security_lvl(&sfx.target);
+
             let security_lvl =
-                determine_security_lvl(gateway_type, side_effects.len(), preferred_security_lvl);
+                if side_effects.len() < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
+                    SecurityLvl::Optimistic
+                } else {
+                    gateway_max_security_lvl
+                };
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
