@@ -597,7 +597,6 @@ mod tests {
                 Assets::balance(ASSET_DOT, &requester),
                 EXISTENTIAL_DEPOSIT as Balance
             );
-
         });
     }
 
