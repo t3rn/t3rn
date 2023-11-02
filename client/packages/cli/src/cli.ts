@@ -14,6 +14,10 @@ import { handleXcmTransferCommand } from "./commands/xcmTransfer/index.ts"
 import { handleAssetRegistrationCommand } from "./commands/registerAsset/index.ts"
 import { handleResetGatewayCommand } from "./commands/resetGateway/index.ts"
 import { handleAddSfxAbiCommand } from "@/commands/sfxABI/index.js"
+import {
+  handleFastWriterCommand,
+  handleMockWriterCommand,
+} from "./commands/fastWriter/index.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -53,15 +57,16 @@ program
   .argument("gateway")
   .description("Reset gateway")
   .option("-f, --force", "Force on live chain")
-  .action(wrapCryptoWaitReady(handleResetGatewayCommand)),
-  withExportMode(
-    program
-      .command("purgeGateway")
-      .argument("gateway")
-      .description("Purge a gateway")
-      .option("-f, --force", "Force on live chain")
-      .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
-  )
+  .action(wrapCryptoWaitReady(handleResetGatewayCommand))
+
+withExportMode(
+  program
+    .command("purgeGateway")
+    .argument("gateway")
+    .description("Purge a gateway")
+    .option("-f, --force", "Force on live chain")
+    .action(wrapCryptoWaitReady(handlePurgeGatewayCommand)),
+)
 
 withExportMode(
   program
@@ -187,6 +192,65 @@ withExportMode(
         .requiredOption("--decimals <number>", "The amount of decimals the token has")
         //.requiredOption("--sufficient <>", "Flags whether to create sufficient or non-sufficient asset")
         .action(handleAssetRegistrationCommand)
+)
+
+// example of a new command
+//  pnpm writer --signer //Alice --target-account //Bob --target-asset 1000 --target-amount 100000000000 --reward-asset 0 --max-reward 40 --insurance 0.1 --speed-mode Fast --endpoint ws://localhost:9944 --dest 3333 --repeat 1 --repeat-interval 1
+withExportMode(
+  program
+    .command("writer")
+    .description(
+      "Write batches of SideEffects (SFX) to the chain using the Vacuum pallet",
+    )
+    .requiredOption("--signer <string>", "The signer of the transaction")
+    .requiredOption(
+      "--endpoint <string>",
+      "The RPC endpoint from which the XCM transaction will be submitted",
+    )
+    .requiredOption("--dest <string>", "The destination chain")
+    .requiredOption("--source <string>", "The source chain")
+    .requiredOption("--target-asset <number>", "Target asset ID (u32)")
+    .requiredOption("--target-account <string>", "The recipient address")
+    .requiredOption(
+      "--target-amount <number>",
+      "The amount of the target asset",
+    )
+    .requiredOption("--reward-asset <number>", "The reward asset ID (u32)")
+    .requiredOption("--max-reward <number>", "The maximum reward")
+    .requiredOption("--insurance <number>", "The insurance amount")
+    .requiredOption("--speed-mode <string>", "The speed mode")
+    .option("--as-utility-batch", "Send as a utility::batch call")
+    .option("--as-sequential-tx", "Send as a sequence of transactions")
+    .option("--as-multi-sfx", "Send as an XTX containing multiple of SFXs")
+    .option("--repeat <number>", "Repeat the transaction")
+    .option(
+      "--repeat-interval <number>",
+      "Repeat the transaction every x seconds",
+    )
+    .action(handleFastWriterCommand),
+)
+
+// example of a new command
+//  pnpm writer --signer //Alice --target-account //Bob --target-asset 1000 --target-amount 100000000000 --reward-asset 0 --max-reward 40 --insurance 0.1 --speed-mode Fast --endpoint ws://localhost:9944 --dest 3333 --repeat 1 --repeat-interval 1
+withExportMode(
+  program
+    .command("mockWriter")
+    .description(
+      "Mock test Write batches of SideEffects (SFX) to the chain using the Vacuum pallet",
+    )
+    .option(
+      "--repeat <number>",
+      "Repeat the transaction x times as utility::batch calls",
+    )
+    .option(
+      "--as-multi-sfx",
+      "Repeat the transaction x times as utility::batch calls",
+    )
+    .option(
+      "--as-sequential-tx",
+      "Repeat the transaction x times as utility::batch calls",
+    )
+    .action(handleMockWriterCommand),
 )
 
 program.parse(process.argv)

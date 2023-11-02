@@ -120,11 +120,7 @@ export const handleAddSfxAbiCommand = async (
 
           spinner.fail(colorLogMsg("ERROR", status.type))
           process.exit(1)
-        } else if (
-          status.isInBlock ||
-          status.isFinalized ||
-          status.isReady
-        ) {
+        } else if (status.isInBlock || status.isFinalized || status.isReady) {
           // check if we have an error event in a custom module
           events.forEach((eventEntry) => {
             const eventEntryParsed = JSON.parse(JSON.stringify(eventEntry))
