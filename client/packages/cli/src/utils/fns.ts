@@ -1,13 +1,13 @@
-import z from "zod"
-import figlet from "figlet"
-import cleanStack from "clean-stack"
-import { cryptoWaitReady } from "@t3rn/sdk"
-import { CONFIG_FILE } from "@/consts.ts"
-import { log } from "./log.ts"
+import z from 'zod'
+import figlet from 'figlet'
+import cleanStack from 'clean-stack'
+import { cryptoWaitReady } from '@t3rn/sdk'
+import { CONFIG_FILE } from '@/consts.ts'
+import { log } from './log.ts'
 
 export const greet = () =>
-  figlet.textSync("t3rn CLI", {
-    font: "3D-ASCII",
+  figlet.textSync('t3rn CLI', {
+    font: '3D-ASCII',
   })
 
 export const validate = <T>(
@@ -22,18 +22,18 @@ export const validate = <T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       log(
-        "ERROR",
-        "Invalid configuration provided in " +
+        'ERROR',
+        'Invalid configuration provided in ' +
           configFileName +
-          ". Please review and make the necessary changes. \n" +
-          "Validation failed with the following errors: \n" +
+          '. Please review and make the necessary changes. \n' +
+          'Validation failed with the following errors: \n' +
           error.errors
-            .map((e) => `• ${e.message} (path: ${e.path.join(".")})`)
-            .join("\n")
+            .map((e) => `• ${e.message} (path: ${e.path.join('.')})`)
+            .join('\n')
             .trim(),
       )
     } else {
-      log("ERROR", "An unexpected error occurred: " + cleanStack(error.message))
+      log('ERROR', 'An unexpected error occurred: ' + cleanStack(error.message))
     }
   }
 }
@@ -49,9 +49,9 @@ export const wrapCryptoWaitReady =
       if (isReady) {
         cb(...args)
       } else {
-        throw new Error("Oops! @polkadot/wasm-crypto module is not ready")
+        throw new Error('Oops! @polkadot/wasm-crypto module is not ready')
       }
     } catch (err) {
-      log("ERROR", cleanStack(err.message))
+      log('ERROR', cleanStack(err.message))
     }
   }

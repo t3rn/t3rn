@@ -1,16 +1,16 @@
-import "@t3rn/types"
-import { ApiPromise } from "@t3rn/sdk"
-import { EventEmitter } from "events"
-import { readSfxFile } from "@/utils/sfx.ts"
-import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
-import { validate } from "./fns.ts"
+import '@t3rn/types'
+import { ApiPromise } from '@t3rn/sdk'
+import { EventEmitter } from 'events'
+import { readSfxFile } from '@/utils/sfx.ts'
+import { ExtrinsicSchema, Extrinsic } from '@/schemas/extrinsic.ts'
+import { validate } from './fns.ts'
 
 export enum ErrorMode {
-  NoBidders = "NoBidders",
-  ConfirmationTimeout = "ConfirmationTimeout",
-  InvalidProof = "InvalidProof",
-  InvalidExecutionValidProof = "InvalidExecutionValidProof",
-  None = "None",
+  NoBidders = 'NoBidders',
+  ConfirmationTimeout = 'ConfirmationTimeout',
+  InvalidProof = 'InvalidProof',
+  InvalidExecutionValidProof = 'InvalidExecutionValidProof',
+  None = 'None',
 }
 
 /**
@@ -109,7 +109,7 @@ export class ErrorListener extends EventEmitter {
     this.client.query.system.events((notifications) => {
       notifications.forEach((notification) => {
         switch (notification.event.method) {
-          case "NewSideEffectsAvailable": {
+          case 'NewSideEffectsAvailable': {
             emitEvent(
               this,
               ListenerEvents.NewSideEffectsAvailable,
@@ -117,11 +117,11 @@ export class ErrorListener extends EventEmitter {
             )
             break
           }
-          case "SFXNewBidReceived": {
+          case 'SFXNewBidReceived': {
             emitEvent(this, ListenerEvents.SFXNewBidReceived, notification)
             break
           }
-          case "XTransactionReadyForExec": {
+          case 'XTransactionReadyForExec': {
             emitEvent(
               this,
               ListenerEvents.XTransactionReadyForExec,
@@ -129,31 +129,31 @@ export class ErrorListener extends EventEmitter {
             )
             break
           }
-          case "HeadersAdded": {
-            console.log("🎶 Emiting event: ", notification.toHuman())
+          case 'HeadersAdded': {
+            console.log('🎶 Emiting event: ', notification.toHuman())
             let vendor
-            if (notification.event.section === "rococoBridge") {
-              vendor = "Rococo"
+            if (notification.event.section === 'rococoBridge') {
+              vendor = 'Rococo'
             }
             const data = {
               vendor,
               height: parseInt(notification.event.data[0].toString()),
             }
-            this.emit("Event", <ListenerEventData>{
+            this.emit('Event', <ListenerEventData>{
               type: ListenerEvents.HeaderSubmitted,
               data,
             })
             break
           }
-          case "SideEffectConfirmed": {
+          case 'SideEffectConfirmed': {
             emitEvent(this, ListenerEvents.SideEffectConfirmed, notification)
             break
           }
-          case "XTransactionXtxFinishedExecAllSteps": {
+          case 'XTransactionXtxFinishedExecAllSteps': {
             emitEvent(this, ListenerEvents.XtxCompleted, notification)
             break
           }
-          case "XTransactionXtxDroppedAtBidding": {
+          case 'XTransactionXtxDroppedAtBidding': {
             emitEvent(
               this,
               ListenerEvents.DroppedAtBidding,
@@ -162,7 +162,7 @@ export class ErrorListener extends EventEmitter {
             )
             break
           }
-          case "XTransactionXtxRevertedAfterTimeOut": {
+          case 'XTransactionXtxRevertedAfterTimeOut': {
             emitEvent(
               this,
               ListenerEvents.RevertTimedOut,
@@ -195,12 +195,12 @@ const emitEvent = (
   notification: unknown,
   error = ErrorMode.None,
 ) => {
-  listener.emit("event", <ListenerEventData>{
+  listener.emit('event', <ListenerEventData>{
     type: event,
     data: (
       notification as {
         event: {
-          data: ListenerEventData["data"]
+          data: ListenerEventData['data']
         }
       }
     ).event.data,

@@ -1,4 +1,4 @@
-import { ApiPromise, Sdk } from "@t3rn/sdk"
+import { ApiPromise, Sdk } from '@t3rn/sdk'
 export class Order {
   dest: string
   asset: number

@@ -1,20 +1,20 @@
-import { Args } from "@/types.ts"
-import { log } from "@/utils/log.ts"
-import "@t3rn/types"
-import ora from "ora"
-import { colorLogMsg } from "@/utils/log.ts"
-import { createCircuitContext } from "@/utils/circuit.ts"
+import { Args } from '@/types.ts'
+import { log } from '@/utils/log.ts'
+import '@t3rn/types'
+import ora from 'ora'
+import { colorLogMsg } from '@/utils/log.ts'
+import { createCircuitContext } from '@/utils/circuit.ts'
 
 export const spinner = ora()
 
 export const handlePurgeGatewayCommand = async (
-  args: Args<"gateway" | "export">,
+  args: Args<'gateway' | 'export'>,
   options: { [key: string]: any },
 ) => {
-  log("INFO", `Purging ${args} gateway...`)
+  log('INFO', `Purging ${args} gateway...`)
 
   if (!args) {
-    log("ERROR", "No vendor provided!")
+    log('ERROR', 'No vendor provided!')
     process.exit(1)
   }
 
@@ -22,14 +22,14 @@ export const handlePurgeGatewayCommand = async (
 
   if (
     ![
-      "ws://localhost:9944",
-      "ws://0.0.0.0:9944",
-      "ws://127.0.0.1:9944",
+      'ws://localhost:9944',
+      'ws://0.0.0.0:9944',
+      'ws://127.0.0.1:9944',
     ].includes(endpoint) &&
     !options.force
   ) {
     log(
-      "ERROR",
+      'ERROR',
       `Circuit endpoint is not localhost:9944. We don't want to purge live gateway! Aborting.`,
     )
     process.exit(1)
@@ -43,16 +43,16 @@ export const handlePurgeGatewayCommand = async (
       ),
     )
 
-    spinner.succeed(colorLogMsg("SUCCESS", `Gateway purged`))
+    spinner.succeed(colorLogMsg('SUCCESS', `Gateway purged`))
     spinner.stopAndPersist({
-      symbol: "🎉",
-      text: colorLogMsg("SUCCESS", `Gateway purged`),
+      symbol: '🎉',
+      text: colorLogMsg('SUCCESS', `Gateway purged`),
     })
     spinner.stop()
 
     process.exit(0)
   } catch (error) {
-    spinner.fail(colorLogMsg("ERROR", `Gateway purge failed! ${error}`))
+    spinner.fail(colorLogMsg('ERROR', `Gateway purge failed! ${error}`))
     process.exit(1)
   }
 }

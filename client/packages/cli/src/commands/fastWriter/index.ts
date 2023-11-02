@@ -1,7 +1,7 @@
-import ora from "ora"
-import { Args } from "@/types.ts"
-import { validate } from "@/utils/fns.ts"
-import { colorLogMsg } from "@/utils/log.ts"
+import ora from 'ora'
+import { Args } from '@/types.ts'
+import { validate } from '@/utils/fns.ts'
+import { colorLogMsg } from '@/utils/log.ts'
 
 import {
   ApiPromise,
@@ -9,38 +9,38 @@ import {
   Keyring,
   cryptoWaitReady,
   Sdk,
-} from "@t3rn/sdk"
-import { FastWriterSchema } from "@/schemas/fastWriter.ts"
-import { createCircuitContext } from "@/utils/circuit.ts"
+} from '@t3rn/sdk'
+import { FastWriterSchema } from '@/schemas/fastWriter.ts'
+import { createCircuitContext } from '@/utils/circuit.ts'
 import {
   build_tx_batch_single_order,
   Order,
   build_tx_vacuum_single_order,
   build_tx_vacuum_multi_order,
-} from "@/commands/fastWriter/tx_builder.ts"
-import * as assert from "assert"
+} from '@/commands/fastWriter/tx_builder.ts'
+import * as assert from 'assert'
 
 export const spinner = ora()
 
 export const handleFastWriterCommand = async (
   _args: Args<
-    | "signer"
-    | "endpoint"
-    | "dest"
-    | "source"
-    | "recipient"
-    | "targetAsset"
-    | "targetAmount"
-    | "rewardAsset"
-    | "maxReward"
-    | "insurance"
-    | "type"
-    | "speedMode"
-    | "asUtilityBatch"
-    | "asSequentialTx"
-    | "asMultiSfx"
-    | "repeat"
-    | "repeatInterval"
+    | 'signer'
+    | 'endpoint'
+    | 'dest'
+    | 'source'
+    | 'recipient'
+    | 'targetAsset'
+    | 'targetAmount'
+    | 'rewardAsset'
+    | 'maxReward'
+    | 'insurance'
+    | 'type'
+    | 'speedMode'
+    | 'asUtilityBatch'
+    | 'asSequentialTx'
+    | 'asMultiSfx'
+    | 'repeat'
+    | 'repeatInterval'
   >,
 ) => {
   const args = validate(FastWriterSchema, {
@@ -62,26 +62,26 @@ export const handleFastWriterCommand = async (
 
   let speedMode = 3
   if (
-    args.speedMode == "fast" ||
-    args.speedMode == "3" ||
-    args.speedMode == "Fast"
+    args.speedMode == 'fast' ||
+    args.speedMode == '3' ||
+    args.speedMode == 'Fast'
   ) {
     speedMode = 0
   } else if (
-    args.speedMode == "rational" ||
-    args.speedMode == "2" ||
-    args.speedMode == "Rational"
+    args.speedMode == 'rational' ||
+    args.speedMode == '2' ||
+    args.speedMode == 'Rational'
   ) {
     speedMode = 1
   } else if (
-    args.speedMode == "finalized" ||
-    args.speedMode == "1" ||
-    args.speedMode == "Finalized"
+    args.speedMode == 'finalized' ||
+    args.speedMode == '1' ||
+    args.speedMode == 'Finalized'
   ) {
     speedMode = 2
   }
 
-  spinner.text = "Warm-up checks for Fast Writer... \n"
+  spinner.text = 'Warm-up checks for Fast Writer... \n'
   spinner.start()
 
   await cryptoWaitReady()
@@ -136,32 +136,32 @@ export const handleFastWriterCommand = async (
   if (args.repeatInterval) {
     const repeatInterval = args.repeatInterval * 1000
 
-    if (args.source == "roco") {
+    if (args.source == 'roco') {
       spinner.text = `Writing to Vacuum every ${repeatInterval}ms... \n`
       spinner.start()
       setInterval(writeToVacuum, repeatInterval)
-    } else if (args.source == "sepl") {
-      console.log("sepl")
+    } else if (args.source == 'sepl') {
+      console.log('sepl')
       // TODO: implement sepl
     } else {
-      console.log("source not supported")
+      console.log('source not supported')
     }
     spinner.text = `Writing to Vacuum every ${repeatInterval}ms... \n`
     spinner.start()
     setInterval(writeToVacuum, repeatInterval)
   } else {
-    if (args.source == "roco") {
+    if (args.source == 'roco') {
       await writeToVacuum()
-    } else if (args.source == "sepl") {
-      console.log("sepl")
+    } else if (args.source == 'sepl') {
+      console.log('sepl')
     } else {
-      console.log("source not supported")
+      console.log('source not supported')
     }
   }
 
   spinner.stopAndPersist({
-    symbol: "🎉",
-    text: colorLogMsg("SUCCESS", `Parsed arguments: ${JSON.stringify(args)}`),
+    symbol: '🎉',
+    text: colorLogMsg('SUCCESS', `Parsed arguments: ${JSON.stringify(args)}`),
   })
   spinner.stop()
 
@@ -169,7 +169,7 @@ export const handleFastWriterCommand = async (
 }
 
 export const handleMockWriterCommand = async (
-  _args: Args<"repeat" | "asSequentialTx" | "asMultiSfx">,
+  _args: Args<'repeat' | 'asSequentialTx' | 'asMultiSfx'>,
 ) => {
   const args = {
     ..._args,
@@ -178,28 +178,28 @@ export const handleMockWriterCommand = async (
     multi: !!_args?.asMultiSfx,
   }
 
-  spinner.text = "Warm-up checks for Mock Fast Writer... \n"
+  spinner.text = 'Warm-up checks for Mock Fast Writer... \n'
   spinner.start()
 
-  spinner.text = "Running on args " + JSON.stringify(args) + "\n"
+  spinner.text = 'Running on args ' + JSON.stringify(args) + '\n'
 
   await cryptoWaitReady()
 
   if (args.single) {
-    await mock_test_single_order("ws://localhost:9944", "//Alice", "roco", 0)
+    await mock_test_single_order('ws://localhost:9944', '//Alice', 'roco', 0)
   } else if (args.repeat > 0 && args.multi) {
     await mock_test_multi_order(
-      "ws://localhost:9944",
-      "//Alice",
-      "roco",
+      'ws://localhost:9944',
+      '//Alice',
+      'roco',
       0,
       args.repeat,
     )
   } else if (args.repeat > 0) {
     await mock_test_batch_order(
-      "ws://localhost:9944",
-      "//Alice",
-      "roco",
+      'ws://localhost:9944',
+      '//Alice',
+      'roco',
       0,
       args.repeat,
     )
@@ -209,8 +209,8 @@ export const handleMockWriterCommand = async (
   await new Promise((resolve) => setTimeout(resolve, 30000))
 
   spinner.stopAndPersist({
-    symbol: "🎉",
-    text: colorLogMsg("SUCCESS", `Parsed arguments: ${JSON.stringify(args)}`),
+    symbol: '🎉',
+    text: colorLogMsg('SUCCESS', `Parsed arguments: ${JSON.stringify(args)}`),
   })
   spinner.stop()
 
@@ -224,7 +224,7 @@ export const mock_test_multi_order = async (
   asset: number,
   repeat: number,
 ) => {
-  const keyring = new Keyring({ type: "sr25519" })
+  const keyring = new Keyring({ type: 'sr25519' })
   const signer = keyring.addFromMnemonic(signer_in)
   const sdk = new Sdk(endpoint, signer, false)
   const circuit = await sdk.init()
@@ -251,7 +251,7 @@ export const mock_test_batch_order = async (
   asset: number,
   repeat: number,
 ) => {
-  const keyring = new Keyring({ type: "sr25519" })
+  const keyring = new Keyring({ type: 'sr25519' })
 
   const signer = keyring.addFromMnemonic(signer_in)
   const sdk = new Sdk(endpoint, signer, false)
@@ -278,7 +278,7 @@ export const mock_test_single_order = async (
   dest: string,
   asset: number,
 ) => {
-  const keyring = new Keyring({ type: "sr25519" })
+  const keyring = new Keyring({ type: 'sr25519' })
   const signer = keyring.addFromMnemonic(signer_in)
   const sdk = new Sdk(endpoint, signer, false)
   const circuit = await sdk.init()

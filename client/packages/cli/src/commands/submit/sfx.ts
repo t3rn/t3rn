@@ -1,11 +1,11 @@
-import "@t3rn/types"
-import ora from "ora"
-import { validate } from "@/utils/fns.ts"
-import { colorLogMsg } from "@/utils/log.ts"
-import { ExtrinsicSchema } from "@/schemas/extrinsic.ts"
-import { readSfxFile, submitSfx } from "@/utils/sfx.ts"
-import { initTransferFile } from "@/commands/init.ts"
-import fs from "fs"
+import '@t3rn/types'
+import ora from 'ora'
+import { validate } from '@/utils/fns.ts'
+import { colorLogMsg } from '@/utils/log.ts'
+import { ExtrinsicSchema } from '@/schemas/extrinsic.ts'
+import { readSfxFile, submitSfx } from '@/utils/sfx.ts'
+import { initTransferFile } from '@/commands/init.ts'
+import fs from 'fs'
 
 export const spinner = ora()
 
@@ -30,16 +30,16 @@ export const handleSubmitSfxCmd = async (
     process.exit(1)
   }
 
-  spinner.text = "Submitting extrinsic..."
+  spinner.text = 'Submitting extrinsic...'
   spinner.info(`Extrinsic: ${JSON.stringify(extrinsic)}`)
   spinner.start()
 
   try {
     const submissionHeight = await submitSfx(extrinsic, exportMode)
     spinner.stopAndPersist({
-      symbol: "🚀",
+      symbol: '🚀',
       text: colorLogMsg(
-        "SUCCESS",
+        'SUCCESS',
         `Extrinsic submitted at block #${submissionHeight}`,
       ),
     })
