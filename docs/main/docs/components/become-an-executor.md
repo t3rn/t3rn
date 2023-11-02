@@ -24,7 +24,7 @@ Clone the [t3rn repo](https://github.com/t3rn/t3rn/tree/development/client/packa
 
 ## Step 3 - Configure your Executor
 
-Configure your Executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc` and using with [direnv](https://github.com/direnv/direnv#how-it-works).
+Configure your Executor by editing `.envrc-example` and changing the values to your liking, renaming it to `.envrc`.
 
 <p align="center">
     <img height="150" src="/img/envrc.png?raw=true"/>
@@ -32,14 +32,7 @@ Configure your Executor by editing `.envrc-example` and changing the values to y
 
 ## Step 4 - Run Executor
 
-Run the command below and add your keys as in the example.
-Run `CIRCUIT_SIGNER_KEY=abc RELAYCHAIN_SIGNER_KEY=xyz pnpm start`.
-
-<p align="center">
-    <img height="150" src="/img/run-executor-w-keys.png?raw=true"/>
-</p>
-
-If you’ve configured your `.envrc` file, then simply run `pnpm start`.
+Now that you’ve configured your `.envrc` file, simply run `pnpm start`.
 
 <p align="center">
     <img height="150" src="/img/run-executor.png?raw=true"/>
