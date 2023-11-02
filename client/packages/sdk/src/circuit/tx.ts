@@ -93,7 +93,7 @@ export class Tx {
       exportObj = new ExtrinsicExport(tx, this.signer.address)
     }
 
-    return new Promise((resolve, reject) =>
+    const blockHash = await new Promise((resolve, reject) =>
       tx.signAndSend(
         this.signer,
         { nonce },
@@ -146,14 +146,13 @@ export class Tx {
           }
         },
       ),
-    ).then((blockHash: string) => {
-      return this.api.rpc.chain.getBlock(blockHash).then((r) => {
-        const number = r.block.header.number
+    ) as string
 
-        exportObj?.addSubmissionHeight(number.toNumber()).toFile()
-        return number.toString()
-      })
-    })
+    const res = await this.api.rpc.chain.getBlock(blockHash)
+    const number = res.block.header.number
+
+    exportObj?.addSubmissionHeight(number.toNumber()).toFile()
+    return number.toString()
   }
 
   async signAndSendRaw(tx: SubmittableExtrinsic): Promise<any> {
