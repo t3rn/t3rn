@@ -670,4 +670,12 @@ mod tests {
     fn supply_is_right() {
         assert_eq!(SUPPLY, 100_000_000_000_000_000_000);
     }
+
+    #[test]
+    fn should_match_correct_aura_keys_for_t0rn() {
+        assert_eq!(
+            get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW").encode(),
+            hex!("902c7861618ce57396b7052b9ca769f7ea38cdf7d6287783e11e7ac740423942").to_vec()
+        );
+    }
 }
