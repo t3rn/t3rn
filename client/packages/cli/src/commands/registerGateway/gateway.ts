@@ -1,7 +1,7 @@
-import "@t3rn/types"
-import ora from "ora"
-import { ApiPromise } from "@t3rn/sdk"
-import { createType } from "@t3rn/types"
+import '@t3rn/types'
+import ora from 'ora'
+import { ApiPromise } from '@t3rn/sdk'
+import { createType } from '@t3rn/types'
 //@ts-ignore - TS doesn't know about the type
 import {
   //@ts-ignore - TS doesn't know about the type
@@ -11,13 +11,13 @@ import {
   //@ts-ignore - TS doesn't know about the type
   T3rnAbiRecodeCodec,
   //@ts-ignore - TS doesn't know about the type
-} from "@polkadot/types/lookup"
-import { Gateway } from "@/schemas/setup.ts"
-import { colorLogMsg, log } from "@/utils/log.ts"
-import { createCircuitContext } from "@/utils/circuit.ts"
-import { getConfig } from "@/utils/config.ts"
-import { registerSubstrateVerificationVendor } from "./vendors/substrate.ts"
-import { registerEthereumVerificationVendor } from "./vendors/eth.ts"
+} from '@polkadot/types/lookup'
+import { Gateway } from '@/schemas/setup.ts'
+import { colorLogMsg, log } from '@/utils/log.ts'
+import { createCircuitContext } from '@/utils/circuit.ts'
+import { getConfig } from '@/utils/config.ts'
+import { registerSubstrateVerificationVendor } from './vendors/substrate.ts'
+import { registerEthereumVerificationVendor } from './vendors/eth.ts'
 
 export const spinner = ora()
 
@@ -35,10 +35,10 @@ export const handleRegisterGateway = async (
   )
 
   if (!foundGateway) {
-    log("ERROR", `Gateway ID ${gatewayId} not found in config file`)
+    log('ERROR', `Gateway ID ${gatewayId} not found in config file`)
     process.exit(1)
   }
-  console.log("Found gateway!", foundGateway)
+  console.log('Found gateway!', foundGateway)
 
   spinner.text = `Registering ${foundGateway.name} gateway...`
   spinner.start()
@@ -52,28 +52,28 @@ const registerGateway = async (
 ) => {
   const { circuit, sdk } = await createCircuitContext(exportMode)
 
-  const gatewayId = createType("[u8; 4]", gatewayData.id)
-  const tokenId = createType("u32", gatewayData.tokenId)
+  const gatewayId = createType('[u8; 4]', gatewayData.id)
+  const tokenId = createType('u32', gatewayData.tokenId)
   const verificationVendor: T3rnPrimitivesGatewayVendor = createType(
-    "T3rnPrimitivesGatewayVendor",
+    'T3rnPrimitivesGatewayVendor',
     gatewayData.registrationData.verificationVendor as never,
   )
   const executionVendor: T3rnPrimitivesExecutionVendor = createType(
-    "T3rnPrimitivesExecutionVendor",
+    'T3rnPrimitivesExecutionVendor',
     gatewayData.registrationData.executionVendor as never,
   )
   const codec: T3rnAbiRecodeCodec = createType(
-    "T3rnAbiRecodeCodec",
+    'T3rnAbiRecodeCodec',
     gatewayData.registrationData.runtimeCodec as never,
   )
   const registrant = null
   const escrowAccounts = null
   const allowedSideEffects = circuit.createType(
-    "Vec<AllowedSideEffect>",
+    'Vec<AllowedSideEffect>',
     gatewayData.registrationData.allowedSideEffects,
   )
   const tokenInfo = circuit.createType(
-    "TokenInfo",
+    'TokenInfo',
     gatewayData.registrationData.tokenInfo,
   )
 
@@ -86,7 +86,7 @@ const registerGateway = async (
       )
     }
 
-    spinner.succeed(colorLogMsg("SUCCESS", "Fetched registration data"))
+    spinner.succeed(colorLogMsg('SUCCESS', 'Fetched registration data'))
     spinner.start()
 
     const tx = circuit.tx.portal.registerGateway(
@@ -110,11 +110,11 @@ const registerGateway = async (
     )
 
     spinner.succeed(
-      colorLogMsg("SUCCESS", `Gateway registration tx sent ${response}`),
+      colorLogMsg('SUCCESS', `Gateway registration tx sent ${response}`),
     )
     spinner.stopAndPersist({
-      symbol: "🎉",
-      text: colorLogMsg("SUCCESS", `${gatewayData.name} gateway registered!`),
+      symbol: '🎉',
+      text: colorLogMsg('SUCCESS', `${gatewayData.name} gateway registered!`),
     })
     spinner.stop()
 
@@ -122,7 +122,7 @@ const registerGateway = async (
   } catch (error) {
     spinner.fail(
       colorLogMsg(
-        "ERROR",
+        'ERROR',
         `${gatewayData.name} gateway registration failed! ${error}`,
       ),
     )
@@ -135,11 +135,11 @@ const getRegistrationData = (
   gatewayData: Required<Gateway>,
 ) => {
   switch (gatewayData.registrationData.executionVendor) {
-    case "Substrate":
+    case 'Substrate':
       return registerSubstrateVerificationVendor(circuit, gatewayData)
-    case "Ethereum":
+    case 'Ethereum':
       return registerEthereumVerificationVendor(circuit)
     default:
-      throw new Error("Registration for verification vendor not available!")
+      throw new Error('Registration for verification vendor not available!')
   }
 }

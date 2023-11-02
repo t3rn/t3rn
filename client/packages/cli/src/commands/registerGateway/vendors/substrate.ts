@@ -1,8 +1,8 @@
-import fetch from "node-fetch"
-import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
-import { Gateway } from "@/schemas/setup.ts"
-import { spinner } from "../gateway.ts"
-import { colorLogMsg } from "@/utils/log.ts"
+import fetch from 'node-fetch'
+import { Encodings, ApiPromise, WsProvider } from '@t3rn/sdk'
+import { Gateway } from '@/schemas/setup.ts'
+import { spinner } from '../gateway.ts'
+import { colorLogMsg } from '@/utils/log.ts'
 
 export const registerSubstrateVerificationVendor = async (
   circuit: ApiPromise,
@@ -38,14 +38,14 @@ const registerRelaychain = async (
 
   spinner.info(
     colorLogMsg(
-      "INFO",
+      'INFO',
       `Registering Block #${registrationHeader.number.toNumber()}`,
     ),
   )
   spinner.start()
 
   return circuit
-    .createType("RelaychainRegistrationData", [
+    .createType('RelaychainRegistrationData', [
       registrationHeader.toHex(),
       Array.from(authorities),
       authoritySetId,
@@ -59,7 +59,7 @@ const registerParachain = async (
   gatewayData: Required<Gateway>,
 ) =>
   circuit
-    .createType("ParachainRegistrationData", [
+    .createType('ParachainRegistrationData', [
       gatewayData.registrationData.parachain.relayChainId,
       gatewayData.registrationData.parachain.id,
     ])
@@ -93,8 +93,8 @@ const fetchPortalConsensusData = async (
   const authoritySetId = await targetAt.query.grandpa.currentSetId()
   return {
     registrationHeader,
-    authorities: circuit.createType("Vec<AccountId>", authorities),
-    authoritySetId: circuit.createType("SetId", authoritySetId),
+    authorities: circuit.createType('Vec<AccountId>', authorities),
+    authoritySetId: circuit.createType('SetId', authoritySetId),
   }
 }
 
@@ -103,17 +103,17 @@ export const fetchLatestAuthoritySetUpdateBlock = async (
 ) => {
   try {
     const response = await fetch(
-      subscanIndexerApiEndpoint + "/api/scan/events",
+      subscanIndexerApiEndpoint + '/api/scan/events',
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "text/json",
+          'Content-Type': 'text/json',
         },
         body: JSON.stringify({
           row: 20,
           page: 0,
-          module: "grandpa",
-          call: "newauthorities",
+          module: 'grandpa',
+          call: 'newauthorities',
         }),
       },
     )
@@ -126,12 +126,12 @@ export const fetchLatestAuthoritySetUpdateBlock = async (
     }
 
     if (response.status !== 200) {
-      throw new Error("Subscan indexer API error")
+      throw new Error('Subscan indexer API error')
     }
 
     return responseData.data.events.map((entry) => entry.block_num)[0]
   } catch (error) {
-    spinner.fail(colorLogMsg("ERROR", error))
+    spinner.fail(colorLogMsg('ERROR', error))
     spinner.start()
   }
 }

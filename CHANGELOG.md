@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.70.1-rc.0] - 2023-11-02
+### :wrench: Chores
+- [`4563cf7`](https://github.com/t3rn/t3rn/commit/4563cf73e367490aed828707c4b1d19825ad79f5) - add extrinsic for linking token to gateways *(PR [#1419](https://github.com/t3rn/t3rn/pull/1419) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.70.0-rc.0] - 2023-11-02
 ### :sparkles: New Features
 - [`f66fd15`](https://github.com/t3rn/t3rn/commit/f66fd1523da1362e0203666ba0e27d30245fa54e) - add command to build executor binaries for linux, macOS and window (x64 and arm64) targets *(PR [#1420](https://github.com/t3rn/t3rn/pull/1420) by [@ahkohd](https://github.com/ahkohd))*
@@ -1853,3 +1858,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.69.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.68.0-rc.0...v1.69.0-rc.0
 [v1.69.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.69.0-rc.0...v1.69.1-rc.0
 [v1.70.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.69.1-rc.0...v1.70.0-rc.0
+[v1.70.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.0-rc.0...v1.70.1-rc.0

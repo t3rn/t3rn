@@ -1,12 +1,12 @@
-import ora from "ora"
-import fetch from "node-fetch"
-import { SingleBar, Presets } from "cli-progress"
-import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
-import { getConfig } from "@/utils/config.ts"
-import { colorLogMsg, log } from "@/utils/log.ts"
-import { createCircuitContext } from "@/utils/circuit.ts"
-import { Gateway } from "@/schemas/setup.ts"
-import { Circuit } from "@/types.ts"
+import ora from 'ora'
+import fetch from 'node-fetch'
+import { SingleBar, Presets } from 'cli-progress'
+import { Encodings, ApiPromise, WsProvider } from '@t3rn/sdk'
+import { getConfig } from '@/utils/config.ts'
+import { colorLogMsg, log } from '@/utils/log.ts'
+import { createCircuitContext } from '@/utils/circuit.ts'
+import { Gateway } from '@/schemas/setup.ts'
+import { Circuit } from '@/types.ts'
 
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
@@ -22,12 +22,12 @@ export const handleSubmitHeadersCmd = async (
 
   const gateway = config.gateways.find((g) => g.id === gatewayId)
   if (!gateway) {
-    log("ERROR", `Gateway with id ${gatewayId} not found in config`)
+    log('ERROR', `Gateway with id ${gatewayId} not found in config`)
     process.exit(1)
   }
 
   if (gateway.registrationData.parachain) {
-    log("ERROR", "Headers can only be submitted for a relaychain not parachain")
+    log('ERROR', 'Headers can only be submitted for a relaychain not parachain')
     process.exit(1)
   }
 
@@ -51,13 +51,13 @@ export const handleSubmitHeadersCmd = async (
     await sdk.circuit.tx.signAndSendSafe(tx)
 
     spinner.succeed(
-      colorLogMsg("SUCCESS", `Header range submitted for ${gatewayId}!`),
+      colorLogMsg('SUCCESS', `Header range submitted for ${gatewayId}!`),
     )
     process.exit(0)
   } catch (e) {
     spinner.fail(
       colorLogMsg(
-        "ERROR",
+        'ERROR',
         `Failed to submit headers for ${gateway.name}: ${e}`,
       ),
     )
@@ -67,7 +67,7 @@ export const handleSubmitHeadersCmd = async (
 
 export const getHeaders = async (circuit: Circuit, gateway: Gateway) => {
   switch (gateway.registrationData.executionVendor) {
-    case "Substrate": {
+    case 'Substrate': {
       const targetApi = await ApiPromise.create({
         provider: new WsProvider(gateway.rpc),
       })
@@ -94,13 +94,13 @@ export const getBridge = (circuit: Circuit, gatewayId: string) => {
 
   const verificationVendor = gateway.registrationData.verificationVendor
   switch (verificationVendor) {
-    case "Kusama":
+    case 'Kusama':
       return circuit.tx.kusamaBridge
-    case "Rococo":
+    case 'Rococo':
       return circuit.tx.rococoBridge
-    case "Polkadot":
+    case 'Polkadot':
       return circuit.tx.polkadotBridge
-    case "Sepolia":
+    case 'Sepolia':
       return circuit.tx.sepoliaBridge
   }
 }
@@ -128,18 +128,18 @@ const getRelayChainHeaders = async (
 const getGatewayHeight = async (gatewayId: string) => {
   // TODO: replace with WS
   const body = {
-    jsonrpc: "2.0",
-    method: "portal_fetchHeadHeight",
+    jsonrpc: '2.0',
+    method: 'portal_fetchHeadHeight',
     params: [Array.from(new TextEncoder().encode(gatewayId))],
     id: 1,
   }
 
   const response = await fetch(
-    process.env.CIRCUIT_RPC_ENDPOINT || "http://localhost:9944",
+    process.env.CIRCUIT_RPC_ENDPOINT || 'http://localhost:9944',
     {
-      method: "post",
+      method: 'post',
       body: JSON.stringify(body),
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     },
   )
   const responseData = (await response.json()) as {
@@ -150,7 +150,7 @@ const getGatewayHeight = async (gatewayId: string) => {
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Get gateway height RPC response error, status: " + response.status,
+      'Oops! Get gateway height RPC response error, status: ' + response.status,
     )
   }
 
@@ -173,7 +173,7 @@ const generateBatchProof = async (
 ) => {
   const transactionArguments = []
   const logMsg = {
-    type: "RELAYCHAIN",
+    type: 'RELAYCHAIN',
     gatewayId,
     latestCircuit: from,
     latestTarget: to,
@@ -182,7 +182,7 @@ const generateBatchProof = async (
 
   spinner.info(
     colorLogMsg(
-      "INFO",
+      'INFO',
       `Obtaining batch proofs for ${gatewayId} from Block #${from} to #${to}`,
     ),
   )
@@ -200,7 +200,7 @@ const generateBatchProof = async (
     // query from header again, as its not part of the proof then concat
     headers = [await getTargetHeader(target, from), ...headers]
 
-    const range = circuit.createType("Vec<Header>", headers)
+    const range = circuit.createType('Vec<Header>', headers)
 
     logMsg.batches.push({
       // @ts-ignore - TS doesn't know that range is a Vec<Header>
@@ -212,7 +212,7 @@ const generateBatchProof = async (
       Encodings.Substrate.Decoders.justificationDecode(justification)
 
     transactionArguments.push({
-      gatewayId: circuit.createType("ChainId", gatewayId),
+      gatewayId: circuit.createType('ChainId', gatewayId),
       signed_header,
       range,
       justification,
