@@ -18,17 +18,14 @@
 //! Runtimes for pallet-xdns.
 
 use super::*;
-use circuit_mock_runtime::{
-    ExtBuilder, Portal,
-    RuntimeOrigin as Origin, *,
-};
+use circuit_mock_runtime::{ExtBuilder, Portal, RuntimeOrigin as Origin, *};
 use codec::Decode;
 
 use frame_support::pallet_prelude::Weight;
 
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
 use sp_core::{crypto::AccountId32, H256};
-use sp_runtime::{DispatchError};
+use sp_runtime::DispatchError;
 use t3rn_primitives::{
     circuit::SecurityLvl::{Escrow, Optimistic},
     clock::OnHookQueues,
