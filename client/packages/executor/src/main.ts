@@ -15,7 +15,9 @@ async function main() {
   // TODO: attestions for now should be disabled by default until ready
   if (config.attestations.enableAttestations) {
     if (config.attestations.ethereum.privateKey === undefined) {
-      logger.warn("Ethereum private key is not defined. Skipping Attestations.");
+      logger.warn(
+        "Ethereum private key is not defined. Skipping Attestations.",
+      );
     } else {
       const attestationManager = new AttestationManager(
         instance.circuitClient,
