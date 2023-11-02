@@ -1,20 +1,20 @@
-import ora from "ora"
-import { estimateMaxReward, Action, Target } from "@t3rn/sdk/price-estimation"
-import { MaxRewardEstimateSchema } from "@/schemas/estimate.ts"
-import { validate } from "@/utils/fns.ts"
-import { colorLogMsg } from "@/utils/log.ts"
-import { Args } from "@/types.ts"
+import ora from 'ora'
+import { estimateMaxReward, Action, Target } from '@t3rn/sdk/price-estimation'
+import { MaxRewardEstimateSchema } from '@/schemas/estimate.ts'
+import { validate } from '@/utils/fns.ts'
+import { colorLogMsg } from '@/utils/log.ts'
+import { Args } from '@/types.ts'
 
 export const spinner = ora()
 
 export const handleEstimateMaxReward = async (
   _args: Args<
-    | "action"
-    | "baseAsset"
-    | "target"
-    | "targetAmount"
-    | "targetAsset"
-    | "overSpend"
+    | 'action'
+    | 'baseAsset'
+    | 'target'
+    | 'targetAmount'
+    | 'targetAsset'
+    | 'overSpend'
   >,
 ) => {
   const args = validate(
@@ -25,7 +25,7 @@ export const handleEstimateMaxReward = async (
       overSpend: parseFloat(_args?.overSpend),
     },
     {
-      configFileName: "estimation arguments",
+      configFileName: 'estimation arguments',
     },
   )
 
@@ -33,7 +33,7 @@ export const handleEstimateMaxReward = async (
     process.exit()
   }
 
-  spinner.text = "Estimating..."
+  spinner.text = 'Estimating...'
   spinner.start()
 
   try {
@@ -45,10 +45,10 @@ export const handleEstimateMaxReward = async (
       targetAsset: args.targetAsset,
       overSpendPercent: args.overSpend,
     })
-    console.log("\n")
+    console.log('\n')
     console.table(estimate)
   } catch (e) {
-    spinner.fail(colorLogMsg("ERROR", e))
+    spinner.fail(colorLogMsg('ERROR', e))
   }
 
   spinner.stop()

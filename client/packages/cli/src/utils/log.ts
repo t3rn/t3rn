@@ -1,17 +1,17 @@
-import chalk from "chalk"
+import chalk from 'chalk'
 
-type Log = "INFO" | "SUCCESS" | "WARN" | "ERROR"
+type Log = 'INFO' | 'SUCCESS' | 'WARN' | 'ERROR'
 
 export const mapLogColor = (type: Log) => {
   switch (type) {
-    case "INFO":
-      return ["blue", "bgBlue"]
-    case "SUCCESS":
-      return ["green", "bgGreen"]
-    case "WARN":
-      return ["yellow", "bgYellow"]
-    case "ERROR":
-      return ["red", "bgRed"]
+    case 'INFO':
+      return ['blue', 'bgBlue']
+    case 'SUCCESS':
+      return ['green', 'bgGreen']
+    case 'WARN':
+      return ['yellow', 'bgYellow']
+    case 'ERROR':
+      return ['red', 'bgRed']
   }
 }
 
