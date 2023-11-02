@@ -554,6 +554,55 @@ mod tests {
     }
 
     #[test]
+    fn optimistic_order_single_rlp_encoded_sfx_vacuum_delivers_to_circuit() {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([2u8; 32]);
+            let requester_on_dest = AccountId32::from([3u8; 32]);
+
+            mint_required_assets_for_optimistic_actors(
+                requester.clone(),
+                executor,
+                200u128,
+                50u128,
+                ASSET_DOT,
+            );
+
+            activate_all_light_clients();
+
+            assert_ok!(Vacuum::single_order(
+                RuntimeOrigin::signed(requester.clone()),
+                ETHEREUM_TARGET,
+                ASSET_DOT,
+                100u128,
+                ASSET_DOT,
+                200u128,
+                50u128,
+                requester_on_dest.clone(),
+                SpeedMode::Fast
+            ));
+
+            let xtx_id = expect_last_event_to_emit_xtx_id();
+
+            assert_eq!(
+                xtx_id,
+                Hash::from(hex!(
+                    "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
+                ))
+            );
+
+            // Expect balance of requester to be reduced by max_reward
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &requester),
+                EXISTENTIAL_DEPOSIT as Balance
+            );
+
+            assert!(false);
+        });
+    }
+
+    #[test]
     fn optimistic_order_single_sfx_vacuum_delivers_to_circuit() {
         let mut ext = prepare_ext_builder_playground();
         ext.execute_with(|| {
