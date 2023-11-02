@@ -20,6 +20,7 @@ export default {
  rangeInterval: 0, // time between range submissions in seconds
  quickSyncLimit: 200, // for more than 200 blocks behind, use quick sync
  targetGatewayId: "pdot",
+ bridgeName: "polkadotBridge",
  batches_max: 1,
  batching: true,
 }

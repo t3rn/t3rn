@@ -21,5 +21,6 @@ export default {
  targetGatewayId: "kusm",
  quickSyncLimit: 200, // for more than 200 blocks behind, use quick sync
  batches_max: 10,
+ bridgeName: "kusamaBridge",
  batching: true,
 }

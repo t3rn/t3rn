@@ -184,47 +184,35 @@ export class GrandpaRanger {
           )
           isQuickSync = true
         }
-        if (!isQuickSync) {
-          let submit
-          // select the correct submit function based on the targetGatewayId
-          if (this.config.targetGatewayId === 'roco') {
-            submit = this.circuit.client.tx.rococoBridge.submitHeaders
-          } else if (this.config.targetGatewayId === 'kusm') {
-            submit = this.circuit.client.tx.kusamaBridge.submitHeaders
-          } else if (this.config.targetGatewayId === 'pdot') {
-            submit = this.circuit.client.tx.polkadotBridge.submitHeaders
-          } else {
-            throw new Error(
-              `Unknown targetGatewayId: ${this.config.targetGatewayId}`,
-            )
-          }
-
-          return submit(args.range, args.signed_header, args.justification)
-        } else {
-          let submitQuickSync
-          // select the correct submit function based on the targetGatewayId
-          if (this.config.targetGatewayId === 'roco') {
-            submitQuickSync =
-              this.circuit.client.tx.rococoBridge
-                .submitQuickSyncLatest101Headers
-          } else if (this.config.targetGatewayId === 'kusm') {
-            submitQuickSync =
-              this.circuit.client.tx.kusamaBridge
-                .submitQuickSyncLatest101Headers
-          } else if (this.config.targetGatewayId === 'pdot') {
-            submitQuickSync =
-              this.circuit.client.tx.polkadotBridge
-                .submitQuickSyncLatest101Headers
-          } else {
-            throw new Error(
-              `Unknown targetGatewayId: ${this.config.targetGatewayId}`,
-            )
-          }
-          return submitQuickSync(
-            args.rangeQuickSync101,
-            args.signed_header,
-            args.justification,
+        if (!this.circuit.client.tx[this.config.bridgeName]) {
+          throw new Error(
+            `Unrecognised Circuit API bridge name: ${this.config.bridgeName} for targetGatewayId: ${this.config.targetGatewayId}`,
           )
+        }
+        if (!isQuickSync) {
+          if (
+            !this.circuit.client.tx[this.config.bridgeName]['submitHeaders']
+          ) {
+            throw new Error(
+              `Unrecognised Circuit API bridge tx "submitHeaders": ${this.config.bridgeName} for targetGatewayId: ${this.config.targetGatewayId}`,
+            )
+          }
+          return this.circuit.client.tx[this.config.bridgeName][
+            'submitHeaders'
+          ](args.range, args.signed_header, args.justification)
+        } else {
+          if (
+            !this.circuit.client.tx[this.config.bridgeName][
+              'submitQuickSyncLatest101Headers'
+            ]
+          ) {
+            throw new Error(
+              `Unrecognised Circuit API bridge tx "submitQuickSyncLatest101Headers": ${this.config.bridgeName} for targetGatewayId: ${this.config.targetGatewayId}`,
+            )
+          }
+          return this.circuit.client.tx[this.config.bridgeName][
+            'submitQuickSyncLatest101Headers'
+          ](args.rangeQuickSync101, args.signed_header, args.justification)
         }
       }),
     )
@@ -263,54 +251,39 @@ export class GrandpaRanger {
       )
       isQuickSync = true
     }
-
-    if (this.config.targetGatewayId === 'roco') {
-      if (isQuickSync) {
-        tx =
-          this.circuit.client.tx.rococoBridge.submitQuickSyncLatest101Headers(
-            range[0].rangeQuickSync101,
-            range[0].signed_header,
-            range[0].justification,
-          )
-      } else {
-        tx = this.circuit.client.tx.rococoBridge.submitHeaders(
-          range[0].range,
-          range[0].signed_header,
-          range[0].justification,
+    if (!this.circuit.client.tx[this.config.bridgeName]) {
+      throw new Error(
+        `Unrecognised Circuit API bridge name: ${this.config.bridgeName} for targetGatewayId: ${this.config.targetGatewayId}`,
+      )
+    }
+    if (isQuickSync) {
+      if (
+        !this.circuit.client.tx[this.config.bridgeName][
+          'submitQuickSyncLatest101Headers'
+        ]
+      ) {
+        throw new Error(
+          `Unrecognised Circuit API bridge tx "submitQuickSyncLatest101Headers": ${this.config.bridgeName} for targetGatewayId: ${this.config.targetGatewayId}`,
         )
       }
-    } else if (this.config.targetGatewayId === 'kusm') {
-      if (isQuickSync) {
-        tx =
-          this.circuit.client.tx.kusamaBridge.submitQuickSyncLatest101Headers(
-            range[0].rangeQuickSync101,
-            range[0].signed_header,
-            range[0].justification,
-          )
-      } else {
-        tx = this.circuit.client.tx.kusamaBridge.submitHeaders(
-          range[0].range,
-          range[0].signed_header,
-          range[0].justification,
-        )
-      }
-    } else if (this.config.targetGatewayId === 'pdot') {
-      if (isQuickSync) {
-        tx =
-          this.circuit.client.tx.polkadotBridge.submitQuickSyncLatest101Headers(
-            range[0].rangeQuickSync101,
-            range[0].signed_header,
-            range[0].justification,
-          )
-      } else {
-        tx = this.circuit.client.tx.polkadotBridge.submitHeaders(
-          range[0].range,
-          range[0].signed_header,
-          range[0].justification,
-        )
-      }
+      tx = this.circuit.client.tx[this.config.bridgeName][
+        'submitQuickSyncLatest101Headers'
+      ](
+        range[0].rangeQuickSync101,
+        range[0].signed_header,
+        range[0].justification,
+      )
     } else {
-      throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
+      if (!this.circuit.client.tx[this.config.bridgeName]['submitHeaders']) {
+        throw new Error(
+          `Unrecognised Circuit API bridge tx "submitHeaders": ${this.config.bridgeName} for targetGatewayId: ${this.config.targetGatewayId}`,
+        )
+      }
+      tx = this.circuit.client.tx[this.config.bridgeName]['submitHeaders'](
+        range[0].range,
+        range[0].signed_header,
+        range[0].justification,
+      )
     }
     return tx
   }
