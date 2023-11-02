@@ -133,6 +133,7 @@ export class Tx {
                 reject(Error(moduleErrorMessage))
               }
             })
+            resolve(status.asInBlock.toString())
           } else if (
             status.isDropped ||
             status.isInvalid ||
@@ -141,18 +142,18 @@ export class Tx {
           ) {
             reject(Error(status.type))
           } else if (status.isInBlock) {
-            resolve(status['inBlock'] || status.asInBlock.toString())
+            resolve(status.asInBlock.toString())
           }
         },
       ),
-    ).then((blockHash: any) =>
-      this.api.rpc.chain.getBlock(blockHash).then((r) => {
+    ).then((blockHash: string) => {
+      return this.api.rpc.chain.getBlock(blockHash).then((r) => {
         const number = r.block.header.number
 
         exportObj?.addSubmissionHeight(number.toNumber()).toFile()
         return number.toString()
-      }),
-    )
+      })
+    })
   }
 
   async signAndSendRaw(tx: SubmittableExtrinsic): Promise<any> {
