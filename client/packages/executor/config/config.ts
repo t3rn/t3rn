@@ -160,12 +160,12 @@ export type Config = {
   /** Configuration for ethereum */
   attestations: {
     ethereum: {
-      name: string;
+      name: string | undefined;
       rpc: string;
-      attestationVerifierAddress: string;
+      attestationVerifierAddress: string | undefined;
       privateKey: string | undefined;
     };
-    processBatches: boolean;
+    enableAttestations: boolean;
   };
 };
 
@@ -314,6 +314,6 @@ export const config: Config = {
       attestationVerifierAddress: "0x12b6B6F917b9B1af3751eBe41b0A1D7D1a0d4a29",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    processBatches: process.env.PROCESS_BATCHES == "true" ? true : false,
+    enableAttestations: process.env.PROCESS_BATCHES == "true" ? true : false,
   },
 };

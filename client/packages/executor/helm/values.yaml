@@ -2,7 +2,7 @@ config:
   websocketEndpoint: "wss://rpc.t0rn.io"
 
   # Pause processing batches until new batches on sepl and eth2
-  processBatches: false
+  enableAttestations: false
 
   # Temporary change loglevel to debug
   logLevel: "info"

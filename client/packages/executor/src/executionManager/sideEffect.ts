@@ -280,6 +280,7 @@ export class SideEffect extends EventEmitter {
    * used to determine if another bid should be placed.
    */
   recomputeMaxProfit() {
+    logger.debug("Recomputing max profit");
     const txCostUsd =
       this.gateway.toFloat(this.txCostNative.getValue()) *
       this.nativeAssetPrice.getValue();
