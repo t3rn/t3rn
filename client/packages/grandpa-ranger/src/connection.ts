@@ -21,7 +21,7 @@ export class Connection {
     rpc2: any,
     isCircuit: boolean,
     prometheus: Prometheus,
-    target: string
+    target: string,
   ) {
     this.rpc1 = rpc1
     this.rpc2 = rpc2
@@ -78,10 +78,10 @@ export class Connection {
         } else {
           this.client = await ApiPromise.create({ provider: this.provider })
           // We can only subscribe to new blocks on the target
-          this.client.derive.chain.subscribeNewHeads((header) => {
+          this.client.derive.chain.subscribeNewHeads(header => {
             this.prometheus.height.set(
               { target: this.target },
-              header.number.toNumber()
+              header.number.toNumber(),
             )
           })
         }
@@ -91,7 +91,7 @@ export class Connection {
         logger.warn(`Error from ${this.currentProvider().ws}: ${error}`)
 
         // Add a delay before attempting to reconnect (adjust as needed)
-        await new Promise((resolve) => setTimeout(resolve, 5000))
+        await new Promise(resolve => setTimeout(resolve, 5000))
 
         // Attempt reconnection
         connect()
@@ -132,7 +132,7 @@ export class Connection {
 
   createProvider() {
     logger.debug(
-      `Current provider ${this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws}`
+      `Current provider ${this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws}`,
     )
     return new WsProvider(this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws)
   }

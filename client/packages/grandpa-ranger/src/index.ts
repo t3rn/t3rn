@@ -17,7 +17,7 @@ class GrandpaRanger {
     this.prometheus = new Prometheus(this.config.targetGatewayId)
     this.prometheus.rangeInterval.inc(
       { target: this.target },
-      this.config.rangeInterval
+      this.config.rangeInterval,
     )
   }
 
@@ -37,7 +37,7 @@ class GrandpaRanger {
       this.config.circuit.rpc2,
       true,
       this.prometheus,
-      'circuit'
+      'circuit',
     )
     this.circuit.connect()
     this.target = new Connection(
@@ -45,7 +45,7 @@ class GrandpaRanger {
       this.config.target.rpc2,
       false,
       this.prometheus,
-      this.config.targetGatewayId
+      this.config.targetGatewayId,
     )
     this.target.connect()
   }
@@ -55,12 +55,12 @@ class GrandpaRanger {
       this.config,
       this.circuit,
       this.target,
-      this.prometheus
+      this.prometheus,
     )
       .then(() => {
         return resolve()
       })
-      .catch((e) => {
+      .catch(e => {
         logger.error(e)
         return resolve()
       })
@@ -73,8 +73,8 @@ class GrandpaRanger {
       this.config,
       this.circuit,
       this.target,
-      this.config.targetGatewayId
-    ).catch((e) => {
+      this.config.targetGatewayId,
+    ).catch(e => {
       logger.error(e)
       // potentially we want to introduce a retry logic here
       return resolve()
@@ -97,16 +97,16 @@ class GrandpaRanger {
     // calculate the total number of elements in the batches elements
     const totalElements = batches.reduce(
       (acc, curr) => acc + curr.range.length,
-      0
+      0,
     )
 
     await this.submitToCircuit(batches)
-      .then((res) => {
+      .then(res => {
         logger.info(
           {
             size: totalElements,
           },
-          `Submitted range tx on block ${res}`
+          `Submitted range tx on block ${res}`,
         )
 
         this.prometheus.submissions.inc({
@@ -115,16 +115,16 @@ class GrandpaRanger {
         })
         // Update latest circuit height
         const latestHeight = parseInt(
-          batches[batches.length - 1].signed_header.number
+          batches[batches.length - 1].signed_header.number,
         )
         this.prometheus.height.set(latestHeight)
         return resolve()
       })
-      .catch((e) => {
+      .catch(e => {
         logger.error(e)
         this.prometheus.submissions.inc(
           { target: this.config.targetGatewayId, status: 'error' },
-          1
+          1,
         )
       })
     return resolve() // resolve, as we don't want to stop the loop
@@ -153,7 +153,7 @@ class GrandpaRanger {
           logger.info(`Range tx size: ${txSize}kB`)
           this.prometheus.txSize.set(
             { target: this.config.targetGatewayId },
-            tx.encodedLength
+            tx.encodedLength,
           )
 
           let res = await this.circuit.sdk.circuit.tx.signAndSendSafe(tx)
@@ -171,23 +171,61 @@ class GrandpaRanger {
   private createTxBatch(range: any[]) {
     let tx
     tx = this.circuit.sdk?.circuit.tx.createBatch(
-      range.map((args) => {
-        let submit
-        // select the correct submit function based on the targetGatewayId
-        if (this.config.targetGatewayId === 'roco') {
-          submit = this.circuit.client.tx.rococoBridge.submitHeaders
-        } else if (this.config.targetGatewayId === 'kusm') {
-          submit = this.circuit.client.tx.kusamaBridge.submitHeaders
-        } else if (this.config.targetGatewayId === 'pdot') {
-          submit = this.circuit.client.tx.polkadotBridge.submitHeaders
+      range.map(args => {
+        // Check if Quick Sync batch
+        let isQuickSync = false
+        // check if exists and is array and has quickSync101
+        if (!!args.rangeQuickSync101 && Array.isArray(args.rangeQuickSync101)) {
+          logger.debug(
+            `Size of rangeQuickSync101 as part of UtilityBatch: ${Math.floor(
+              Buffer.from(JSON.stringify(args.rangeQuickSync101)).length / 1024,
+            )}kB`,
+          )
+          isQuickSync = true
+        }
+        if (!isQuickSync) {
+          let submit
+          // select the correct submit function based on the targetGatewayId
+          if (this.config.targetGatewayId === 'roco') {
+            submit = this.circuit.client.tx.rococoBridge.submitHeaders
+          } else if (this.config.targetGatewayId === 'kusm') {
+            submit = this.circuit.client.tx.kusamaBridge.submitHeaders
+          } else if (this.config.targetGatewayId === 'pdot') {
+            submit = this.circuit.client.tx.polkadotBridge.submitHeaders
+          } else {
+            throw new Error(
+              `Unknown targetGatewayId: ${this.config.targetGatewayId}`,
+            )
+          }
+
+          return submit(args.range, args.signed_header, args.justification)
         } else {
-          throw new Error(
-            `Unknown targetGatewayId: ${this.config.targetGatewayId}`
+          let submitQuickSync
+          // select the correct submit function based on the targetGatewayId
+          if (this.config.targetGatewayId === 'roco') {
+            submitQuickSync =
+              this.circuit.client.tx.rococoBridge
+                .submitQuickSyncLatest101Headers
+          } else if (this.config.targetGatewayId === 'kusm') {
+            submitQuickSync =
+              this.circuit.client.tx.kusamaBridge
+                .submitQuickSyncLatest101Headers
+          } else if (this.config.targetGatewayId === 'pdot') {
+            submitQuickSync =
+              this.circuit.client.tx.polkadotBridge
+                .submitQuickSyncLatest101Headers
+          } else {
+            throw new Error(
+              `Unknown targetGatewayId: ${this.config.targetGatewayId}`,
+            )
+          }
+          return submitQuickSync(
+            args.rangeQuickSync101,
+            args.signed_header,
+            args.justification,
           )
         }
-
-        return submit(args.range, args.signed_header, args.justification)
-      })
+      }),
     )
     return tx
   }
@@ -197,37 +235,79 @@ class GrandpaRanger {
     logger.debug('Batches disabled')
     logger.debug(
       `Size of range: ${Math.floor(
-        Buffer.from(JSON.stringify(range[0].range)).length / 1024
-      )}kB`
+        Buffer.from(JSON.stringify(range[0].range)).length / 1024,
+      )}kB`,
     )
     logger.debug(
       `Size of signed_header: ${Math.floor(
-        Buffer.from(JSON.stringify(range[0].signed_header)).length / 1024
-      )}kB`
+        Buffer.from(JSON.stringify(range[0].signed_header)).length / 1024,
+      )}kB`,
     )
     logger.debug(
       `Size of justification: ${Math.floor(
-        Buffer.from(JSON.stringify(range[0].justification)).length / 1024
-      )}kB`
+        Buffer.from(JSON.stringify(range[0].justification)).length / 1024,
+      )}kB`,
     )
+
+    let isQuickSync = false
+    // check if exists and is array and has quickSync101
+    if (
+      !!range[0].rangeQuickSync101 &&
+      Array.isArray(range[0].rangeQuickSync101)
+    ) {
+      logger.debug(
+        `Size of rangeQuickSync101: ${Math.floor(
+          Buffer.from(JSON.stringify(range[0].rangeQuickSync101)).length / 1024,
+        )}kB`,
+      )
+      isQuickSync = true
+    }
+
     if (this.config.targetGatewayId === 'roco') {
-      tx = this.circuit.client.tx.rococoBridge.submitHeaders(
-        range[0].range,
-        range[0].signed_header,
-        range[0].justification
-      )
+      if (isQuickSync) {
+        tx =
+          this.circuit.client.tx.rococoBridge.submitQuickSyncLatest101Headers(
+            range[0].rangeQuickSync101,
+            range[0].signed_header,
+            range[0].justification,
+          )
+      } else {
+        tx = this.circuit.client.tx.rococoBridge.submitHeaders(
+          range[0].range,
+          range[0].signed_header,
+          range[0].justification,
+        )
+      }
     } else if (this.config.targetGatewayId === 'kusm') {
-      tx = this.circuit.client.tx.kusamaBridge.submitHeaders(
-        range[0].range,
-        range[0].signed_header,
-        range[0].justification
-      )
+      if (isQuickSync) {
+        tx =
+          this.circuit.client.tx.kusamaBridge.submitQuickSyncLatest101Headers(
+            range[0].rangeQuickSync101,
+            range[0].signed_header,
+            range[0].justification,
+          )
+      } else {
+        tx = this.circuit.client.tx.kusamaBridge.submitHeaders(
+          range[0].range,
+          range[0].signed_header,
+          range[0].justification,
+        )
+      }
     } else if (this.config.targetGatewayId === 'pdot') {
-      tx = this.circuit.client.tx.polkadotBridge.submitHeaders(
-        range[0].range,
-        range[0].signed_header,
-        range[0].justification
-      )
+      if (isQuickSync) {
+        tx =
+          this.circuit.client.tx.polkadotBridge.submitQuickSyncLatest101Headers(
+            range[0].rangeQuickSync101,
+            range[0].signed_header,
+            range[0].justification,
+          )
+      } else {
+        tx = this.circuit.client.tx.polkadotBridge.submitHeaders(
+          range[0].range,
+          range[0].signed_header,
+          range[0].justification,
+        )
+      }
     } else {
       throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
     }
@@ -238,7 +318,7 @@ class GrandpaRanger {
     while (true) {
       await new Promise((resolve, _reject) => {
         setTimeout(() => {
-          this.submitMetrics(resolve).catch((e) => resolve)
+          this.submitMetrics(resolve).catch(e => resolve)
         }, this.config.rangeInterval * 1000)
       })
     }

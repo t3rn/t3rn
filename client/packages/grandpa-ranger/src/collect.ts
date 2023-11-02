@@ -8,11 +8,11 @@ export const setCheckpointMetrics = async (
   config: any,
   circuitConnection: Connection,
   targetConnection: Connection,
-  prometheus: Prometheus
+  prometheus: Prometheus,
 ) => {
   const circuitHeight = await currentGatewayHeight(
     circuitConnection,
-    config.targetGatewayId
+    config.targetGatewayId,
   )
   let targetHeight = await currentTargetHeight(targetConnection)
 
@@ -24,13 +24,13 @@ export const generateRange = async (
   config: any,
   circuitConnection: Connection,
   targetConnection: Connection,
-  target: string
+  target: string,
 ): Promise<any[]> => {
   return new Promise(async (resolve, reject) => {
     try {
       const circuitHeight = await currentGatewayHeight(
         circuitConnection,
-        config.targetGatewayId
+        config.targetGatewayId,
       )
       let targetHeight = await currentTargetHeight(targetConnection)
 
@@ -39,7 +39,7 @@ export const generateRange = async (
           circuitHeight,
           targetHeight,
         },
-        'Current heights'
+        'Current heights',
       )
 
       if (targetHeight > circuitHeight) {
@@ -48,7 +48,8 @@ export const generateRange = async (
           targetConnection.client,
           config.targetGatewayId,
           circuitHeight + 1,
-          targetHeight
+          targetHeight,
+          config.quickSyncLimit,
         )
         return resolve(batches)
       } else {
@@ -65,7 +66,8 @@ const generateBatchProof = async (
   targetClient: ApiPromise,
   targetGatewayId: string,
   from: number,
-  to: number
+  to: number,
+  quickSyncLimit: number,
 ): Promise<any[]> => {
   let transactionArguments: any[] = []
 
@@ -77,14 +79,42 @@ const generateBatchProof = async (
       Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
 
     const justificationSize = Math.floor(
-      Buffer.from(JSON.stringify(justification)).length / 1024
+      Buffer.from(JSON.stringify(justification)).length / 1024,
     )
     const headersSize = Math.floor(
-      Buffer.from(JSON.stringify(headers)).length / 1024
+      Buffer.from(JSON.stringify(headers)).length / 1024,
     )
     logger.debug('Fetched finality proof from target chain')
     logger.debug(`Justification size: ${justificationSize}kb`)
     logger.debug(`Headers size: ${headersSize}kb`)
+
+    if (headers.length > quickSyncLimit && headers.length > 0) {
+      // Switch to quick sync instead - presumably the target chain is too far ahead and there could be too many headers to submit (this issue is a problem for full Polkadot Headers and session of 24H)
+      logger.debug('Switching to quick sync')
+      // Figure the height of the last block in the epoch is the last block in the headers array.
+      // For Quick Sync ask for the last block in the epoch - 101, since the Light Client stores max 100 headers, and the extra 101 is used to compare againt parentHash as substitute for finalized block hash.
+      const signed_header = headers.pop()
+      const endOfEpochMinus101 = parseInt(signed_header.number.toJSON()) - 101
+      const finalityProof =
+        await targetClient.rpc.grandpa.proveFinality(endOfEpochMinus101)
+      const { justification, headers } =
+        Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
+      const signedHeaderQuickSync = headers.pop()
+      const rangeQuickSync101 = circuitClient.createType('Vec<Header>', headers)
+      //push to transaction queue
+      transactionArguments = [
+        {
+          gatewayId: circuitClient.createType('ChainId', targetGatewayId),
+          signed_header: signedHeaderQuickSync,
+          range: [],
+          rangeQuickSync101,
+          justification,
+        },
+      ]
+
+      // No point on dragging the loop further, since we are switching to quick sync
+      return transactionArguments
+    }
 
     let signed_header
     if (headers.length == 0) {
@@ -106,6 +136,7 @@ const generateBatchProof = async (
       gatewayId: circuitClient.createType('ChainId', targetGatewayId),
       signed_header,
       range,
+      rangeQuickSync101: [],
       justification,
     })
   }
@@ -114,14 +145,14 @@ const generateBatchProof = async (
 
 const currentTargetHeight = async (connection: Connection): Promise<number> => {
   const header = await connection.client.rpc.chain.getHeader(
-    await connection.client.rpc.chain.getFinalizedHead()
+    await connection.client.rpc.chain.getFinalizedHead(),
   )
   return header.number.toNumber()
 }
 
 const currentGatewayHeight = async (
   client: Connection,
-  targetGatewayId: string
+  targetGatewayId: string,
 ) => {
   // client.rpc.portal.
   return axios
@@ -137,15 +168,15 @@ const currentGatewayHeight = async (
         headers: {
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
-    .then((response) => {
+    .then(response => {
       if (response.data.error) throw new Error(response.data.error.message)
       return response.data.result
     })
-    .catch((error) => {
+    .catch(error => {
       throw new Error(
-        `Gateway height couldnt be fetched! Err: ${error.toString()}`
+        `Gateway height couldnt be fetched! Err: ${error.toString()}`,
       )
     })
 }
@@ -153,7 +184,7 @@ const currentGatewayHeight = async (
 const getHeader = async (client: ApiPromise, height: number) => {
   return (
     await client.rpc.chain.getHeader(
-      await client.rpc.chain.getBlockHash(height)
+      await client.rpc.chain.getBlockHash(height),
     )
   ).toJSON()
 }

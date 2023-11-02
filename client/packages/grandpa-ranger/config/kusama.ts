@@ -19,6 +19,7 @@ export default {
  },
  rangeInterval: 0, // time between range submissions in seconds
  targetGatewayId: "kusm",
+ quickSyncLimit: 200, // for more than 200 blocks behind, use quick sync
  batches_max: 10,
  batching: true,
 }

@@ -73,7 +73,7 @@ export class Prometheus {
           res.end(
             JSON.stringify({
               heightDiff: this.heightDiff,
-            })
+            }),
           )
         } else {
           res.statusCode = 404

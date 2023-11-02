@@ -19,5 +19,6 @@ export default {
 	},
 	rangeInterval: 10, // time between range submissions in seconds
 	targetGatewayId: "roco",
+	quickSyncLimit: 200, // for more than 200 blocks behind, use quick sync
 	batches_max: 10,
 }
