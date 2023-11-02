@@ -577,7 +577,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         justification: GrandpaJustification<BridgedHeader<T, I>>,
         // Check against the best finalized header in storage
         // we get the latest header from storage
-        mut best_finalized_hash: &mut BridgedBlockHash<T, I>,
+        best_finalized_hash: &mut BridgedBlockHash<T, I>,
     ) -> DispatchResult {
         // °°°°° Implicit Check: °°°°°
         // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
