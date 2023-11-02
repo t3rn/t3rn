@@ -161,7 +161,7 @@ export type Config = {
   attestations: {
     ethereum: {
       name: string | undefined;
-      rpc: string | undefined;
+      rpc: string;
       attestationVerifierAddress: string | undefined;
       privateKey: string | undefined;
     };
