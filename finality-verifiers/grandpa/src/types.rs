@@ -32,6 +32,12 @@ pub struct GrandpaHeaderData<Header: sp_runtime::traits::Header> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+pub struct GrandpaHeadersQuickSync<Header: sp_runtime::traits::Header> {
+    pub signed_header: Header,
+    pub latest_range_of_101: Vec<Header>,
+    pub justification: GrandpaJustification<Header>,
+}
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 pub struct RelaychainInclusionProof<Header: sp_runtime::traits::Header> {
     /// this is the item we're proving to be included in a specfic block (e.g. event, storage entry, etc)
     pub encoded_payload: Vec<u8>,

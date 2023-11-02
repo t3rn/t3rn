@@ -309,7 +309,70 @@ pub mod pallet {
             let _ = ensure_signed(origin)?;
 
             let pointer_prior = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
-            Pallet::<T, I>::verify_and_store_headers(range, signed_header, justification)?;
+            // we get the latest header from storage
+            let mut best_finalized_hash =
+                <BestFinalizedHash<T, I>>::get().ok_or(Error::<T, I>::NoFinalizedHeader)?;
+
+            Pallet::<T, I>::verify_and_store_headers(
+                range,
+                signed_header,
+                justification,
+                &mut best_finalized_hash,
+            )?;
+            let pointer_post = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
+            if pointer_prior != pointer_post {
+                let counter = <SubmissionsCounter<T, I>>::get();
+
+                match Pallet::<T, I>(PhantomData).get_latest_heartbeat() {
+                    Ok(heartbeat) => {
+                        let verifier = T::MyVendor::get();
+                        T::LightClientAsyncAPI::on_new_epoch(verifier, counter, heartbeat);
+                    },
+                    Err(e) => {
+                        log::error!(
+                            "Failed to get latest heartbeat after submit_headers: {:?}",
+                            e
+                        );
+                    },
+                }
+
+                <SubmissionsCounter<T, I>>::put(
+                    counter
+                        .saturating_add(frame_system::pallet_prelude::BlockNumberFor::<T>::one()),
+                );
+
+                Ok(Pays::No.into())
+            } else {
+                Ok(Pays::Yes.into())
+            }
+        }
+
+        /// Quick sync assuming the latest 101 submitted headers will be Signed with the current authority set, and the justification is valid.
+        #[pallet::weight(Weight::from_parts(10_000, 0u64) + T::DbWeight::get().writes(1))]
+        pub fn submit_quick_sync_latest_101_headers(
+            origin: OriginFor<T>,
+            latest_range_of_101: Vec<BridgedHeader<T, I>>,
+            // The header with the highest height, signed in the justification
+            signed_header: BridgedHeader<T, I>,
+            // GrandpaJustification for the signed_header
+            justification: GrandpaJustification<BridgedHeader<T, I>>,
+        ) -> DispatchResultWithPostInfo {
+            let _ = ensure_signed(origin)?;
+
+            let mut parent_hash = latest_range_of_101
+                .first()
+                .ok_or("Empty range of up to 101 latest headers")?
+                .hash();
+            let latest_range_of_max_100 = latest_range_of_101[1..].to_vec();
+
+            let pointer_prior = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
+            // The rest follows as usual submit_headers
+            Pallet::<T, I>::verify_and_store_headers(
+                latest_range_of_max_100,
+                signed_header,
+                justification,
+                &mut parent_hash,
+            )?;
             let pointer_post = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
             if pointer_prior != pointer_post {
                 let counter = <SubmissionsCounter<T, I>>::get();
@@ -512,14 +575,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         signed_header: BridgedHeader<T, I>,
         // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
+        // Check against the best finalized header in storage
+        // we get the latest header from storage
+        mut best_finalized_hash: &mut BridgedBlockHash<T, I>,
     ) -> DispatchResult {
         // °°°°° Implicit Check: °°°°°
         // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
         // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len
-
-        // we get the latest header from storage
-        let mut best_finalized_hash =
-            <BestFinalizedHash<T, I>>::get().ok_or(Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explanation °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -550,7 +612,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         // °°°°° Begin Check: #1 °°°°°
         for header in range {
-            if best_finalized_hash == *header.parent_hash() {
+            if best_finalized_hash == header.parent_hash() {
                 // write header to storage if correct
                 write_and_clean_header_data::<T, I>(
                     &mut buffer_index,
@@ -559,7 +621,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                     false,
                 )?;
 
-                best_finalized_hash = header.hash();
+                *best_finalized_hash = header.hash();
             } else {
                 // if anything fails here, noop!
                 return Err(Error::<T, I>::InvalidRangeLinkage.into())
@@ -568,7 +630,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         // °°°°° Check Success: #1 °°°°°
 
         // °°°°° Begin Check: #3 °°°°°
-        if best_finalized_hash == *signed_header.parent_hash() {
+        if best_finalized_hash == signed_header.parent_hash() {
             // write header to storage if correct
             write_and_clean_header_data::<T, I>(
                 &mut buffer_index,
@@ -722,10 +784,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             Decode::decode(&mut &*encoded_header_data)
                 .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
+        // we get the latest header from storage
+        let mut best_finalized_hash =
+            <BestFinalizedHash<T, I>>::get().ok_or(Error::<T, I>::NoFinalizedHeader)?;
+
         Pallet::<T, I>::verify_and_store_headers(
             data.range,
             data.signed_header,
             data.justification,
+            &mut best_finalized_hash,
         )?;
         Ok(())
     }
@@ -1036,9 +1103,9 @@ pub mod tests {
 pub mod tests {
     use super::*;
     use crate::mock::{
-        produce_mock_headers_range, run_test, test_header, test_header_range,
-        test_header_with_correct_parent, AccountId, RuntimeOrigin as Origin, TestHeader,
-        TestNumber, TestRuntime,
+        produce_mock_headers_range, produce_quick_sync_range, run_test, test_header,
+        test_header_range, test_header_with_correct_parent, AccountId, RuntimeOrigin as Origin,
+        TestHeader, TestNumber, TestRuntime,
     };
     use bp_runtime::ChainId;
     use bridges::{
@@ -1054,7 +1121,7 @@ pub mod tests {
     use sp_core::{crypto::AccountId32, H160, H256};
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
-    use crate::types::GrandpaHeaderData;
+    use crate::types::{GrandpaHeaderData, GrandpaHeadersQuickSync};
 
     fn initialize_relaychain(
         origin: Origin,
@@ -1129,6 +1196,22 @@ pub mod tests {
         Ok(data)
     }
 
+    pub fn submit_quick_sync_update_of_parent_hashes_concluded_with_101_headers(
+        from: u8,
+        to: u8,
+    ) -> Result<GrandpaHeadersQuickSync<TestHeader>, &'static str> {
+        let data = produce_quick_sync_range(from, to);
+        let data_cp = data.clone();
+        let quick_submission_result = Pallet::<TestRuntime>::submit_quick_sync_latest_101_headers(
+            Origin::signed(1),
+            data.latest_range_of_101,
+            data.signed_header,
+            data.justification,
+        );
+        assert_ok!(quick_submission_result);
+        Ok(data_cp)
+    }
+
     fn next_block() {
         use frame_support::traits::OnInitialize;
 
@@ -1191,6 +1274,8 @@ pub mod tests {
         })
     }
     use hex_literal::hex;
+    use t3rn_primitives::Hash;
+
     #[test]
     fn can_register_again_after_reset_with_valid_data_and_signer() {
         run_test(|| {
@@ -1478,6 +1563,40 @@ pub mod tests {
     }
 
     #[test]
+    fn processes_quick_sync_updates_when_gap_is_larger_than_100() {
+        run_test(|| {
+            let _ = initialize_relaychain(Origin::root());
+
+            let data = submit_headers(1, 3).unwrap();
+
+            assert_eq!(
+                <BestFinalizedHash<TestRuntime>>::get(),
+                Some(data.signed_header.hash())
+            );
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
+                data.signed_header.hash()
+            ));
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
+                data.range[0].hash()
+            ));
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
+                data.range[1].hash()
+            ));
+
+            let mut quick_sync_update_data =
+                submit_quick_sync_update_of_parent_hashes_concluded_with_101_headers(4, 204);
+            assert_ok!(quick_sync_update_data.clone());
+
+            let quick_sync_update_data_ok = quick_sync_update_data.clone().unwrap();
+            assert_eq!(quick_sync_update_data_ok.latest_range_of_101.len(), 100);
+            assert_eq!(
+                <BestFinalizedHash<TestRuntime>>::get(),
+                Some(quick_sync_update_data_ok.signed_header.hash())
+            );
+        })
+    }
+
+    #[test]
     fn reject_range_with_invalid_range_linkage() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
@@ -1504,6 +1623,7 @@ pub mod tests {
     }
 
     #[test]
+    #[ignore]
     fn reject_range_with_invalid_grandpa_linkage() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());

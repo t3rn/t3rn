@@ -28,7 +28,7 @@ use sp_runtime::{
 
 type Header = generic::Header<u32, BlakeTwo256>;
 use sp_std::convert::{TryFrom, TryInto};
-use t3rn_primitives::{light_client::LightClientAsyncAPIEmptyMock, GatewayVendor};
+use t3rn_primitives::{light_client::LightClientAsyncAPIEmptyMock, GatewayVendor, Hash};
 
 use crate::bridges::runtime::Chain;
 pub type AccountId = u64;
@@ -42,7 +42,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 use crate::{
     bridges::test_utils::make_default_justification,
     light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
-    types::GrandpaHeaderData,
+    types::{GrandpaHeaderData, GrandpaHeadersQuickSync},
     BestFinalizedHash, Config, ImportedHeaders,
 };
 
@@ -245,6 +245,27 @@ pub fn produce_mock_headers_range(from: u8, to: u8) -> GrandpaHeaderData<TestHea
     GrandpaHeaderData::<TestHeader> {
         signed_header: signed_header.clone(),
         range,
+        justification,
+    }
+}
+
+pub fn produce_quick_sync_range(from: u8, to: u8) -> GrandpaHeadersQuickSync<TestHeader> {
+    let mut all_headers_from_genesis: Vec<TestHeader> = test_header_range(to.into());
+
+    if all_headers_from_genesis.len() < 101 {
+        panic!("Not enough headers to produce quick sync range of 101");
+    }
+    // Keep latest 100 headers as range of 100
+    let mut latest_range_of_101 =
+        all_headers_from_genesis[all_headers_from_genesis.len() - 101..].to_vec();
+    let signed_header: &TestHeader = all_headers_from_genesis.last().unwrap();
+    // kick out latest header from range of 100
+    latest_range_of_101.pop();
+    let justification = make_default_justification(&signed_header.clone());
+
+    GrandpaHeadersQuickSync::<TestHeader> {
+        signed_header: signed_header.clone(),
+        latest_range_of_101,
         justification,
     }
 }
