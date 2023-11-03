@@ -36,9 +36,6 @@ export const handleAssetRegistrationCommand = async (
           provider: new WsProvider(args.endpoint),
       })
 
-      const keyring = new Keyring({type: 'sr25519'})
-      const signer = keyring.addFromUri('//Alice')
-
       const assetId = AssetRegistrationParameters.createAssetId(api, args.id)
       const assetAdmin = AssetRegistrationParameters.createAdmin(
           api,
@@ -54,9 +51,29 @@ export const handleAssetRegistrationCommand = async (
       const assetMultiLocation =
           AssetRegistrationParameters.createAssetMultiLocation(api, args.symbol)
 
-      if (args.dest == "t0rn") {
-        const adminId = await api.query.sudo.key()
-        const adminPair = keyring.getPair(adminId.toString())
+      const keyring = new Keyring({type: 'sr25519'})
+      if (process.env.XCM_TEST_SIGNER_KEY != undefined && args.dest != "t0rn") {
+          const signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
+      }
+      else if (process.env.CIRCUIT_SIGNER_KEY != undefined && args.dest == "t0rn") {
+          const signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
+      }
+      else if (args.dest == "local") {
+          const signer = keyring.addFromUri('//Alice')
+      }
+      else {
+          throw new Error("Signer not found!")
+      }
+
+      if (args.dest == "t0rn" || args.dest == "local") {
+        if (args.dest == "local") {
+            const adminId = await api.query.sudo.key()
+            const adminPair = keyring.getPair(adminId.toString())
+        }
+        else {
+            const adminPair = signer
+        }
+
         const create = await api.tx.sudo
           .sudo(
               api.tx.utility.batch([
