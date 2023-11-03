@@ -151,6 +151,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
         HeadersAdded(BridgedBlockNumber<T, I>),
+        QuickSyncHeadersAdded(BridgedBlockNumber<T, I>),
     }
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -369,14 +370,14 @@ pub mod pallet {
             // The rest follows as usual submit_headers
             Pallet::<T, I>::verify_and_store_headers(
                 latest_range_of_max_100,
-                signed_header,
+                signed_header.clone(),
                 justification,
                 &mut parent_hash,
             )?;
+            Self::deposit_event(Event::QuickSyncHeadersAdded(*signed_header.number()));
             let pointer_post = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
             if pointer_prior != pointer_post {
                 let counter = <SubmissionsCounter<T, I>>::get();
-
                 match Pallet::<T, I>(PhantomData).get_latest_heartbeat() {
                     Ok(heartbeat) => {
                         let verifier = T::MyVendor::get();
@@ -389,12 +390,10 @@ pub mod pallet {
                         );
                     },
                 }
-
                 <SubmissionsCounter<T, I>>::put(
                     counter
                         .saturating_add(frame_system::pallet_prelude::BlockNumberFor::<T>::one()),
                 );
-
                 Ok(Pays::No.into())
             } else {
                 Ok(Pays::Yes.into())
@@ -1593,6 +1592,8 @@ pub mod tests {
                 <BestFinalizedHash<TestRuntime>>::get(),
                 Some(quick_sync_update_data_ok.signed_header.hash())
             );
+            // Can continue with normal header submission
+            assert_ok!(submit_headers(205, 210));
         })
     }
 
