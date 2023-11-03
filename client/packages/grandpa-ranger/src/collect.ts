@@ -89,9 +89,13 @@ const generateBatchProof = async (
     logger.debug(`Headers size: ${headersSize}kb`)
     const latestHeader = headers.pop()
 
-    if (headers.length > quickSyncLimit && headers.length > 0) {
+    if (
+      !!quickSyncLimit &&
+      headers.length > quickSyncLimit &&
+      headers.length > 0
+    ) {
       // Switch to quick sync instead - presumably the target chain is too far ahead and there could be too many headers to submit (this issue is a problem for full Polkadot Headers and session of 24H)
-      logger.debug('Switching to quick sync')
+      logger.warn('Switching to quick sync')
       // Figure the height of the last block in the epoch is the last block in the headers array.
       // For Quick Sync ask for the last block in the epoch - 101, since the Light Client stores max 100 headers, and the extra 101 is used to compare againt parentHash as substitute for finalized block hash.
       const endOfEpochMinus101 = parseInt(latestHeader.number.toJSON()) - 101

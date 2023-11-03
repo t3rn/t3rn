@@ -176,7 +176,11 @@ export class GrandpaRanger {
         // Check if Quick Sync batch
         let isQuickSync = false
         // check if exists and is array and has quickSync101
-        if (!!args.rangeQuickSync101 && Array.isArray(args.rangeQuickSync101)) {
+        if (
+          !!args.rangeQuickSync101 &&
+          Array.isArray(args.rangeQuickSync101) &&
+          args.rangeQuickSync101.length > 0
+        ) {
           logger.debug(
             `Size of rangeQuickSync101 as part of UtilityBatch: ${Math.floor(
               Buffer.from(JSON.stringify(args.rangeQuickSync101)).length / 1024,
@@ -242,7 +246,8 @@ export class GrandpaRanger {
     // check if exists and is array and has quickSync101
     if (
       !!range[0].rangeQuickSync101 &&
-      Array.isArray(range[0].rangeQuickSync101)
+      Array.isArray(range[0].rangeQuickSync101) &&
+      range[0].rangeQuickSync101.length > 0
     ) {
       logger.debug(
         `Size of rangeQuickSync101: ${Math.floor(
