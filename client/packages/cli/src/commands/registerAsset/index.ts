@@ -53,20 +53,20 @@ export const handleAssetRegistrationCommand = async (
 
       const keyring = new Keyring({type: 'sr25519'})
       let signer = keyring.addFromUri('//Alice')
-      if (process.env.XCM_TEST_SIGNER_KEY != undefined && args.dest != "t0rn") {
+      if (process.env.XCM_TEST_SIGNER_KEY != undefined && args.dest != 't0rn') {
           signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
       }
-      else if (process.env.CIRCUIT_SIGNER_KEY != undefined && args.dest == "t0rn") {
+      else if (process.env.CIRCUIT_SIGNER_KEY != undefined && args.dest == 't0rn') {
           signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
       }
-      else if (args.dest == "local") {
+      else if (args.dest == 'local') {
           signer = keyring.addFromUri('//Alice')
       }
-      else if(args.dest != "para"){
-          throw new Error("Signer not found!")
+      else if(args.dest != 'para'){
+          throw new Error('Signer not found!')
       }
 
-      if (args.dest == "t0rn" || args.dest == "local") {
+      if (args.dest == 't0rn' || args.dest == 'local') {
 
         const adminId = await api.query.sudo.key()
         const adminPair = keyring.getPair(adminId.toString())
@@ -125,7 +125,7 @@ export const handleAssetRegistrationCommand = async (
               }
           })
     } 
-    else if (args.dest == "para" ) {
+    else if (args.dest == 'para' ) {
         await api.tx.utility.batch([
               api.tx.assets.create(
                   assetId,
@@ -172,7 +172,7 @@ export const handleAssetRegistrationCommand = async (
           })
     }
     else {
-          throw new Error("Unsupported asset registration destination type!")
+          throw new Error('Unsupported asset registration destination type!')
     }
     // TO DO: Add support for AssetHub registration of a native token of a parachain
     console.log('Asset Created!\n')

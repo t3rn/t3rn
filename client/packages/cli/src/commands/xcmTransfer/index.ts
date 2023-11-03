@@ -64,24 +64,24 @@ export const handleXcmTransferCommand = async (
       XcmTransferParameters.createWeightLimit(targetApi)
 
     let signer = keyring.addFromUri(args.signer)
-    if (args.signer == "//Circuit") {
+    if (args.signer == '//Circuit') {
       if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
-          console.log("Circuit signer not found... Exit\n")
+          console.log('Circuit signer not found... Exit\n')
           spinner.stop()
           process.exit(0)
       }
       signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
     }
-    else if (args.signer == "//Test") {
+    else if (args.signer == '//Test') {
       if (process.env.XCM_TEST_SIGNER_KEY === undefined) {
-          console.log("XCM test signer key not found... Exit\n")
+          console.log('XCM test signer key not found... Exit\n')
           spinner.stop()
           process.exit(0)
       }
       signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
     }
 
-    if (args.type == "relay") {
+    if (args.type == 'relay') {
         await targetApi.tx.xcmPallet
             .limitedReserveTransferAssets(
                 xcmDestParam,
@@ -114,9 +114,9 @@ export const handleXcmTransferCommand = async (
                 }
             })
     }
-    else if (args.type == "para" && args.targetAsset == "TRN") {
+    else if (args.type == 'para' && args.targetAsset == 'TRN') {
         const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
-        const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, "ROC", args.type, 2000000000000)
+        const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, 'ROC', args.type, 2000000000000)
         await targetApi.tx.withdrawTeleport
             .withdrawAndTeleport(xcmDestParam, xcmBeneficiaryParam, xcmNativeAssetAmount, xcmFeeAsset)
             .signAndSend(signer, ({ status, events }) => {
@@ -225,7 +225,7 @@ export const handleXcmTransferCommand = async (
         })
     }
     else {
-        throw new Error("Unsupported transaction type!")
+        throw new Error('Unsupported transaction type!')
     }
     console.log('XCM Transfer Completed\n')
     spinner.stop()

@@ -17,8 +17,8 @@ export const XcmTransferSchema = z.object({
   }),
   dest: z
     .number({
-      invalid_type_error: "Destination chain ID must be a number",
-      required_error: "Destination chain ID is required",
+      invalid_type_error: 'Destination chain ID must be a number',
+      required_error: 'Destination chain ID is required',
     })
     .max(10000),
   recipient: z.string({
