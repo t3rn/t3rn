@@ -63,13 +63,14 @@ export const handleXcmTransferCommand = async (
     const xcmWeightLimitParam =
       XcmTransferParameters.createWeightLimit(targetApi)
 
+    let signer = keyring.addFromUri(args.signer)
     if (args.signer == "//Circuit") {
       if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
           console.log("Circuit signer not found... Exit\n")
           spinner.stop()
           process.exit(0)
       }
-      const signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
+      signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
     }
     else if (args.signer == "//Test") {
       if (process.env.XCM_TEST_SIGNER_KEY === undefined) {
@@ -77,10 +78,7 @@ export const handleXcmTransferCommand = async (
           spinner.stop()
           process.exit(0)
       }
-      const signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
-    }
-    else {
-      const signer = keyring.addFromUri(args.signer)
+      signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
     }
 
     if (args.type == "relay") {

@@ -52,27 +52,24 @@ export const handleAssetRegistrationCommand = async (
           AssetRegistrationParameters.createAssetMultiLocation(api, args.symbol)
 
       const keyring = new Keyring({type: 'sr25519'})
+      let signer = keyring.addFromUri('//Alice')
       if (process.env.XCM_TEST_SIGNER_KEY != undefined && args.dest != "t0rn") {
-          const signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
+          signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
       }
       else if (process.env.CIRCUIT_SIGNER_KEY != undefined && args.dest == "t0rn") {
-          const signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
+          signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
       }
       else if (args.dest == "local") {
-          const signer = keyring.addFromUri('//Alice')
+          signer = keyring.addFromUri('//Alice')
       }
       else {
           throw new Error("Signer not found!")
       }
 
       if (args.dest == "t0rn" || args.dest == "local") {
-        if (args.dest == "local") {
-            const adminId = await api.query.sudo.key()
-            const adminPair = keyring.getPair(adminId.toString())
-        }
-        else {
-            const adminPair = signer
-        }
+
+        const adminId = await api.query.sudo.key()
+        let adminPair = keyring.getPair(adminId.toString())
 
         const create = await api.tx.sudo
           .sudo(
