@@ -69,7 +69,7 @@ export const handleAssetRegistrationCommand = async (
       if (args.dest == "t0rn" || args.dest == "local") {
 
         const adminId = await api.query.sudo.key()
-        let adminPair = keyring.getPair(adminId.toString())
+        const adminPair = keyring.getPair(adminId.toString())
 
         const create = await api.tx.sudo
           .sudo(
