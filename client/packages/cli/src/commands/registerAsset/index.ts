@@ -62,7 +62,7 @@ export const handleAssetRegistrationCommand = async (
       else if (args.dest == "local") {
           signer = keyring.addFromUri('//Alice')
       }
-      else {
+      else if(args.dest != "para"){
           throw new Error("Signer not found!")
       }
 
