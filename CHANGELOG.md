@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.71.0-rc.0] - 2023-11-03
+### :sparkles: New Features
+- [`735f315`](https://github.com/t3rn/t3rn/commit/735f3151b874ecea0c8481c93f89ec4eb559a46a) - include SFX evaluation by executors for transfer assets against t0rn *(PR [#1432](https://github.com/t3rn/t3rn/pull/1432) by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`7d6e383`](https://github.com/t3rn/t3rn/commit/7d6e383fb443365ec5a2cc2d1487a63f8da4cf62) - **ci**: add automated XCM transactions sending using helm *(PR [#1430](https://github.com/t3rn/t3rn/pull/1430) by [@chexware](https://github.com/chexware))*
+
+### :bug: Bug Fixes
+- [`d58ea3c`](https://github.com/t3rn/t3rn/commit/d58ea3cee99b05391f3a9ca0ea91173a9f80c2ed) - cli reset register light client *(PR [#1429](https://github.com/t3rn/t3rn/pull/1429) by [@gvko](https://github.com/gvko))*
+- [`578e08e`](https://github.com/t3rn/t3rn/commit/578e08e37d17b363a1ae97d5f7a700558b7b2d73) - correct signAndSendSafe not resolving on success *(PR [#1434](https://github.com/t3rn/t3rn/pull/1434) by [@gvko](https://github.com/gvko))*
+
+### :white_check_mark: Tests
+- [`a287cc5`](https://github.com/t3rn/t3rn/commit/a287cc513ff809345bf6b3815bfd5ef5b483d6fa) - extend mock single vacuum order to test all registered gateways *(PR [#1431](https://github.com/t3rn/t3rn/pull/1431) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`fb17d09`](https://github.com/t3rn/t3rn/commit/fb17d09329548dedd916fc4a49f9eeddbcba94e9) - update sepolia LC version  *(PR [#1433](https://github.com/t3rn/t3rn/pull/1433) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.70.2-rc.0] - 2023-11-02
 ### :bug: Bug Fixes
 - [`63b00a5`](https://github.com/t3rn/t3rn/commit/63b00a570bdde7516125c63e844d9b5be740f068) - **grandpa-ranger**: sending limited ranges to not exceed blocksize *(PR [#1404](https://github.com/t3rn/t3rn/pull/1404) by [@coun7zero](https://github.com/coun7zero))*
@@ -1871,3 +1887,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.70.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.69.1-rc.0...v1.70.0-rc.0
 [v1.70.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.0-rc.0...v1.70.1-rc.0
 [v1.70.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.1-rc.0...v1.70.2-rc.0
+[v1.71.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.2-rc.0...v1.71.0-rc.0
