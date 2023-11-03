@@ -66,6 +66,11 @@ interface NextSyncCommitteeResponse {
   }
 }
 
+export interface VendorRegistrationArgs {
+  retry?: boolean
+  slot?: number
+}
+
 const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
   const period = slot / ETHEREUM_SLOTS_PER_EPOCH / ETHEREUM_EPOCHS_PER_PERIOD
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
@@ -309,14 +314,38 @@ const generateRegistrationData = (
 
 export const registerEthereumVerificationVendor = async (
   circuit: ApiPromise,
+  args: VendorRegistrationArgs,
 ) => {
+  const spinnerMsg = args.slot
+    ? `Registering from a predefined slot: ${args.slot}`
+    : 'Registering from beacon head'
+  spinner.info(spinnerMsg)
+
+  let slot = args.slot ? args.slot : await fetchLastSyncCommitteeUpdateSlot()
+
   try {
-    const slot = await fetchLastSyncCommitteeUpdateSlot()
+    // Sometimes the slot we fetch here might be missed.
+    // In this case, we should subtract 32 * 256 slots (the previous committee term).
+    // If one of them returns 404 we should use other one.
+    if (args.retry) {
+      slot -= 8192
+    }
+
     const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
     const data = await fetchInitData(slot, root)
 
     return generateRegistrationData(data, circuit)
-  } catch (e) {
-    spinner.fail(colorLogMsg('ERROR', e))
+  } catch (err) {
+    if (!args.retry) {
+      spinner.info(
+        colorLogMsg(
+          'INFO',
+          `Retrying to fetch init data due to an error: ${err.message}`,
+        ),
+      )
+      return registerEthereumVerificationVendor(circuit, { slot, retry: true })
+    } else {
+      spinner.fail(colorLogMsg('ERROR', err))
+    }
   }
 }

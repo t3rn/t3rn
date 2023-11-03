@@ -24,6 +24,7 @@ export const spinner = ora()
 export const handleRegisterGateway = async (
   gatewayId: string,
   exportMode: boolean,
+  slot?: number,
 ) => {
   const config = getConfig()
   if (!config) {
@@ -31,29 +32,29 @@ export const handleRegisterGateway = async (
   }
 
   const foundGateway = config.gateways.find(
-    (g) => g.id.toLowerCase() === gatewayId.toLowerCase(),
+    (gateway) => gateway.id.toLowerCase() === gatewayId.toLowerCase(),
   )
 
   if (!foundGateway) {
     log('ERROR', `Gateway ID ${gatewayId} not found in config file`)
     process.exit(1)
   }
-  console.log('Found gateway!', foundGateway)
 
   spinner.text = `Registering ${foundGateway.name} gateway...`
   spinner.start()
 
-  await registerGateway(foundGateway as Required<Gateway>, exportMode)
+  await registerGateway(foundGateway as Required<Gateway>, exportMode, slot)
 }
 
 const registerGateway = async (
   gatewayData: Required<Gateway>,
   exportMode: boolean,
+  slot?: number,
 ) => {
   const { circuit, sdk } = await createCircuitContext(exportMode)
 
   const gatewayId = createType('[u8; 4]', gatewayData.id)
-  const tokenId = createType('u32', gatewayData.tokenId)
+  const tokenId = createType('[u8; 4]', gatewayData.tokenId)
   const verificationVendor: T3rnPrimitivesGatewayVendor = createType(
     'T3rnPrimitivesGatewayVendor',
     gatewayData.registrationData.verificationVendor as never,
@@ -78,7 +79,11 @@ const registerGateway = async (
   )
 
   try {
-    const registrationData = await getRegistrationData(circuit, gatewayData)
+    const registrationData = await getRegistrationData(
+      circuit,
+      gatewayData,
+      slot,
+    )
 
     if (!registrationData) {
       throw new Error(
@@ -100,7 +105,6 @@ const registerGateway = async (
       codec.toJSON(),
       registrant,
       escrowAccounts,
-      //@ts-ignore - TS doesn't know about the type
       allowedSideEffects,
       tokenInfo,
       registrationData,
@@ -123,7 +127,7 @@ const registerGateway = async (
     spinner.fail(
       colorLogMsg(
         'ERROR',
-        `${gatewayData.name} gateway registration failed! ${error}`,
+        `${gatewayData.name} gateway registration failed! Error: ${error}`,
       ),
     )
     process.exit(1)
@@ -133,12 +137,17 @@ const registerGateway = async (
 const getRegistrationData = (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>,
+  slot?: number,
 ) => {
-  switch (gatewayData.registrationData.executionVendor) {
-    case 'Substrate':
+  switch (gatewayData.registrationData.verificationVendor) {
+    case 'Kusama':
+      return registerSubstrateVerificationVendor(circuit, gatewayData)
+    case 'Rococo':
       return registerSubstrateVerificationVendor(circuit, gatewayData)
     case 'Ethereum':
-      return registerEthereumVerificationVendor(circuit)
+      return registerEthereumVerificationVendor(circuit, { slot })
+    case 'Sepolia':
+      return registerEthereumVerificationVendor(circuit, { slot })
     default:
       throw new Error('Registration for verification vendor not available!')
   }
