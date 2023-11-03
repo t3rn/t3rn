@@ -9,7 +9,9 @@ import {
 } from "@polkadot/types/interfaces"
 
 /**
- * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
+ * A class for batching and sending transaction to circuit.
+ * The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding.
+ * This is supposed to act as a default way of dealing with extrinsics.
  */
 export class Tx {
   api: ApiPromise
@@ -52,18 +54,15 @@ export class Tx {
             exportObj?.addEvent(event)
           })
 
-          if (dispatchError?.isModule) {
-            const err = this.api.registry.findMetaError(dispatchError.asModule)
-
-            exportObj?.addErr(dispatchError).toFile()
-            reject(Error(`${err.section}::${err.name}`))
-          } else if (dispatchError) {
-            exportObj?.addErr(dispatchError).toFile()
-
-            reject(Error(dispatchError.toString()))
-          } else if (status.isInBlock) {
-            resolve({ status, events, dispatchError })
+          if (dispatchError) {
+            this.throwDispatchError(dispatchError, exportObj, reject)
           }
+
+          Tx.resolveIfTxIsInBlock(status, "statusEventsAndError", resolve, {
+            status,
+            events,
+            dispatchError,
+          })
         },
       ),
     )
@@ -144,9 +143,8 @@ export class Tx {
           events.forEach(({ event }) => {
             exportObj?.addEvent(event)
           })
-          if (status.isInBlock) {
-            resolve(events)
-          }
+
+          Tx.resolveIfTxIsInBlock(status, "events", resolve, events)
         },
       ),
     )
@@ -172,15 +170,28 @@ export class Tx {
 
   private static resolveIfTxIsInBlock(
     status: ExtrinsicStatus,
-    // TODO: for later refactor, to use this func in other functions
     returnType: "blockHash" | "events" | "statusEventsAndError",
     resolve,
+    dataToReturn?:
+      | EventRecord[]
+      | {
+          status: ExtrinsicStatus
+          events: EventRecord[]
+          dispatchError: DispatchError | undefined
+        },
   ) {
     if (!status.isInBlock) {
       return
     }
 
-    resolve(status.asInBlock.toString())
+    switch (returnType) {
+      case "blockHash":
+        return resolve(status.asInBlock.toString())
+      case "events":
+        return resolve(dataToReturn)
+      case "statusEventsAndError":
+        return resolve(dataToReturn)
+    }
   }
 
   private static throwIfTxStatusIsError(status: ExtrinsicStatus, reject) {
