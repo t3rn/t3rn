@@ -1,8 +1,12 @@
-import { ApiPromise } from '@polkadot/api'
-import { ExtrinsicExport } from '../export'
-import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
-import { SignerOptions } from '@polkadot/api/types/submittable'
-import { DispatchError, EventRecord, ExtrinsicStatus, } from '@polkadot/types/interfaces'
+import { ApiPromise } from "@polkadot/api"
+import { ExtrinsicExport } from "../export"
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import { SignerOptions } from "@polkadot/api/types/submittable"
+import {
+  DispatchError,
+  EventRecord,
+  ExtrinsicStatus,
+} from "@polkadot/types/interfaces"
 
 /**
  * A class for batching and sending transaction to circuit.
