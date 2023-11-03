@@ -43,12 +43,13 @@ export class CoingeckoPricing {
 
   /** Read the config file to initialize the list of assets we want to track */
   getTrackingAssets() {
+    logger.info("Tracking assets");
     const keys = Object.keys(config.assets);
     for (let i = 0; i < keys.length; i++) {
       config.assets[keys[i]].forEach((asset) => {
         if (asset.priceSource === "coingecko") {
+          logger.info(`Asset id: ${asset.id}`);
           this.assets[keys[i]] = asset.id;
-          console.log("asset id: ", asset.id);
           this.prices[keys[i]] = new BehaviorSubject<number>(0);
         }
       });
