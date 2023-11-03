@@ -42,10 +42,12 @@ export class CoingeckoPricing {
 
   /** Read the config file to initialize the list of assets we want to track */
   getTrackingAssets() {
+    logger.info("Tracking assets");
     const keys = Object.keys(config.assets);
     for (let i = 0; i < keys.length; i++) {
       config.assets[keys[i]].forEach((asset) => {
         if (asset.priceSource === "coingecko") {
+          logger.info(`Asset id: ${asset.id}`);
           this.assets[keys[i]] = asset.id;
           this.prices[keys[i]] = new BehaviorSubject<number>(0);
         }
@@ -56,7 +58,12 @@ export class CoingeckoPricing {
   /** Update the price of all assets we are tracking every 30 seconds */
   async updateAssetPrices() {
     const ids = Object.keys(this.assets);
+    const alreadyUpdated = [];
     for (let i = 0; i < ids.length; i++) {
+      if (alreadyUpdated[ids[i]]) {
+        this.prices[ids[i]].next(alreadyUpdated[ids[i]]);
+        continue;
+      }
       await axios
         .get(
           config.pricing.coingecko.endpoint +
@@ -68,10 +75,11 @@ export class CoingeckoPricing {
           if (price !== this.prices[ids[i]].getValue()) {
             this.prices[ids[i]].next(price);
           }
+          alreadyUpdated[ids[i]] = price;
           return new Promise((resolve) => setTimeout(resolve, 2000));
         })
         .catch((err) => {
-          logger.error({ err }, "Failed fetching prices");
+          logger.error({ err }, "Failed fetching prices for asset %s", ids[i]);
         });
     }
     setTimeout(this.updateAssetPrices.bind(this), this.updateFrequency);

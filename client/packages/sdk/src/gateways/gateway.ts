@@ -275,7 +275,6 @@ export class Gateway {
   /**
    * Set the side effect bindings
    */
-
   setSfxBindings() {
     for (let i = 0; i < this.allowedSideEffects.length; i++) {
       switch (this.allowedSideEffects[i]) {
