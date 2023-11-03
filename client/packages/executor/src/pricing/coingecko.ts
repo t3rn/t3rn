@@ -2,7 +2,6 @@ import { config } from "../../config/config";
 import { BehaviorSubject } from "rxjs";
 import axios from "axios";
 import { logger } from "../logging";
-import * as console from "console";
 
 /**
  * MVP implementation of sourcing prices from coingecko
