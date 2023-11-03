@@ -16,6 +16,7 @@ export const handleAddSfxAbiCommand = async (
     AddSfxAbiSchema,
     {
       ..._args,
+      palletId: _args?.palletId ? parseInt(_args?.palletId) : undefined,
     },
     {
       configFileName: 'Add SFX ABI to XDNS arguments',
