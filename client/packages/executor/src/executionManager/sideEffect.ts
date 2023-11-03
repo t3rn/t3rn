@@ -22,6 +22,7 @@ import { Codec } from "@polkadot/types/types";
 import { BN } from "@polkadot/util";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
+import { config } from "../../config/config";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -37,8 +38,12 @@ export type TxOutput = {
   amount: bigint;
   /** Output amount in human-readable float */
   amountHuman: number;
-  /** Output asset tickker */
+  /** Output asset ticker */
   asset: string;
+  /** Reward asset ticker */
+  rewardAsset: string;
+  /** Reward amount in human-readable float */
+  rewardAmount: number;
 };
 
 /**
@@ -117,6 +122,8 @@ export class SideEffect extends EventEmitter {
   insurance: number;
   /** The current reward paid by the user for executing this SFX. This amount can reduce through executor bidding */
   reward: BehaviorSubject<number>;
+  /** The reward asset, e.g. TRN */
+  maybeRewardAsset: number;
   /** The raw SideEffect, encoded in SCALE */
   raw: T3rnTypesSideEffect;
 
@@ -189,7 +196,8 @@ export class SideEffect extends EventEmitter {
       this.gateway = sdk.gateways[this.target];
       this.reward = new BehaviorSubject(
         sdk.circuit.toFloat(sideEffect.maxReward),
-      ); // this is always in TRN (native asset)
+      );
+      this.maybeRewardAsset = sideEffect.rewardAssetId || 0;
       this.insurance = sdk.circuit.toFloat(sideEffect.insurance); // this is always in TRN (native asset)
       this.strategyEngine = strategyEngine;
       this.biddingEngine = biddingEngine;
@@ -228,17 +236,25 @@ export class SideEffect extends EventEmitter {
     this.txOutputAssetPrice = txOutputAssetPrice;
     this.rewardAssetPrice = rewardAssetPrice;
 
-    logger.info(
-      {
-        txCostNative: txCostNative.getValue(),
-        nativeAssetPrice: nativeAssetPrice.getValue(),
-        txOutputAssetPrice: txOutputAssetPrice.getValue(),
-        rewardAssetPrice: rewardAssetPrice.getValue(),
-        xtxId: this.xtxId,
-      },
-      "Set risk parameters and subscriptions",
-    );
-
+    // Wrap the subjects in a subscription to trigger the re-evaluation of the SFXs profitability in try catch loop
+    try {
+      logger.info(
+        {
+          txCostNative: txCostNative.getValue(),
+          nativeAssetPrice: nativeAssetPrice.getValue(),
+          txOutputAssetPrice: txOutputAssetPrice.getValue(),
+          rewardAssetPrice: rewardAssetPrice.getValue(),
+          xtxId: this.xtxId,
+        },
+        "Set risk parameters and subscriptions",
+      );
+    } catch (error) {
+      logger.error(
+        error.stack,
+        "Error getting price values in SideEffect.setRiskRewardParameters()",
+      );
+      return;
+    }
     const txCostNativeSubscription = this.txCostNative.subscribe(() => {
       this.recomputeMaxProfit();
     });
@@ -286,7 +302,8 @@ export class SideEffect extends EventEmitter {
       this.nativeAssetPrice.getValue();
     this.txCostUsd = txCostUsd;
     const txOutputCostUsd =
-      this.txOutputAssetPrice.getValue() * this.getTxOutputs().amountHuman;
+      this.txOutputAssetPrice.getValue() *
+      this.getTxOutputs(config.assetIdToTickerMap).amountHuman;
     this.txOutputCostUsd = txOutputCostUsd;
     const rewardValueUsd =
       this.rewardAssetPrice.getValue() * this.reward.getValue();
@@ -372,6 +389,21 @@ export class SideEffect extends EventEmitter {
       case SfxType.Transfer: {
         return this.getTransferArguments();
       }
+      case SfxType.TransferAsset: {
+        return this.getTransferAssetArguments();
+      }
+      case SfxType.CallEVM: {
+        return this.getCallArguments();
+      }
+      case SfxType.CallWASM: {
+        return this.getCallArguments();
+      }
+      case SfxType.CallGeneric: {
+        return this.getCallArguments();
+      }
+      default: {
+        return [];
+      }
     }
   }
 
@@ -380,16 +412,42 @@ export class SideEffect extends EventEmitter {
    *
    * @returns TxOutput.
    */
-  getTxOutputs(): TxOutput {
+  getTxOutputs(assetIdToTickerMap: { [assetId: number]: string }): TxOutput {
     switch (this.action) {
       case SfxType.Transfer: {
         let amount = this.getTransferArguments()[1];
         amount = parseInt(amount.toString());
-
         return {
           amount: BigInt(amount),
           amountHuman: this.gateway.toFloat(amount), // converts to human format
           asset: this.gateway.ticker,
+          rewardAsset: "TRN",
+          rewardAmount: this.reward.getValue(),
+        };
+      }
+      case SfxType.TransferAsset: {
+        const transferAssetArguments = this.getTransferAssetArguments();
+        const assetId = transferAssetArguments[0];
+        const assetTicker = assetIdToTickerMap[assetId];
+        const targetAmount = transferAssetArguments[2];
+        const amount = parseInt(targetAmount.toString());
+        const rewardAssetTicker =
+          assetIdToTickerMap[this.maybeRewardAsset] || "TRN";
+        return {
+          amount: BigInt(amount),
+          amountHuman: this.gateway.toFloat(amount), // converts to human format
+          asset: assetTicker,
+          rewardAsset: rewardAssetTicker,
+          rewardAmount: this.reward.getValue(),
+        };
+      }
+      default: {
+        return {
+          amount: BigInt(0),
+          amountHuman: 0,
+          asset: "",
+          rewardAsset: "TRN",
+          rewardAmount: 0,
         };
       }
     }
@@ -529,6 +587,22 @@ export class SideEffect extends EventEmitter {
         this.action = SfxType.Transfer;
         return true;
       }
+      case "tass": {
+        this.action = SfxType.TransferAsset;
+        return true;
+      }
+      case "cevm": {
+        this.action = SfxType.CallEVM;
+        return true;
+      }
+      case "wasm": {
+        this.action = SfxType.CallWASM;
+        return true;
+      }
+      case "call": {
+        this.action = SfxType.CallGeneric;
+        return true;
+      }
       default: {
         return false;
       }
@@ -540,6 +614,23 @@ export class SideEffect extends EventEmitter {
     return [
       this.arguments[0],
       this.gateway.parseLe(this.arguments[1]).toNumber(),
+    ];
+  }
+
+  private getTransferAssetArguments() {
+    return [
+      this.gateway.parseLe(this.arguments[0]).toNumber(), // Asset ID as u32
+      this.arguments[0], // Target address
+      this.gateway.parseLe(this.arguments[1]).toNumber(), // Amount as u128
+    ];
+  }
+
+  private getCallArguments() {
+    return [
+      this.arguments[0], // Target address
+      this.arguments[1], // Input
+      this.gateway.parseLe(this.arguments[2]).toNumber(), // Amount as u128
+      this.gateway.parseLe(this.arguments[3]).toNumber(), // Gas Amount u32
     ];
   }
 

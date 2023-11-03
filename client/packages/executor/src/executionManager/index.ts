@@ -88,6 +88,7 @@ export class ExecutionManager {
   circuitListener: CircuitListener;
   circuitRelayer: CircuitRelayer;
   prometheus: Prometheus;
+  globalConfig: Config;
 
   constructor(
     public circuitClient: Sdk["client"],
@@ -102,6 +103,7 @@ export class ExecutionManager {
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.prometheus = prometheus;
+    this.globalConfig = config;
   }
 
   /** Setup all instances and listeners for the execution manager */
@@ -677,19 +679,37 @@ export class ExecutionManager {
    * @param sfx The sfx object
    */
   async addRiskRewardParameters(sfx: SideEffect) {
+    logger.debug(
+      JSON.stringify(sfx.raw),
+      `starting addRiskRewardParameters for RAW SFX`,
+    );
     // get txCost on target
     const txCostSubject =
       await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx);
-    // get price of native token on target
+
+    const txOutput = sfx.getTxOutputs(this.globalConfig.assetIdToTickerMap);
+
+    // get price of asset token on target
     const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
       sfx.gateway.ticker,
     );
 
-    const txOutput = sfx.getTxOutputs();
     // get tx output cost. E.g. tran 1 Eth this returns the current price of Eth
     const txOutputPriceSubject = this.priceEngine.getAssetPrice(txOutput.asset);
     // get price of the reward asset
-    const rewardAssetPriceSubject = this.priceEngine.getAssetPrice("TRN");
+    const rewardAssetPriceSubject = this.priceEngine.getAssetPrice(
+      txOutput.rewardAsset,
+    );
+
+    logger.info(
+      {
+        targetAsset: txOutput.asset,
+        targetAmount: txOutput.amount,
+        rewardAsset: txOutput.rewardAsset,
+        rewardAmount: txOutput.rewardAmount,
+      },
+      `starting sfx.setRiskRewardParameters for Order details`,
+    );
 
     sfx.setRiskRewardParameters(
       txCostSubject,
