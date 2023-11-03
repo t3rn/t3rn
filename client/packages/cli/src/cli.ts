@@ -132,24 +132,24 @@ program
   .action(handleEstimateMaxReward)
 
 withExportMode(
-  program
-    .command('xcmTransfer')
-    .description('Cross-chain transfer of assets using XCM')
-    .requiredOption('--signer <string>', 'The signer of the transaction')
-    .requiredOption('--type <string>', 'The type of XCM transfer')
-    .requiredOption(
-      '--endpoint <string>',
-      'The RPC endpoint from which the XCM transaction will be submitted',
-    )
-    .requiredOption('--dest <string>', 'The destination chain')
-    .requiredOption('--recipient <string>', 'The recipient address')
-    .requiredOption('--target-asset <symbol>', 'The target asset')
-    .requiredOption(
-      '--target-amount <amount>',
-      'The amount of the target asset',
-    )
-    .action(handleXcmTransferCommand),
-)
+    program
+      .command('xcmTransfer')
+      .description('Cross-chain transfer of assets using XCM')
+      .requiredOption('--signer <string>", "The signer of the transaction')
+      .requiredOption('--type <string>", "The type of XCM transfer')
+      .requiredOption(
+        '--endpoint <string>',
+        'The RPC endpoint from which the XCM transaction will be submitted',
+      )
+      .requiredOption('--dest <number>", "The destination chain')
+      .requiredOption('--recipient <string>", "The recipient address')
+      .requiredOption('--target-asset <symbol>", "The target asset')
+      .requiredOption(
+        '--target-amount <amount>',
+        'The amount of the target asset',
+      )
+      .action(handleXcmTransferCommand),
+  )
 
 withExportMode(
   program
