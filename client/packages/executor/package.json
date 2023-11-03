@@ -38,7 +38,7 @@
     "@polkadot/x-textdecoder": "^12.5.1",
     "@polkadot/x-textencoder": "^12.5.1",
     "@polkadot/x-ws": "^12.5.1",
-    "@t3rn/sdk": "0.4.7",
+    "@t3rn/sdk": "0.4.9",
     "@t3rn/types": "^0.1.11",
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",

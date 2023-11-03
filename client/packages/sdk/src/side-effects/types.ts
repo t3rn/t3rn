@@ -4,6 +4,14 @@
 export enum SfxType {
   /* Native Transfer on Target */
   Transfer,
+  /* Transfer Asset between Source and Destination */
+  TransferAsset,
+  /* Call EVM Contract with given input on Destination */
+  CallEVM,
+  /* Call WASM Contract with given input on Destination */
+  CallWASM,
+  /* Call Generic (e.g. Substrate's Pallet) with given input on Destination */
+  CallGeneric,
 }
 
 /**
