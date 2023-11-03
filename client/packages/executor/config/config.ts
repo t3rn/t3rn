@@ -150,6 +150,9 @@ export type Config = {
       },
     ];
   };
+  assetIdToTickerMap: {
+    [assetId: number]: string;
+  };
   /** The strategies that are being used for each gateway */
   strategies: {
     [targetId: string]: Strategy;
@@ -160,12 +163,12 @@ export type Config = {
   /** Configuration for ethereum */
   attestations: {
     ethereum: {
-      name: string;
+      name: string | undefined;
       rpc: string;
-      attestationVerifierAddress: string;
+      attestationVerifierAddress: string | undefined;
       privateKey: string | undefined;
     };
-    processBatches: boolean;
+    enableAttestations: boolean;
   };
 };
 
@@ -252,6 +255,61 @@ export const config: Config = {
         id: "tether",
       },
     ],
+    SLOW: [
+      {
+        priceSource: "coingecko",
+        id: "polkadot",
+      },
+    ],
+    USDT: [
+      {
+        priceSource: "coingecko",
+        id: "tether",
+      },
+    ],
+    USDC: [
+      {
+        priceSource: "coingecko",
+        id: "usd-coin",
+      },
+    ],
+    ETH: [
+      {
+        priceSource: "coingecko",
+        id: "ethereum",
+      },
+    ],
+    SEPL: [
+      {
+        priceSource: "coingecko",
+        id: "ethereum",
+      },
+    ],
+    MATIC: [
+      {
+        priceSource: "coingecko",
+        id: "matic-network",
+      },
+    ],
+    OP: [
+      {
+        priceSource: "coingecko",
+        id: "optimism",
+      },
+    ],
+  },
+  assetIdToTickerMap: {
+    0: "TRN",
+    3333: "TRN",
+    1: "ROC",
+    2: "BSX",
+    3: "KSM",
+    4: "DOT",
+    44: "SLOW",
+    1000: "ETH",
+    1001: "USDT",
+    1002: "SEPL",
+    1003: "USDT",
   },
   strategies: {
     ksm: {
@@ -266,7 +324,7 @@ export const config: Config = {
       },
     },
     roco: {
-      supportedAssets: ["ROC"],
+      supportedAssets: ["ROC", "SLOW", "TRN"],
       sfx: {
         minProfitUsd: 3,
         minYield: 0.05,
@@ -314,6 +372,6 @@ export const config: Config = {
       attestationVerifierAddress: "0x12b6B6F917b9B1af3751eBe41b0A1D7D1a0d4a29",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    processBatches: process.env.PROCESS_BATCHES == "true" ? true : false,
+    enableAttestations: process.env.PROCESS_BATCHES == "true" ? true : false,
   },
 };

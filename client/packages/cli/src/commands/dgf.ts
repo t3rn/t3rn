@@ -1,22 +1,22 @@
-import ora from "ora"
-import { getConfig } from "@/utils/config.ts"
-import { colorLogMsg } from "@/utils/log.ts"
+import ora from 'ora'
+import { getConfig } from '@/utils/config.ts'
+import { colorLogMsg } from '@/utils/log.ts'
 import {
   ErrorListener,
   ErrorMode,
   ListenerEvents,
   processSfx,
-} from "@/utils/dgf.ts"
-import { SfxSendType, submitSfx } from "@/utils/sfx.ts"
-import { createCircuitContext } from "@/utils/circuit.ts"
-import { Extrinsic } from "@/schemas/extrinsic.ts"
-import { Args } from "@/types.ts"
+} from '@/utils/dgf.ts'
+import { SfxSendType, submitSfx } from '@/utils/sfx.ts'
+import { createCircuitContext } from '@/utils/circuit.ts'
+import { Extrinsic } from '@/schemas/extrinsic.ts'
+import { Args } from '@/types.ts'
 
 const spinner = ora()
 const submitedRegistry = new Map<string, Extrinsic>()
 
 export const handleDgfCmd = async (
-  args: Args<"sfx" | "timeout" | "export">,
+  args: Args<'sfx' | 'timeout' | 'export'>,
 ) => {
   const config = getConfig()
   const exportMode = Boolean(args.export)
@@ -26,7 +26,7 @@ export const handleDgfCmd = async (
   }
 
   spinner.start(
-    colorLogMsg("INFO", "Starting the unhappy path generation process..."),
+    colorLogMsg('INFO', 'Starting the unhappy path generation process...'),
   )
 
   try {
@@ -35,17 +35,17 @@ export const handleDgfCmd = async (
 
     await batchErrorCreation(args.sfx, exportMode)
     spinner.stopAndPersist({
-      symbol: "🎉",
-      text: colorLogMsg("SUCCESS", "Data generated for unhappy paths!"),
+      symbol: '🎉',
+      text: colorLogMsg('SUCCESS', 'Data generated for unhappy paths!'),
     })
 
     const timeout = parseInt(args.timeout) ?? 30
     const start = Date.now()
 
-    listener.on("event", (eventData) => {
+    listener.on('event', (eventData) => {
       spinner.info(
         colorLogMsg(
-          "INFO",
+          'INFO',
           `Received ${ListenerEvents[eventData.type]} event for processing!`,
         ),
       )
@@ -55,7 +55,7 @@ export const handleDgfCmd = async (
       const secondsLeftTillTimeout = timeout - (Date.now() - start) / 1000
       spinner.start(
         colorLogMsg(
-          "INFO",
+          'INFO',
           `Waiting for events from the chain, ${secondsLeftTillTimeout.toFixed(
             2,
           )}s till timeout...`,
@@ -71,22 +71,22 @@ export const handleDgfCmd = async (
     await new Promise((resolve) => setTimeout(resolve, timeout * 1000))
 
     spinner.stopAndPersist({
-      symbol: "🏁",
-      text: colorLogMsg("INFO", "Timeout waiting for events from the chain!"),
+      symbol: '🏁',
+      text: colorLogMsg('INFO', 'Timeout waiting for events from the chain!'),
     })
     process.exit(0)
   } catch (e) {
-    spinner.fail(colorLogMsg("ERROR", e.message))
+    spinner.fail(colorLogMsg('ERROR', e.message))
     process.exit(1)
   }
 }
 
 const batchErrorCreation = async (filePath: string, exportMode = false) => {
   spinner.stopAndPersist({
-    symbol: "🚧",
+    symbol: '🚧',
     text: colorLogMsg(
-      "INFO",
-      "Generate and submit test SFXs that will result in various errors:",
+      'INFO',
+      'Generate and submit test SFXs that will result in various errors:',
     ),
   })
 
@@ -98,21 +98,21 @@ const batchErrorCreation = async (filePath: string, exportMode = false) => {
     const extrinsic = processSfx(filePath, ErrorMode[errorMode])
 
     spinner.stopAndPersist({
-      symbol: " •",
+      symbol: ' •',
       text: colorLogMsg(
-        "SUCCESS",
+        'SUCCESS',
         `🔨 Generated SFX that will result in ${errorMode} error`,
       ),
     })
-    spinner.start(colorLogMsg("INFO", "📦 Submitting this SFX..."))
+    spinner.start(colorLogMsg('INFO', '📦 Submitting this SFX...'))
 
     const response = await submitSfx(extrinsic, exportMode, SfxSendType.Raw)
     const hash = response[3].event.data[1]
 
     submitedRegistry.set(hash.toHuman(), extrinsic)
     spinner.stopAndPersist({
-      symbol: " •",
-      text: colorLogMsg("SUCCESS", "✨ The SFX was successfully submitted!"),
+      symbol: ' •',
+      text: colorLogMsg('SUCCESS', '✨ The SFX was successfully submitted!'),
     })
   }
 }
@@ -129,20 +129,20 @@ const processEvent = (eventData: {
 }) => {
   if (ErrorMode[eventData.error] !== ErrorMode[ErrorMode.None]) {
     spinner.stopAndPersist({
-      symbol: "🛬",
+      symbol: '🛬',
       text:
-        "Received an event that is interesting to us:" +
-        "\n   Type: " +
+        'Received an event that is interesting to us:' +
+        '\n   Type: ' +
         ListenerEvents[eventData.type] +
-        "\n   Extrinsic Hash: " +
+        '\n   Extrinsic Hash: ' +
         JSON.stringify(eventData.data) +
-        "\n   Error mode: " +
+        '\n   Error mode: ' +
         JSON.stringify(ErrorMode[eventData.error]),
     })
 
     validateExtrinsic(eventData)
   } else {
-    spinner.warn(colorLogMsg("WARN", "Ignore this event, not interesting!"))
+    spinner.warn(colorLogMsg('WARN', 'Ignore this event, not interesting!'))
   }
 }
 
@@ -166,9 +166,9 @@ const validateExtrinsic = (eventData: {
   // Check if the error modes match
   if (reg.sideEffects[0].signature === ErrorMode[eventData.error]) {
     spinner.stopAndPersist({
-      symbol: "✅",
+      symbol: '✅',
       text: colorLogMsg(
-        "SUCCESS",
+        'SUCCESS',
         `Event emited and created have matching error modes: ${
           ErrorMode[eventData.error]
         }`,
@@ -176,9 +176,9 @@ const validateExtrinsic = (eventData: {
     })
   } else {
     spinner.stopAndPersist({
-      symbol: "🚩",
+      symbol: '🚩',
       text: colorLogMsg(
-        "ERROR",
+        'ERROR',
         `Event emited and created DO NOT match on the error mode.\n\tError mode received: \t${
           ErrorMode[eventData.error]
         }\n\tError mode sent: \t${reg.sideEffects[0].signature}`,

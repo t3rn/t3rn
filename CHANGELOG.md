@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.70.2-rc.0] - 2023-11-02
+### :bug: Bug Fixes
+- [`63b00a5`](https://github.com/t3rn/t3rn/commit/63b00a570bdde7516125c63e844d9b5be740f068) - **grandpa-ranger**: sending limited ranges to not exceed blocksize *(PR [#1404](https://github.com/t3rn/t3rn/pull/1404) by [@coun7zero](https://github.com/coun7zero))*
+- [`5952849`](https://github.com/t3rn/t3rn/commit/59528492bbafa440a3914db70e7ec8fd83425022) - **executor**: disable attestations *(PR [#1423](https://github.com/t3rn/t3rn/pull/1423) by [@3h4x](https://github.com/3h4x))*
+- [`d6508e3`](https://github.com/t3rn/t3rn/commit/d6508e3d51cdad329f7fefc76de106e5eeeceb71) - correct ABI descriptor for RLP-encoded "tass" & refresh standard ABI list at XDNS::reboot *(PR [#1427](https://github.com/t3rn/t3rn/pull/1427) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`1574969`](https://github.com/t3rn/t3rn/commit/157496902385af3991fa75cc28c2c7c742b21e1c) - add missing @t3rn/sdk TS options of Vendor::XBI & Instant *(PR [#1421](https://github.com/t3rn/t3rn/pull/1421) by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2339cf0`](https://github.com/t3rn/t3rn/commit/2339cf0efbbb55da8380db4eaa3969aaf001df67) - add prettier rules and reformat the whole project *(PR [#1424](https://github.com/t3rn/t3rn/pull/1424) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.70.1-rc.0] - 2023-11-02
+### :wrench: Chores
+- [`4563cf7`](https://github.com/t3rn/t3rn/commit/4563cf73e367490aed828707c4b1d19825ad79f5) - add extrinsic for linking token to gateways *(PR [#1419](https://github.com/t3rn/t3rn/pull/1419) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.70.0-rc.0] - 2023-11-02
+### :sparkles: New Features
+- [`f66fd15`](https://github.com/t3rn/t3rn/commit/f66fd1523da1362e0203666ba0e27d30245fa54e) - add command to build executor binaries for linux, macOS and window (x64 and arm64) targets *(PR [#1420](https://github.com/t3rn/t3rn/pull/1420) by [@ahkohd](https://github.com/ahkohd))*
+- [`570c328`](https://github.com/t3rn/t3rn/commit/570c328e700ecadedac9861ca6c8b27edb414fc5) - make SFX validation verbose & extend CLI with writer of Orders to Vacuum *(PR [#1409](https://github.com/t3rn/t3rn/pull/1409) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`dcc3191`](https://github.com/t3rn/t3rn/commit/dcc3191033297c7791dd13897b56bf1fbe3d6478) - speed up CI with actions that can run on smaller workers *(PR [#1422](https://github.com/t3rn/t3rn/pull/1422) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.69.1-rc.0] - 2023-11-02
+### :wrench: Chores
+- [`46a1619`](https://github.com/t3rn/t3rn/commit/46a1619f9323c201b4f70d6f2ce2257c5e5bdcef) - update t0rn session parameters: time to 1h, kick threshold to 6h, no disabled validators from session *(PR [#1417](https://github.com/t3rn/t3rn/pull/1417) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.69.0-rc.0] - 2023-11-01
+### :sparkles: New Features
+- [`f0da32a`](https://github.com/t3rn/t3rn/commit/f0da32a80070c142f4d8c42dadab152649dc61fe) - registering assets on t0rn through CLI  and integration tests for XCM transfers of ROC *(PR [#1414](https://github.com/t3rn/t3rn/pull/1414) by [@chexware](https://github.com/chexware))*
+
+### :bug: Bug Fixes
+- [`b0da569`](https://github.com/t3rn/t3rn/commit/b0da569e0c9b46c1e494e42c2464fc08499780db) - loosen fail checks in CLI SDK signAndSafeSafe  *(PR [#1411](https://github.com/t3rn/t3rn/pull/1411) by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9515591`](https://github.com/t3rn/t3rn/commit/9515591015134a065e704ab4424b33a5bbf156d3) - **sdk**: add CI and allow only yarn *(PR [#1412](https://github.com/t3rn/t3rn/pull/1412) by [@3h4x](https://github.com/3h4x))*
+- [`6902b9c`](https://github.com/t3rn/t3rn/commit/6902b9cab4a770d3d46c6167c02f3339b6d3d4fc) - updated SDK version in CLI package.json to enable asset registration *(PR [#1415](https://github.com/t3rn/t3rn/pull/1415) by [@chexware](https://github.com/chexware))*
+
+### :wrench: Chores
+- [`d4f9f6d`](https://github.com/t3rn/t3rn/commit/d4f9f6d6ef09758fe9dbbf5e4c6f080c8b81b756) - update sepolia pallet version to tag v1.1.9 *(PR [#1416](https://github.com/t3rn/t3rn/pull/1416) by [@gvko](https://github.com/gvko))*
+
+
 ## [v1.68.0-rc.0] - 2023-10-30
 ### :sparkles: New Features
 - [`9259eca`](https://github.com/t3rn/t3rn/commit/9259eca14e81aa3ec86065e444afe767e543429b) - add tx enrolling new sfx abi to selected gateway *(PR [#1402](https://github.com/t3rn/t3rn/pull/1402) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1823,3 +1866,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.67.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.66.1-rc.0...v1.67.0-rc.0
 [v1.67.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.67.0-rc.0...v1.67.1-rc.0
 [v1.68.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.67.1-rc.0...v1.68.0-rc.0
+[v1.69.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.68.0-rc.0...v1.69.0-rc.0
+[v1.69.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.69.0-rc.0...v1.69.1-rc.0
+[v1.70.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.69.1-rc.0...v1.70.0-rc.0
+[v1.70.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.0-rc.0...v1.70.1-rc.0
+[v1.70.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.1-rc.0...v1.70.2-rc.0

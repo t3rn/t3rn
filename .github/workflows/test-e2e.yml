@@ -48,7 +48,7 @@ jobs:
 
   test:
     name: Generate E2E Tests & Test
-    runs-on: [self-hosted, rust]
+    runs-on: [self-hosted]
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
     steps:

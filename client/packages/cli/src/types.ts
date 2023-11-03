@@ -1,4 +1,4 @@
-import { createCircuitContext } from "./utils/circuit.ts"
+import { createCircuitContext } from './utils/circuit.ts'
 
 export type Args<T extends string> = Readonly<
   Partial<{
@@ -8,4 +8,4 @@ export type Args<T extends string> = Readonly<
 
 export type Circuit = Awaited<
   ReturnType<typeof createCircuitContext>
->["circuit"]
+>['circuit']

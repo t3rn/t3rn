@@ -329,7 +329,7 @@ pub trait Xdns<T: frame_system::Config, Balance> {
 
     fn allowed_side_effects(gateway_id: &ChainId) -> Vec<([u8; 4], Option<u8>)>;
 
-    fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
+    fn get_gateway_max_security_lvl(chain_id: &ChainId) -> SecurityLvl;
 
     fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
 

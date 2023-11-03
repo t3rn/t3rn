@@ -42,7 +42,7 @@ jobs:
 
   check:
     name: Subalfred Check Features
-    runs-on: [self-hosted, rust]
+    runs-on: [self-hosted]
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
 
