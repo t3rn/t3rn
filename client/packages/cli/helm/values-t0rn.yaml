@@ -26,16 +26,17 @@ jobs:
     env:
       - name: CIRCUIT_WS_ENDPOINT
         value: wss://rpc.t0rn.io
-      - name: CIRCUIT_RPC_ENDPOINT
-        value: https://rpc.t0rn.io
       - name: LOG_LEVEL
         value: debug
+      - name: XCM_RECIPIENT
+        value: 0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e # TEST account on t0rn
 
+    # Run every 1 minute
     schedule: "*/1 * * * *"
     args:
       - xcmTransfer
       - --signer
-      - "//Circuit"
+      - "//Test"
       - --type
       - "relay"
       - --endpoint

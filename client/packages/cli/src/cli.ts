@@ -136,7 +136,7 @@ withExportMode(
         "--endpoint <string>",
         "The RPC endpoint from which the XCM transaction will be submitted",
       )
-      .requiredOption("--dest <string>", "The destination chain")
+      .requiredOption("--dest <number>", "The destination chain")
       .requiredOption("--recipient <string>", "The recipient address")
       .requiredOption("--target-asset <symbol>", "The target asset")
       .requiredOption(

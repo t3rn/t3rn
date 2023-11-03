@@ -21,7 +21,7 @@ async function run(nodeName, networkInfo) {
         --signer "//Bob"
         --type "relay"
         --endpoint "ws://127.0.0.1:9933"
-        --dest "3333"
+        --dest 3333
         --recipient "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"
         --target-asset "ROC"
         --target-amount 2000000000000'

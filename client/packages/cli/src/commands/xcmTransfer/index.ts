@@ -5,6 +5,7 @@ import { XcmTransferSchema } from "@/schemas/xcm.ts"
 import { colorLogMsg } from "@/utils/log.js"
 import { ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
 import { XcmTransferParameters } from "@t3rn/sdk/utils"
+//import *  from 'dotenv';
 
 export const spinner = ora()
 
@@ -23,6 +24,7 @@ export const handleXcmTransferCommand = async (
     XcmTransferSchema,
     {
       ..._args,
+      dest: parseInt(_args?.dest),
       targetAmount: parseFloat(_args?.targetAmount),
     },
     {
@@ -62,14 +64,26 @@ export const handleXcmTransferCommand = async (
       const xcmWeightLimitParam =
           XcmTransferParameters.createWeightLimit(targetApi)
 
-        const keyring = new Keyring({ type: "sr25519" })
-        const signer = process.env.CIRCUIT_SIGNER_KEY === undefined
-            ? keyring.addFromUri(args.signer)
-            : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
-        if (args.signer == "//Circuit" && process.env.CIRCUIT_SIGNER_KEY === undefined) {
-            console.log("Circuit signer not found... Exit\n")
-            spinner.stop()
-            process.exit(0)
+      const keyring = new Keyring({ type: "sr25519" })
+
+      if (args.signer == "//Circuit") {
+            if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
+                console.log("Circuit signer not found... Exit\n")
+                spinner.stop()
+                process.exit(0)
+            }
+            const signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
+        }
+        else if (args.signer == "//Test") {
+            if (process.env.XCM_TEST_SIGNER_KEY === undefined) {
+                console.log("XCM test signer key not found... Exit\n")
+                spinner.stop()
+                process.exit(0)
+            }
+            const signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
+        }
+        else {
+            const signer = keyring.addFromUri(args.signer)
         }
         if (args.type == "relay") {
             await targetApi.tx.xcmPallet
