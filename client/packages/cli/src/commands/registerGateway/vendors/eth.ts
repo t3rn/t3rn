@@ -72,7 +72,7 @@ export interface VendorRegistrationArgs {
 }
 
 const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
-  const period = slot / ETHEREUM_SLOTS_PER_EPOCH / ETHEREUM_EPOCHS_PER_PERIOD
+  const period = slotToCommitteePeriod(slot)
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
   const fetchOptions = {
     method: 'GET',
@@ -85,18 +85,17 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
 
   if (response.status !== 200) {
     throw new Error(
-      'Oops! Fetch debug beacon state faulted to error status: ' +
-        response.status,
+      `Could not fetch next sync committee (slot: ${slot}, period: ${period}). Err: ${response.status} ${response.statusText}`,
     )
   }
 
-  const responseData = (await response.json()) as [NextSyncCommitteeResponse]
-  const next: SyncCommittee = {
+  const responseData = (await response.json()) as NextSyncCommitteeResponse[]
+  const syncCommittee: SyncCommittee = {
     pubs: responseData[0].data.next_sync_committee.pubkeys,
     aggr: responseData[0].data.next_sync_committee.aggregate_pubkey,
   }
 
-  return next
+  return syncCommittee
 }
 
 const fetchLastSyncCommitteeUpdateSlot = async () => {
@@ -109,10 +108,9 @@ const fetchLastSyncCommitteeUpdateSlot = async () => {
   )
 
   if (response.status !== 200) {
+    const reason = await response.text()
     throw new Error(
-      `Failed to fetch the last sync committee update slot, STATUS: ${
-        response.status
-      }, REASON: ${await response.text()}`,
+      `Failed to fetch the last sync committee update slot, STATUS: ${response.status}, REASON: ${reason}`,
     )
   }
 
@@ -198,10 +196,9 @@ async function fetchBeaconBlockHeaderAndRoot(
   const response = await fetch(endpoint, fetchOptions)
 
   if (response.status !== 200) {
+    const reason = await response.text()
     throw new Error(
-      `Failed to fetch beacon header, STATUS: ${
-        response.status
-      }, REASON: ${await response.text()}`,
+      `Failed to fetch beacon header, STATUS: ${response.status}, REASON: ${reason}`,
     )
   }
 
@@ -248,14 +245,14 @@ const fetchInitData = async (
   const response = await fetch(endpoint, fetchOptions)
 
   if (response.status !== 200) {
+    const reason = await response.text()
     throw new Error(
-      `Failed fetch init data, STATUS: ${
-        response.status
-      }, REASON: ${await response.text()}`,
+      `Failed fetch init data, STATUS: ${response.status}, REASON: ${reason}`,
     )
   }
 
   const responseData = (await response.json()) as BootstrapResponse
+
   const finalized = await fetchCheckpointEntry(finalizedSlot)
   const justified = await fetchCheckpointEntry(
     finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH,
@@ -263,6 +260,9 @@ const fetchInitData = async (
   const attested = await fetchCheckpointEntry(
     finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH,
   )
+  // const attestedExecutionHeader = await fetchExecutionHeader(
+  //   attested.execution.height - 1
+  // )
   const currentSyncCommittee: SyncCommittee = {
     pubs: responseData.data.current_sync_committee.pubkeys,
     aggr: responseData.data.current_sync_committee.aggregate_pubkey,
@@ -282,6 +282,7 @@ const fetchInitData = async (
     currentSyncCommittee,
     nextSyncCommittee,
     checkpoint,
+    // attestedExecutionHeader,
   }
 }
 
@@ -348,4 +349,21 @@ export const registerEthereumVerificationVendor = async (
       spinner.fail(colorLogMsg('ERROR', err))
     }
   }
+}
+
+/**
+ * Calculate the committee period from a given slot.
+ * The committee period is set to be 256 epochs long, which is approximately 27 hours (and each epoch has 32 slots).
+ * E.g. for slot 3293152 or slot 3305026:
+ *    circuit committee period: (3293152 - (3293152 % (32 * 256))) / (32 * 256) = 401
+ *    target committee period: (3305026 - (3305026 % (32 * 256))) / (32 * 256) = 403
+ *
+ * @param {number}  slot
+ * @return {number}
+ */
+export function slotToCommitteePeriod(slot: number): number {
+  return (
+    (slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD))) /
+    (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD)
+  )
 }

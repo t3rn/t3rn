@@ -54,7 +54,7 @@ const registerGateway = async (
   const { circuit, sdk } = await createCircuitContext(exportMode)
 
   const gatewayId = createType('[u8; 4]', gatewayData.id)
-  const tokenId = createType('[u8; 4]', gatewayData.tokenId)
+  const tokenId = createType('u32', gatewayData.tokenId)
   const verificationVendor: T3rnPrimitivesGatewayVendor = createType(
     'T3rnPrimitivesGatewayVendor',
     gatewayData.registrationData.verificationVendor as never,
@@ -127,7 +127,7 @@ const registerGateway = async (
     spinner.fail(
       colorLogMsg(
         'ERROR',
-        `${gatewayData.name} gateway registration failed! Error: ${error}`,
+        `${gatewayData.name} gateway registration failed! REASON: ${error}`,
       ),
     )
     process.exit(1)

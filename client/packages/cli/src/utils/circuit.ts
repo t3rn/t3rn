@@ -1,4 +1,4 @@
-import { Sdk, ApiPromise, Keyring } from '@t3rn/sdk'
+import { ApiPromise, Keyring, Sdk } from '@t3rn/sdk'
 
 export type CircuitContext = {
   circuit: ApiPromise
