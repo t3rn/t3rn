@@ -251,7 +251,7 @@ export class SideEffect extends EventEmitter {
     } catch (error) {
       logger.error(
         error.stack,
-        "Error getting price values in SideEffect.setRiskRewardParameters()",
+        "Error getting price values in SideEffect.setRiskRewardParameters",
       );
       return;
     }

@@ -703,6 +703,8 @@ export class ExecutionManager {
 
     logger.info(
       {
+        xtxId: sfx.xtxId,
+        sfxId: sfx.id,
         targetAsset: txOutput.asset,
         targetAmount: txOutput.amount,
         rewardAsset: txOutput.rewardAsset,
