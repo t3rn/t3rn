@@ -1,7 +1,7 @@
 import ora from 'ora'
 import { Args } from '@/types.ts'
 import { validate } from '@/utils/fns.ts'
-import { colorLogMsg } from '@/utils/log.ts'
+import { colorLogMsg, log } from '@/utils/log.ts'
 
 import {
   ApiPromise,
@@ -178,29 +178,71 @@ export const handleMockWriterCommand = async (
     multi: !!_args?.asMultiSfx,
   }
 
-  spinner.text = 'Warm-up checks for Mock Fast Writer... \n'
+  spinner.text = 'Running couple of tx for Mock Fast Writer... \n'
   spinner.start()
-
-  spinner.text = 'Running on args ' + JSON.stringify(args) + '\n'
 
   await cryptoWaitReady()
 
   if (args.single) {
-    await mock_test_single_order('ws://localhost:9944', '//Alice', 'roco', 0)
+    spinner.text = 'Running single order in Asset=1 to roco... \n'
+    await mock_test_single_order('wss://rpc.t0rn.io', '//Alice', 'roco', 1)
+    // Sleep for 1min
+    spinner.text = 'Sleeping for 1min... \n'
+    await new Promise((resolve) => setTimeout(resolve, 60000))
+
+    spinner.text = 'Running single order in Asset=1 to sepl... \n'
+    await mock_test_single_order('wss://rpc.t0rn.io', '//Alice', 'sepl', 1)
+
+    // Sleep for 1min
+    spinner.text = 'Sleeping for 1min... \n'
+    await new Promise((resolve) => setTimeout(resolve, 60000))
+
+    spinner.text = 'Running single order in Asset=1 to eth2... \n'
+    await mock_test_single_order('wss://rpc.t0rn.io', '//Alice', 'eth2', 1)
+
+    // Sleep for 1min
+    spinner.text = 'Sleeping for 1min... \n'
+    await new Promise((resolve) => setTimeout(resolve, 60000))
+
+    spinner.text = 'Running single order in Asset=1 to pdot... \n'
+    await mock_test_single_order('wss://rpc.t0rn.io', '//Alice', 'pdot', 1)
+
+    // Sleep for 1min
+    spinner.text = 'Sleeping for 1min... \n'
+    await new Promise((resolve) => setTimeout(resolve, 60000))
+
+    spinner.text = 'Running single order in Asset=1 to kusm... \n'
+    await mock_test_single_order('wss://rpc.t0rn.io', '//Alice', 'kusm', 1)
+
+    // Sleep for 1min
+    spinner.text = 'Sleeping for 1min... \n'
+    await new Promise((resolve) => setTimeout(resolve, 60000))
+
+    spinner.text = 'Running single order in Asset=1 to 0x03030303... \n'
+    await mock_test_single_order(
+      'wss://rpc.t0rn.io',
+      '//Alice',
+      '0x03030303',
+      1,
+    )
+
+    // Sleep for 1min
+    spinner.text = 'Sleeping for 1min... \n'
+    await new Promise((resolve) => setTimeout(resolve, 60000))
   } else if (args.repeat > 0 && args.multi) {
     await mock_test_multi_order(
-      'ws://localhost:9944',
+      'wss://rpc.t0rn.io',
       '//Alice',
       'roco',
-      0,
+      1,
       args.repeat,
     )
   } else if (args.repeat > 0) {
     await mock_test_batch_order(
-      'ws://localhost:9944',
+      'wss://rpc.t0rn.io',
       '//Alice',
       'roco',
-      0,
+      1,
       args.repeat,
     )
   }
@@ -289,10 +331,10 @@ export const mock_test_single_order = async (
     dest,
     asset,
     signer.address,
-    100,
-    asset,
-    101,
     10,
+    asset,
+    11,
+    1,
     3,
   )
 }
@@ -397,14 +439,19 @@ export const write_multi_order = async (
 }
 
 export const signAndSender = async (sdk: Sdk, tx: any) => {
-  const txSize = Math.floor(tx.encodedLength / 1024)
-  console.debug(`writer::signAndSend tx size: ${txSize}kB`)
+  const txSize = Math.floor(tx.encodedLength)
+  spinner.text = `Submitting tx of size ${txSize}B... \n`
 
-  const res = await sdk.circuit.tx.signAndSendSafe(tx)
-  console.debug(`writer::signAndSend response ${res}`)
-  assert.ok(res)
+  // wrap in try catch and continue on error
+  await sdk.circuit.tx
+    .signAndSend(tx, {})
+    .then((res) => {
+      spinner.text = `writer::signAndSend response ${JSON.stringify(res)}`
+    })
+    .catch((error) => {
+      spinner.text = `writer::signAndSend ERROR ${JSON.stringify(error)}`
+    })
 
-  // Sleep for 5 seconds for tx to settle
-  await new Promise((resolve) => setTimeout(resolve, 5000))
-  return res
+  // Sleep for 15 seconds for tx to settle
+  await new Promise((resolve) => setTimeout(resolve, 15000))
 }
