@@ -1,5 +1,4 @@
-import { SfxStatus, XtxStatus } from "./side-effects/types"
-import { SfxType } from "@t3rn/sdk"
+import { SfxType, SfxStatus, XtxStatus } from "./side-effects/types"
 
 /**
  * SideEffect types namespace
