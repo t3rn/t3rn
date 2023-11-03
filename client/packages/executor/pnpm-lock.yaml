@@ -42,8 +42,8 @@ dependencies:
     specifier: ^12.5.1
     version: 12.5.1
   '@t3rn/sdk':
-    specifier: file:../sdk
-    version: file:../sdk(typescript@5.2.2)
+    specifier: 0.4.9
+    version: 0.4.9(typescript@5.2.2)
   '@t3rn/types':
     specifier: ^0.1.11
     version: 0.1.11(@polkadot/util-crypto@12.5.1)(@polkadot/util@12.5.1)(@types/node@20.8.0)(typescript@5.2.2)
@@ -2189,6 +2189,24 @@ packages:
 
   /@substrate/ss58-registry@1.43.0:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
+    dev: false
+
+  /@t3rn/sdk@0.4.9(typescript@5.2.2):
+    resolution: {integrity: sha512-/ljz1bsieFU7cdFUaAOlQhS9qwna65PHiCC6vfxNk8l6rlgUdmUsqPj3a1W7o5iW7R2eb4qzWKHnBJj3mBNwNg==}
+    requiresBuild: true
+    dependencies:
+      '@polkadot/api': 8.14.1
+      '@polkadot/types': 8.14.1
+      dotenv: 16.3.1
+      node-fetch: 2.7.0
+      web3: 4.2.1(typescript@5.2.2)
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - zod
     dev: false
 
   /@t3rn/types@0.1.11(@polkadot/util-crypto@12.5.1)(@polkadot/util@12.5.1)(@types/node@20.8.0)(typescript@5.2.2):
@@ -7579,24 +7597,4 @@ packages:
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-    dev: false
-
-  file:../sdk(typescript@5.2.2):
-    resolution: {directory: ../sdk, type: directory}
-    id: file:../sdk
-    name: '@t3rn/sdk'
-    requiresBuild: true
-    dependencies:
-      '@polkadot/api': 8.14.1
-      '@polkadot/types': 8.14.1
-      dotenv: 16.3.1
-      node-fetch: 2.7.0
-      web3: 4.2.1(typescript@5.2.2)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - supports-color
-      - typescript
-      - utf-8-validate
-      - zod
     dev: false
