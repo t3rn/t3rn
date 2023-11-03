@@ -150,6 +150,9 @@ export type Config = {
       },
     ];
   };
+  assetIdToTickerMap: {
+    [assetId: number]: string;
+  };
   /** The strategies that are being used for each gateway */
   strategies: {
     [targetId: string]: Strategy;
@@ -252,6 +255,61 @@ export const config: Config = {
         id: "tether",
       },
     ],
+    SLOW: [
+      {
+        priceSource: "coingecko",
+        id: "polkadot",
+      },
+    ],
+    USDT: [
+      {
+        priceSource: "coingecko",
+        id: "tether",
+      },
+    ],
+    USDC: [
+      {
+        priceSource: "coingecko",
+        id: "usd-coin",
+      },
+    ],
+    ETH: [
+      {
+        priceSource: "coingecko",
+        id: "ethereum",
+      },
+    ],
+    SEPL: [
+      {
+        priceSource: "coingecko",
+        id: "ethereum",
+      },
+    ],
+    MATIC: [
+      {
+        priceSource: "coingecko",
+        id: "matic-network",
+      },
+    ],
+    OP: [
+      {
+        priceSource: "coingecko",
+        id: "optimism",
+      },
+    ],
+  },
+  assetIdToTickerMap: {
+    0: "TRN",
+    3333: "TRN",
+    1: "ROC",
+    2: "BSX",
+    3: "KSM",
+    4: "DOT",
+    44: "SLOW",
+    1000: "ETH",
+    1001: "USDT",
+    1002: "SEPL",
+    1003: "USDT",
   },
   strategies: {
     ksm: {
@@ -266,7 +324,7 @@ export const config: Config = {
       },
     },
     roco: {
-      supportedAssets: ["ROC"],
+      supportedAssets: ["ROC", "SLOW", "TRN"],
       sfx: {
         minProfitUsd: 3,
         minYield: 0.05,
