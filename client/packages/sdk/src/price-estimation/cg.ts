@@ -1,4 +1,4 @@
-import fetch from 'node-fetch'
+import fetch from "node-fetch"
 
 export interface CoinInfo {
   id: string
@@ -11,7 +11,7 @@ export const getCoinList = async () => {
 
   if (response.status !== 200) {
     throw new Error(
-      'Failed to fetch coin list. ERROR_STATUS: ' + response.status,
+      "Failed to fetch coin list. ERROR_STATUS: " + response.status,
     )
   }
 
@@ -25,7 +25,7 @@ export const getCurrencyList = async () => {
 
   if (response.status !== 200) {
     throw new Error(
-      'Failed to fetch currencies list. ERROR_STATUS: ' + response.status,
+      "Failed to fetch currencies list. ERROR_STATUS: " + response.status,
     )
   }
 
@@ -36,20 +36,20 @@ export const getCoinWithSymbol = (symbol: string, list: Array<CoinInfo>) => {
   const result = list.find((entry) => entry.symbol === symbol)
 
   if (!result) {
-    throw new Error('Failed to find coin with symbol: ' + symbol)
+    throw new Error("Failed to find coin with symbol: " + symbol)
   }
 
   return result
 }
 
-export const getCoinPrice = async (coinId: string, currency = 'usd') => {
+export const getCoinPrice = async (coinId: string, currency = "usd") => {
   const response = await fetch(
     `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=${currency}`,
   )
 
   if (response.status !== 200) {
     throw new Error(
-      'Failed to fetch coin value. ERROR_STATUS: ' + response.status,
+      "Failed to fetch coin value. ERROR_STATUS: " + response.status,
     )
   }
 
@@ -65,20 +65,20 @@ export const getCoinPrice = async (coinId: string, currency = 'usd') => {
 
 export const getPriceForSymbol = async (
   assetSymbol: string,
-  currency = 'usd',
+  currency = "usd",
 ) => {
   const coinList = await getCoinList()
   const currencyList = await getCurrencyList()
 
   if (!currencyList.includes(currency)) {
-    throw new Error('Currency not supported: ' + currency)
+    throw new Error("Currency not supported: " + currency)
   }
 
   const info = getCoinWithSymbol(assetSymbol, coinList)
   const price = await getCoinPrice(info.id, currency)
 
   if (!price) {
-    throw new Error('Failed to fetch price for asset: ' + assetSymbol)
+    throw new Error("Failed to fetch price for asset: " + assetSymbol)
   }
 
   return price

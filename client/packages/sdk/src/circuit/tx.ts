@@ -1,12 +1,12 @@
-import { ApiPromise } from '@polkadot/api'
-import { ExtrinsicExport } from '../export'
-import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
-import { SignerOptions } from '@polkadot/api/types/submittable'
+import { ApiPromise } from "@polkadot/api"
+import { ExtrinsicExport } from "../export"
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import { SignerOptions } from "@polkadot/api/types/submittable"
 import {
   DispatchError,
   EventRecord,
   ExtrinsicStatus,
-} from '@polkadot/types/interfaces'
+} from "@polkadot/types/interfaces"
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -114,7 +114,7 @@ export class Tx {
             )
           }
           Tx.throwIfTxStatusIsError(status, reject)
-          Tx.resolveIfTxIsInBlock(status, 'blockHash', resolve)
+          Tx.resolveIfTxIsInBlock(status, "blockHash", resolve)
         },
       ),
     )) as string
@@ -173,7 +173,7 @@ export class Tx {
   private static resolveIfTxIsInBlock(
     status: ExtrinsicStatus,
     // TODO: for later refactor, to use this func in other functions
-    returnType: 'blockHash' | 'events' | 'statusEventsAndError',
+    returnType: "blockHash" | "events" | "statusEventsAndError",
     resolve,
   ) {
     if (!status.isInBlock) {
@@ -203,7 +203,7 @@ export class Tx {
       const err = this.api.registry.findMetaError(dispatchError.asModule)
 
       exportObj?.addErr(dispatchError).toFile()
-      reject(Error(`${err.section}::${err.name}: ${err.docs.join(' ')}`))
+      reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`))
     }
 
     exportObj?.addErr(dispatchError).toFile()
@@ -229,10 +229,10 @@ export class Tx {
       if (isError) {
         const pallet =
           eventEntryParsed.event.data[0].err.module.index ||
-          'Un-parsed pallet index'
+          "Un-parsed pallet index"
         const error =
           eventEntryParsed.event.data[0].err.module.error ||
-          'Un-parsed error index'
+          "Un-parsed error index"
         const moduleErrorMessage = `Pallet of index = ${pallet} returned an error of index = ${error}`
 
         exportObj?.addErr(moduleErrorMessage).toFile()
@@ -240,6 +240,6 @@ export class Tx {
         reject(Error(moduleErrorMessage))
       }
     })
-    Tx.resolveIfTxIsInBlock(status, 'blockHash', resolve)
+    Tx.resolveIfTxIsInBlock(status, "blockHash", resolve)
   }
 }

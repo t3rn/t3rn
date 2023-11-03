@@ -1,7 +1,7 @@
-import { ApiPromise } from '@polkadot/api'
-import BN from 'bn.js'
-import { AmountConverter } from '../converters/amounts'
-import { Tx } from './tx'
+import { ApiPromise } from "@polkadot/api"
+import BN from "bn.js"
+import { AmountConverter } from "../converters/amounts"
+import { Tx } from "./tx"
 
 const DECIMALS = 12
 const VALUE_TYPE_SIZE = 16

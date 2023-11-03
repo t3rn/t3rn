@@ -1,10 +1,10 @@
-import { TypeRegistry, createType } from '@polkadot/types'
+import { TypeRegistry, createType } from "@polkadot/types"
 
 const registry = new TypeRegistry()
 
-const justification = { type: 'GrandpaJustification<Header>' }
-const finalityProof = { proof: '(Header::Hash, Vec<u8>, Vec<Header>)' }
-const header = { type: 'Header' }
+const justification = { type: "GrandpaJustification<Header>" }
+const finalityProof = { proof: "(Header::Hash, Vec<u8>, Vec<Header>)" }
+const header = { type: "Header" }
 
 /**
  * Decode the finality proof

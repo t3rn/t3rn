@@ -1,22 +1,22 @@
-import fetch from 'node-fetch'
-import Web3, { Bytes } from 'web3'
-import { Action as SfxAction } from './index'
+import fetch from "node-fetch"
+import Web3, { Bytes } from "web3"
+import { Action as SfxAction } from "./index"
 
 // DECLARE GAS AMOUNT
 export const ETH_TRANSFER_GAS_AMOUNT = 21000
 
-export type SpeedMode = 'rapid' | 'fast' | 'standard' | 'slow'
+export type SpeedMode = "rapid" | "fast" | "standard" | "slow"
 export const SpeedModes = {
-  Rapid: 'rapid',
-  Fast: 'fast',
-  Standard: 'standard',
-  Slow: 'slow',
+  Rapid: "rapid",
+  Fast: "fast",
+  Standard: "standard",
+  Slow: "slow",
 } as const
 
-export type Action = 'transfer' | 'cevm'
+export type Action = "transfer" | "cevm"
 export const Actions = {
-  Transfer: 'transfer',
-  CallEvm: 'cevm',
+  Transfer: "transfer",
+  CallEvm: "cevm",
 } as const
 
 export type GasPrice = {
@@ -28,10 +28,10 @@ export type GasPrice = {
   priceUsd: number
 }
 
-export type Target = 'eth' | 'sepl'
+export type Target = "eth" | "sepl"
 export const Targets = {
-  Eth: 'eth',
-  Sepolia: 'sepl',
+  Eth: "eth",
+  Sepolia: "sepl",
 } as const
 
 /**
@@ -43,21 +43,21 @@ export const Targets = {
 
 export const mapSfxActionToEthAction = (action: SfxAction) => {
   switch (action) {
-    case 'tass':
+    case "tass":
       return Actions.Transfer
-    case 'cevm':
+    case "cevm":
       return Actions.CallEvm
     default:
-      throw new Error('Unable to map sfx action to eth action')
+      throw new Error("Unable to map sfx action to eth action")
   }
 }
 
 const getGasPriceEstimationEndpoint = (target: Target) => {
   switch (target) {
     case Targets.Eth:
-      return 'https://beaconcha.in/api/v1/execution/gasnow'
+      return "https://beaconcha.in/api/v1/execution/gasnow"
     case Targets.Sepolia:
-      return 'https://sepolia.beaconcha.in/api/v1/execution/gasnow'
+      return "https://sepolia.beaconcha.in/api/v1/execution/gasnow"
   }
 }
 
@@ -72,7 +72,7 @@ export const getGasPrice = async (target: Target) => {
   const req = await fetch(getGasPriceEstimationEndpoint(target))
 
   if (req.status !== 200) {
-    throw new Error('Failed to fetch gas price. ERROR_STATUS: ' + req.status)
+    throw new Error("Failed to fetch gas price. ERROR_STATUS: " + req.status)
   }
 
   return (
@@ -122,9 +122,9 @@ export const estimateGasFee = async (
 const getTargetRpcEndpoint = (target: Target) => {
   switch (target) {
     case Targets.Eth:
-      return 'https://rpc.ankr.com/eth'
+      return "https://rpc.ankr.com/eth"
     case Targets.Sepolia:
-      return 'https://rpc.ankr.com/eth_sepolia'
+      return "https://rpc.ankr.com/eth_sepolia"
   }
 }
 

@@ -3,12 +3,12 @@ import {
   T3rnPrimitivesXdnsFullGatewayRecord,
   // @ts-ignore
   T3rnTypesSideEffect,
-} from '@polkadot/types/lookup'
-import * as BN from 'bn.js'
-import { AmountConverter } from '../converters/amounts'
-import * as Address from '../converters/address'
-import { toU8aId } from '../converters/utils'
-import { createSfx } from '../side-effects'
+} from "@polkadot/types/lookup"
+import * as BN from "bn.js"
+import { AmountConverter } from "../converters/amounts"
+import * as Address from "../converters/address"
+import { toU8aId } from "../converters/utils"
+import { createSfx } from "../side-effects"
 
 /**
  * A Gateway type enum
@@ -107,7 +107,7 @@ export class Gateway {
       maxReward,
       insurance,
       encodedArgs,
-      action: 'tran',
+      action: "tran",
       signature: args.signature,
       enforceExecutioner: args.enforceExecutioner,
     })
@@ -166,7 +166,7 @@ export class Gateway {
     insurance: number | BN | string,
     reward: number | BN | string,
   ): string[] {
-    if (!this.allowedSideEffects.includes('tran'))
+    if (!this.allowedSideEffects.includes("tran"))
       throw new Error(`Transfer Sfx not supported for ${this.id}`)
     // ensure we pass the correct address encoding (e.g. pub key for substrate)
     to = this.validateAddress(to)
@@ -213,7 +213,7 @@ export class Gateway {
 
   validateAddress(addr: string) {
     switch (this.executionVendor) {
-      case 'Substrate':
+      case "Substrate":
         return Address.Substrate.addrToPub(addr)
         break
       default:
@@ -265,9 +265,9 @@ export class Gateway {
    */
 
   getType(vendor: string) {
-    if (['Rococo', 'Kusama', 'Polkadot'].includes(vendor)) {
+    if (["Rococo", "Kusama", "Polkadot"].includes(vendor)) {
       return GatewayType.Substrate
-    } else if (vendor === 'Ethereum') {
+    } else if (vendor === "Ethereum") {
       return GatewayType.Evm
     }
   }
@@ -279,8 +279,8 @@ export class Gateway {
   setSfxBindings() {
     for (let i = 0; i < this.allowedSideEffects.length; i++) {
       switch (this.allowedSideEffects[i]) {
-        case 'tran':
-          this.createSfx['tran'] = this.createTransferSfx
+        case "tran":
+          this.createSfx["tran"] = this.createTransferSfx
       }
     }
   }

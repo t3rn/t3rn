@@ -1,9 +1,9 @@
-import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
-import * as fs from 'fs'
-import * as process from 'process'
-import * as path from 'path'
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import * as fs from "fs"
+import * as process from "process"
+import * as path from "path"
 
-require('dotenv').config()
+require("dotenv").config()
 
 interface ExtrinsicParam {
   name: string
@@ -27,7 +27,7 @@ export class ExtrinsicExport {
   events: EventParam[] = []
   submissionHeight: number
   signer: string
-  error: string = ''
+  error: string = ""
 
   constructor(tx: SubmittableExtrinsic, address: string) {
     this.tx = tx
@@ -97,7 +97,7 @@ export class ExtrinsicExport {
   }
 
   toFile() {
-    const dir = process.env.EXPORT_PATH || './exports'
+    const dir = process.env.EXPORT_PATH || "./exports"
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir)
     }

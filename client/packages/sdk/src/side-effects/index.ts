@@ -6,8 +6,8 @@ import {
   T3rnTypesSfxSideEffect,
   // @ts-ignore
   u128,
-} from '@polkadot/types/lookup'
-import * as BN from 'bn.js'
+} from "@polkadot/types/lookup"
+import * as BN from "bn.js"
 
 /**
  * A factory function that creates a side effect

@@ -1,5 +1,5 @@
-import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
-import { AddressOrPair } from '@polkadot/api/types'
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import { AddressOrPair } from "@polkadot/api/types"
 
 export interface EstimateSubmittableExtrinsicParams {
   tx: SubmittableExtrinsic

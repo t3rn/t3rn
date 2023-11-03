@@ -1,5 +1,5 @@
-const { u8aToHex, isHex, isString, isNumber } = require('@polkadot/util')
-import * as BN from 'bn.js'
+const { u8aToHex, isHex, isString, isNumber } = require("@polkadot/util")
+import * as BN from "bn.js"
 
 /**
  * This class is used for doing amount conversions of different types. When dealing with circuit, there are three main encodings are used for representing amounts:
@@ -63,7 +63,7 @@ export class AmountConverter {
       } else if (isNumber(args.value)) {
         if (Math.floor(args.value as number) !== args.value) {
           throw new Error(
-            'AmountConverter: Float values not supported! Please convert to Integer!',
+            "AmountConverter: Float values not supported! Please convert to Integer!",
           )
         } else {
           this.value = new BN.BN(args.value, 10)
@@ -122,7 +122,7 @@ export class AmountConverter {
  */
 
 export const fromLeEncoding = (number: string): BN => {
-  return new BN.BN(number.split('0x')[1], 16, 'le')
+  return new BN.BN(number.split("0x")[1], 16, "le")
 }
 
 /**
@@ -138,7 +138,7 @@ export const toLeEncoding = (
   if (valueTypeSize === undefined) {
     valueTypeSize = 16 as number
   }
-  return new BN.BN(number).toArray('le', valueTypeSize)
+  return new BN.BN(number).toArray("le", valueTypeSize)
 }
 
 /**

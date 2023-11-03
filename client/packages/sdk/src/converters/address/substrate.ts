@@ -1,5 +1,5 @@
-import { decodeAddress, encodeAddress } from '@polkadot/keyring'
-const { hexToU8a, isHex } = require('@polkadot/util')
+import { decodeAddress, encodeAddress } from "@polkadot/keyring"
+const { hexToU8a, isHex } = require("@polkadot/util")
 
 /**
  * Convert a substrate pubkey to address
@@ -9,10 +9,10 @@ const { hexToU8a, isHex } = require('@polkadot/util')
 
 export const pub2Addr = (pub: string, prefix: number): string | Error => {
   if (isValidAddressPolkadotAddress(pub)) {
-    pub = pub.split('0x')[1]
-    return encodeAddress(Uint8Array.from(Buffer.from(pub, 'hex')), prefix)
+    pub = pub.split("0x")[1]
+    return encodeAddress(Uint8Array.from(Buffer.from(pub, "hex")), prefix)
   } else {
-    return new Error('Invalid Address')
+    return new Error("Invalid Address")
   }
 }
 
@@ -27,10 +27,10 @@ export const addrToPub = (address: string): string => {
       // if hex, a pub was passed
       return address
     } else {
-      return '0x' + Buffer.from(decodeAddress(address)).toString('hex')
+      return "0x" + Buffer.from(decodeAddress(address)).toString("hex")
     }
   } else {
-    throw new Error('Invalid Address Detected!')
+    throw new Error("Invalid Address Detected!")
   }
 }
 
