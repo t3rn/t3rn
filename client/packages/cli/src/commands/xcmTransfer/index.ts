@@ -143,8 +143,8 @@ export const handleXcmTransferCommand = async (
               }
             },
           )
-      }
-    })
+        }
+     })
     } else if (args.type == 'system' && args.targetAsset == 'TRN') {
       await targetApi.tx.polkadotXcm
         .limitedTeleportAssets(
@@ -185,7 +185,7 @@ export const handleXcmTransferCommand = async (
               )
           }
         })
-    } else {
+    } else if(args.type == 'system' || args.type == 'para' ) {
       await targetApi.tx.polkadotXcm
         .limitedReserveTransferAssets(
           xcmDestParam,
@@ -225,6 +225,9 @@ export const handleXcmTransferCommand = async (
               )
           }
         })
+    }
+    else {
+        throw new Error("Unsupported transaction type!")
     }
     console.log('XCM Transfer Completed\n')
     spinner.stop()
