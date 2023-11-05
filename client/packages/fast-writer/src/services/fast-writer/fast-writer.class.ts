@@ -1,10 +1,11 @@
-import { cryptoWaitReady } from '@t3rn/sdk'
 import { sleep } from '../../utils/helpers'
 import { logger } from '../../utils/logger'
 import { CircuitConnection } from '../circuit/connection.class'
 import { CircuitClient } from '../circuit/client'
 import { Prometheus } from '../../prometheus'
 import { Config } from '../../config/config'
+import { Order } from './build-tx'
+import { ApiPromise } from '@t3rn/sdk/.'
 
 export class FastWriter {
   private readonly config: Config
@@ -39,23 +40,42 @@ export class FastWriter {
   }
 
   private async connectClients() {
-    const cryptoIsReady = await cryptoWaitReady()
-    if (!cryptoIsReady) {
-      throw new Error('Crypto WASM lib is not ready')
-    }
-
     this.circuitConnection.connect()
   }
+
+  private async fetchNonce(api: ApiPromise, address: string) {
+    return await api.rpc.system.accountNextIndex(address).then((nextIndex) => {
+      // @ts-ignore - property does not exist on type
+      return parseInt(nextIndex.toNumber());
+    });
+}
 
   private async scheduleSubmissionsToCircuit() {
     while (true) {
       logger.info('Starting new submission loop to Circuit')
+      let nonce = await this.fetchNonce(this.circuitClient.sdk.client, this.circuitClient.sdk.signer.address)
 
       // TODO submit SFXs
+      for (const sideEffect of this.config.sideEffects) {
+        const order = new Order(
+          sideEffect.dest,
+          sideEffect.asset,
+          sideEffect.targetAccount,
+          sideEffect.amount,
+          sideEffect.maxReward,
+          sideEffect.rewardAsset,
+          sideEffect.insurance,
+          sideEffect.remote_origin_nonce,
+          sideEffect.count,
+          sideEffect.txType
+        );
+        order.execute(this.circuitClient, order, nonce);
+      }
+
 
       logger.info(
         { },
-        `Submission for next slot`,
+        `SFXs submission`,
       )
 
       await sleep(

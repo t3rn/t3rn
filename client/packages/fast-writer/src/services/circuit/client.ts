@@ -6,8 +6,8 @@ import { Config } from 'src/config/config'
 export class CircuitClient {
   private readonly prometheus: Prometheus
   private readonly circuitConnection: CircuitConnection
-  private readonly sdk
   private readonly config
+  readonly sdk
 
   constructor(
     circuitConnection: CircuitConnection,

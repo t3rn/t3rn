@@ -26,6 +26,7 @@ const config = () => ({
       .asEnum(Object.values(LogLevel)),
     pretty: get('LOG_PRETTY').required().default('false').asBoolStrict(),
   },
+  sideEffects: get('SIDEEFFECTS').required().asJsonArray(),
   intervalSeconds: get('INTERVAL')
     .required()
     .default(12)

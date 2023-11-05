@@ -18,37 +18,37 @@ sideEffects:
       amount: 0.01
     enforceExecutor: null
     rewardAssetId: null # defaults to TRN
-    count: 10
-  - target: pdot
-    maxReward: 1
-    insurance: 1
-    action: transfer
-    transferArgs:
-      to: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
-      amount: 1
-    enforceExecutor: null
-    rewardAssetId: null # defaults to TRN
-    count: 1
-  - target: kusm
-    maxReward: 1
-    insurance: 1
-    action: transfer
-    transferArgs:
-      to: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
-      amount: 0.01
-    enforceExecutor: null
-    rewardAssetId: null # defaults to TRN
-    count: 1
-  - target: sepl
-    maxReward: 1
-    insurance: 1
-    action: transfer
-    transferArgs:
-      to: 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
-      amount: 0.01
-    enforceExecutor: null
-    rewardAssetId: null # defaults to TRN
-    count: 1
+    count: 1000
+  # - target: pdot
+  #   maxReward: 1
+  #   insurance: 1
+  #   action: transfer
+  #   transferArgs:
+  #     to: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
+  #     amount: 1
+  #   enforceExecutor: null
+  #   rewardAssetId: null # defaults to TRN
+  #   count: 1
+  # - target: kusm
+  #   maxReward: 1
+  #   insurance: 1
+  #   action: transfer
+  #   transferArgs:
+  #     to: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
+  #     amount: 0.01
+  #   enforceExecutor: null
+  #   rewardAssetId: null # defaults to TRN
+  #   count: 1
+  # - target: sepl
+  #   maxReward: 1
+  #   insurance: 1
+  #   action: transfer
+  #   transferArgs:
+  #     to: 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
+  #     amount: 0.01
+  #   enforceExecutor: null
+  #   rewardAssetId: null # defaults to TRN
+  #   count: 1
 
 securityContext:
   capabilities:
