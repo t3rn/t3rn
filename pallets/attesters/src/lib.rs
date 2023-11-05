@@ -31,8 +31,11 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::{BlockNumberFor, *};
     use sp_core::{hexdisplay::AsBytesRef, H160, H256, H512};
-    use t3rn_primitives::light_client::{LightClientAsyncAPI, LightClientHeartbeat};
     pub use t3rn_primitives::portal::InclusionReceipt;
+    use t3rn_primitives::{
+        light_client::{LightClientAsyncAPI, LightClientHeartbeat},
+        TreasuryAccount,
+    };
 
     use sp_runtime::{
         traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
@@ -436,7 +439,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000)]
+        #[pallet::weight(60_000)]
         pub fn register_attester(
             origin: OriginFor<T>,
             self_nominate_amount: BalanceOf<T>,
@@ -447,46 +450,37 @@ pub mod pallet {
         ) -> DispatchResult {
             let account_id = ensure_signed(origin.clone())?;
 
-            // Check min. self-nomination bond
-            ensure!(
-                self_nominate_amount >= T::MinAttesterBond::get(),
-                Error::<T>::AttesterBondTooSmall
-            );
+            Self::do_register_attester(
+                account_id,
+                self_nominate_amount,
+                ecdsa_key,
+                ed25519_key,
+                sr25519_key,
+                custom_commission,
+            )
+        }
 
-            // Ensure the attester is not already registered
-            ensure!(
-                !Attesters::<T>::contains_key(&account_id),
-                Error::<T>::AlreadyRegistered
-            );
+        #[pallet::weight(60_000)]
+        pub fn register_invulnerable_attester(
+            origin: OriginFor<T>,
+            self_nominate_amount: BalanceOf<T>,
+            ecdsa_key: [u8; 33],
+            ed25519_key: [u8; 32],
+            sr25519_key: [u8; 32],
+            custom_commission: Option<Percent>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            let account_id = T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow);
+            Self::do_register_attester(
+                account_id.clone(),
+                self_nominate_amount,
+                ecdsa_key,
+                ed25519_key,
+                sr25519_key,
+                custom_commission,
+            )?;
 
-            let commission = match custom_commission {
-                Some(commission) => commission,
-                None => T::DefaultCommission::get(),
-            };
-
-            let next_index = Attesters::<T>::iter().count() as u32;
-
-            Attesters::<T>::insert(
-                &account_id,
-                AttesterInfo {
-                    key_ec: ecdsa_key,
-                    key_ed: ed25519_key,
-                    key_sr: sr25519_key,
-                    commission,
-                    index: next_index,
-                },
-            );
-
-            // Self nominate in order to be part of the active set selection
-            Self::do_nominate(&account_id, &account_id, self_nominate_amount)?;
-
-            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
-
-            // Figure if signed by Sudo origin and set as extra key to Invulnerable
-
-            if ensure_root(origin).is_ok() {
-                InvulnerableAttester::<T>::put(&account_id);
-            }
+            InvulnerableAttester::<T>::put(&account_id);
 
             Ok(())
         }
@@ -1413,6 +1407,52 @@ pub mod pallet {
                 .find(|batches| batches.iter().any(|batch| &batch.message() == message))
                 .unwrap()
                 .clone()
+        }
+
+        fn do_register_attester(
+            account_id: T::AccountId,
+            self_nominate_amount: BalanceOf<T>,
+            ecdsa_key: [u8; 33],
+            ed25519_key: [u8; 32],
+            sr25519_key: [u8; 32],
+            custom_commission: Option<Percent>,
+        ) -> DispatchResult {
+            // Check min. self-nomination bond
+            ensure!(
+                self_nominate_amount >= T::MinAttesterBond::get(),
+                Error::<T>::AttesterBondTooSmall
+            );
+
+            // Ensure the attester is not already registered
+            ensure!(
+                !Attesters::<T>::contains_key(&account_id),
+                Error::<T>::AlreadyRegistered
+            );
+
+            let commission = match custom_commission {
+                Some(commission) => commission,
+                None => T::DefaultCommission::get(),
+            };
+
+            let next_index = Attesters::<T>::iter().count() as u32;
+
+            Attesters::<T>::insert(
+                &account_id,
+                AttesterInfo {
+                    key_ec: ecdsa_key,
+                    key_ed: ed25519_key,
+                    key_sr: sr25519_key,
+                    commission,
+                    index: next_index,
+                },
+            );
+
+            // Self nominate in order to be part of the active set selection
+            Self::do_nominate(&account_id, &account_id, self_nominate_amount)?;
+
+            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
+
+            Ok(())
         }
 
         fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
@@ -2463,7 +2503,7 @@ pub mod attesters_test {
         attester_info
     }
 
-    pub fn register_attester_from_sudo_priviliges_sets_as_invulnerable(
+    pub fn register_attester_from_sudo_privilige_sets_as_invulnerable(
         secret_key: [u8; 32],
     ) -> AttesterInfo {
         // Register an attester
@@ -2475,7 +2515,10 @@ pub mod attesters_test {
 
         let _ = Balances::deposit_creating(&attester, 100u128);
 
-        assert_ok!(Attesters::register_attester(
+        // Put Minimum Nomination Bond to Escrow's Treasury Account
+        let treasury_account = MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
+        let _ = Balances::deposit_creating(&treasury_account, 100u128);
+        assert_ok!(Attesters::register_invulnerable_attester(
             RuntimeOrigin::root(),
             10u128,
             ecdsa_key.clone().try_into().unwrap(),
@@ -2487,9 +2530,13 @@ pub mod attesters_test {
         // Run to active set selection
         Attesters::on_initialize(400u32);
 
-        assert_eq!(Attesters::invulnerable_attester(), Some(attester.clone()));
+        assert_eq!(
+            Attesters::invulnerable_attester(),
+            Some(treasury_account.clone())
+        );
 
-        let attester_info: AttesterInfo = AttestersStore::<MiniRuntime>::get(&attester).unwrap();
+        let attester_info: AttesterInfo =
+            AttestersStore::<MiniRuntime>::get(&treasury_account).unwrap();
         assert_eq!(attester_info.key_ed.encode(), ed25519_key);
         assert_eq!(attester_info.key_ec.encode(), ecdsa_key);
         assert_eq!(attester_info.key_sr.encode(), sr25519_key);
@@ -2562,6 +2609,14 @@ pub mod attesters_test {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
             register_attester_with_single_private_key([1u8; 32]);
+        });
+    }
+
+    #[test]
+    fn register_attester_with_sudo_privilige_sets_as_invulnerable() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            register_attester_from_sudo_privilige_sets_as_invulnerable([1u8; 32]);
         });
     }
 
