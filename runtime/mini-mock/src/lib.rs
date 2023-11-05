@@ -315,7 +315,7 @@ impl pallet_attesters::Config for MiniRuntime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
-    // type SlashAccount = SlashAccount;
+    type LightClientAsyncAPI = XDNS;
     type TreasuryAccounts = MiniRuntime;
     type Xdns = XDNS;
 }

@@ -66,6 +66,7 @@ impl pallet_attesters::Config for Runtime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = HourlyShufflingFrequency;
+    type LightClientAsyncAPI = XDNS;
     type TreasuryAccounts = Runtime;
     type Xdns = XDNS;
 }

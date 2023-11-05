@@ -31,6 +31,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::{BlockNumberFor, *};
     use sp_core::{hexdisplay::AsBytesRef, H160, H256, H512};
     pub use t3rn_primitives::portal::InclusionReceipt;
+    use t3rn_primitives::light_client::{LightClientAsyncAPI, LightClientHeartbeat};
 
     use sp_runtime::{
         traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
@@ -225,6 +226,7 @@ pub mod pallet {
         type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
         type Xdns: Xdns<Self, BalanceOf<Self>>;
+        type LightClientAsyncAPI: LightClientAsyncAPI<Self>;
     }
 
     #[pallet::pallet]
@@ -2040,6 +2042,15 @@ pub mod pallet {
             if (n % T::BatchingWindow::get()).is_zero() {
                 // Check if there any pending attestations to submit with the current batch
                 aggregated_weight = Self::process_next_batch_window(n, aggregated_weight);
+                let current_block = frame_system::Pallet::<T>::block_number();
+                T::LightClientAsyncAPI::on_new_epoch(GatewayVendor::Attesters, n % T::BatchingWindow::get(), LightClientHeartbeat {
+                    last_heartbeat: current_block,
+                    last_finalized_height: current_block,
+                    last_rational_height: current_block,
+                    last_fast_height: current_block,
+                    is_halted: false,
+                    ever_initialized: true,
+                });
             }
             if (n % T::RepatriationPeriod::get()).is_zero() {
                 aggregated_weight = Self::process_repatriations(n, aggregated_weight);
