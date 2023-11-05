@@ -19,6 +19,7 @@ pub mod pallet {
     pub const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
 
     use super::*;
+    use std::hash::Hash;
     t3rn_primitives::reexport_currency_types!();
     use tiny_keccak::{Hasher, Keccak};
 
@@ -30,8 +31,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::{BlockNumberFor, *};
     use sp_core::{hexdisplay::AsBytesRef, H160, H256, H512};
-    pub use t3rn_primitives::portal::InclusionReceipt;
     use t3rn_primitives::light_client::{LightClientAsyncAPI, LightClientHeartbeat};
+    pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
         traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
@@ -81,6 +82,17 @@ pub mod pallet {
         pub status: BatchStatus,
         pub latency: LatencyStatus,
         pub halt: bool,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub struct InfluxMessage<BlockNumber> {
+        pub message_hash: H256,
+        pub message: H256,
+        pub height_there: BlockNumber,
+        pub gateway: TargetId,
+        pub signatures: Vec<Vec<u8>>,
+        pub created: BlockNumber,
+        pub status: BatchStatus,
     }
 
     impl<BlockNumber: Zero> Default for BatchMessage<BlockNumber> {
@@ -251,6 +263,11 @@ pub mod pallet {
     pub type CommitteeTransitionOn<T: Config> = StorageMap<_, Identity, TargetId, u32>;
 
     #[pallet::storage]
+    #[pallet::getter(fn attestations_influx)]
+    pub type AttestationsInflux<T: Config> =
+        StorageDoubleMap<_, Identity, TargetId, Identity, H256, InfluxMessage<BlockNumberFor<T>>>;
+
+    #[pallet::storage]
     pub type CurrentRetributionPerSFXPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
@@ -413,6 +430,8 @@ pub mod pallet {
         BanAttesterAlreadyRequested,
         BatchAlreadyCommitted,
         CommitteeSizeTooLarge,
+        InfluxSignatureAlreadySubmitted,
+        InfluxMessageHashIncorrect,
     }
 
     #[pallet::call]
@@ -616,6 +635,126 @@ pub mod pallet {
             });
 
             Self::deposit_event(Event::NewTargetProposed(target));
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn submit_for_influx_attestation(
+            // Must be signed by the attester in current Committee
+            origin: OriginFor<T>,
+            // Message being a hash of the message to sign
+            message: H256,
+            // Message hash of the message
+            message_hash: H256,
+            // Message hash of the message
+            height_there: BlockNumberFor<T>,
+            // Target of the attestation
+            target: TargetId,
+            // Signature of the message
+            signature: Vec<u8>,
+        ) -> DispatchResult {
+            let account_id = ensure_signed(origin)?;
+
+            // Ensure target is activated
+            ensure!(
+                AttestationTargets::<T>::get().contains(&target),
+                Error::<T>::TargetNotActive
+            );
+
+            // Lookup the attester in the storage
+            let attester = Attesters::<T>::get(&account_id).ok_or(Error::<T>::NotRegistered)?;
+
+            // Check if Current Committee
+            ensure!(
+                CurrentCommittee::<T>::get().contains(&account_id),
+                Error::<T>::NotInCurrentCommittee
+            );
+
+            // Check if the attester has agreed to the target
+            let recoverable = AttestersAgreements::<T>::get(&account_id, &target)
+                .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
+
+            // Get the codec of target from XDNS
+            let target_codec = <T as Config>::Xdns::get_target_codec(&target)?;
+
+            let mut message_bytes = message.as_bytes().to_vec();
+            // add target to the message
+            message_bytes.extend_from_slice(&target.encode());
+            // add height_there to the message
+            message_bytes.extend_from_slice(&height_there.encode());
+
+            // Check if message_hash is correct
+            let recalculate_message_hash: H256 = match target_codec {
+                Codec::Scale => {
+                    let substrate_message_hash =
+                        sp_core::hashing::blake2_256(message_bytes.as_slice());
+                    H256::from(substrate_message_hash)
+                },
+                Codec::Rlp => {
+                    let evm_message_hash = sp_core::hashing::keccak_256(message_bytes.as_slice());
+                    H256::from(evm_message_hash)
+                },
+            };
+
+            ensure!(
+                recalculate_message_hash == message_hash,
+                Error::<T>::InfluxMessageHashIncorrect
+            );
+
+            // Get XDNS targer's vendor
+            let vendor = <T as Config>::Xdns::get_verification_vendor(&target)
+                .map_err(|_| Error::<T>::XdnsTargetNotActive)?;
+
+            let is_verified = attester
+                .verify_attestation_signature(
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    &message_hash.encode(),
+                    &signature,
+                    recoverable,
+                    &vendor,
+                )
+                .map_err(|_| Error::<T>::InvalidSignature)?;
+
+            ensure!(is_verified, Error::<T>::InvalidSignature);
+
+            // Recover or create attestation influx from storage
+            let maybe_attestation_influx_msg = AttestationsInflux::<T>::get(&target, &message_hash);
+
+            let mut attestation_influx = if let Some(mut attestation) = maybe_attestation_influx_msg
+            {
+                // Check if the attestation is already submitted into Signatures vector
+                ensure!(
+                    !attestation.signatures.contains(&signature),
+                    Error::<T>::InfluxSignatureAlreadySubmitted
+                );
+                // Update Influx attestation with attestator's signature
+                attestation.signatures.push(signature);
+                attestation
+            } else {
+                InfluxMessage {
+                    message_hash,
+                    message,
+                    height_there,
+                    gateway: target,
+                    signatures: vec![signature],
+                    created: <frame_system::Pallet<T>>::block_number(),
+                    status: BatchStatus::PendingAttestation,
+                }
+            };
+
+            // Set status based on if signed by majority of the committee
+            let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
+            let status = if attestation_influx.signatures.len() >= quorum {
+                BatchStatus::ReadyForSubmissionByMajority
+            } else if (attestation_influx.signatures.len() as u32) == T::CommitteeSize::get() {
+                BatchStatus::ReadyForSubmissionFullyApproved
+            } else {
+                BatchStatus::PendingAttestation
+            };
+            attestation_influx.status = status;
+            // Save Influx attestation into storage
+            AttestationsInflux::<T>::insert(&target, &message_hash, attestation_influx);
 
             Ok(())
         }
@@ -1830,7 +1969,7 @@ pub mod pallet {
                 // If a batch exists, update its status
                 Batches::<T>::mutate(target, |batches| {
                     if let Some(batches) = batches {
-                        for mut batch in batches.iter_mut() {
+                        for batch in batches.iter_mut() {
                             if batch.status == BatchStatus::PendingAttestation
                                 && batch.signatures.len() >= quorum
                             {
@@ -2043,14 +2182,18 @@ pub mod pallet {
                 // Check if there any pending attestations to submit with the current batch
                 aggregated_weight = Self::process_next_batch_window(n, aggregated_weight);
                 let current_block = frame_system::Pallet::<T>::block_number();
-                T::LightClientAsyncAPI::on_new_epoch(GatewayVendor::Attesters, n % T::BatchingWindow::get(), LightClientHeartbeat {
-                    last_heartbeat: current_block,
-                    last_finalized_height: current_block,
-                    last_rational_height: current_block,
-                    last_fast_height: current_block,
-                    is_halted: false,
-                    ever_initialized: true,
-                });
+                T::LightClientAsyncAPI::on_new_epoch(
+                    GatewayVendor::Attesters,
+                    n % T::BatchingWindow::get(),
+                    LightClientHeartbeat {
+                        last_heartbeat: current_block,
+                        last_finalized_height: current_block,
+                        last_rational_height: current_block,
+                        last_fast_height: current_block,
+                        is_halted: false,
+                        ever_initialized: true,
+                    },
+                );
             }
             if (n % T::RepatriationPeriod::get()).is_zero() {
                 aggregated_weight = Self::process_repatriations(n, aggregated_weight);
@@ -2106,7 +2249,7 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::{H160, H256, H512};
-    use sp_runtime::{traits::Keccak256, Percent};
+    use sp_runtime::traits::Keccak256;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersAgreements, AttestersError,
@@ -2139,16 +2282,16 @@ pub mod attesters_test {
             let target_id = ETHEREUM_TARGET;
             AttestationTargets::<MiniRuntime>::append(&target_id);
             // test data
-            let blocks_delay: BlockNumber = 1;
+            let _blocks_delay: BlockNumber = 1;
             let base_user_fee_for_single_user: Balance = 10_000_000_000_000u128.try_into().unwrap();
             let overcharge_32_percent_factor: Balance = 3_200_000_000_000u128.try_into().unwrap();
 
-            let result = Attesters::estimate_user_finality_fee(
+            let _result = Attesters::estimate_user_finality_fee(
                 RuntimeOrigin::signed(AccountId::from([1u8; 32])),
                 target_id,
             );
 
-            let (target, estimated_fee) = expect_last_event_to_emit_finality_fee_estimation();
+            let (_target, estimated_fee) = expect_last_event_to_emit_finality_fee_estimation();
 
             // For just one, has to be the same
             assert_eq!(
@@ -2596,7 +2739,7 @@ pub mod attesters_test {
 
             System::set_block_number(current_block_1 + 1);
 
-            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
+            let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             assert_eq!(Attesters::attestation_targets(), vec![target]);
         });
