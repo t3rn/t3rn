@@ -268,6 +268,10 @@ pub mod pallet {
     pub type PermanentSlashes<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn invulnerable_attester)]
+    pub type InvulnerableAttester<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn attestation_targets)]
     pub type AttestationTargets<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
 
@@ -420,7 +424,7 @@ pub mod pallet {
             sr25519_key: [u8; 32],
             custom_commission: Option<Percent>,
         ) -> DispatchResult {
-            let account_id = ensure_signed(origin)?;
+            let account_id = ensure_signed(origin.clone())?;
 
             // Check min. self-nomination bond
             ensure!(
@@ -455,7 +459,13 @@ pub mod pallet {
             // Self nominate in order to be part of the active set selection
             Self::do_nominate(&account_id, &account_id, self_nominate_amount)?;
 
-            Self::deposit_event(Event::AttesterRegistered(account_id));
+            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
+
+            // Figure if signed by Sudo origin and set as extra key to Invulnerable
+
+            if ensure_root(origin).is_ok() {
+                InvulnerableAttester::<T>::put(&account_id);
+            }
 
             Ok(())
         }
@@ -1692,6 +1702,12 @@ pub mod pallet {
 
             shuffle_active_set(&mut shuffled_active_set);
 
+            // Set the invulnerable attester as the first attester in the shuffled active set
+            if let Some(invulnerable_attester) = InvulnerableAttester::<T>::get() {
+                if let Some(first_attester) = shuffled_active_set.get_mut(0) {
+                    *first_attester = invulnerable_attester;
+                }
+            }
             let new_committee = shuffled_active_set
                 .clone()
                 .into_iter()
@@ -2283,6 +2299,41 @@ pub mod attesters_test {
 
         // Run to active set selection
         Attesters::on_initialize(400u32);
+
+        assert_eq!(Attesters::invulnerable_attester(), None);
+
+        let attester_info: AttesterInfo = AttestersStore::<MiniRuntime>::get(&attester).unwrap();
+        assert_eq!(attester_info.key_ed.encode(), ed25519_key);
+        assert_eq!(attester_info.key_ec.encode(), ecdsa_key);
+        assert_eq!(attester_info.key_sr.encode(), sr25519_key);
+        attester_info
+    }
+
+    pub fn register_attester_from_sudo_priviliges_sets_as_invulnerable(
+        secret_key: [u8; 32],
+    ) -> AttesterInfo {
+        // Register an attester
+        let attester = AccountId::from(secret_key);
+
+        let ecdsa_key = ecdsa::Pair::from_seed(&secret_key).public().to_raw_vec();
+        let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
+        let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
+
+        let _ = Balances::deposit_creating(&attester, 100u128);
+
+        assert_ok!(Attesters::register_attester(
+            RuntimeOrigin::root(),
+            10u128,
+            ecdsa_key.clone().try_into().unwrap(),
+            ed25519_key.clone().try_into().unwrap(),
+            sr25519_key.clone().try_into().unwrap(),
+            None,
+        ));
+
+        // Run to active set selection
+        Attesters::on_initialize(400u32);
+
+        assert_eq!(Attesters::invulnerable_attester(), Some(attester.clone()));
 
         let attester_info: AttesterInfo = AttestersStore::<MiniRuntime>::get(&attester).unwrap();
         assert_eq!(attester_info.key_ed.encode(), ed25519_key);
