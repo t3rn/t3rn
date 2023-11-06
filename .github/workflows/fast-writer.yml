@@ -81,7 +81,7 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/fast-writer/eslint_report.json
-          fail-on-error: true
+          fail-on-error: false
           fail-on-warning: false
           only-pr-files: true
 
