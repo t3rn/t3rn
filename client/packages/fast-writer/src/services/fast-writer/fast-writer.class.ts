@@ -4,7 +4,7 @@ import { CircuitConnection } from '../circuit/connection.class'
 import { CircuitClient } from '../circuit/client'
 import { Prometheus } from '../../prometheus'
 import { Config } from '../../config/config'
-import { Order } from './send-tx'
+import { Order } from './order'
 import { ApiPromise } from '@t3rn/sdk/.'
 import { TxType } from './enums'
 
@@ -75,9 +75,9 @@ export class FastWriter {
           sideEffect.count,
           sideEffect.txType,
         )
-        logger.info({ order }, '📤 Submitting SFX to Circuit')
+        logger.info({ order: order.hash }, '📤 Submitting SFX to Circuit')
         await this.execute(order, nonce)
-        logger.info({ order }, '✅ Submitted SFX to Circuit')
+        logger.info({ order: order.hash }, '✅ Submitted SFX to Circuit')
       }
 
       await sleep(
@@ -97,11 +97,7 @@ export class FastWriter {
     }
   }
 
-  async submitBatchOrder(
-    order: Order,
-    nonce: number,
-    speedMode: number = 1,
-  ) {
+  async submitBatchOrder(order: Order, nonce: number, speedMode: number = 1) {
     const transactions = []
     const sdk = this.circuitClient.sdk
 
@@ -141,15 +137,16 @@ export class FastWriter {
       })
   }
 
-  async submitSingleOrder(
-    order: Order,
-    nonce: number,
-    speedMode: number = 1,
-  ) {
+  async submitSingleOrder(order: Order, nonce: number, speedMode: number = 1) {
     const sdk = this.circuitClient.sdk
     let txSize = 0
 
-    logger.debug({order}, `🏎️ Submitting ${order.count} transaction with nonce ${nonce}`)
+    logger.debug(
+      { order: order.hash },
+      `🏎️ Generating ${order.count} transaction with nonces ${nonce}-${
+        nonce + order.count
+      }`,
+    )
     async function customSignAndSend(client) {
       try {
         const tx = client.sdk.client.tx.vacuum.singleOrder(
@@ -169,7 +166,7 @@ export class FastWriter {
       }
     }
 
-    this.prometheus.txSize.set({target: order.target}, txSize)
+    this.prometheus.txSize.set({ target: order.target }, txSize)
 
     for (let i = 0; i < order.count; i++) {
       customSignAndSend(this.circuitClient)

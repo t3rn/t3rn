@@ -1,4 +1,6 @@
-import { TxType } from "./enums"
+import { logger } from '../../utils/logger'
+import { TxType } from './enums'
+import * as CryptoJS from 'crypto-js'
 
 export class Order {
   target: string
@@ -11,6 +13,7 @@ export class Order {
   remote_origin_nonce: number
   count: number
   txType: TxType
+  hash: string
 
   constructor(
     target: string,
@@ -35,5 +38,11 @@ export class Order {
     this.remote_origin_nonce = remote_origin_nonce
     this.count = count
     this.txType = txType
+
+    // each order has hash to not pollute logs
+    const data = JSON.stringify(this)
+    this.hash = CryptoJS.SHA256(data).toString()
+
+    logger.info({ order: this }, '💾 Created new order')
   }
 }

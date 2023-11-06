@@ -44,6 +44,7 @@
     "@types/node": "^20.8.0",
     "chai": "^4.3.8",
     "chai-as-promised": "^7.1.1",
+    "crypto-js": "^4.2.0",
     "dotenv": "16.3.1",
     "env-var": "^7.4.1",
     "mocha": "^10.2.0",
