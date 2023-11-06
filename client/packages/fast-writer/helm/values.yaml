@@ -15,11 +15,11 @@ sideEffects:
     insurance: 1
     action: transfer
     targetAccount: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
-    amount: 1
+    amount: 0.01
     enforceExecutor: null
     rewardAsset: null # defaults to TRN
     count: 10
-    txType: batch
+    txType: single
   # - target: pdot
   #   maxReward: 1
   #   insurance: 1

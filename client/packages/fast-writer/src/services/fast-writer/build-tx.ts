@@ -31,7 +31,7 @@ export class Order {
     txType: TxType,
   ) {
     this.target = target
-    this.asset = asset === undefined ? null : (asset as number) // Use a type assertion
+    this.asset = asset === undefined ? 0 : (asset as number) // Use a type assertion
     this.targetAccount = targetAccount
     this.amount = amount * 10 ** 12
     this.maxReward = maxReward
@@ -74,7 +74,7 @@ export class Order {
         order.targetAccount,
         speedMode,
       ) 
-      transactions.push(transaction)
+      transactions.push(transaction as never)
     }
 
     async function customSignAndSend() {
@@ -82,7 +82,7 @@ export class Order {
         const tx = sdk.circuit.tx.createBatch(transactions)
         const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
         logger.info(
-          `Transaction included in block ${res.status.asFinalized.toString()}`,
+          `Transaction included in block ${res}`,
         )
       } catch (e) {
         logger.error(`signAndSend failed with error: ${e}`)
@@ -108,37 +108,40 @@ export class Order {
   ) {
     const sdk = client.sdk
 
-    // amount is increased by 1 for each order to avoid SetupFailedDuplicatedXtx
-    const tx = client.sdk.client.tx.vacuum.singleOrder(
-      order.target,
-      order.asset,
-      order.amount,
-      order.rewardAsset,
-      order.maxReward,
-      order.insurance,
-      order.targetAccount,
-      speedMode,
-    ) 
-
+    logger.info(`Submitting ${order.count} transaction with nonce ${nonce}`)
     async function customSignAndSend() {
       try {
+        const tx = client.sdk.client.tx.vacuum.singleOrder(
+          order.target,
+          order.asset,
+          order.amount,
+          order.rewardAsset,
+          order.maxReward,
+          order.insurance,
+          order.targetAccount,
+          speedMode,
+        ) 
         const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
         logger.info(
-          `Transaction included in block ${res.status.asFinalized.toString()}`,
+          `Transaction included in block ${res}`,
         )
+        return res
       } catch (e) {
         logger.error(`signAndSend failed with error: ${e}`)
       }
     }
 
-    customSignAndSend()
-      .then((block) => {
-        // Handle success here if necessary
-        logger.info('Transaction sent successfully', block)
-      })
-      .catch((err) => {
-        // Handle uncaught errors here if necessary
-        console.error('Unhandled error:', err)
-      })
+    for (let i = 0; i < order.count; i++) {
+      customSignAndSend()
+        .then((block) => {
+          // Handle success here if necessary
+          logger.info('Transaction sent successfully', block)
+        })
+        .catch((err) => {
+          // Handle uncaught errors here if necessary
+          console.error('Unhandled error:', err)
+        })
+      nonce += 1
+    }
   }
 }
