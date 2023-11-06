@@ -143,7 +143,7 @@ export class FastWriter {
 
     logger.debug(
       { order: order.hash },
-      `🏎️ Generating ${order.count} transaction with nonces ${nonce}-${
+      `🏎️ Generating ${order.count} transaction(s) as single order sequence with nonces ${nonce}-${
         nonce + order.count
       }`,
     )
