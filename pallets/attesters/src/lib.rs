@@ -19,7 +19,6 @@ pub mod pallet {
     pub const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
 
     use super::*;
-    use std::hash::Hash;
     t3rn_primitives::reexport_currency_types!();
     use tiny_keccak::{Hasher, Keccak};
 
