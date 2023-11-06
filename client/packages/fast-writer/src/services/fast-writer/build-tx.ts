@@ -2,12 +2,12 @@ import { CircuitClient } from '../circuit/client'
 import { logger } from '../../utils/logger'
 
 enum TxType {
-    Single = 'single',
-    Batch = 'batch',
+  Single = 'single',
+  Batch = 'batch',
 }
 
 export class Order {
-  dest: string
+  target: string
   asset: number | null
   targetAccount: string
   amount: number
@@ -19,7 +19,7 @@ export class Order {
   txType: TxType
 
   constructor(
-    dest: string,
+    target: string,
     asset: number | undefined,
     targetAccount: string,
     amount: number,
@@ -30,8 +30,8 @@ export class Order {
     count: number,
     txType: TxType,
   ) {
-    this.dest = dest
-    this.asset = asset === undefined ? null : asset as number; // Use a type assertion
+    this.target = target
+    this.asset = asset === undefined ? null : asset as number // Use a type assertion
     this.targetAccount = targetAccount
     this.amount = amount
     this.maxReward = maxReward
@@ -41,52 +41,105 @@ export class Order {
     this.count = count
     this.txType = txType
   }
+  // xdns.token = roco
 
-execute(circuitClient: CircuitClient, order: Order, nonce) {
-    // if (this.txType == TxType.Single) {
-    //   circuitClient.submitSingleOrder(this);
-    // } else if (this.txType == TxType.Batch) {
-      this.submitBatchOrder(circuitClient, order, nonce);
-    // }
+  execute(circuitClient: CircuitClient, order: Order, nonce) {
+    if (this.txType == TxType.Single) {
+      this.submitSingleOrder(circuitClient, order, nonce)
+    } else if (this.txType == TxType.Batch) {
+      this.submitBatchOrder(circuitClient, order, nonce)
+    } else {
+      logger.error('Invalid txType', this.txType)
+    }
   }
 
-async submitBatchOrder(
-  client: CircuitClient,
-  order: Order,
-  nonce: number,
-  speedMode: number = 1,
-) {
-const transactions = [];
-const sdk = client.sdk;
+  async submitBatchOrder(
+    client: CircuitClient,
+    order: Order,
+    nonce: number,
+    speedMode: number = 1,
+  ) {
+    const transactions = []
+    const sdk = client.sdk
 
-for (let i = 0; i < order.count; i++) {
-  const transaction = client.sdk.client.tx.vacuum.singleOrder(
-    order.dest,
-    order.asset,
-    order.amount,
-    order.rewardAsset,
-    order.maxReward,
-    order.insurance,
-    order.targetAccount,
-    speedMode
-  ) as any;
-  transactions.push(transaction as never);
-}
-
-
-async function customSignAndSend() {
-    try {
-        const tx = sdk.circuit.tx.createBatch(transactions);
-        const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
-        logger.info(`Transaction included in block ${res.status.asFinalized.toString()}`)
-    } catch (e) {
-        logger.error(`signAndSend failed with error: ${e}`)
+    for (let i = 0; i < order.count; i++) {
+      // amount is increased by 1 for each order to avoid SetupFailedDuplicatedXtx
+      const transaction = client.sdk.client.tx.vacuum.singleOrder(
+        order.target,
+        order.asset,
+        order.amount + i,
+        order.rewardAsset,
+        order.maxReward,
+        order.insurance,
+        order.targetAccount,
+        speedMode,
+      ) as any
+      transactions.push(transaction as never)
     }
-}
 
-    customSignAndSend().catch((err) => {
+    async function customSignAndSend() {
+      try {
+        const tx = sdk.circuit.tx.createBatch(transactions)
+        const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
+        logger.info(
+          `Transaction included in block ${res.status.asFinalized.toString()}`,
+        )
+      } catch (e) {
+        logger.error(`signAndSend failed with error: ${e}`)
+      }
+    }
+
+    customSignAndSend()
+      .then((block) => {
+        // Handle success here if necessary
+        logger.info('Transaction sent successfully', block)
+      })
+      .catch((err) => {
         // Handle uncaught errors here if necessary
-        console.error('Unhandled error:', err);
-    });
+        console.error('Unhandled error:', err)
+      })
+  }
 
-}}
+  async submitSingleOrder(
+    client: CircuitClient,
+    order: Order,
+    nonce: number,
+    speedMode: number = 1,
+  ) {
+    const transactions = []
+    const sdk = client.sdk
+
+    // amount is increased by 1 for each order to avoid SetupFailedDuplicatedXtx
+    const tx = client.sdk.client.tx.vacuum.singleOrder(
+      order.target,
+      order.asset,
+      order.amount,
+      order.rewardAsset,
+      order.maxReward,
+      order.insurance,
+      order.targetAccount,
+      speedMode,
+    ) as any
+
+    async function customSignAndSend() {
+      try {
+        const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
+        logger.info(
+          `Transaction included in block ${res.status.asFinalized.toString()}`,
+        )
+      } catch (e) {
+        logger.error(`signAndSend failed with error: ${e}`)
+      }
+    }
+
+    customSignAndSend()
+      .then((block) => {
+        // Handle success here if necessary
+        logger.info('Transaction sent successfully', block)
+      })
+      .catch((err) => {
+        // Handle uncaught errors here if necessary
+        console.error('Unhandled error:', err)
+      })
+  }
+}

@@ -27,10 +27,7 @@ const config = () => ({
     pretty: get('LOG_PRETTY').required().default('false').asBoolStrict(),
   },
   sideEffects: get('SIDEEFFECTS').required().asJsonArray(),
-  intervalSeconds: get('INTERVAL')
-    .required()
-    .default(12)
-    .asInt(),
+  intervalSeconds: get('INTERVAL_SECONDS').required().default(12).asInt(),
 })
 
 export default config()

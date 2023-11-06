@@ -10,15 +10,16 @@ config:
 # Side Effects Configuration
 sideEffects:
   - target: roco
+    asset: 0
     maxReward: 1
     insurance: 1
     action: transfer
-    transferArgs:
-      to: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
-      amount: 0.01
+    targetAccount: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
+    amount: 1
     enforceExecutor: null
-    rewardAssetId: null # defaults to TRN
-    count: 1000
+    rewardAsset: null # defaults to TRN
+    count: 10
+    txType: batch
   # - target: pdot
   #   maxReward: 1
   #   insurance: 1

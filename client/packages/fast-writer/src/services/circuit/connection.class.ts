@@ -13,12 +13,7 @@ export class CircuitConnection {
   signer: any
   prometheus: Prometheus
 
-  constructor(
-    rpc1: any,
-    rpc2: any,
-    signer: string,
-    prometheus: Prometheus,
-  ) {
+  constructor(rpc1: any, rpc2: any, signer: string, prometheus: Prometheus) {
     this.rpc1 = rpc1
     this.rpc2 = rpc2
     this.usingPrimaryRpc = true

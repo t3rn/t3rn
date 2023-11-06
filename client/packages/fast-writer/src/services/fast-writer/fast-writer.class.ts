@@ -46,37 +46,37 @@ export class FastWriter {
   private async fetchNonce(api: ApiPromise, address: string) {
     return await api.rpc.system.accountNextIndex(address).then((nextIndex) => {
       // @ts-ignore - property does not exist on type
-      return parseInt(nextIndex.toNumber());
-    });
-}
+      return parseInt(nextIndex.toNumber())
+    })
+  }
 
   private async scheduleSubmissionsToCircuit() {
     while (true) {
       logger.info('Starting new submission loop to Circuit')
-      let nonce = await this.fetchNonce(this.circuitClient.sdk.client, this.circuitClient.sdk.signer.address)
+      const nonce = await this.fetchNonce(
+        this.circuitClient.sdk.client,
+        this.circuitClient.sdk.signer.address,
+      )
 
       // TODO submit SFXs
       for (const sideEffect of this.config.sideEffects) {
         const order = new Order(
-          sideEffect.dest,
+          sideEffect.target,
           sideEffect.asset,
           sideEffect.targetAccount,
-          sideEffect.amount,
+          sideEffect.amount * 10**12,
           sideEffect.maxReward,
           sideEffect.rewardAsset,
           sideEffect.insurance,
           sideEffect.remote_origin_nonce,
           sideEffect.count,
-          sideEffect.txType
-        );
-        order.execute(this.circuitClient, order, nonce);
+          sideEffect.txType,
+        )
+        logger.info({ order }, 'Submitting SFX to Circuit')
+        order.execute(this.circuitClient, order, nonce)
       }
 
-
-      logger.info(
-        { },
-        `SFXs submission`,
-      )
+      logger.info({}, `SFXs submission`)
 
       await sleep(
         this.config.intervalSeconds,
@@ -84,6 +84,4 @@ export class FastWriter {
       )
     }
   }
-
-
 }

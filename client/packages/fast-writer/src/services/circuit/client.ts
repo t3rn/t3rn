@@ -19,5 +19,4 @@ export class CircuitClient {
     this.sdk = this.circuitConnection.sdk
     this.config = config
   }
-
 }

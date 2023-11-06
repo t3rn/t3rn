@@ -1,7 +1,6 @@
 import pino from 'pino'
 
-const isPrettyPrintEnabled =
-  process.env.LOG_PRETTY === 'true'
+const isPrettyPrintEnabled = process.env.LOG_PRETTY === 'true'
 
 const loggerConfig = {
   level: process.env.LOG_LEVEL || 'info',
