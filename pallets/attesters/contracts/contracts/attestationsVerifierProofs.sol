@@ -79,6 +79,10 @@ contract AttestationsVerifierProofs {
         return keccak256(batchEncodePacked(batch));
     }
 
+    function singleAttestationHash(bytes calldata messageGMPPayload, bytes4 sourceGateway, uint32 sourceHeight) public pure returns (bytes32) {
+        return keccak256(abi.encode(keccak256(messageGMPPayload), sourceGateway, sourceHeight));
+    }
+
     constructor(address[] memory initialCommittee, address[] memory nextCommittee, uint256 startingIndex, EscrowGMP _escrowGMP) {
         currentCommitteeTransitionCount = 1;
         totalAttesters = initialCommittee.length;
@@ -132,6 +136,27 @@ contract AttestationsVerifierProofs {
         quorum = committeeSize * 2 / 3;
     }
 
+    function receiveSingleAttestation(
+        bytes calldata messageGMPPayload, // keccak hash of the message constitutes 32bytes of message
+        bytes4 sourceGateway, // 4 bytes of source gateway
+        uint32 sourceHeight, // height of the block in which the message was emitted
+        bytes[] calldata signatures,
+        bytes32[] calldata multiProofProof,
+        bool[] calldata multiProofMembershipFlags
+    ) public {
+        bytes32 messageHash = singleAttestationHash(messageGMPPayload, sourceGateway, sourceHeight);
+        bytes32[] memory attestersAsLeaves = recoverCurrentSigners(
+            messageHash,
+            signatures,
+            new address[](0)
+        );
+        require(attestersAsLeaves.length >= quorum, "Not enough correct signatures");
+
+        require(MerkleProof.multiProofVerifyCalldata(multiProofProof, multiProofMembershipFlags, currentCommitteeHash, attestersAsLeaves), "Multi-proof of attestations commitments verification failed for single attestation");
+
+        decodeAndProcessPayload(messageGMPPayload);
+    }
+
     function receiveAttestationBatch(
         bytes calldata batchPayload,
         bytes calldata batchGMPPayload,
@@ -148,6 +173,8 @@ contract AttestationsVerifierProofs {
             signatures,
             batch.bannedCommittee
         );
+
+        require(attestersAsLeaves.length >= quorum, "Not enough correct signatures");
 
         // Check if maybeNextCommittee contains new members commitment
         // If so, use the currently store next committee hash to verify signatures
@@ -201,7 +228,7 @@ contract AttestationsVerifierProofs {
         bytes32 expectedBatchHash,
         bytes[] calldata signatures,
         address[] memory bannedCommittee
-    ) public returns (bytes32[] memory leaves) {
+    ) public pure returns (bytes32[] memory leaves) {
         uint32 correctSignatures = 0;
         bytes32[] memory leaves = new bytes32[](signatures.length);
         address[] memory recoveredAddresses = new address[](signatures.length);
@@ -215,7 +242,6 @@ contract AttestationsVerifierProofs {
             recoveredAddresses[i] = recoveredSigner;
             correctSignatures += 1;
         }
-        require(correctSignatures >= quorum, "Not enough correct signatures");
         return leaves;
     }
 
