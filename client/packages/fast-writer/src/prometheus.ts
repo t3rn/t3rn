@@ -7,7 +7,6 @@ export class Prometheus {
   private readonly config: Config
   disconnects: Counter
   register: Registry
-  height: Gauge
   submissions: Counter
   interval: Gauge
   txSize: Gauge

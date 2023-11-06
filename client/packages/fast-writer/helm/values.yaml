@@ -13,7 +13,6 @@ sideEffects:
     asset: 0
     maxReward: 1
     insurance: 1
-    action: transfer
     targetAccount: 5F3vTGGG56DetArfvmtZseV6fEZeCQpdYgijzzsQdBqdxmen
     amount: 0.01
     enforceExecutor: null

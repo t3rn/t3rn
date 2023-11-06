@@ -6,6 +6,7 @@ import { Prometheus } from '../../prometheus'
 import { Config } from '../../config/config'
 import { Order } from './send-tx'
 import { ApiPromise } from '@t3rn/sdk/.'
+import { TxType } from './enums'
 
 export class FastWriter {
   private readonly config: Config
@@ -22,6 +23,7 @@ export class FastWriter {
       this.config.circuit.signer,
       this.prometheus,
     )
+    this.prometheus.interval.set(this.config.intervalSeconds)
   }
 
   async start() {
@@ -74,13 +76,123 @@ export class FastWriter {
           sideEffect.txType,
         )
         logger.info({ order }, 'Submitting SFX to Circuit')
-        await order.execute(this.circuitClient, order, nonce)
+        await this.execute(order, nonce)
       }
 
       await sleep(
         this.config.intervalSeconds,
         'Waiting between SFX submissions to Circuit',
       )
+    }
+  }
+
+  execute(order: Order, nonce) {
+    if (order.txType == TxType.Single) {
+      this.submitSingleOrder(order, nonce)
+    } else if (order.txType == TxType.Batch) {
+      this.submitBatchOrder(order, nonce)
+    } else {
+      logger.error('Invalid txType', order.txType)
+    }
+  }
+
+  async submitBatchOrder(
+    order: Order,
+    nonce: number,
+    speedMode: number = 1,
+  ) {
+    const transactions = []
+    const sdk = this.circuitClient.sdk
+
+    for (let i = 0; i < order.count; i++) {
+      // amount is increased by 1 for each order to avoid SetupFailedDuplicatedXtx
+      const transaction = this.circuitClient.sdk.client.tx.vacuum.singleOrder(
+        order.target,
+        order.asset,
+        order.amount + i,
+        order.rewardAsset,
+        order.maxReward,
+        order.insurance,
+        order.targetAccount,
+        speedMode,
+      )
+      transactions.push(transaction as never)
+    }
+
+    async function customSignAndSend() {
+      try {
+        const tx = sdk.circuit.tx.createBatch(transactions)
+        const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
+        logger.info({ res }, `Transaction included in block ${res}`)
+      } catch (e) {
+        logger.error(`signAndSend failed with error: ${e}`)
+      }
+    }
+
+    customSignAndSend()
+      .then((block) => {
+        // Handle success here if necessary
+        logger.info('Transaction sent successfully', block)
+      })
+      .catch((err) => {
+        // Handle uncaught errors here if necessary
+        logger.error('Unhandled error:', err)
+      })
+  }
+
+  async submitSingleOrder(
+    order: Order,
+    nonce: number,
+    speedMode: number = 1,
+  ) {
+    const sdk = this.circuitClient.sdk
+    let txSize = 0
+
+    logger.info(`Submitting ${order.count} transaction with nonce ${nonce}`)
+    async function customSignAndSend(client) {
+      try {
+        const tx = client.sdk.client.tx.vacuum.singleOrder(
+          order.target,
+          order.asset,
+          order.amount,
+          order.rewardAsset,
+          order.maxReward,
+          order.insurance,
+          order.targetAccount,
+          speedMode,
+        )
+        txSize += tx.encodedLength
+        const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
+        logger.info(`Transaction included in block ${res}`)
+        return res.status.inBlock
+      } catch (e) {
+        logger.error(`signAndSend failed with error: ${e}`)
+      }
+    }
+
+    this.prometheus.txSize.set({target: order.target}, txSize)
+
+    for (let i = 0; i < order.count; i++) {
+      customSignAndSend(this.circuitClient)
+        .then((blockHash) => {
+          // Handle success here if necessary
+          logger.info(`Transaction sent successfully in ${blockHash}`)
+          this.prometheus.submissions.inc({
+            target: order.target,
+            status: 'success',
+            type: order.txType,
+          })
+        })
+        .catch((err) => {
+          // Handle uncaught errors here if necessary
+          logger.error('Unhandled error:', err)
+          this.prometheus.submissions.inc({
+            target: order.target,
+            status: 'failure',
+            type: order.txType,
+          })
+        })
+      nonce += 1
     }
   }
 }
