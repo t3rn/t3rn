@@ -675,16 +675,24 @@ pub mod pallet {
             // add target to the message (assumed encoded on 32 bytes)
             message_bytes.extend_from_slice(&target.encode());
             // add height_there to the message (assumed encoded on 4 bytes)
-            message_bytes.extend_from_slice(&height_there.encode());
 
             // Check if message_hash is correct
             let recalculate_message_hash: H256 = match target_codec {
                 Codec::Scale => {
+                    message_bytes.extend_from_slice(&height_there.encode());
                     let substrate_message_hash =
                         sp_core::hashing::blake2_256(message_bytes.as_slice());
                     H256::from(substrate_message_hash)
                 },
                 Codec::Rlp => {
+                    // reverse order for BigEndian encoding
+                    let height_there = height_there
+                        .encode()
+                        .iter()
+                        .rev()
+                        .cloned()
+                        .collect::<Vec<u8>>();
+                    message_bytes.extend_from_slice(&height_there);
                     let evm_message_hash = sp_core::hashing::keccak_256(message_bytes.as_slice());
                     H256::from(evm_message_hash)
                 },
@@ -2563,7 +2571,10 @@ pub mod attesters_test {
     }
 
     pub fn add_target_and_transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
-        let _ = Attesters::add_attestation_target(RuntimeOrigin::root(), target);
+        assert_ok!(Attesters::add_attestation_target(
+            RuntimeOrigin::root(),
+            target
+        ));
         if !Attesters::attestation_targets().contains(&target) {
             // if active set is empty, select the next active set
             if !ActiveSet::<MiniRuntime>::get().is_empty() {
@@ -2702,7 +2713,8 @@ pub mod attesters_test {
     }
 
     #[test]
-    fn submit_first_influx_attestation_with_correct_signature_sets_status_to_pending_attestation() {
+    fn submit_first_influx_attestation_rlp_encoded_with_correct_signature_sets_status_to_pending_attestation(
+    ) {
         let mut ext = ExtBuilder::default()
             .with_standard_sfx_abi()
             .with_eth_gateway_record()
@@ -2722,7 +2734,7 @@ pub mod attesters_test {
             let height_there: u32 = 8;
             // Add target and height to the message
             influx_message_to_sign_on.extend_from_slice(&target_there);
-            influx_message_to_sign_on.extend_from_slice(&height_there.to_le_bytes());
+            influx_message_to_sign_on.extend_from_slice(&height_there.to_be_bytes());
 
             // Calculate the hash of the message
             let mut hasher = Keccak::v256();
@@ -2753,6 +2765,64 @@ pub mod attesters_test {
                     message: influx_message_32b.into(),
                     height_there,
                     gateway: ETHEREUM_TARGET,
+                    signatures: vec![signature],
+                    created: System::block_number(),
+                    status: BatchStatus::PendingAttestation,
+                })
+            );
+        });
+    }
+
+    #[test]
+    fn submit_first_influx_attestation_scale_encoded_with_correct_signature_sets_status_to_pending_attestation(
+    ) {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_polkadot_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
+
+            add_target_and_transition_to_next_batch(POLKADOT_TARGET, 0);
+
+            // Submit an attestation signed with the Ed25519 key
+            let influx_message_32b = *b"message_that_needs_attestation32";
+            let mut influx_message_to_sign_on: Vec<u8> = influx_message_32b.to_vec();
+            let target_there: [u8; 4] = POLKADOT_TARGET;
+            let height_there: u32 = 8;
+            // Add target and height to the message
+            influx_message_to_sign_on.extend_from_slice(&target_there);
+            influx_message_to_sign_on.extend_from_slice(&height_there.to_le_bytes());
+
+            // Calculate the Blake256 hash of the message
+            let sfx_id_to_sign_on =
+                H256::from(sp_core::hashing::blake2_256(&influx_message_to_sign_on));
+
+            // Sign the message
+            let signature = ecdsa::Pair::from_seed(&[1u8; 32])
+                .sign_prehashed(&sfx_id_to_sign_on.into())
+                .encode();
+
+            assert_ok!(Attesters::submit_for_influx_attestation(
+                RuntimeOrigin::signed(attester),
+                influx_message_32b.into(),
+                sfx_id_to_sign_on,
+                height_there,
+                POLKADOT_TARGET,
+                signature.clone(),
+            ));
+
+            // current block
+            assert_eq!(
+                Attesters::attestations_influx(&POLKADOT_TARGET, sfx_id_to_sign_on),
+                Some(InfluxMessage {
+                    message_hash: sfx_id_to_sign_on,
+                    message: influx_message_32b.into(),
+                    height_there,
+                    gateway: POLKADOT_TARGET,
                     signatures: vec![signature],
                     created: System::block_number(),
                     status: BatchStatus::PendingAttestation,
