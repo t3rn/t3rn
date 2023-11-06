@@ -69,6 +69,14 @@ pub mod pallet {
 
     use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
 
+    // XDNS Topology
+    // Define a structure to hold the topology data
+    #[derive(Encode, Decode, Clone, Default, PartialEq, Eq, Debug)]
+    pub struct XDNSTopology<AccountId> {
+        gateways: Vec<FullGatewayRecord<AccountId>>,
+        assets: Vec<TokenRecord>,
+    }
+
     pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
 
     #[pallet::config]
@@ -445,6 +453,20 @@ pub mod pallet {
             // Update the general overview
             GatewaysOverviewStore::<T>::put(all_overviews);
         }
+
+        // XDNS Topology Zip / Unzip
+        pub fn do_zip_topology() -> XDNSTopology<T::AccountId> {
+            let gateways = Self::fetch_full_gateway_records();
+
+            // Collect all asset information
+            let assets = AllTokenIds::<T>::get()
+                .iter()
+                .filter_map(|asset_id| Tokens::<T>::get(asset_id, T::SelfGatewayId::get()))
+                .collect::<Vec<TokenRecord>>();
+
+            // Assemble the topology structure
+            XDNSTopology { gateways, assets }
+        }
     }
 
     #[pallet::call]
@@ -694,6 +716,14 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn zip_topology(origin: OriginFor<T>) -> DispatchResult {
+            let _ = ensure_signed(origin)?;
+            let topology = Self::do_zip_topology();
+            Self::deposit_event(Event::<T>::XDNSTopologyZip(topology.clone()));
+            Ok(())
+        }
     }
 
     #[pallet::event]
@@ -711,6 +741,8 @@ pub mod pallet {
         XdnsRecordPurged(T::AccountId, TargetId),
         /// \[xdns_record_id\]
         XdnsRecordUpdated(TargetId),
+        /// \[xdns_topology\]
+        XDNSTopologyZip(XDNSTopology<T::AccountId>),
     }
 
     // Errors inform users that something went wrong.
