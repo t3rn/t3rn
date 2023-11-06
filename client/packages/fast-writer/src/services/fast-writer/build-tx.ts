@@ -33,7 +33,7 @@ export class Order {
     this.target = target
     this.asset = asset === undefined ? null : (asset as number) // Use a type assertion
     this.targetAccount = targetAccount
-    this.amount = amount
+    this.amount = amount * 10 ** 12
     this.maxReward = maxReward
     this.rewardAsset = rewardAsset
     this.insurance = insurance

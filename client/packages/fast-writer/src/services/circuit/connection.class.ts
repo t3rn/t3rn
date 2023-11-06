@@ -1,19 +1,20 @@
 import { ApiPromise, Keyring, Sdk, WsProvider } from '@t3rn/sdk'
 import { logger } from '../../utils/logger'
 import { Prometheus } from '../../prometheus'
+import { KeyringPair } from '@polkadot/keyring/types'
 
 export class CircuitConnection {
   client: ApiPromise
   provider: WsProvider
-  rpc1: any
+  rpc1: string
   usingPrimaryRpc: boolean = true
-  rpc2: any
+  rpc2: string
   isActive: boolean = false
   sdk: Sdk
-  signer: any
+  signer: KeyringPair
   prometheus: Prometheus
 
-  constructor(rpc1: any, rpc2: any, signer: string, prometheus: Prometheus) {
+  constructor(rpc1: string, rpc2: string, signer: string, prometheus: Prometheus) {
     this.rpc1 = rpc1
     this.rpc2 = rpc2
     this.usingPrimaryRpc = true
@@ -23,6 +24,7 @@ export class CircuitConnection {
   }
 
   async connect() {
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         this.provider = this.createProvider()
@@ -32,12 +34,14 @@ export class CircuitConnection {
         this.usingPrimaryRpc = !this.usingPrimaryRpc // toggle connection
         const sleepSecs = 2
         logger.info(
-          `Retrying in ${sleepSecs} second with ${this.currentProvider().ws}`,
+          `Retrying in ${sleepSecs} second with ${this.currentProvider()}`,
         )
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         await new Promise((resolve, _reject) => setTimeout(resolve, sleepSecs))
       }
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return new Promise((resolve, _reject) => resolve)
   }
 
@@ -45,7 +49,7 @@ export class CircuitConnection {
     return new Promise((resolve, reject) => {
       this.provider.on('connected', async () => {
         this.isActive = true
-        logger.info(`Connected to ${this.currentProvider().ws}`)
+        logger.info(`Connected to ${this.currentProvider()}`)
 
         const sdk = new Sdk(this.provider, this.signer)
         this.sdk = sdk
@@ -58,11 +62,11 @@ export class CircuitConnection {
 
       this.provider.on('disconnected', () => {
         this.prometheus.disconnects.inc({
-          endpoint: this.currentProvider().ws,
+          endpoint: this.currentProvider(),
         })
 
         this.isActive = false
-        logger.warn(`Disconnected from ${this.currentProvider().ws}`)
+        logger.warn(`Disconnected from ${this.currentProvider()}`)
 
         this.provider.disconnect()
         if (this.client) {
@@ -75,7 +79,7 @@ export class CircuitConnection {
         this.isActive = false
         logger.error(
           { error: err.message },
-          `Error from ${this.currentProvider().ws}`,
+          `Error from ${this.currentProvider()}`,
         )
 
         this.provider.disconnect()
@@ -87,11 +91,11 @@ export class CircuitConnection {
     })
   }
 
-  currentProvider(): any {
+  currentProvider(): string {
     return this.usingPrimaryRpc ? this.rpc1 : this.rpc2
   }
 
   createProvider() {
-    return new WsProvider(this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws)
+    return new WsProvider(this.usingPrimaryRpc ? this.rpc1 : this.rpc2)
   }
 }

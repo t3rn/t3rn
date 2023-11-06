@@ -51,6 +51,7 @@ export class FastWriter {
   }
 
   private async scheduleSubmissionsToCircuit() {
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       logger.info('Starting new submission loop to Circuit')
       const nonce = await this.fetchNonce(
@@ -64,7 +65,7 @@ export class FastWriter {
           sideEffect.target,
           sideEffect.asset,
           sideEffect.targetAccount,
-          sideEffect.amount * 10 ** 12,
+          sideEffect.amount,
           sideEffect.maxReward,
           sideEffect.rewardAsset,
           sideEffect.insurance,

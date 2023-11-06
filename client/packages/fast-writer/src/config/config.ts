@@ -11,12 +11,8 @@ const config = () => ({
     port: get('PROMETHEUS_PORT').required().default(9133).asPortNumber(),
   },
   circuit: {
-    rpc1: {
-      ws: get('CIRCUIT_RPC1_WS').required().asString(),
-    },
-    rpc2: {
-      ws: get('CIRCUIT_RPC2_WS').required().asString(),
-    },
+    rpc1: get('CIRCUIT_RPC1_WS').required().asString(),
+    rpc2: get('CIRCUIT_RPC2_WS').required().asString(),
     signer: get('CIRCUIT_SIGNER_KEY').required().asString(),
   },
   log: {
