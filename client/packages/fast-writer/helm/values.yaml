@@ -2,7 +2,7 @@
 # Declare variables to be passed into your templates.
 config:
   circuitWsEndpoint: wss://rpc.t0rn.io
-  interval: 12s
+  interval: 12
   logLevel: debug
   prometheus:
     port: 9133
@@ -62,7 +62,7 @@ securityContext:
 
 resources:
   limits:
-    cpu: 1000m
+    cpu: 200m
     memory: 1024Mi
   requests:
     cpu: 10m

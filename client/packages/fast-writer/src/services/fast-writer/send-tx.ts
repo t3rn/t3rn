@@ -27,6 +27,7 @@ export class Order {
     this.target = target
     this.asset = asset === undefined ? 0 : (asset as number) // Use a type assertion
     this.targetAccount = targetAccount
+    // TODO: this should be known from xdns.assets...decimals
     this.amount = amount * 10 ** 12
     this.maxReward = maxReward
     this.rewardAsset = rewardAsset
@@ -35,6 +36,4 @@ export class Order {
     this.count = count
     this.txType = txType
   }
-  // xdns.token = roco
-
 }
