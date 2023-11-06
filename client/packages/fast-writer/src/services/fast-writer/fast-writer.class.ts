@@ -64,7 +64,7 @@ export class FastWriter {
           sideEffect.target,
           sideEffect.asset,
           sideEffect.targetAccount,
-          sideEffect.amount * 10**12,
+          sideEffect.amount * 10 ** 12,
           sideEffect.maxReward,
           sideEffect.rewardAsset,
           sideEffect.insurance,

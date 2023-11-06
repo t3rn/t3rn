@@ -11,8 +11,8 @@
     "build": "tsup",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
-    "fmt": "prettier --write src config tests",
-    "fmt:check": "prettier --check src config tests",
+    "fmt": "prettier --write src tests",
+    "fmt:check": "prettier --check src tests",
     "test": "DOTENV_CONFIG_PATH=.env-tests mocha -r ts-node/register 'tests/**/*.ts' --require dotenv/config"
   },
   "exclude": [

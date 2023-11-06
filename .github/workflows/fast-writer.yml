@@ -48,7 +48,7 @@ jobs:
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
   test:
-    name: Test Grandpa Ranger
+    name: Test Fast Writer
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
     defaults:
@@ -86,7 +86,7 @@ jobs:
           only-pr-files: true
 
   # build-docker:
-  #   name: Build Docker Grandpa Ranger
+  #   name: Build Docker Fast Writer
   #   needs: [changes]
   #   if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
 
@@ -100,7 +100,7 @@ jobs:
   #         docker build . -f fast-writer.Dockerfile
 
   deploy:
-    name: Deploy Grandpa Ranger
+    name: Deploy Fast Writer
     runs-on: self-hosted
     needs: test
     concurrency: fast-writer

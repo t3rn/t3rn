@@ -31,7 +31,7 @@ export class Order {
     txType: TxType,
   ) {
     this.target = target
-    this.asset = asset === undefined ? null : asset as number // Use a type assertion
+    this.asset = asset === undefined ? null : (asset as number) // Use a type assertion
     this.targetAccount = targetAccount
     this.amount = amount
     this.maxReward = maxReward
