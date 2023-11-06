@@ -31,7 +31,7 @@ spec:
           env:
             - name: PROMETHEUS_PORT
               value: "{{ .Values.config.prometheus.port }}"
-            - name: INTERVAL
+            - name: INTERVAL_SECONDS
               value: "{{ .Values.config.interval }}"
             - name: CIRCUIT_RPC1_WS
               value: "{{ .Values.config.circuitWsEndpoint }}"

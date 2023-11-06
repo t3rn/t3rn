@@ -5,4 +5,4 @@ metadata:
   labels:
     {{- include "fast-writer.labels" . | nindent 4 }}
 data:
-  sideEffects: {{ .Values.sideEffects | toJson }}
+  sideEffects: {{ .Values.sideEffects | toJson | quote }}

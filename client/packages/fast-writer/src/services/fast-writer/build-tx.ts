@@ -73,8 +73,8 @@ export class Order {
         order.insurance,
         order.targetAccount,
         speedMode,
-      ) as any
-      transactions.push(transaction as never)
+      ) 
+      transactions.push(transaction)
     }
 
     async function customSignAndSend() {
@@ -106,7 +106,6 @@ export class Order {
     nonce: number,
     speedMode: number = 1,
   ) {
-    const transactions = []
     const sdk = client.sdk
 
     // amount is increased by 1 for each order to avoid SetupFailedDuplicatedXtx
@@ -119,7 +118,7 @@ export class Order {
       order.insurance,
       order.targetAccount,
       speedMode,
-    ) as any
+    ) 
 
     async function customSignAndSend() {
       try {
