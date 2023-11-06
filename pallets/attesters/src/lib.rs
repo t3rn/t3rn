@@ -681,7 +681,9 @@ pub mod pallet {
                 Codec::Scale => {
                     message_bytes.extend_from_slice(&height_there.encode());
                     let substrate_message_hash =
-                        sp_core::hashing::blake2_256(message_bytes.as_slice());
+                        <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::hash(
+                            &message_bytes.as_slice(),
+                        );
                     H256::from(substrate_message_hash)
                 },
                 Codec::Rlp => {
@@ -693,7 +695,11 @@ pub mod pallet {
                         .cloned()
                         .collect::<Vec<u8>>();
                     message_bytes.extend_from_slice(&height_there);
-                    let evm_message_hash = sp_core::hashing::keccak_256(message_bytes.as_slice());
+                    // calculate the hash of the message with tiny-keccak
+                    let mut keccak = Keccak::v256();
+                    keccak.update(&message_bytes);
+                    let mut evm_message_hash: [u8; 32] = [0; 32];
+                    keccak.finalize(&mut evm_message_hash);
                     H256::from(evm_message_hash)
                 },
             };
