@@ -6,7 +6,7 @@ import { logger } from './logger'
  * @param {string=} reason reason for sleeping
  */
 export function sleep(seconds: number, reason?: string): Promise<void> {
-  logger.debug({ reason }, `Sleeping for ${seconds} sec...`)
+  logger.debug({ reason }, `💤 Sleeping for ${seconds} sec...`)
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve()

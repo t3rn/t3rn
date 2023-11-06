@@ -75,8 +75,9 @@ export class FastWriter {
           sideEffect.count,
           sideEffect.txType,
         )
-        logger.info({ order }, 'Submitting SFX to Circuit')
+        logger.info({ order }, '📤 Submitting SFX to Circuit')
         await this.execute(order, nonce)
+        logger.info({ order }, '✅ Submitted SFX to Circuit')
       }
 
       await sleep(
@@ -148,7 +149,7 @@ export class FastWriter {
     const sdk = this.circuitClient.sdk
     let txSize = 0
 
-    logger.info(`Submitting ${order.count} transaction with nonce ${nonce}`)
+    logger.debug({order}, `🏎️ Submitting ${order.count} transaction with nonce ${nonce}`)
     async function customSignAndSend(client) {
       try {
         const tx = client.sdk.client.tx.vacuum.singleOrder(
@@ -162,11 +163,9 @@ export class FastWriter {
           speedMode,
         )
         txSize += tx.encodedLength
-        const res = await sdk.circuit.tx.signAndSend(tx, { nonce })
-        logger.info(`Transaction included in block ${res}`)
-        return res.status.inBlock
+        await sdk.circuit.tx.signAndSend(tx, { nonce })
       } catch (e) {
-        logger.error(`signAndSend failed with error: ${e}`)
+        logger.error(`💥 signAndSend failed with error: ${e}`)
       }
     }
 
@@ -174,9 +173,8 @@ export class FastWriter {
 
     for (let i = 0; i < order.count; i++) {
       customSignAndSend(this.circuitClient)
-        .then((blockHash) => {
+        .then(() => {
           // Handle success here if necessary
-          logger.info(`Transaction sent successfully in ${blockHash}`)
           this.prometheus.submissions.inc({
             target: order.target,
             status: 'success',
@@ -185,7 +183,7 @@ export class FastWriter {
         })
         .catch((err) => {
           // Handle uncaught errors here if necessary
-          logger.error('Unhandled error:', err)
+          logger.error('❌ Unhandled error:', err)
           this.prometheus.submissions.inc({
             target: order.target,
             status: 'failure',
