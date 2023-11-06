@@ -260,6 +260,7 @@ const fetchInitData = async (
   const attested = await fetchCheckpointEntry(
     finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH,
   )
+  // TODO: test if submissions of epochs work w/o this
   // const attestedExecutionHeader = await fetchExecutionHeader(
   //   attested.execution.height - 1
   // )
