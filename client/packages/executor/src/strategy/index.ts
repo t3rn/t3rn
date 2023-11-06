@@ -195,7 +195,7 @@ export class StrategyEngine {
    * @returns Error if asset is not supported
    */
   assetIsSupported(sfx: SideEffect): void | Error {
-    const txOutputs = sfx.getTxOutputs();
+    const txOutputs = sfx.getTxOutputs(config.assetIdToTickerMap);
     const assetTicker = txOutputs?.asset;
     if (!this.supportedAssets[sfx.target].includes(assetTicker)) {
       throw new Error("Asset is not supported by the target gateway!");

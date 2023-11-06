@@ -23,6 +23,7 @@ export const handleXcmTransferCommand = async (
     XcmTransferSchema,
     {
       ..._args,
+      dest: parseInt(_args?.dest),
       targetAmount: parseFloat(_args?.targetAmount),
     },
     {
@@ -62,109 +63,86 @@ export const handleXcmTransferCommand = async (
     const xcmWeightLimitParam =
       XcmTransferParameters.createWeightLimit(targetApi)
 
-    const keyring = new Keyring({ type: 'sr25519' })
-    const signer =
-      process.env.CIRCUIT_SIGNER_KEY === undefined
-        ? keyring.addFromUri(args.signer)
-        : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
-    if (
-      args.signer == '//Circuit' &&
-      process.env.CIRCUIT_SIGNER_KEY === undefined
-    ) {
-      console.log('Circuit signer not found... Exit\n')
-      spinner.stop()
-      process.exit(0)
+    let signer = keyring.addFromUri(args.signer)
+    if (args.signer == '//Circuit') {
+      if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
+          console.log('Circuit signer not found... Exit\n')
+          spinner.stop()
+          process.exit(0)
+      }
+      signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
     }
+    else if (args.signer == '//Test') {
+      if (process.env.XCM_TEST_SIGNER_KEY === undefined) {
+          console.log('XCM test signer key not found... Exit\n')
+          spinner.stop()
+          process.exit(0)
+      }
+      signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
+    }
+
     if (args.type == 'relay') {
-      await targetApi.tx.xcmPallet
-        .limitedReserveTransferAssets(
-          xcmDestParam,
-          xcmBeneficiaryParam,
-          xcmAssetsParam,
-          xcmAssetFeeItem,
-          xcmWeightLimitParam,
-        )
-        .signAndSend(signer, ({ status, events }) => {
-          if (status.isInBlock || status.isFinalized) {
-            events
-              // find/filter for failed events
-              .filter(({ event }) =>
-                targetApi.events.system.ExtrinsicFailed.is(event),
-              )
-              // we know that data for system.ExtrinsicFailed is
-              // (DispatchError, DispatchInfo)
-              .forEach(
-                ({
-                  event: {
-                    data: [error, info],
-                  },
-                }) => {
-                  if (error.isModule) {
-                    // for module errors, we have the section indexed, lookup
-                    const decoded = targetApi.registry.findMetaError(
-                      error.asModule,
-                    )
-                    const { docs, method, section } = decoded
+        await targetApi.tx.xcmPallet
+            .limitedReserveTransferAssets(
+                xcmDestParam,
+                xcmBeneficiaryParam,
+                xcmAssetsParam,
+                xcmAssetFeeItem,
+                xcmWeightLimitParam
+            )
+            .signAndSend(signer, ({ status, events }) => {
+                if (status.isInBlock || status.isFinalized) {
+                    events
+                        // find/filter for failed events
+                        .filter(({ event }) =>
+                            targetApi.events.system.ExtrinsicFailed.is(event)
+                        )
+                        // we know that data for system.ExtrinsicFailed is
+                        // (DispatchError, DispatchInfo)
+                        .forEach(({ event: { data: [error, info] } }) => {
+                            if (error.isModule) {
+                                // for module errors, we have the section indexed, lookup
+                                const decoded = targetApi.registry.findMetaError(error.asModule)
+                                const { docs, method, section } = decoded
 
-                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                  } else {
-                    // Other, CannotLookup, BadOrigin, no extra info
-                    console.log(error.toString())
-                  }
-                },
-              )
-          }
-        })
-    } else if (args.type == 'para' && args.targetAsset == 'TRN') {
-      const xcmNativeAssetAmount =
-        XcmTransferParameters.createNativeAssetAmount(
-          targetApi,
-          args.targetAmount,
-        )
-      const xcmFeeAsset = XcmTransferParameters.createAssets(
-        targetApi,
-        'ROC',
-        args.type,
-        2000000000000,
-      )
-      await targetApi.tx.withdrawTeleport
-        .withdrawAndTeleport(
-          xcmDestParam,
-          xcmBeneficiaryParam,
-          xcmNativeAssetAmount,
-          xcmFeeAsset,
-        )
-        .signAndSend(signer, ({ status, events }) => {
-          if (status.isInBlock || status.isFinalized) {
-            events
-              // find/filter for failed events
-              .filter(({ event }) =>
-                targetApi.events.system.ExtrinsicFailed.is(event),
-              )
-              // we know that data for system.ExtrinsicFailed is
-              // (DispatchError, DispatchInfo)
-              .forEach(
-                ({
-                  event: {
-                    data: [error, info],
-                  },
-                }) => {
-                  if (error.isModule) {
-                    // for module errors, we have the section indexed, lookup
-                    const decoded = targetApi.registry.findMetaError(
-                      error.asModule,
-                    )
-                    const { docs, method, section } = decoded
+                                console.log(`${section}.${method}: ${docs.join(' ')}`)
+                            } else {
+                                // Other, CannotLookup, BadOrigin, no extra info
+                                console.log(error.toString())
+                            }
+                        })
+                }
+            })
+    }
+    else if (args.type == 'para' && args.targetAsset == 'TRN') {
+        const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
+        const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, 'ROC', args.type, 2000000000000)
+        await targetApi.tx.withdrawTeleport
+            .withdrawAndTeleport(xcmDestParam, xcmBeneficiaryParam, xcmNativeAssetAmount, xcmFeeAsset)
+            .signAndSend(signer, ({ status, events }) => {
+                if (status.isInBlock || status.isFinalized) {
+                    events
+                        // find/filter for failed events
+                        .filter(({ event }) =>
+                            targetApi.events.system.ExtrinsicFailed.is(event)
+                        )
+                        // we know that data for system.ExtrinsicFailed is
+                        // (DispatchError, DispatchInfo)
+                        .forEach(({ event: { data: [error, info] } }) => {
+                            if (error.isModule) {
+                                // for module errors, we have the section indexed, lookup
+                                const decoded = targetApi.registry.findMetaError(error.asModule)
+                                const { docs, method, section } = decoded
 
-                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                  } else {
-                    // Other, CannotLookup, BadOrigin, no extra info
-                    console.log(error.toString())
-                  }
-                },
-              )
-          }
-        })
+                console.log(`${section}.${method}: ${docs.join(' ')}`)
+              } else {
+                // Other, CannotLookup, BadOrigin, no extra info
+                console.log(error.toString())
+              }
+            },
+          )
+        }
+     })
     } else if (args.type == 'system' && args.targetAsset == 'TRN') {
       await targetApi.tx.polkadotXcm
         .limitedTeleportAssets(
@@ -205,7 +183,7 @@ export const handleXcmTransferCommand = async (
               )
           }
         })
-    } else {
+    } else if(args.type == 'system' || args.type == 'para' ) {
       await targetApi.tx.polkadotXcm
         .limitedReserveTransferAssets(
           xcmDestParam,
@@ -245,6 +223,9 @@ export const handleXcmTransferCommand = async (
               )
           }
         })
+    }
+    else {
+        throw new Error('Unsupported transaction type!')
     }
     console.log('XCM Transfer Completed\n')
     spinner.stop()
