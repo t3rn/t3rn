@@ -15,7 +15,7 @@ async function main() {
     throw new Error('Crypto WASM lib is not ready')
   }
 
-  logger.info({ logLevel: config.log.level }, 'Starting Fast Writer')
+  logger.info('Starting Fast Writer')
 
   const fastWriter = new FastWriter(config)
   await fastWriter.start()

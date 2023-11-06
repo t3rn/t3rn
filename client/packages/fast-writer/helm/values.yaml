@@ -17,7 +17,7 @@ sideEffects:
     amount: 0.01
     enforceExecutor: null
     rewardAsset: null # defaults to TRN
-    count: 10
+    count: 50
     txType: single
   # - target: pdot
   #   maxReward: 1
