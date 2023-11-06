@@ -71,6 +71,7 @@ impl pallet_attesters::Config for Runtime {
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
+    type LightClientAsyncAPI = XDNS;
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
@@ -82,7 +83,6 @@ impl pallet_attesters::Config for Runtime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
-    type LightClientAsyncAPI = XDNS;
     type TreasuryAccounts = Runtime;
     type Xdns = XDNS;
 }

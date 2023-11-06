@@ -673,9 +673,9 @@ pub mod pallet {
             let target_codec = <T as Config>::Xdns::get_target_codec(&target)?;
 
             let mut message_bytes = message.as_bytes().to_vec();
-            // add target to the message
+            // add target to the message (assumed encoded on 32 bytes)
             message_bytes.extend_from_slice(&target.encode());
-            // add height_there to the message
+            // add height_there to the message (assumed encoded on 4 bytes)
             message_bytes.extend_from_slice(&height_there.encode());
 
             // Check if message_hash is correct
@@ -2295,8 +2295,8 @@ pub mod attesters_test {
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersAgreements, AttestersError,
         AttestersEvent, AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
         CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee,
-        ExistentialDeposit, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations,
+        ExistentialDeposit, ExtBuilder, FullSideEffects, InfluxMessage, LatencyStatus, MiniRuntime,
+        NextBatch, NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations,
         PermanentSlashes, PreviousCommittee, Rewards, RuntimeEvent as Event, RuntimeOrigin,
         SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET,
         POLKADOT_TARGET,
@@ -2699,6 +2699,66 @@ pub mod attesters_test {
             let batch_latency = Attesters::read_attestation_latency(&ETHEREUM_TARGET);
             assert!(batch_latency.is_some());
             assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
+        });
+    }
+
+    #[test]
+    fn submit_first_influx_attestation_with_correct_signature_sets_status_to_pending_attestation() {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
+
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 0);
+
+            // Submit an attestation signed with the Ed25519 key
+            let influx_message_32b = *b"message_that_needs_attestation32";
+            let mut influx_message_to_sign_on: Vec<u8> = influx_message_32b.to_vec();
+            let target_there: [u8; 4] = ETHEREUM_TARGET;
+            let height_there: u32 = 8;
+            // Add target and height to the message
+            influx_message_to_sign_on.extend_from_slice(&target_there);
+            influx_message_to_sign_on.extend_from_slice(&height_there.to_le_bytes());
+
+            // Calculate the hash of the message
+            let mut hasher = Keccak::v256();
+            hasher.update(&influx_message_to_sign_on);
+            let mut hash = [0u8; 32];
+            hasher.finalize(&mut hash);
+            let sfx_id_to_sign_on = H256::from(hash);
+
+            // Sign the message
+            let signature = ecdsa::Pair::from_seed(&[1u8; 32])
+                .sign_prehashed(&sfx_id_to_sign_on.into())
+                .encode();
+
+            assert_ok!(Attesters::submit_for_influx_attestation(
+                RuntimeOrigin::signed(attester),
+                influx_message_32b.into(),
+                sfx_id_to_sign_on,
+                height_there,
+                ETHEREUM_TARGET,
+                signature.clone(),
+            ));
+
+            // current block
+            assert_eq!(
+                Attesters::attestations_influx(&ETHEREUM_TARGET, sfx_id_to_sign_on),
+                Some(InfluxMessage {
+                    message_hash: sfx_id_to_sign_on,
+                    message: influx_message_32b.into(),
+                    height_there,
+                    gateway: ETHEREUM_TARGET,
+                    signatures: vec![signature],
+                    created: System::block_number(),
+                    status: BatchStatus::PendingAttestation,
+                })
+            );
         });
     }
 
