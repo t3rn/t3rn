@@ -5,14 +5,15 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "npm exec -- only-allow pnpm",
-    "start": "yarn build && node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "sfx-json": "yq e -j .sideEffects helm/values.yaml | jq -c",
     "build": "tsup",
-    "lint": "eslint --ext .ts src",
-    "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
+    "dev": "ts-node src/index.ts",
     "fmt": "prettier --write src tests",
     "fmt:check": "prettier --check src tests",
+    "helm-diff": "helm diff upgrade fast-writer -n fast-writer helm/ --values helm/values.yaml",
+    "lint": "eslint --ext .ts src",
+    "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
+    "sfx-json": "yq e -j .sideEffects helm/values.yaml | jq -c",
+    "start": "yarn build && node dist/index.js",
     "test": "DOTENV_CONFIG_PATH=.env-tests mocha -r ts-node/register 'tests/**/*.ts' --require dotenv/config"
   },
   "exclude": [

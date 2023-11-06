@@ -4,7 +4,7 @@ import { CircuitConnection } from '../circuit/connection.class'
 import { CircuitClient } from '../circuit/client'
 import { Prometheus } from '../../prometheus'
 import { Config } from '../../config/config'
-import { Order } from './build-tx'
+import { Order } from './send-tx'
 import { ApiPromise } from '@t3rn/sdk/.'
 
 export class FastWriter {
@@ -74,10 +74,8 @@ export class FastWriter {
           sideEffect.txType,
         )
         logger.info({ order }, 'Submitting SFX to Circuit')
-        order.execute(this.circuitClient, order, nonce)
+        await order.execute(this.circuitClient, order, nonce)
       }
-
-      logger.info({}, `SFXs submission`)
 
       await sleep(
         this.config.intervalSeconds,
