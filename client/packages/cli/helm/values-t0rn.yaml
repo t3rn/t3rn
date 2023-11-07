@@ -50,3 +50,23 @@ jobs:
       - --target-amount
       - 281500000000 # 0.2815 ROC
     activeDeadlineSeconds: 300
+
+    # Run every 2 minutes
+    schedule: "*/2 * * * *"
+    args:
+      - xcmTransfer
+      - --signer
+      - "//Test"
+      - --type
+      - "system"
+      - --endpoint
+      - "wss://rococo-asset-hub-rpc.dwellir.com"
+      - --dest
+      - 3333
+      - --recipient
+      - "0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e"
+      - --target-asset
+      - "RUSD"
+      - --target-amount
+      - 50000000000 # 0.05 RUSD
+    activeDeadlineSeconds: 300
