@@ -6,7 +6,9 @@ dotenv.config()
 const get = envVar.get
 
 export const config = () => ({
-  t3rnConfigFile: get('T3RN_CONFIG_FILE').default('.t3rn-config.json').asString(),
+  t3rnConfigFile: get('T3RN_CONFIG_FILE')
+    .default('.t3rn-config.json')
+    .asString(),
   targetChain: {
     beaconEndpoint: get('BEACON_ENDPOINT').required().asString(),
     executionEndpoint: get('EXECUTION_ENDPOINT').required().asString(),
