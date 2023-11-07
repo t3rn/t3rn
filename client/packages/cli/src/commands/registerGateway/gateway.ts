@@ -20,7 +20,7 @@ export const handleRegisterGateway = async (
   gatewayId: string,
   exportMode: boolean,
   slot?: number,
-) => {
+): Promise<void> => {
   const config = getConfig()
   if (!config) {
     process.exit(1)
