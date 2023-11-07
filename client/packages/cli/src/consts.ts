@@ -1,4 +1,4 @@
-export const CONFIG_FILE = 'config.json'
+export const CONFIG_FILE = '.t3rn-config.json'
 
 export const ETHEREUM_SLOTS_PER_EPOCH = 32
 export const ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD = 256

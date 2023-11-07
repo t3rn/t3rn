@@ -32,6 +32,12 @@ dependencies:
   commander:
     specifier: ^11.1.0
     version: 11.1.0
+  dotenv:
+    specifier: ^16.3.1
+    version: 16.3.1
+  env-var:
+    specifier: ^7.4.1
+    version: 7.4.1
   figlet:
     specifier: ^1.6.0
     version: 1.6.0
@@ -3306,6 +3312,11 @@ packages:
     resolution: {integrity: sha512-+uw1inIHVPQoaVuHzRyXd21icM+cnt4CzD5rW+NC1wjOUSTOs+Te7FOv7AhN7vS9x/oIyhLP5PR1H+phQAHu5Q==}
     dependencies:
       once: 1.4.0
+    dev: false
+
+  /env-var@7.4.1:
+    resolution: {integrity: sha512-H8Ga2SbXTQwt6MKEawWSvmxoH1+J6bnAXkuyE7eDvbGmrhIL2i+XGjzGM3DFHcJu8GY1zY9/AnBJY8uGQYPHiw==}
+    engines: {node: '>=10'}
     dev: false
 
   /error-ex@1.3.2:

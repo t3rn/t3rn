@@ -2,13 +2,6 @@ import fetch from 'node-fetch'
 import { ApiPromise } from '@t3rn/sdk'
 import { fromHexString } from '@chainsafe/ssz'
 import { colorLogMsg } from '@/utils/log.ts'
-import {
-  ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD,
-  ETHEREUM_SLOTS_PER_EPOCH,
-  EXECUTION_ENDPOINT,
-  LODESTAR_ENDPOINT,
-  RELAY_ENDPOINT,
-} from '@/consts.ts'
 import { spinner } from '../gateway.ts'
 import Web3 from 'web3'
 import {
@@ -23,6 +16,7 @@ import {
   SyncCommittee,
   VendorRegistrationArgs,
 } from '@/commands/registerGateway/vendors/types-eth.ts'
+import { config } from '@/config/config.ts'
 
 export const registerEthereumVerificationVendor = async (
   circuit: ApiPromise,
@@ -50,7 +44,7 @@ const fetchLastSyncCommitteeUpdateSlot = async (): Promise<number> => {
     method: 'GET',
   }
   const res = await fetch(
-    `${RELAY_ENDPOINT}/eth/v1/beacon/headers/head`,
+    `${config().targetChain.relayEndpoint}/eth/v1/beacon/headers/head`,
     fetchOptions,
   )
 
@@ -76,14 +70,18 @@ const fetchLastSyncCommitteeUpdateSlot = async (): Promise<number> => {
   // calc first slot of the current committee period
   slot =
     slot -
-    (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD))
+    (slot %
+      (config().eth.consts.slotsPerEpoch *
+        config().eth.consts.epochsPerCommitteePeriod))
   return slot
 }
 
 async function fetchBeaconBlockHeaderAndRoot(
   slot: number,
 ): Promise<BeaconBlockHeaderAndRoot> {
-  const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/headers?slot=${slot}`
+  const endpoint = `${
+    config().targetChain.relayEndpoint
+  }/eth/v1/beacon/headers?slot=${slot}`
   const fetchOptions = {
     method: 'GET',
   }
@@ -128,7 +126,9 @@ const fetchInitData = async (
   finalizedSlot: number,
   finalizedBeaconBlockRoot: string,
 ): Promise<InitData> => {
-  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
+  const endpoint = `${
+    config().targetChain.lodestarEndpoint
+  }/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
   const fetchOptions = {
     method: 'GET',
   }
@@ -146,11 +146,11 @@ const fetchInitData = async (
   spinner.info(`Fetching checkpoint data for finalized slot ${finalizedSlot}`)
   const finalized = await fetchCheckpointEntry(finalizedSlot)
 
-  const justifiedSlot = finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH
+  const justifiedSlot = finalizedSlot + config().eth.consts.slotsPerEpoch
   spinner.info(`Fetching checkpoint data for justified slot ${justifiedSlot}`)
   const justified = await fetchCheckpointEntry(justifiedSlot)
 
-  const attestedSlot = finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH
+  const attestedSlot = finalizedSlot + 2 * config().eth.consts.slotsPerEpoch
   spinner.info(`Fetching checkpoint data for attested slot ${attestedSlot}`)
   const attested = await fetchCheckpointEntry(attestedSlot)
   const attestedExecutionHeader = await fetchExecutionHeader(
@@ -232,7 +232,9 @@ const generateRegistrationData = (
 
 const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
   const period = slotToCommitteePeriod(slot)
-  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
+  const endpoint = `${
+    config().targetChain.lodestarEndpoint
+  }/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
   const fetchOptions = {
     method: 'GET',
     headers: {
@@ -256,7 +258,9 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
 }
 
 async function fetchHeaderData(slot: number): Promise<BeaconBlockResponseData> {
-  const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
+  const endpoint = `${
+    config().targetChain.relayEndpoint
+  }/eth/v2/beacon/blocks/${slot}`
   const fetchOptions = {
     headers: {
       'Content-Type': 'application/json',
@@ -296,8 +300,9 @@ async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
 }
 
 const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
-  // const web3 = new Web3(EXECUTION_ENDPOINT as string)
-  const web3 = new Web3(new Web3.providers.HttpProvider(EXECUTION_ENDPOINT))
+  const web3 = new Web3(
+    new Web3.providers.HttpProvider(config().targetChain.executionEndpoint),
+  )
   const blockHeader = await web3.eth.getBlock(blockNumber)
 
   return {
@@ -335,8 +340,10 @@ function slotToCommitteePeriod(slot: number): number {
   return (
     (slot -
       (slot %
-        (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD))) /
-    (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD)
+        (config().eth.consts.slotsPerEpoch *
+          config().eth.consts.epochsPerCommitteePeriod))) /
+    (config().eth.consts.slotsPerEpoch *
+      config().eth.consts.epochsPerCommitteePeriod)
   )
 }
 
@@ -347,7 +354,7 @@ function slotToCommitteePeriod(slot: number): number {
  * @return {number} The calculated epoch
  */
 function slotToEpoch(slot: number): number {
-  const remainder = slot % ETHEREUM_SLOTS_PER_EPOCH
+  const remainder = slot % config().eth.consts.slotsPerEpoch
 
-  return (slot - remainder) / ETHEREUM_SLOTS_PER_EPOCH
+  return (slot - remainder) / config().eth.consts.slotsPerEpoch
 }
