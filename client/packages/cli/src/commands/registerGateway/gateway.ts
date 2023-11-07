@@ -2,15 +2,10 @@ import '@t3rn/types'
 import ora from 'ora'
 import { ApiPromise } from '@t3rn/sdk'
 import { createType } from '@t3rn/types'
-//@ts-ignore - TS doesn't know about the type
 import {
-  //@ts-ignore - TS doesn't know about the type
-  T3rnPrimitivesGatewayVendor,
-  //@ts-ignore - TS doesn't know about the type
-  T3rnPrimitivesExecutionVendor,
-  //@ts-ignore - TS doesn't know about the type
   T3rnAbiRecodeCodec,
-  //@ts-ignore - TS doesn't know about the type
+  T3rnPrimitivesExecutionVendor,
+  T3rnPrimitivesGatewayVendor,
 } from '@polkadot/types/lookup'
 import { Gateway } from '@/schemas/setup.ts'
 import { colorLogMsg, log } from '@/utils/log.ts'
@@ -50,7 +45,7 @@ const registerGateway = async (
   gatewayData: Required<Gateway>,
   exportMode: boolean,
   slot?: number,
-) => {
+): Promise<void> => {
   const { circuit, sdk } = await createCircuitContext(exportMode)
 
   const gatewayId = createType('[u8; 4]', gatewayData.id)
@@ -138,7 +133,7 @@ const getRegistrationData = (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>,
   slot?: number,
-) => {
+): Promise<string> => {
   switch (gatewayData.registrationData.verificationVendor) {
     case 'Kusama':
       return registerSubstrateVerificationVendor(circuit, gatewayData)

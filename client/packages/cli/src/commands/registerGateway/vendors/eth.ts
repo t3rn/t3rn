@@ -1,75 +1,27 @@
 import fetch from 'node-fetch'
+import { Web3 } from 'web3'
 import { ApiPromise } from '@t3rn/sdk'
-// @ts-ignore - TS doesn't know about the type definition
-import { phase0 } from '@lodestar/types'
 import { fromHexString } from '@chainsafe/ssz'
 import { colorLogMsg } from '@/utils/log.ts'
 import {
-  ETHEREUM_SLOTS_PER_EPOCH,
   ETHEREUM_EPOCHS_PER_PERIOD,
+  ETHEREUM_SLOTS_PER_EPOCH,
+  EXECUTION_ENDPOINT,
   LODESTAR_ENDPOINT,
   RELAY_ENDPOINT,
 } from '@/consts.ts'
 import { spinner } from '../gateway.ts'
-
-type BLSPubKey = Uint8Array
-
-type SyncCommittee = {
-  pubs: Array<BLSPubKey | string>
-  aggr: BLSPubKey | string
-}
-
-interface BootstrapResponse {
-  data: {
-    header: {
-      beacon: {
-        slot: string
-        proposer_index: string
-        parent_root: string
-        state_root: string
-        body_root: string
-      }
-      execution: {
-        parent_hash: string
-        fee_recipient: string
-        state_root: string
-        receipts_root: string
-        logs_bloom: string
-        prev_randao: string
-        block_number: string
-        gas_limit: string
-        gas_used: string
-        timestamp: string
-        extra_data: string
-        base_fee_per_gas: string
-        block_hash: string
-        transactions_root: string
-        withdrawals_root: string
-      }
-      execution_branch: Array<string>
-    }
-    current_sync_committee: {
-      pubkeys: Array<string>
-      aggregate_pubkey: string
-    }
-    current_sync_committe_branch: Array<string>
-    version: string
-  }
-}
-
-interface NextSyncCommitteeResponse {
-  data: {
-    next_sync_committee: {
-      pubkeys: Array<BLSPubKey | string>
-      aggregate_pubkey: BLSPubKey | string
-    }
-  }
-}
-
-export interface VendorRegistrationArgs {
-  retry?: boolean
-  slot?: number
-}
+import {
+  BeaconBlockHeader,
+  BeaconBlockHeaderAndRoot,
+  BeaconBlockHeaderMsgData,
+  BootstrapResponse,
+  CheckpointEntry,
+  InitData,
+  NextSyncCommitteeResponse,
+  SyncCommittee,
+  VendorRegistrationArgs,
+} from '@/commands/registerGateway/vendors/types-eth.ts'
 
 const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
   const period = slotToCommitteePeriod(slot)
@@ -146,7 +98,7 @@ interface BeaconBlockResponseData {
   }
 }
 
-async function fetchHeaderData(slot: number) {
+async function fetchHeaderData(slot: number): Promise<BeaconBlockResponseData> {
   const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
   const fetchOptions = {
     headers: {
@@ -157,8 +109,9 @@ async function fetchHeaderData(slot: number) {
   const response = await fetch(endpoint, fetchOptions)
 
   if (response.status !== 200) {
+    const reason = await response.text()
     throw new Error(
-      'Oops! Fetch header data faulted to error status: ' + response.status,
+      `Failed to fetch header data, STATUS: ${response.status}, REASON: ${reason}`,
     )
   }
 
@@ -169,26 +122,25 @@ async function fetchHeaderData(slot: number) {
   return responseData.data
 }
 
-async function fetchCheckpointEntry(slot: number) {
+async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
   const header = await fetchHeaderData(slot)
   const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
 
   return {
     beacon: {
+      epoch: slotToEpoch(parseInt(header.message.slot, 10)),
       root,
-      // slot to epoch number
-      epoch: parseInt(header.message.slot, 10) / ETHEREUM_SLOTS_PER_EPOCH,
     },
     execution: {
-      root: header.message.body.execution_payload.block_hash,
       height: parseInt(header.message.body.execution_payload.block_number, 10),
+      root: header.message.body.execution_payload.block_hash,
     },
   }
 }
 
 async function fetchBeaconBlockHeaderAndRoot(
   slot: number,
-): Promise<{ header: phase0.BeaconBlockHeader; root: string }> {
+): Promise<BeaconBlockHeaderAndRoot> {
   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/headers?slot=${slot}`
   const fetchOptions = {
     method: 'GET',
@@ -203,22 +155,12 @@ async function fetchBeaconBlockHeaderAndRoot(
   }
 
   const responseData = (await response.json()) as {
-    data: Array<{
-      root: string
-      header: {
-        message: {
-          proposer_index: string
-          parent_root: string
-          state_root: string
-          body_root: string
-        }
-      }
-    }>
+    data: Array<BeaconBlockHeader>
   }
 
   const { proposer_index, parent_root, state_root, body_root } =
     responseData.data[0].header.message
-  const header = {
+  const header: BeaconBlockHeaderMsgData = {
     slot,
     proposerIndex: parseInt(proposer_index),
     parentRoot: fromHexString(parent_root),
@@ -232,12 +174,10 @@ async function fetchBeaconBlockHeaderAndRoot(
   }
 }
 
-type InitData = Awaited<ReturnType<typeof fetchInitData>>
-
 const fetchInitData = async (
   finalizedSlot: number,
   finalizedBeaconBlockRoot: string,
-) => {
+): Promise<InitData> => {
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
   const fetchOptions = {
     method: 'GET',
@@ -253,17 +193,20 @@ const fetchInitData = async (
 
   const responseData = (await response.json()) as BootstrapResponse
 
+  spinner.info(`Fetching checkpoint data for finalized slot ${finalizedSlot}`)
   const finalized = await fetchCheckpointEntry(finalizedSlot)
-  const justified = await fetchCheckpointEntry(
-    finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH,
+
+  const justifiedSlot = finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH
+  spinner.info(`Fetching checkpoint data for justified slot ${justifiedSlot}`)
+  const justified = await fetchCheckpointEntry(justifiedSlot)
+
+  const attestedSlot = finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH
+  spinner.info(`Fetching checkpoint data for attested slot ${attestedSlot}`)
+  const attested = await fetchCheckpointEntry(attestedSlot)
+
+  const attestedExecutionHeader = await fetchExecutionHeader(
+    attested.execution.height - 1,
   )
-  const attested = await fetchCheckpointEntry(
-    finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH,
-  )
-  // TODO: test if submissions of epochs work w/o this
-  // const attestedExecutionHeader = await fetchExecutionHeader(
-  //   attested.execution.height - 1
-  // )
   const currentSyncCommittee: SyncCommittee = {
     pubs: responseData.data.current_sync_committee.pubkeys,
     aggr: responseData.data.current_sync_committee.aggregate_pubkey,
@@ -283,12 +226,18 @@ const fetchInitData = async (
     currentSyncCommittee,
     nextSyncCommittee,
     checkpoint,
-    // attestedExecutionHeader,
+    attestedExecutionHeader,
   }
 }
 
 const generateRegistrationData = (
-  { data, checkpoint, currentSyncCommittee, nextSyncCommittee }: InitData,
+  {
+    data,
+    checkpoint,
+    currentSyncCommittee,
+    nextSyncCommittee,
+    attestedExecutionHeader,
+  }: InitData,
   circuit: ApiPromise,
 ) => {
   return circuit
@@ -308,7 +257,7 @@ const generateRegistrationData = (
       ),
       execution_header: circuit.createType(
         'ExecutionHeader',
-        data.header.execution,
+        attestedExecutionHeader,
       ),
     })
     .toHex()
@@ -317,7 +266,7 @@ const generateRegistrationData = (
 export const registerEthereumVerificationVendor = async (
   circuit: ApiPromise,
   args: VendorRegistrationArgs,
-) => {
+): Promise<string> => {
   const spinnerMsg = args.slot
     ? `Registering from a predefined slot: ${args.slot}`
     : 'Registering from beacon head'
@@ -326,29 +275,40 @@ export const registerEthereumVerificationVendor = async (
   let slot = args.slot ? args.slot : await fetchLastSyncCommitteeUpdateSlot()
 
   try {
-    // Sometimes the slot we fetch here might be missed.
-    // In this case, we should subtract 32 * 256 slots (the previous committee term).
-    // If one of them returns 404 we should use other one.
-    if (args.retry) {
-      slot -= 8192
-    }
-
     const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
     const data = await fetchInitData(slot, root)
 
     return generateRegistrationData(data, circuit)
   } catch (err) {
-    if (!args.retry) {
-      spinner.info(
-        colorLogMsg(
-          'INFO',
-          `Retrying to fetch init data due to an error: ${err.message}`,
-        ),
-      )
-      return registerEthereumVerificationVendor(circuit, { slot, retry: true })
-    } else {
-      spinner.fail(colorLogMsg('ERROR', err))
-    }
+    spinner.fail(colorLogMsg('ERROR', err))
+  }
+}
+
+const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
+  const web3 = new Web3(EXECUTION_ENDPOINT as string)
+  const blockHeader = await web3.eth.getBlock(blockNumber)
+
+  return {
+    parentHash: blockHeader.parentHash,
+    ommersHash: blockHeader.sha3Uncles,
+    beneficiary: blockHeader.miner.toLowerCase(),
+    stateRoot: blockHeader.stateRoot,
+    transactionsRoot: blockHeader.transactionsRoot,
+    receiptsRoot: blockHeader.receiptsRoot,
+    logsBloom: blockHeader.logsBloom,
+    difficulty: blockHeader.difficulty,
+    number: blockHeader.number,
+    gasLimit: blockHeader.gasLimit,
+    gasUsed: blockHeader.gasUsed,
+    timestamp: blockHeader.timestamp,
+    extraData: blockHeader.extraData,
+    mixHash: blockHeader.mixHash,
+    nonce: blockHeader.nonce,
+    // The following two params are not present in the return type in web3js v4.
+    // And before we were using v1.
+    baseFeePerGas: blockHeader.baseFeePerGas,
+    // @ts-ignore
+    withdrawalsRoot: blockHeader.withdrawalsRoot,
   }
 }
 
@@ -362,9 +322,21 @@ export const registerEthereumVerificationVendor = async (
  * @param {number}  slot
  * @return {number}
  */
-export function slotToCommitteePeriod(slot: number): number {
+function slotToCommitteePeriod(slot: number): number {
   return (
     (slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD))) /
     (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD)
   )
+}
+
+/**
+ * Calculates, turning a slot into an epoch.
+ *
+ * @param {number}  slot
+ * @return {number} The calculated epoch
+ */
+function slotToEpoch(slot: number): number {
+  const remainder = slot % ETHEREUM_SLOTS_PER_EPOCH
+
+  return (slot - remainder) / ETHEREUM_SLOTS_PER_EPOCH
 }
