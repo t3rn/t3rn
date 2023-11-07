@@ -1,5 +1,4 @@
 import fetch from 'node-fetch'
-import Web3 from 'web3'
 import { ApiPromise } from '@t3rn/sdk'
 import { fromHexString } from '@chainsafe/ssz'
 import { colorLogMsg } from '@/utils/log.ts'
@@ -11,6 +10,7 @@ import {
   RELAY_ENDPOINT,
 } from '@/consts.ts'
 import { spinner } from '../gateway.ts'
+import Web3 from 'web3'
 import {
   BeaconBlockHeader,
   BeaconBlockHeaderAndRoot,
@@ -49,19 +49,20 @@ const fetchLastSyncCommitteeUpdateSlot = async (): Promise<number> => {
   const fetchOptions = {
     method: 'GET',
   }
-  const response = await fetch(
+  const res = await fetch(
     `${RELAY_ENDPOINT}/eth/v1/beacon/headers/head`,
     fetchOptions,
   )
 
-  if (response.status !== 200) {
-    const reason = await response.text()
+  if (res.status !== 200) {
     throw new Error(
-      `Failed to fetch the last sync committee update slot, STATUS: ${response.status}, REASON: ${reason}`,
+      `Failed to fetch the last sync committee update slot, STATUS: ${
+        res.status
+      }, REASON: ${await res.text()}`,
     )
   }
 
-  const responseData = (await response.json()) as {
+  const responseData = (await res.json()) as {
     data: {
       header: {
         message: {
@@ -76,7 +77,6 @@ const fetchLastSyncCommitteeUpdateSlot = async (): Promise<number> => {
   slot =
     slot -
     (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD))
-
   return slot
 }
 
@@ -87,16 +87,16 @@ async function fetchBeaconBlockHeaderAndRoot(
   const fetchOptions = {
     method: 'GET',
   }
-  const response = await fetch(endpoint, fetchOptions)
+  const res = await fetch(endpoint, fetchOptions)
 
-  if (response.status !== 200) {
-    const reason = await response.text()
+  if (res.status !== 200) {
+    const reason = await res.text()
     throw new Error(
-      `Failed to fetch beacon header, STATUS: ${response.status}, REASON: ${reason}`,
+      `Failed to fetch beacon header, STATUS: ${res.status}, REASON: ${reason}`,
     )
   }
 
-  const responseData = (await response.json()) as {
+  const responseData = (await res.json()) as {
     data: Array<BeaconBlockHeader>
   }
 
@@ -132,16 +132,16 @@ const fetchInitData = async (
   const fetchOptions = {
     method: 'GET',
   }
-  const response = await fetch(endpoint, fetchOptions)
+  const res = await fetch(endpoint, fetchOptions)
 
-  if (response.status !== 200) {
-    const reason = await response.text()
+  if (res.status !== 200) {
+    const reason = await res.text()
     throw new Error(
-      `Failed fetch init data, STATUS: ${response.status}, REASON: ${reason}`,
+      `Failed fetch init data, STATUS: ${res.status}, REASON: ${reason}`,
     )
   }
 
-  const responseData = (await response.json()) as BootstrapResponse
+  const responseData = (await res.json()) as BootstrapResponse
 
   spinner.info(`Fetching checkpoint data for finalized slot ${finalizedSlot}`)
   const finalized = await fetchCheckpointEntry(finalizedSlot)
@@ -153,7 +153,6 @@ const fetchInitData = async (
   const attestedSlot = finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH
   spinner.info(`Fetching checkpoint data for attested slot ${attestedSlot}`)
   const attested = await fetchCheckpointEntry(attestedSlot)
-
   const attestedExecutionHeader = await fetchExecutionHeader(
     attested.execution.height - 1,
   )
@@ -241,15 +240,15 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
       Accept: '*/*',
     },
   }
-  const response = await fetch(endpoint, fetchOptions)
+  const res = await fetch(endpoint, fetchOptions)
 
-  if (response.status !== 200) {
+  if (res.status !== 200) {
     throw new Error(
-      `Could not fetch next sync committee (slot: ${slot}, period: ${period}). Err: ${response.status} ${response.statusText}`,
+      `Could not fetch next sync committee (slot: ${slot}, period: ${period}). Err: ${res.status} ${res.statusText}`,
     )
   }
 
-  const responseData = (await response.json()) as NextSyncCommitteeResponse[]
+  const responseData = (await res.json()) as [NextSyncCommitteeResponse]
   return {
     pubs: responseData[0].data.next_sync_committee.pubkeys,
     aggr: responseData[0].data.next_sync_committee.aggregate_pubkey,
@@ -264,16 +263,16 @@ async function fetchHeaderData(slot: number): Promise<BeaconBlockResponseData> {
       Accept: '*/*',
     },
   }
-  const response = await fetch(endpoint, fetchOptions)
+  const res = await fetch(endpoint, fetchOptions)
 
-  if (response.status !== 200) {
-    const reason = await response.text()
+  if (res.status !== 200) {
+    const reason = await res.text()
     throw new Error(
-      `Failed to fetch header data, STATUS: ${response.status}, REASON: ${reason}`,
+      `Failed to fetch header data, STATUS: ${res.status}, REASON: ${reason}`,
     )
   }
 
-  const responseData = (await response.json()) as {
+  const responseData = (await res.json()) as {
     data: BeaconBlockResponseData
   }
 
@@ -317,8 +316,6 @@ const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
     extraData: blockHeader.extraData,
     mixHash: blockHeader.mixHash,
     nonce: blockHeader.nonce,
-    // The following two params are not present in the return type in web3js v4.
-    // And before we were using v1.
     baseFeePerGas: blockHeader.baseFeePerGas,
     withdrawalsRoot: blockHeader.withdrawalsRoot,
   }
