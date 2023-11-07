@@ -1,10 +1,10 @@
 import fetch from 'node-fetch'
-import { Web3 } from 'web3'
+import Web3 from 'web3'
 import { ApiPromise } from '@t3rn/sdk'
 import { fromHexString } from '@chainsafe/ssz'
 import { colorLogMsg } from '@/utils/log.ts'
 import {
-  ETHEREUM_EPOCHS_PER_PERIOD,
+  ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD,
   ETHEREUM_SLOTS_PER_EPOCH,
   EXECUTION_ENDPOINT,
   LODESTAR_ENDPOINT,
@@ -45,7 +45,7 @@ export const registerEthereumVerificationVendor = async (
   }
 }
 
-const fetchLastSyncCommitteeUpdateSlot = async () => {
+const fetchLastSyncCommitteeUpdateSlot = async (): Promise<number> => {
   const fetchOptions = {
     method: 'GET',
   }
@@ -73,7 +73,9 @@ const fetchLastSyncCommitteeUpdateSlot = async () => {
 
   let slot = parseInt(responseData.data.header.message.slot)
   // calc first slot of the current committee period
-  slot = slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD))
+  slot =
+    slot -
+    (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD))
 
   return slot
 }
@@ -199,21 +201,30 @@ const generateRegistrationData = (
 
   return circuit
     .createType('EthereumInitializationData', {
-      current_sync_committee: circuit.createType('SyncCommittee', {
-        pubs: circuit.createType('Vec<BLSPubkey>', currentSyncCommittee.pubs),
-        aggr: circuit.createType('BLSPubkey', currentSyncCommittee.aggr),
-      }),
-      next_sync_committee: circuit.createType('SyncCommittee', {
-        pubs: circuit.createType('Vec<BLSPubkey>', nextSyncCommittee.pubs),
-        aggr: circuit.createType('BLSPubkey', nextSyncCommittee.aggr),
-      }),
-      checkpoint: circuit.createType('Checkpoint', checkpoint),
+      current_sync_committee: circuit.createType(
+        'PalletEth2FinalityVerifierSyncCommittee',
+        {
+          pubs: circuit.createType('Vec<BLSPubkey>', currentSyncCommittee.pubs),
+          aggr: circuit.createType('BLSPubkey', currentSyncCommittee.aggr),
+        },
+      ),
+      next_sync_committee: circuit.createType(
+        'PalletEth2FinalityVerifierSyncCommittee',
+        {
+          pubs: circuit.createType('Vec<BLSPubkey>', nextSyncCommittee.pubs),
+          aggr: circuit.createType('BLSPubkey', nextSyncCommittee.aggr),
+        },
+      ),
+      checkpoint: circuit.createType(
+        'PalletEth2FinalityVerifierCheckpoint',
+        checkpoint,
+      ),
       beacon_header: circuit.createType(
-        'BeaconBlockHeader',
+        'PalletEth2FinalityVerifierBeaconBlockHeader',
         data.header.beacon,
       ),
       execution_header: circuit.createType(
-        'ExecutionHeader',
+        'PalletEth2FinalityVerifierExecutionHeader',
         attestedExecutionHeader,
       ),
     })
@@ -239,12 +250,10 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
   }
 
   const responseData = (await response.json()) as NextSyncCommitteeResponse[]
-  const syncCommittee: SyncCommittee = {
+  return {
     pubs: responseData[0].data.next_sync_committee.pubkeys,
     aggr: responseData[0].data.next_sync_committee.aggregate_pubkey,
   }
-
-  return syncCommittee
 }
 
 async function fetchHeaderData(slot: number): Promise<BeaconBlockResponseData> {
@@ -288,7 +297,8 @@ async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
 }
 
 const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
-  const web3 = new Web3(EXECUTION_ENDPOINT as string)
+  // const web3 = new Web3(EXECUTION_ENDPOINT as string)
+  const web3 = new Web3(new Web3.providers.HttpProvider(EXECUTION_ENDPOINT))
   const blockHeader = await web3.eth.getBlock(blockNumber)
 
   return {
@@ -310,7 +320,6 @@ const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
     // The following two params are not present in the return type in web3js v4.
     // And before we were using v1.
     baseFeePerGas: blockHeader.baseFeePerGas,
-    // @ts-ignore
     withdrawalsRoot: blockHeader.withdrawalsRoot,
   }
 }
@@ -327,8 +336,10 @@ const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
  */
 function slotToCommitteePeriod(slot: number): number {
   return (
-    (slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD))) /
-    (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD)
+    (slot -
+      (slot %
+        (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD))) /
+    (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_COMMITTEE_PERIOD)
   )
 }
 
