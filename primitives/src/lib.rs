@@ -507,6 +507,15 @@ pub struct CircuitInboundResult {
     pub proof_type: ProofTriePointer,
 }
 
+// XDNS Topology
+// Define a structure to hold the topology data
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct XDNSTopology<AccountId> {
+    pub gateways: Vec<crate::xdns::FullGatewayRecord<AccountId>>,
+    pub assets: Vec<crate::xdns::TokenRecord>,
+}
+
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

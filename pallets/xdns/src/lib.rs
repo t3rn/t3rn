@@ -64,18 +64,11 @@ pub mod pallet {
         },
         Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayType,
         GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
+        XDNSTopology,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
     use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
-
-    // XDNS Topology
-    // Define a structure to hold the topology data
-    #[derive(Encode, Decode, Clone, Default, PartialEq, Eq, Debug)]
-    pub struct XDNSTopology<AccountId> {
-        gateways: Vec<FullGatewayRecord<AccountId>>,
-        assets: Vec<TokenRecord>,
-    }
 
     pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
 
