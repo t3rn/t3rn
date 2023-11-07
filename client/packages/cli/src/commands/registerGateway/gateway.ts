@@ -133,7 +133,7 @@ const getRegistrationData = (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>,
   slot?: number,
-): Promise<string> => {
+) => {
   switch (gatewayData.registrationData.verificationVendor) {
     case 'Kusama':
       return registerSubstrateVerificationVendor(circuit, gatewayData)

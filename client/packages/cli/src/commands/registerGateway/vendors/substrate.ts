@@ -7,7 +7,7 @@ import { colorLogMsg } from '@/utils/log.ts'
 export const registerSubstrateVerificationVendor = async (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>,
-): Promise<string> => {
+) => {
   if (!gatewayData.registrationData.parachain) {
     const target = await ApiPromise.create({
       provider: new WsProvider(gatewayData.rpc),
@@ -57,7 +57,7 @@ const registerRelaychain = async (
 const registerParachain = async (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>,
-): Promise<string> =>
+) =>
   circuit
     .createType('ParachainRegistrationData', [
       gatewayData.registrationData.parachain.relayChainId,

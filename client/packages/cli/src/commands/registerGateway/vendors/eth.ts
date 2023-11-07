@@ -21,7 +21,7 @@ import { config } from '@/config/config.ts'
 export const registerEthereumVerificationVendor = async (
   circuit: ApiPromise,
   args: VendorRegistrationArgs,
-): Promise<string> => {
+) => {
   const spinnerMsg = args.slot
     ? `Registering from a predefined slot: ${args.slot}`
     : 'Registering from beacon head'
@@ -184,12 +184,8 @@ const fetchInitData = async (
  *
  * @param {InitData}  initData
  * @param {ApiPromise}  circuit
- * @return {Promise<string>}
  */
-const generateRegistrationData = (
-  initData: InitData,
-  circuit: ApiPromise,
-): Promise<string> => {
+const generateRegistrationData = (initData: InitData, circuit: ApiPromise) => {
   const {
     data,
     checkpoint,
@@ -300,7 +296,9 @@ async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
 }
 
 const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
+  // @ts-ignore
   const web3 = new Web3(
+    // @ts-ignore
     new Web3.providers.HttpProvider(config().targetChain.executionEndpoint),
   )
   const blockHeader = await web3.eth.getBlock(blockNumber)
