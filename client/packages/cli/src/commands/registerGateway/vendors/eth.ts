@@ -296,9 +296,9 @@ async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
 }
 
 const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
-  // @ts-ignore
+  // @ts-ignore - TS doesn't know about this type
   const web3 = new Web3(
-    // @ts-ignore
+    // @ts-ignore - TS doesn't know about this type
     new Web3.providers.HttpProvider(config().targetChain.executionEndpoint),
   )
   const blockHeader = await web3.eth.getBlock(blockNumber)
