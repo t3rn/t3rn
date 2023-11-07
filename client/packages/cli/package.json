@@ -36,6 +36,7 @@
     "node-gyp-build": "^4.6.1",
     "ora": "^5.4.1",
     "tslib": "^2.6.2",
+    "web3": "^4.2.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
