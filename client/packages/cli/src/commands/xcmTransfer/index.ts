@@ -63,6 +63,7 @@ export const handleXcmTransferCommand = async (
     const xcmWeightLimitParam =
       XcmTransferParameters.createWeightLimit(targetApi)
 
+    const keyring = new Keyring({type: 'sr25519'})
     let signer = keyring.addFromUri(args.signer)
     if (args.signer == '//Circuit') {
       if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
@@ -184,6 +185,7 @@ export const handleXcmTransferCommand = async (
           }
         })
     } else if(args.type == 'system' || args.type == 'para' ) {
+      console.log('Start XCM Transfer \n')
       await targetApi.tx.polkadotXcm
         .limitedReserveTransferAssets(
           xcmDestParam,
