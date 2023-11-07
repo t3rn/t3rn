@@ -15,6 +15,7 @@ import {
   BeaconBlockHeader,
   BeaconBlockHeaderAndRoot,
   BeaconBlockHeaderMsgData,
+  BeaconBlockResponseData,
   BootstrapResponse,
   CheckpointEntry,
   InitData,
@@ -23,31 +24,25 @@ import {
   VendorRegistrationArgs,
 } from '@/commands/registerGateway/vendors/types-eth.ts'
 
-const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
-  const period = slotToCommitteePeriod(slot)
-  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
-  const fetchOptions = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: '*/*',
-    },
-  }
-  const response = await fetch(endpoint, fetchOptions)
+export const registerEthereumVerificationVendor = async (
+  circuit: ApiPromise,
+  args: VendorRegistrationArgs,
+): Promise<string> => {
+  const spinnerMsg = args.slot
+    ? `Registering from a predefined slot: ${args.slot}`
+    : 'Registering from beacon head'
+  spinner.info(spinnerMsg)
 
-  if (response.status !== 200) {
-    throw new Error(
-      `Could not fetch next sync committee (slot: ${slot}, period: ${period}). Err: ${response.status} ${response.statusText}`,
-    )
-  }
+  let slot = args.slot ? args.slot : await fetchLastSyncCommitteeUpdateSlot()
 
-  const responseData = (await response.json()) as NextSyncCommitteeResponse[]
-  const syncCommittee: SyncCommittee = {
-    pubs: responseData[0].data.next_sync_committee.pubkeys,
-    aggr: responseData[0].data.next_sync_committee.aggregate_pubkey,
-  }
+  try {
+    const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
+    const data = await fetchInitData(slot, root)
 
-  return syncCommittee
+    return generateRegistrationData(data, circuit)
+  } catch (err) {
+    spinner.fail(colorLogMsg('ERROR', err))
+  }
 }
 
 const fetchLastSyncCommitteeUpdateSlot = async () => {
@@ -55,7 +50,7 @@ const fetchLastSyncCommitteeUpdateSlot = async () => {
     method: 'GET',
   }
   const response = await fetch(
-    RELAY_ENDPOINT + '/eth/v1/beacon/headers/head',
+    `${RELAY_ENDPOINT}/eth/v1/beacon/headers/head`,
     fetchOptions,
   )
 
@@ -77,65 +72,10 @@ const fetchLastSyncCommitteeUpdateSlot = async () => {
   }
 
   let slot = parseInt(responseData.data.header.message.slot)
-  slot = slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD)) // calc first slot of the current committee period
+  // calc first slot of the current committee period
+  slot = slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD))
+
   return slot
-}
-
-interface BeaconBlockResponseData {
-  message: {
-    slot: string
-    body: {
-      execution_payload: {
-        transactions: unknown
-        transactions_root: string
-        withdrawals: unknown
-        withdrawals_root: unknown
-        block_hash: string
-        block_number: string
-      }
-      execution_payload_header: unknown
-    }
-  }
-}
-
-async function fetchHeaderData(slot: number): Promise<BeaconBlockResponseData> {
-  const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
-  const fetchOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: '*/*',
-    },
-  }
-  const response = await fetch(endpoint, fetchOptions)
-
-  if (response.status !== 200) {
-    const reason = await response.text()
-    throw new Error(
-      `Failed to fetch header data, STATUS: ${response.status}, REASON: ${reason}`,
-    )
-  }
-
-  const responseData = (await response.json()) as {
-    data: BeaconBlockResponseData
-  }
-
-  return responseData.data
-}
-
-async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
-  const header = await fetchHeaderData(slot)
-  const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
-
-  return {
-    beacon: {
-      epoch: slotToEpoch(parseInt(header.message.slot, 10)),
-      root,
-    },
-    execution: {
-      height: parseInt(header.message.body.execution_payload.block_number, 10),
-      root: header.message.body.execution_payload.block_hash,
-    },
-  }
 }
 
 async function fetchBeaconBlockHeaderAndRoot(
@@ -174,6 +114,14 @@ async function fetchBeaconBlockHeaderAndRoot(
   }
 }
 
+/**
+ * Makes external calls to different Ethereum nodes to fetch beacon and execution headers data,
+ * and constructs an object out of it.
+ *
+ * @param {number}  finalizedSlot
+ * @param {number}  finalizedBeaconBlockRoot
+ * @return {Promise<InitData>}
+ */
 const fetchInitData = async (
   finalizedSlot: number,
   finalizedBeaconBlockRoot: string,
@@ -230,16 +178,25 @@ const fetchInitData = async (
   }
 }
 
+/**
+ * Generate registration data hex, from the init data object, that is to be submitted as tx to Circuit
+ *
+ * @param {InitData}  initData
+ * @param {ApiPromise}  circuit
+ * @return {Promise<string>}
+ */
 const generateRegistrationData = (
-  {
+  initData: InitData,
+  circuit: ApiPromise,
+): Promise<string> => {
+  const {
     data,
     checkpoint,
     currentSyncCommittee,
     nextSyncCommittee,
     attestedExecutionHeader,
-  }: InitData,
-  circuit: ApiPromise,
-) => {
+  } = initData
+
   return circuit
     .createType('EthereumInitializationData', {
       current_sync_committee: circuit.createType('SyncCommittee', {
@@ -263,24 +220,70 @@ const generateRegistrationData = (
     .toHex()
 }
 
-export const registerEthereumVerificationVendor = async (
-  circuit: ApiPromise,
-  args: VendorRegistrationArgs,
-): Promise<string> => {
-  const spinnerMsg = args.slot
-    ? `Registering from a predefined slot: ${args.slot}`
-    : 'Registering from beacon head'
-  spinner.info(spinnerMsg)
+const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
+  const period = slotToCommitteePeriod(slot)
+  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
+  const fetchOptions = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: '*/*',
+    },
+  }
+  const response = await fetch(endpoint, fetchOptions)
 
-  let slot = args.slot ? args.slot : await fetchLastSyncCommitteeUpdateSlot()
+  if (response.status !== 200) {
+    throw new Error(
+      `Could not fetch next sync committee (slot: ${slot}, period: ${period}). Err: ${response.status} ${response.statusText}`,
+    )
+  }
 
-  try {
-    const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
-    const data = await fetchInitData(slot, root)
+  const responseData = (await response.json()) as NextSyncCommitteeResponse[]
+  const syncCommittee: SyncCommittee = {
+    pubs: responseData[0].data.next_sync_committee.pubkeys,
+    aggr: responseData[0].data.next_sync_committee.aggregate_pubkey,
+  }
 
-    return generateRegistrationData(data, circuit)
-  } catch (err) {
-    spinner.fail(colorLogMsg('ERROR', err))
+  return syncCommittee
+}
+
+async function fetchHeaderData(slot: number): Promise<BeaconBlockResponseData> {
+  const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
+  const fetchOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: '*/*',
+    },
+  }
+  const response = await fetch(endpoint, fetchOptions)
+
+  if (response.status !== 200) {
+    const reason = await response.text()
+    throw new Error(
+      `Failed to fetch header data, STATUS: ${response.status}, REASON: ${reason}`,
+    )
+  }
+
+  const responseData = (await response.json()) as {
+    data: BeaconBlockResponseData
+  }
+
+  return responseData.data
+}
+
+async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
+  const header = await fetchHeaderData(slot)
+  const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
+
+  return {
+    beacon: {
+      epoch: slotToEpoch(parseInt(header.message.slot, 10)),
+      root,
+    },
+    execution: {
+      height: parseInt(header.message.body.execution_payload.block_number, 10),
+      root: header.message.body.execution_payload.block_hash,
+    },
   }
 }
 

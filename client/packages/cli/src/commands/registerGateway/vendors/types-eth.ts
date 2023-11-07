@@ -152,3 +152,20 @@ export interface BeaconBlockHeaderAndRoot {
   header: BeaconBlockHeaderMsgData
   root: string
 }
+
+export interface BeaconBlockResponseData {
+  message: {
+    slot: string
+    body: {
+      execution_payload: {
+        transactions: unknown
+        transactions_root: string
+        withdrawals: unknown
+        withdrawals_root: unknown
+        block_hash: string
+        block_number: string
+      }
+      execution_payload_header: unknown
+    }
+  }
+}
