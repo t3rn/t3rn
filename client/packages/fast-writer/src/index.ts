@@ -4,7 +4,8 @@ import { Config } from './config/config'
 import { cryptoWaitReady } from '@t3rn/sdk'
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+  logger.error({promise, reason}, 'Unhandled Rejection. Shutting down...')
+  process.exit(1)
 })
 
 async function main() {
