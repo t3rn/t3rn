@@ -1,37 +1,39 @@
 {
-  "name": "hardhat-project",
-  "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "@nomiclabs/hardhat-ethers": "^2.2.3",
-    "@nomiclabs/hardhat-etherscan": "^3.1.7",
-    "@nomiclabs/hardhat-waffle": "^2.0.6",
-    "@openzeppelin/contracts": "^4.9.3",
-    "@typechain/ethers-v5": "^10.2.1",
-    "@typechain/hardhat": "^6.1.6",
-    "@types/chai": "^4.3.5",
-    "@types/mocha": "^10.0.1",
-    "chai": "^4.3.7",
-    "ethereum-waffle": "^4.0.10",
-    "ethers": "^5.7.2",
-    "hardhat": "^2.17.0",
-    "hardhat-gas-reporter": "^1.0.9",
-    "solidity-coverage": "^0.8.4",
-    "ts-node": "^10.9.1",
-    "typechain": "^8.3.0",
-    "typescript": "^5.1.6"
-  },
-  "scripts": {
-    "preinstall": "npm exec -- only-allow pnpm",
-    "compile": "hardhat compile",
-    "test": "hardhat test"
-  },
-  "dependencies": {
-    "@openzeppelin/merkle-tree": "^1.0.5",
-    "ethereumjs-util": "^7.1.5",
-    "merkletreejs": "^0.3.10",
-    "mocha": "^10.2.0",
-    "secp256k1": "^5.0.0"
-  }
+    "name": "hardhat-project",
+    "devDependencies": {
+        "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
+        "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
+        "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+        "@nomiclabs/hardhat-ethers": "^2.2.3",
+        "@nomiclabs/hardhat-etherscan": "^3.1.7",
+        "@nomiclabs/hardhat-waffle": "^2.0.6",
+        "@openzeppelin/contracts": "^4.9.3",
+        "@typechain/ethers-v5": "^10.2.1",
+        "@typechain/hardhat": "^6.1.6",
+        "@types/chai": "^4.3.5",
+        "@types/mocha": "^10.0.1",
+        "chai": "^4.3.7",
+        "ethereum-waffle": "^4.0.10",
+        "ethereumjs-util": "^7.1.5",
+        "ethers": "^5.7.2",
+        "hardhat": "^2.17.0",
+        "hardhat-gas-reporter": "^1.0.9",
+        "solidity-coverage": "^0.8.4",
+        "ts-node": "^10.9.1",
+        "typechain": "^8.3.0",
+        "typescript": "^5.1.6"
+    },
+    "scripts": {
+        "preinstall": "npm exec -- only-allow pnpm",
+        "compile": "hardhat compile",
+        "test": "hardhat test",
+        "fmt": "prettier --write \"./**/*.{js,ts,json,md}\"",
+        "coverage": "hardhat coverage"
+    },
+    "dependencies": {
+        "@openzeppelin/merkle-tree": "^1.0.5",
+        "merkletreejs": "^0.3.10",
+        "mocha": "^10.2.0",
+        "secp256k1": "^5.0.0"
+    }
 }

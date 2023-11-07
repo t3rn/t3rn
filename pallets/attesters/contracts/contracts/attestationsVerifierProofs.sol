@@ -80,7 +80,7 @@ contract AttestationsVerifierProofs {
     }
 
     function singleAttestationHash(bytes calldata messageGMPPayload, bytes4 sourceGateway, uint32 sourceHeight) public pure returns (bytes32) {
-        return keccak256(abi.encode(keccak256(messageGMPPayload), sourceGateway, sourceHeight));
+        return keccak256(abi.encodePacked(keccak256(messageGMPPayload), sourceGateway, sourceHeight));
     }
 
     constructor(address[] memory initialCommittee, address[] memory nextCommittee, uint256 startingIndex, EscrowGMP _escrowGMP) {
@@ -231,7 +231,6 @@ contract AttestationsVerifierProofs {
     ) public pure returns (bytes32[] memory leaves) {
         uint32 correctSignatures = 0;
         bytes32[] memory leaves = new bytes32[](signatures.length);
-        address[] memory recoveredAddresses = new address[](signatures.length);
         for (uint256 i = 0; i < signatures.length; i++) {
             address recoveredSigner = recoverSigner(expectedBatchHash, signatures[i]);
             require(recoveredSigner != address(0), "Bad signature");
@@ -239,7 +238,6 @@ contract AttestationsVerifierProofs {
                 require(!addressArrayContains(bannedCommittee, recoveredSigner), "Signer is banned");
             }
             leaves[i] = keccak256(bytes.concat(keccak256(abi.encode(recoveredSigner))));
-            recoveredAddresses[i] = recoveredSigner;
             correctSignatures += 1;
         }
         return leaves;
@@ -272,7 +270,6 @@ contract AttestationsVerifierProofs {
             OperationType opType = OperationType(uint8(payload[offset]));
             bytes memory data;
             offset += 1;  // To move past the operation type byte
-
             if (opType == OperationType.TransferCommit) {
                 require(payload.length >= offset + 52, "Payload too short for TransferCommit");
                 data = bytes(payload[offset:offset+52]);  // 32 bytes for sfxId + 20 bytes for address
