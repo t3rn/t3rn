@@ -149,6 +149,6 @@ export interface BeaconBlockHeader {
 
 export type BeaconBlockHeaderMsgData = phase0.BeaconBlockHeader
 export interface BeaconBlockHeaderAndRoot {
-  header: BeaconBlockHeaderMsgData,
+  header: BeaconBlockHeaderMsgData
   root: string
 }
