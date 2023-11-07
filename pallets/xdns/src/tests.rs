@@ -35,13 +35,13 @@ use t3rn_primitives::{
     ExecutionVendor::{Substrate, EVM},
     FinalityVerifierActivity, GatewayActivity, GatewayVendor,
     GatewayVendor::{Ethereum, Kusama, Polkadot, Rococo},
-    SpeedMode, SubstrateToken, TokenInfo,
+    SpeedMode, SubstrateToken, TokenInfo, XDNSTopology,
 };
 
 use t3rn_abi::Codec::{Rlp, Scale};
 use t3rn_primitives::{
     xdns::EpochEstimate,
-    GatewayVendor::{Sepolia, XBI},
+    GatewayVendor::{Attesters, Sepolia, XBI},
 };
 
 use t3rn_types::fsx::SecurityLvl;
@@ -163,6 +163,36 @@ fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"gate").is_some());
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"pdot").is_some());
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"ksma").is_some());
+        });
+}
+
+use hex_literal::hex;
+#[test]
+fn should_zip_xdns_topology_for_default_records_via_event() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_ok!(XDNS::zip_topology(Origin::signed(ALICE)));
+            // Retrieve the event and check the zip
+            let all_events = System::events();
+            let last_system_event = all_events.last();
+            assert!(last_system_event.clone().is_some());
+            let xdns_topology_zip = match last_system_event {
+                Some(event) => match &event.event {
+                    RuntimeEvent::XDNS(pallet_xdns::Event::XDNSTopologyZip(topology)) =>
+                        topology.clone(),
+                    _ => panic!(
+                        "expected last event to be pallet_xdns::Event::XDNSTopologyZip: no different event emitted"
+                    ),
+                },
+                None => panic!(
+                    "expected last event to be pallet_xdns::Event::XDNSTopologyZip: no last event emitted"
+                ),
+            };
+
+            assert_eq!(xdns_topology_zip.encode(), hex!("20000000000200000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00010101010000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00030303030000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00050505050000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00657468320301010000047472616e010200676174650200000000047472616e0102006b736d610100000000087472616e01027461737301040070646f740000000000087472616e01027461737301040000").to_vec())
         });
 }
 
@@ -1196,6 +1226,15 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                     epoch: 0,
                     is_active: true,
                 },
+                FinalityVerifierActivity {
+                    verifier: Attesters,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
             ];
 
             let expected_verifier_overview_all_on = vec![
@@ -1246,6 +1285,15 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                 },
                 FinalityVerifierActivity {
                     verifier: XBI,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Attesters,
                     reported_at: 17,
                     justified_height: 24,
                     finalized_height: 24,
@@ -1668,7 +1716,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
             }
             assert_eq!(
                 XDNS::process_all_verifier_overviews(100),
-                Weight::from_parts(1825000000u64, 0)
+                Weight::from_parts(2125000000u64, 0)
             );
             assert_eq!(XDNS::process_overview(100), ());
 
