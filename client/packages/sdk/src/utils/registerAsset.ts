@@ -54,6 +54,15 @@ export const AssetRegistrationParameters: IRegisterAsset = {
           ],
         })
         break
+      case "RUSD":
+        assetInterior = api.registry.createType("InteriorMultiLocation", {
+          X3: [
+            { Parachain: 1000 },
+            { PalletInstance: 50 },
+            { GeneralIndex: 2984 },
+          ],
+        })
+        break
       case "TRN":
         assetInterior = api.registry.createType("InteriorMultiLocation", {
           X1: {
