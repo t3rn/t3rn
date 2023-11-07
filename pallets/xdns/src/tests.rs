@@ -197,6 +197,47 @@ fn should_zip_xdns_topology_for_default_records_via_event() {
 }
 
 #[test]
+fn should_unzip_xdns_topology_from_decoded_form_with_default_records() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .build()
+        .execute_with(|| {
+
+            // check that the topology is empty via all assets and all gateways ids
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
+
+            let encoded_xdns_topology = hex!("20000000000200000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00010101010000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00030303030000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00050505050000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00657468320301010000047472616e010200676174650200000000047472616e0102006b736d610100000000087472616e01027461737301040070646f740000000000087472616e01027461737301040000").to_vec();
+            // Decode the topology
+            let decoded_xdns_topology = XDNSTopology::<AccountId32>::decode(&mut &encoded_xdns_topology[..]).unwrap();
+
+            // Unzip the topology
+            assert_ok!(XDNS::unzip_topology(Origin::root(), Some(decoded_xdns_topology), None));
+
+            // check that the topology is not empty via all assets and all gateways ids
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+        });
+}
+
+#[test]
+fn should_unzip_xdns_topology_from_encoded_form_with_default_records() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .build()
+        .execute_with(|| {
+
+            // check that the topology is empty via all assets and all gateways ids
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
+
+            let encoded_xdns_topology = hex!("20000000000200000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00010101010000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00030303030000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00050505050000000000187472616e0102746173730104737761700103616c697101036365766d010a7761736d010a00657468320301010000047472616e010200676174650200000000047472616e0102006b736d610100000000087472616e01027461737301040070646f740000000000087472616e01027461737301040000").to_vec();
+            // Unzip the topology
+            assert_ok!(XDNS::unzip_topology(Origin::root(), None, Some(encoded_xdns_topology)));
+
+            // check that the topology is not empty via all assets and all gateways ids
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+        });
+}
+
+#[test]
 fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(XDNS::add_new_gateway(

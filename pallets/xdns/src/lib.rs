@@ -460,6 +460,61 @@ pub mod pallet {
             // Assemble the topology structure
             XDNSTopology { gateways, assets }
         }
+
+        pub fn do_unzip_topology(
+            origin: &OriginFor<T>,
+            topology: XDNSTopology<T::AccountId>,
+        ) -> DispatchResult {
+            // Update the gateways
+            for gateway in topology.gateways {
+                // Register Gateway
+                let (
+                    gateway_id,
+                    verification_vendor,
+                    execution_vendor,
+                    codec,
+                    registrant,
+                    escrow_account,
+                    allowed_side_effects,
+                ) = (
+                    gateway.gateway_record.gateway_id,
+                    gateway.gateway_record.verification_vendor,
+                    gateway.gateway_record.execution_vendor,
+                    gateway.gateway_record.codec,
+                    gateway.gateway_record.registrant,
+                    gateway.gateway_record.escrow_account,
+                    gateway.gateway_record.allowed_side_effects,
+                );
+                log::info!("topology unzip -- gateway_id: {:?}", gateway_id);
+                Self::override_gateway(
+                    gateway_id,
+                    verification_vendor,
+                    execution_vendor,
+                    codec,
+                    registrant,
+                    escrow_account,
+                    allowed_side_effects,
+                )?;
+            }
+
+            // Update the assets
+            for asset in topology.assets {
+                log::info!("topology unzip -- asset_id: {:?}", asset.token_id);
+                // Register Asset if not present
+                if !AllTokenIds::<T>::get().contains(&asset.token_id) {
+                    Self::register_new_token(origin, asset.token_id, asset.token_props)?;
+                } else {
+                    // Link the asset to the gateway
+                    Self::link_token_to_gateway(
+                        asset.token_id,
+                        asset.gateway_id,
+                        asset.token_props,
+                    )?;
+                }
+            }
+
+            Ok(())
+        }
     }
 
     #[pallet::call]
@@ -717,6 +772,28 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::XDNSTopologyZip(topology.clone()));
             Ok(())
         }
+
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn unzip_topology(
+            origin: OriginFor<T>,
+            topology_decoded: Option<XDNSTopology<T::AccountId>>,
+            topology_encoded: Option<Vec<u8>>,
+        ) -> DispatchResult {
+            let _ = ensure_root(origin.clone())?;
+            let topology = if let Some(topology) = topology_decoded {
+                topology
+            } else if let Some(topology) = topology_encoded {
+                let topology = XDNSTopology::<T::AccountId>::decode(&mut topology.as_slice())
+                    .map_err(|_| Error::<T>::TopologyDecodeError)?;
+                topology
+            } else {
+                return Err(Error::<T>::EmptyTopologySubmitted.into())
+            };
+
+            Self::do_unzip_topology(&origin, topology)?;
+
+            Ok(())
+        }
     }
 
     #[pallet::event]
@@ -767,6 +844,10 @@ pub mod pallet {
         TokenExecutionVendorMismatch,
         /// Gateway verified as inactive
         GatewayNotActive,
+        /// Failed to decode XDNS topology at Unzip
+        TopologyDecodeError,
+        /// Empty topology submitted at Unzip
+        EmptyTopologySubmitted,
     }
 
     // Deprecated storage entry -- StandardSideEffects
