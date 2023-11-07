@@ -33,7 +33,7 @@ export const registerEthereumVerificationVendor = async (
     : 'Registering from beacon head'
   spinner.info(spinnerMsg)
 
-  let slot = args.slot ? args.slot : await fetchLastSyncCommitteeUpdateSlot()
+  const slot = args.slot ? args.slot : await fetchLastSyncCommitteeUpdateSlot()
 
   try {
     const { root } = await fetchBeaconBlockHeaderAndRoot(slot)

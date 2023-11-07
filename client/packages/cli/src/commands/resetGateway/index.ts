@@ -22,7 +22,7 @@ export const handleResetGatewayCommand = async (
     process.exit(1)
   }
 
-  const { circuit, sdk, endpoint, signer } = await createCircuitContext()
+  const { circuit, sdk, endpoint } = await createCircuitContext()
 
   if (
     ![
