@@ -88,8 +88,8 @@ jobs:
         value: debug
       - name: XCM_RECIPIENT
         value: 0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e # TEST account on t0rn
-  # Run every 3 minutes
-  schedule: "*/3 * * * *"
+  # Run every 10 minutes
+  schedule: "*/10 * * * *"
   args:
     - xcmTransfer
     - --signer

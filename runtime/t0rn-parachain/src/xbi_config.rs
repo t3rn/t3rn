@@ -300,6 +300,11 @@ parameter_types! {
         default_fee_per_second() * 10,
         0u128
     );
+    pub RUsdPerSecond: (xcm::v3::AssetId, u128, u128) = (
+        MultiLocation::new(1, X3(Parachain(1000), PalletInstance(50), GeneralIndex(2984))).into(),
+        default_fee_per_second() * 10,
+        0u128
+    );
     /// Roc = 7 Rococo USDT
     pub RocPerSecond: (xcm::v3::AssetId, u128,u128) = (MultiLocation::new(1,Here).into(), default_fee_per_second() * 70, 0u128);
     pub SelfReserve: MultiLocation = MultiLocation { parents:0, interior: Here };
@@ -365,6 +370,8 @@ where
 pub type Traders = (
     // Rococo USDT
     FixedRateOfFungible<RUsdtPerSecond, ()>,
+    // RUSD
+    FixedRateOfFungible<RUsdPerSecond, ()>,
     // ROC
     FixedRateOfFungible<RocPerSecond, ()>,
     // Everything else
