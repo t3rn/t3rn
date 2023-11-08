@@ -2,14 +2,20 @@
 
 A CLI tool for interacting with the t3rn circuit.
 
-## Installation
+## Getting started
 
+#### Install the npm dependencies
 The CLI is yet to be published to NPM, so you must manually install the dependencies and build the CLI from the source. To do so, run the command below to install the CLI dependencies:
 
 ```bash
 npm i -g pnpm
 pnpm i
 ```
+
+#### Set up the environment variables
+Create a `.env` file in the root dir (next to `.env-example`) and copy inside the contents of the `.env-example` file.
+
+Change the values accordingly, if needed.
 
 ## Commands
 
@@ -30,17 +36,18 @@ Options:
 
 ### register
 
-The `register` command is used to register a gateway with the t3rn circuit.
+The `registerGateway` command is used to register a gateway with the t3rn circuit.
 
 Usage:
 
 ```bash
-pnpm cli register 
+pnpm cli registerGateway -g <gatewayId>
 ```
 
 Argument:
 
-- **gateway**: ID of the gateway to register
+- **-g**: (mandatory) ID of the gateway to register. You can see the options in `.t3rn-config.json`
+- **-s**: (optional) The slot from which you want to register the gateway. If none given, the CLI will register from the head slot (valid only for Ethereum/Sepolia chains)
 
 ### submit
 

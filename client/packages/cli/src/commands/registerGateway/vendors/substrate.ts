@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { Encodings, ApiPromise, WsProvider } from '@t3rn/sdk'
+import { ApiPromise, Encodings, WsProvider } from '@t3rn/sdk'
 import { Gateway } from '@/schemas/setup.ts'
 import { spinner } from '../gateway.ts'
 import { colorLogMsg } from '@/utils/log.ts'
