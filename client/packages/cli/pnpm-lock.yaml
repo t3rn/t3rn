@@ -15,8 +15,8 @@ dependencies:
     specifier: ^1.11.3
     version: 1.11.3
   '@t3rn/sdk':
-    specifier: ^0.4.9
-    version: 0.4.9(typescript@5.1.6)(zod@3.22.4)
+    specifier: ^0.4.11
+    version: 0.4.11(typescript@5.1.6)(zod@3.22.4)
   '@t3rn/types':
     specifier: ^0.1.11
     version: 0.1.11(@polkadot/util-crypto@9.7.2)(@polkadot/util@9.7.2)(@types/node@20.8.7)(typescript@5.1.6)
@@ -1748,8 +1748,8 @@ packages:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
     dev: false
 
-  /@t3rn/sdk@0.4.9(typescript@5.1.6)(zod@3.22.4):
-    resolution: {integrity: sha512-/ljz1bsieFU7cdFUaAOlQhS9qwna65PHiCC6vfxNk8l6rlgUdmUsqPj3a1W7o5iW7R2eb4qzWKHnBJj3mBNwNg==}
+  /@t3rn/sdk@0.4.11(typescript@5.1.6)(zod@3.22.4):
+    resolution: {integrity: sha512-JG/JAyI5MSiDBi4ggWTSabC6LTyfkHa5vGZUM5wtVNo0sT+jqkMYrY0SLnq1GZI4ZGgWgmBdOrOCnamVWKKz+w==}
     requiresBuild: true
     dependencies:
       '@polkadot/api': 8.14.1
