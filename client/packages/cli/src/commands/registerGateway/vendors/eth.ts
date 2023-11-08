@@ -5,6 +5,7 @@ import { colorLogMsg } from '@/utils/log.ts'
 import { spinner } from '../gateway.ts'
 import Web3 from 'web3'
 import {
+  AttestedExecutionHeader,
   BeaconBlockHeader,
   BeaconBlockHeaderAndRoot,
   BeaconBlockHeaderMsgData,
@@ -295,7 +296,9 @@ async function fetchCheckpointEntry(slot: number): Promise<CheckpointEntry> {
   }
 }
 
-const fetchExecutionHeader = async (blockNumber: number): Promise<any> => {
+const fetchExecutionHeader = async (
+  blockNumber: number,
+): Promise<AttestedExecutionHeader> => {
   // @ts-ignore - TS doesn't know about this type
   const web3 = new Web3(
     // @ts-ignore - TS doesn't know about this type

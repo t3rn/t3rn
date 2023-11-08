@@ -8,7 +8,7 @@ export const spinner = ora()
 
 export const handleResetGatewayCommand = async (
   arg: string,
-  options: { [key: string]: any },
+  options: { [key: string]: string },
 ) => {
   log('INFO', `Resetting ${arg} gateway...`)
 

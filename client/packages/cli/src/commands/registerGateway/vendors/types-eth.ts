@@ -78,7 +78,7 @@ export interface InitData {
     current_sync_committe_branch: Array<string>
     version: string
   }
-  attestedExecutionHeader: any
+  attestedExecutionHeader: AttestedExecutionHeader
   currentSyncCommittee: SyncCommittee
   nextSyncCommittee: SyncCommittee
 }
@@ -168,4 +168,24 @@ export interface BeaconBlockResponseData {
       execution_payload_header: unknown
     }
   }
+}
+
+export interface AttestedExecutionHeader {
+  parentHash: string
+  ommersHash: string
+  beneficiary: string
+  stateRoot: string
+  transactionsRoot: string
+  receiptsRoot: string
+  logsBloom: string
+  difficulty: string // a number
+  number: number
+  gasLimit: number
+  gasUsed: number
+  timestamp: number
+  extraData: string // a number
+  mixHash: string
+  nonce: string
+  baseFeePerGas: number
+  withdrawalsRoot: string
 }
