@@ -1,12 +1,12 @@
 {
   "GatewayVendor": {
-    "_enum": ["Polkadot", "Kusama", "Rococo", "Ethereum", "Sepolia"]
+    "_enum": ["Polkadot", "Kusama", "Rococo", "Ethereum", "Sepolia", "XBI"]
   },
   "ExecutionVendor": {
     "_enum": ["Substrate", "EVM"]
   },
   "SpeedMode": {
-    "_enum": ["Fast", "Rational", "Finalized"]
+    "_enum": ["Fast", "Rational", "Finalized", "Instant"]
   },
   "GatewayType": {
     "_enum": {

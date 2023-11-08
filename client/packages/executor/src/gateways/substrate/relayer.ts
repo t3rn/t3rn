@@ -76,12 +76,41 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns SubmittableExtrinsic tx that can be submitted to the target
    */
   buildTx(sideEffect: SideEffect): SubmittableExtrinsic | undefined {
+    const data = sideEffect.execute();
     switch (sideEffect.action) {
       case SfxType.Transfer: {
-        const data = sideEffect.execute();
         return this.client.tx.balances.transferKeepAlive(
           data[0] as string,
           data[1],
+        );
+      }
+      case SfxType.TransferAsset: {
+        return this.client.tx.assets.transfer(
+          data[0], // asset id
+          data[1] as string, // to
+          data[2], // amount
+        );
+      }
+      case SfxType.CallEVM: {
+        return this.client.tx.evm.call(
+          sideEffect.executor, // source
+          data[0] as string, // target
+          data[1] as string, // input
+          data[2], // value amount
+          data[3], // gas limit
+          "100", // max fee per gas
+          null, // max priority fee per gas
+          null, // nonce
+          [], // access list
+        );
+      }
+      case SfxType.CallWASM: {
+        return this.client.tx.contracts.call(
+          data[0] as string, // target (dest: AccountIdLookupOf<T>)
+          data[2], // value amount (value: BalanceOf<T>)
+          data[3] as string, // gas limit (gas_limit: OldWeight)
+          null, // storage_deposit_limit: Option<<BalanceOf<T> as codec::HasCompact>::Type>
+          data[1] as string, // input data (data: Vec<u8>)
         );
       }
       default:

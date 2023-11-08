@@ -1,30 +1,30 @@
-import { existsSync, readFileSync } from "fs"
-import { Sdk } from "@t3rn/sdk"
-import { createType } from "@t3rn/types"
+import { existsSync, readFileSync } from 'fs'
+import { Sdk } from '@t3rn/sdk'
+import { createType } from '@t3rn/types'
 //@ts-ignore - TS doesn't know about the type
-import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
-import { Extrinsic, SpeedMode } from "@/schemas/extrinsic.ts"
+import { T3rnTypesSfxSideEffect } from '@polkadot/types/lookup'
+import { Extrinsic, SpeedMode } from '@/schemas/extrinsic.ts'
 import {
   EncodedArgs,
   SideEffectAction,
   SideEffectActions,
   TransferEncodedArgs,
-} from "@/schemas/sfx.ts"
-import { Circuit } from "@/types.ts"
-import { createCircuitContext } from "./circuit.ts"
-import { getConfig } from "./config.ts"
-import { log } from "./log.ts"
+} from '@/schemas/sfx.ts'
+import { Circuit } from '@/types.ts'
+import { createCircuitContext } from './circuit.ts'
+import { getConfig } from './config.ts'
+import { log } from './log.ts'
 
 export const buildSfx = (
   circuitApi: Circuit,
-  sideEffects: Extrinsic["sideEffects"],
+  sideEffects: Extrinsic['sideEffects'],
   speedMode: SpeedMode,
   sdk: Sdk,
 ) => {
   return {
     // @ts-ignore - A weird error that I don't understand
     sideEffects: createType(
-      "Vec<T3rnTypesSfxSideEffect>",
+      'Vec<T3rnTypesSfxSideEffect>',
       sideEffects.map((data) => {
         if (!isGatewayRegistered(data.target, sdk)) {
           throw new Error(
@@ -36,9 +36,9 @@ export const buildSfx = (
           data.action
         ]({
           from: sdk.circuit.signer.address,
-          to: data.encodedArgs[0]["to"],
+          to: data.encodedArgs[0]['to'],
           value: sdk.gateways[data.target].floatToBn(
-            data.encodedArgs[0]["amount"],
+            data.encodedArgs[0]['amount'],
           ),
           maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
           insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
@@ -47,13 +47,13 @@ export const buildSfx = (
       }),
       // @ts-ignore - TS doesn't know that we are creating a type here
     ).toJSON(),
-    speed_mode: circuitApi.createType("T3rnPrimitivesSpeedMode", speedMode),
+    speed_mode: circuitApi.createType('T3rnPrimitivesSpeedMode', speedMode),
   }
 }
 
 export enum SfxSendType {
-  Safe = "safe",
-  Raw = "raw",
+  Safe = 'safe',
+  Raw = 'raw',
 }
 
 export const submitSfx = async (
@@ -80,11 +80,11 @@ export const submitSfx = async (
       typeof circuit.tx.circuit.onExtrinsicTrigger
     >[0],
     transactionArgs.speed_mode,
-    "Optimistic",
+    'Optimistic',
   )
   const response =
     await sdk.circuit.tx[
-      sendType === SfxSendType.Raw ? "signAndSendRaw" : "signAndSendSafe"
+      sendType === SfxSendType.Raw ? 'signAndSendRaw' : 'signAndSendSafe'
     ](transaction)
 
   return response
@@ -109,15 +109,15 @@ export const mapEncodedArgs = (
 
 export const readSfxFile = (filePath: string) => {
   if (!existsSync(filePath)) {
-    log("ERROR", `File ${filePath} does not exist`)
+    log('ERROR', `File ${filePath} does not exist`)
     return
   }
 
-  const file = readFileSync(filePath, "utf8")
+  const file = readFileSync(filePath, 'utf8')
   try {
     return JSON.parse(file)
   } catch (e) {
-    log("ERROR", `Unable to parse ${filePath} as JSON`)
+    log('ERROR', `Unable to parse ${filePath} as JSON`)
   }
 }
 

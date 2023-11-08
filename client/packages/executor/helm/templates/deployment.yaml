@@ -42,7 +42,7 @@ spec:
                   name: relaychain
                   key: signer_key
             - name: PROCESS_BATCHES
-              value: "{{ .Values.config.processBatches }}"
+              value: "{{ .Values.config.enableAttestations }}"
             - name: ETHEREUM_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:

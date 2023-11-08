@@ -1,10 +1,10 @@
-import { Args } from "@/types.ts"
-import { log } from "@/utils/log.ts"
-import { handleSubmitSfxCmd } from "./sfx.ts"
-import { handleSubmitHeadersCmd } from "./headers.ts"
+import { Args } from '@/types.ts'
+import { log } from '@/utils/log.ts'
+import { handleSubmitSfxCmd } from './sfx.ts'
+import { handleSubmitHeadersCmd } from './headers.ts'
 
 export const handleSubmitCmd = async (
-  args: Args<"sfx" | "headers" | "export">,
+  args: Args<'sfx' | 'headers' | 'export'>,
 ) => {
   if (args.sfx) {
     return handleSubmitSfxCmd(args.sfx, Boolean(args.export))
@@ -14,6 +14,6 @@ export const handleSubmitCmd = async (
     return handleSubmitHeadersCmd(args.headers, Boolean(args.export))
   }
 
-  log("ERROR", "No option provided!")
+  log('ERROR', 'No option provided!')
   process.exit(1)
 }

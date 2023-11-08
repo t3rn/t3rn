@@ -1,24 +1,25 @@
-import ora from "ora"
-import { Args } from "@/types.js"
-import { validate } from "@/utils/fns.js"
-import { AddSfxAbiSchema } from "@/schemas/abi.ts"
-import { colorLogMsg } from "@/utils/log.js"
-import { ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
+import ora from 'ora'
+import { Args } from '@/types.js'
+import { validate } from '@/utils/fns.js'
+import { AddSfxAbiSchema } from '@/schemas/abi.ts'
+import { colorLogMsg } from '@/utils/log.js'
+import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
 
 export const spinner = ora()
 
 export const handleAddSfxAbiCommand = async (
   _args: Args<
-    "signer" | "endpoint" | "target" | "sfxId" | "sfxAbi" | "palletId" | "purge"
+    'signer' | 'endpoint' | 'target' | 'sfxId' | 'sfxAbi' | 'palletId' | 'purge'
   >,
 ) => {
   const args = validate(
     AddSfxAbiSchema,
     {
       ..._args,
+      palletId: _args?.palletId ? parseInt(_args?.palletId) : undefined,
     },
     {
-      configFileName: "Add SFX ABI to XDNS arguments",
+      configFileName: 'Add SFX ABI to XDNS arguments',
     },
   )
 
@@ -26,12 +27,12 @@ export const handleAddSfxAbiCommand = async (
     process.exit()
   }
 
-  console.log("args", args)
+  console.log('args', args)
 
   if (args.purge) {
-    spinner.text = "Submitting purge SFX ABI Transaction... \n"
+    spinner.text = 'Submitting purge SFX ABI Transaction... \n'
   } else {
-    spinner.text = "Submitting add SFX ABI Transaction... \n"
+    spinner.text = 'Submitting add SFX ABI Transaction... \n'
   }
 
   spinner.start()
@@ -41,16 +42,16 @@ export const handleAddSfxAbiCommand = async (
       provider: new WsProvider(args.endpoint),
     })
 
-    const keyring = new Keyring({ type: "sr25519" })
+    const keyring = new Keyring({ type: 'sr25519' })
     const signer =
       process.env.CIRCUIT_SIGNER_KEY === undefined
         ? keyring.addFromUri(args.signer)
         : keyring.addFromMnemonic(process.env.CIRCUIT_SIGNER_KEY)
     if (
-      args.signer == "//Circuit" &&
+      args.signer == '//Circuit' &&
       process.env.CIRCUIT_SIGNER_KEY === undefined
     ) {
-      console.log("Circuit signer not found... Exit\n")
+      console.log('Circuit signer not found... Exit\n')
       spinner.stop()
       process.exit(0)
     }
@@ -64,7 +65,7 @@ export const handleAddSfxAbiCommand = async (
     )
 
     console.info(
-      "Updated sfx abi storage prior to transaction",
+      'Updated sfx abi storage prior to transaction',
       sfxAbiPrior.toHuman(),
     )
 
@@ -82,7 +83,7 @@ export const handleAddSfxAbiCommand = async (
       const isKnownABI = await targetApi.query.xdns.standardSFXABIs(args.sfxId)
       if (!isKnownABI) {
         throw new Error(
-          "SFX ABI descriptor is required - optional, but required if SFX ID is non-standard (not one of the built-in SFXs)",
+          'SFX ABI descriptor is required - optional, but required if SFX ID is non-standard (not one of the built-in SFXs)',
         )
       } else {
         console.log(
@@ -100,7 +101,7 @@ export const handleAddSfxAbiCommand = async (
     }
 
     if (tx === undefined) {
-      throw new Error("No transaction to submit")
+      throw new Error('No transaction to submit')
     }
 
     await targetApi.tx.sudo
@@ -114,17 +115,13 @@ export const handleAddSfxAbiCommand = async (
           !!dispatchError
         ) {
           if (dispatchError) {
-            spinner.fail(colorLogMsg("ERROR", dispatchError))
+            spinner.fail(colorLogMsg('ERROR', dispatchError))
             process.exit(1)
           }
 
-          spinner.fail(colorLogMsg("ERROR", status.type))
+          spinner.fail(colorLogMsg('ERROR', status.type))
           process.exit(1)
-        } else if (
-          status.isInBlock ||
-          status.isFinalized ||
-          status.isReady
-        ) {
+        } else if (status.isInBlock || status.isFinalized || status.isReady) {
           // check if we have an error event in a custom module
           events.forEach((eventEntry) => {
             const eventEntryParsed = JSON.parse(JSON.stringify(eventEntry))
@@ -138,13 +135,13 @@ export const handleAddSfxAbiCommand = async (
             ) {
               const pallet =
                 eventEntryParsed.event.data[0].err.module.index ||
-                "Un-parsed pallet index"
+                'Un-parsed pallet index'
               const error =
                 eventEntryParsed.event.data[0].err.module.error ||
-                "Un-parsed error index"
+                'Un-parsed error index'
               spinner.fail(
                 colorLogMsg(
-                  "ERROR",
+                  'ERROR',
                   `Pallet of index = ${pallet} returned an error of index = ${error}`,
                 ),
               )
@@ -160,21 +157,21 @@ export const handleAddSfxAbiCommand = async (
     // Ensure that the effects of the transaction are reflected in the state
     const sfxAbi = await targetApi.query.xdns.sfxabiRegistry(args.target, null)
 
-    console.info("Updated sfx abi storage after transaction", sfxAbi.toHuman())
+    console.info('Updated sfx abi storage after transaction', sfxAbi.toHuman())
 
     if (args.purge) {
       spinner.stopAndPersist({
-        symbol: "🚩",
+        symbol: '🚩',
         text: colorLogMsg(
-          "SUCCESS",
+          'SUCCESS',
           `SFX ABI Successfully purged ${args.sfxId} for ${args.target}`,
         ),
       })
     } else {
       spinner.stopAndPersist({
-        symbol: "🚩",
+        symbol: '🚩',
         text: colorLogMsg(
-          "SUCCESS",
+          'SUCCESS',
           `SFX ABI Successfully added ${args.sfxId} for ${args.target}`,
         ),
       })
@@ -182,6 +179,6 @@ export const handleAddSfxAbiCommand = async (
 
     process.exit(0)
   } catch (e) {
-    spinner.fail(colorLogMsg("ERROR", e))
+    spinner.fail(colorLogMsg('ERROR', e))
   }
 }

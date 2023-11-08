@@ -1,16 +1,16 @@
-import fetch from "node-fetch"
-import { ApiPromise } from "@t3rn/sdk"
+import fetch from 'node-fetch'
+import { ApiPromise } from '@t3rn/sdk'
 // @ts-ignore - TS doesn't know about the type definition
-import { phase0 } from "@lodestar/types"
-import { fromHexString } from "@chainsafe/ssz"
-import { colorLogMsg } from "@/utils/log.ts"
+import { phase0 } from '@lodestar/types'
+import { fromHexString } from '@chainsafe/ssz'
+import { colorLogMsg } from '@/utils/log.ts'
 import {
   ETHEREUM_SLOTS_PER_EPOCH,
   ETHEREUM_EPOCHS_PER_PERIOD,
   LODESTAR_ENDPOINT,
   RELAY_ENDPOINT,
-} from "@/consts.ts"
-import { spinner } from "../gateway.ts"
+} from '@/consts.ts'
+import { spinner } from '../gateway.ts'
 
 type BLSPubKey = Uint8Array
 
@@ -70,17 +70,17 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
   const period = slot / ETHEREUM_SLOTS_PER_EPOCH / ETHEREUM_EPOCHS_PER_PERIOD
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
   const fetchOptions = {
-    method: "GET",
+    method: 'GET',
     headers: {
-      "Content-Type": "application/json",
-      Accept: "*/*",
+      'Content-Type': 'application/json',
+      Accept: '*/*',
     },
   }
   const response = await fetch(endpoint, fetchOptions)
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Fetch debug beacon state faulted to error status: " +
+      'Oops! Fetch debug beacon state faulted to error status: ' +
         response.status,
     )
   }
@@ -96,10 +96,10 @@ const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
 
 const fetchLastSyncCommitteeUpdateSlot = async () => {
   const fetchOptions = {
-    method: "GET",
+    method: 'GET',
   }
   const response = await fetch(
-    RELAY_ENDPOINT + "/eth/v1/beacon/headers/head",
+    RELAY_ENDPOINT + '/eth/v1/beacon/headers/head',
     fetchOptions,
   )
 
@@ -147,15 +147,15 @@ async function fetchHeaderData(slot: number) {
   const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
   const fetchOptions = {
     headers: {
-      "Content-Type": "application/json",
-      Accept: "*/*",
+      'Content-Type': 'application/json',
+      Accept: '*/*',
     },
   }
   const response = await fetch(endpoint, fetchOptions)
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Fetch header data faulted to error status: " + response.status,
+      'Oops! Fetch header data faulted to error status: ' + response.status,
     )
   }
 
@@ -188,7 +188,7 @@ async function fetchBeaconBlockHeaderAndRoot(
 ): Promise<{ header: phase0.BeaconBlockHeader; root: string }> {
   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/headers?slot=${slot}`
   const fetchOptions = {
-    method: "GET",
+    method: 'GET',
   }
   const response = await fetch(endpoint, fetchOptions)
 
@@ -238,7 +238,7 @@ const fetchInitData = async (
 ) => {
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
   const fetchOptions = {
-    method: "GET",
+    method: 'GET',
   }
   const response = await fetch(endpoint, fetchOptions)
 
@@ -285,22 +285,22 @@ const generateRegistrationData = (
   circuit: ApiPromise,
 ) => {
   return circuit
-    .createType("EthereumInitializationData", {
-      current_sync_committee: circuit.createType("SyncCommittee", {
-        pubs: circuit.createType("Vec<BLSPubkey>", currentSyncCommittee.pubs),
-        aggr: circuit.createType("BLSPubkey", currentSyncCommittee.aggr),
+    .createType('EthereumInitializationData', {
+      current_sync_committee: circuit.createType('SyncCommittee', {
+        pubs: circuit.createType('Vec<BLSPubkey>', currentSyncCommittee.pubs),
+        aggr: circuit.createType('BLSPubkey', currentSyncCommittee.aggr),
       }),
-      next_sync_committee: circuit.createType("SyncCommittee", {
-        pubs: circuit.createType("Vec<BLSPubkey>", nextSyncCommittee.pubs),
-        aggr: circuit.createType("BLSPubkey", nextSyncCommittee.aggr),
+      next_sync_committee: circuit.createType('SyncCommittee', {
+        pubs: circuit.createType('Vec<BLSPubkey>', nextSyncCommittee.pubs),
+        aggr: circuit.createType('BLSPubkey', nextSyncCommittee.aggr),
       }),
-      checkpoint: circuit.createType("Checkpoint", checkpoint),
+      checkpoint: circuit.createType('Checkpoint', checkpoint),
       beacon_header: circuit.createType(
-        "BeaconBlockHeader",
+        'BeaconBlockHeader',
         data.header.beacon,
       ),
       execution_header: circuit.createType(
-        "ExecutionHeader",
+        'ExecutionHeader',
         data.header.execution,
       ),
     })
@@ -317,6 +317,6 @@ export const registerEthereumVerificationVendor = async (
 
     return generateRegistrationData(data, circuit)
   } catch (e) {
-    spinner.fail(colorLogMsg("ERROR", e))
+    spinner.fail(colorLogMsg('ERROR', e))
   }
 }

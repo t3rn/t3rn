@@ -558,7 +558,8 @@ impl<AccountId: Encode + Decode + Clone> OrderOrigin<AccountId> {
     }
 }
 
-impl<AccountId, Asset, Balance, Destination, Input, MaxCost> TryInto<SideEffect<AccountId, Balance>>
+impl<AccountId, Asset: Clone, Balance, Destination, Input, MaxCost>
+    TryInto<SideEffect<AccountId, Balance>>
     for OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost>
 where
     u32: From<Asset>,
@@ -584,11 +585,23 @@ where
             },
             SFXAction::Transfer(target, asset, destination, amount) => {
                 let mut encoded_args: Vec<Vec<u8>> = vec![];
-                encoded_args.push(<Asset as Into<u32>>::into(asset).to_le_bytes().to_vec());
+                let asset_id: u32 = <Asset as Into<u32>>::into(asset);
+                let action_id = if asset_id != 0 {
+                    encoded_args.push(asset_id.to_le_bytes().to_vec());
+                    *b"tass"
+                } else {
+                    *b"tran"
+                };
                 encoded_args.push(destination.encode());
                 encoded_args.push(amount.encode());
-                (*b"tass", target.into(), encoded_args)
+                (action_id, target.into(), encoded_args)
             },
+        };
+
+        let reward_asset_id = if <Asset as Into<u32>>::into(self.reward_asset.clone()) == 0 {
+            None
+        } else {
+            Some(<Asset as Into<u32>>::into(self.reward_asset))
         };
 
         let side_effect = SideEffect {
@@ -599,7 +612,7 @@ where
             encoded_args,
             signature: vec![],
             enforce_executor: None,
-            reward_asset_id: Some(self.reward_asset.into()),
+            reward_asset_id,
         };
 
         Ok(side_effect)
@@ -756,6 +769,33 @@ mod tests {
         assert_eq!(side_effect.encoded_args[1], [2u8; 32]);
         assert_eq!(
             side_effect.encoded_args[2],
+            vec![100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+    }
+
+    #[test]
+    fn test_try_into_transfer_native_for_asset_zero() {
+        let order_sfx = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+            sfx_action: SFXAction::Transfer([3u8; 4], 0u32, AccountId32::new([2u8; 32]), 100u128),
+            max_reward: 200u128,
+            insurance: 50u128,
+            reward_asset: 0u32,
+            remote_origin_nonce: None,
+        };
+
+        let result: Result<SideEffect<AccountId32, u128>, _> = order_sfx.try_into();
+        assert_ok!(&result);
+
+        let side_effect = result.unwrap();
+        assert_eq!(side_effect.max_reward, 200);
+        assert_eq!(side_effect.insurance, 50);
+        assert_eq!(side_effect.target, [3u8; 4]);
+        assert_eq!(side_effect.action, *b"tran");
+        assert_eq!(side_effect.reward_asset_id, None);
+        assert_eq!(side_effect.encoded_args.len(), 2);
+        assert_eq!(side_effect.encoded_args[0], [2u8; 32]);
+        assert_eq!(
+            side_effect.encoded_args[1],
             vec![100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         );
     }
