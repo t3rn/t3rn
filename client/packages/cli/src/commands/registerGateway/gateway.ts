@@ -35,7 +35,7 @@ export const handleRegisterGateway = async (
     process.exit(1)
   }
 
-  spinner.text = `Registering ${foundGateway.name} gateway...`
+  log('INFO', `Registering ${foundGateway.name} gateway...`)
   spinner.start()
 
   await registerGateway(foundGateway as Required<Gateway>, exportMode, slot)

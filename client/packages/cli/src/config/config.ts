@@ -9,6 +9,15 @@ export const config = () => ({
   t3rnConfigFile: get('T3RN_CONFIG_FILE')
     .default('.t3rn-config.json')
     .asString(),
+  circuit: {
+    rpc: {
+      ws: get('CIRCUIT_WS_ENDPOINT').default('ws://127.0.0.1:9944').asString(),
+      http: get('CIRCUIT_HTTP_ENDPOINT')
+        .default('http://127.0.0.1:9944')
+        .asString(),
+    },
+    signerKey: get('CIRCUIT_SIGNER_KEY').asString(),
+  },
   targetChain: {
     beaconEndpoint: get('BEACON_ENDPOINT').required().asString(),
     executionEndpoint: get('EXECUTION_ENDPOINT').required().asString(),
