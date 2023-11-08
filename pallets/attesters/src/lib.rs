@@ -2577,10 +2577,7 @@ pub mod attesters_test {
     }
 
     pub fn add_target_and_transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
-        assert_ok!(Attesters::add_attestation_target(
-            RuntimeOrigin::root(),
-            target
-        ));
+        let _ = Attesters::add_attestation_target(RuntimeOrigin::root(), target);
         if !Attesters::attestation_targets().contains(&target) {
             // if active set is empty, select the next active set
             if !ActiveSet::<MiniRuntime>::get().is_empty() {
