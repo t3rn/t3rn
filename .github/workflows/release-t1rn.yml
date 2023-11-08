@@ -17,6 +17,7 @@ jobs:
   build-release:
     runs-on: [self-hosted, rust]
     name: t1rn Kusama Release
+    concurrency: runtime-upgrade-t1rn
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -150,3 +151,77 @@ jobs:
           asset_path: ${{ env.WASM_BINARY }}.info.json
           asset_name: ${{ env.WASM_RELEASE_ASSET }}.info.json
           asset_content_type: text/plain
+
+  runtime-upgrade-zombienet-test:
+    runs-on: [self-hosted, rust]
+    concurrency: runtime-upgrade-t1rn
+    needs: build-release
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
+
+      - name: 📼 Run zombienet runtime upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade ${{ env.PARACHAIN_NAME }}
+
+  runtime-upgrade:
+    runs-on: self-hosted
+    needs: runtime-upgrade-zombienet-test
+    concurrency: runtime-upgrade-t1rn
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Set variables 
+        run: |
+          echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+          # PUSHED_TAG is not available yet in the env, so we need to use GITHUB_REF
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
+
+      - name: 📥 Download runtime WASM
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: t3rn/t3rn
+          version: "tags/${{ env.PUSHED_TAG }}"
+          file: ${{ env.WASM_RELEASE_ASSET }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📥 Download runtime WASM hash blake2_256
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: t3rn/t3rn
+          version: "tags/${{ env.PUSHED_TAG }}"
+          file: ${{ env.WASM_RELEASE_ASSET }}.blake2_256
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🚀 t1rn Runtime Upgrade Dry Run
+        run: |
+          # We want to run it in case it fails because just multiline env variable would obscure that
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T1RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
+
+          # This is a workaround for multiline env variable
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "RUNTIME_UPGRADE_OUTPUT<<$EOF" >> $GITHUB_ENV
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T1RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV          
+
+      - name: 🚀 t1rn Runtime Upgrade
+        run: |
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T1RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
+          
+      - name: 📟 Send Telegram Message
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_T1RN_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 t1rn Runtime Upgrade ${{ env.PUSHED_TAG }}
+            
+            Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.PUSHED_TAG }}
+            Monitoring: https://monitoring.t3rn.io/d/HyX9GHGVz/chain-statistics?orgId=1&refresh=1m&var-parachain=${{ env.PARACHAIN_NAME }}&var-region=All
+            Github Action Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

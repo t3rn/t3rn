@@ -156,7 +156,7 @@ runtime_upgrade() {
     if [[ $# -lt 2 ]]; then
         echo "Expecting 2 or more arguments"
         echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn> [local/github]"
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t1rn/t0rn> [local/github]"
         return 1
     fi
     
