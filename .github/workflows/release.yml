@@ -8,7 +8,7 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
-      - "**/runtime-upgrade-t0rn.yml"
+      - "**/release-*.yml"
       - "collator.*.Dockerfile"
       - "specs/*.raw.json"
       - ".dockerignore"

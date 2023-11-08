@@ -17,7 +17,7 @@ jobs:
   build-release:
     runs-on: [self-hosted, rust]
     name: t0rn Rococo Release
-    concurrency: runtime-upgrade
+    concurrency: runtime-upgrade-t0rn
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -164,7 +164,7 @@ jobs:
 
   runtime-upgrade-zombienet-test:
     runs-on: [self-hosted, rust]
-    concurrency: runtime-upgrade
+    concurrency: runtime-upgrade-t0rn
     needs: build-release
     steps:
       - name: ☁ Checkout git repo
@@ -181,7 +181,7 @@ jobs:
   runtime-upgrade:
     runs-on: self-hosted
     needs: runtime-upgrade-zombienet-test
-    concurrency: runtime-upgrade
+    concurrency: runtime-upgrade-t0rn
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v4
@@ -212,17 +212,17 @@ jobs:
       - name: 🚀 t0rn Runtime Upgrade Dry Run
         run: |
           # We want to run it in case it fails because just multiline env variable would obscure that
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T0RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
 
           # This is a workaround for multiline env variable
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "RUNTIME_UPGRADE_OUTPUT<<$EOF" >> $GITHUB_ENV
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T0RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV          
 
       - name: 🚀 t0rn Runtime Upgrade
         run: |
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T0RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
           
       - name: 📟 Send Telegram Message
         uses: appleboy/telegram-action@v0.1.1

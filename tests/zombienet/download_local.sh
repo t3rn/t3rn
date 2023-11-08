@@ -4,7 +4,7 @@ DIR=$(git rev-parse --show-toplevel)
 BIN_DIR=$DIR/bin
 
 case "$1" in
-    t0rn*)
+    t0rn|t1rn*)
         new_version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*" | head -n 1)
     ;;
     t3rn*)
