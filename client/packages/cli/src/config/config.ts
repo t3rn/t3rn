@@ -19,7 +19,7 @@ export const config = () => ({
     signerKey: get('CIRCUIT_SIGNER_KEY').asString(),
   },
   targetChain: {
-    beaconEndpoint: get('BEACON_ENDPOINT').required().asString(),
+    beaconEndpoint: get('BEACON_ENDPOINT').asString(),
     executionEndpoint: get('EXECUTION_ENDPOINT').required().asString(),
     relayEndpoint: get('RELAY_ENDPOINT').required().asString(),
     lodestarEndpoint: get('LODESTAR_ENDPOINT').required().asString(),
