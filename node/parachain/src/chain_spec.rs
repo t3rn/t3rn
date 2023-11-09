@@ -1,11 +1,11 @@
-#[cfg(feature = "t1rn")]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 use t1rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
-#[cfg(feature = "t3rn")]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 use t3rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
@@ -318,7 +318,7 @@ pub fn polkadot_config() -> ChainSpec {
         "t3rn",
         ChainType::Live,
         move || {
-            polkadot_genesis_shell(
+            polkadot_genesis_full(
                 vec![
                     (
                         // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
@@ -379,6 +379,7 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
@@ -444,11 +445,11 @@ fn polkadot_genesis_full(
     id: ParaId,
     root_key: AccountId,
 ) -> RuntimeGenesisConfig {
-    #[cfg(feature = "t3rn")]
+    #[cfg(all(feature = "t3rn", not(feature = "default")))]
     #[rustfmt::skip]
     return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
 
-    #[cfg(not(feature = "t3rn"))]
+    // #[cfg(not(feature = "t3rn"))]
     return RuntimeGenesisConfig {
         system: SystemConfig {
             code: WASM_BINARY

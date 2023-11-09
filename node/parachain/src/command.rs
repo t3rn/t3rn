@@ -5,19 +5,19 @@ use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
 // Local Runtime Types
-#[cfg(feature = "t1rn")]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(feature = "t3rn")]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
 #[cfg(feature = "t0rn")]
 use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(feature = "t3rn")]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 const COLLATOR_NAME: &str = "t3rn collator";
 
-#[cfg(feature = "t1rn")]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 const COLLATOR_NAME: &str = "t1rn collator";
 
 #[cfg(feature = "t0rn")]
@@ -39,7 +39,7 @@ use crate::{
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
         "local" => Box::new(chain_spec::local_testnet_config()),
-        #[cfg(feature = "t3rn")]
+        #[cfg(all(feature = "t3rn", not(feature = "default")))]
         "polkadot" | "polkadot-live" => Box::new(chain_spec::polkadot_config()),
         "kusama" | "kusama-live" => Box::new(chain_spec::kusama_config()),
         "rococo" | "rococo-live" => Box::new(chain_spec::rococo_config()),

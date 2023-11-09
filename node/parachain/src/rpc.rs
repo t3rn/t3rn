@@ -13,10 +13,10 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-#[cfg(feature = "t1rn")]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 use t1rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
-#[cfg(feature = "t3rn")]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 #[cfg(feature = "t0rn")]
@@ -74,7 +74,7 @@ where
 }
 
 /// Instantiate all full RPC extensions for t3rn shell - no XDNS, no Portal
-#[cfg(feature = "t3rn")]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>

@@ -4,10 +4,10 @@
 use cumulus_client_cli::CollatorOptions;
 use std::{sync::Arc, time::Duration};
 // Local Runtime Types
-#[cfg(feature = "t1rn")]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
-#[cfg(feature = "t3rn")]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 use t3rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 #[cfg(feature = "t0rn")]
