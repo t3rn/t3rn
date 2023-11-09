@@ -39,7 +39,6 @@ use crate::{
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
         "local" => Box::new(chain_spec::local_testnet_config()),
-        #[cfg(all(feature = "t3rn", not(feature = "default")))]
         "polkadot" | "polkadot-live" => Box::new(chain_spec::polkadot_config()),
         "kusama" | "kusama-live" => Box::new(chain_spec::kusama_config()),
         "rococo" | "rococo-live" => Box::new(chain_spec::rococo_config()),
