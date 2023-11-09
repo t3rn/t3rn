@@ -318,7 +318,7 @@ pub fn polkadot_config() -> ChainSpec {
         "t3rn",
         ChainType::Live,
         move || {
-            polkadot_genesis_full(
+            polkadot_genesis_shell(
                 vec![
                     (
                         // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
@@ -379,13 +379,6 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-#[cfg(all(
-    feature = "t3rn",
-    not(feature = "t1rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
 fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
@@ -451,16 +444,11 @@ fn polkadot_genesis_full(
     id: ParaId,
     root_key: AccountId,
 ) -> RuntimeGenesisConfig {
-    #[cfg(all(
-        feature = "t3rn",
-        not(feature = "t1rn"),
-        not(feature = "t0rn"),
-        not(feature = "default"),
-        not(feature = "runtime-benchmarks")
-    ))]
+    #[cfg(feature = "t3rn")]
     #[rustfmt::skip]
     return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
 
+    #[cfg(not(feature = "t3rn"))]
     return RuntimeGenesisConfig {
         system: SystemConfig {
             code: WASM_BINARY
