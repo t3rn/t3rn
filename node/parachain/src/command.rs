@@ -5,22 +5,22 @@ use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
 // Local Runtime Types
-#[cfg( feature = "t1rn")]
+#[cfg(feature = "t1rn")]
 use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg( feature = "t3rn")]
+#[cfg(feature = "t3rn")]
 use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg( feature = "t0rn")]
+#[cfg(feature = "t0rn")]
 use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg( feature = "t3rn")]
+#[cfg(feature = "t3rn")]
 const COLLATOR_NAME: &str = "t3rn collator";
 
-#[cfg( feature = "t1rn")]
+#[cfg(feature = "t1rn")]
 const COLLATOR_NAME: &str = "t1rn collator";
 
-#[cfg( feature = "t0rn")]
+#[cfg(feature = "t0rn")]
 const COLLATOR_NAME: &str = "t0rn collator";
 
 use sc_cli::{
