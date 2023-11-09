@@ -293,8 +293,8 @@ match_types! {
 
 parameter_types! {
     pub AssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
-    pub const T0rnNative: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(MultiLocation::here()) });
-    pub AssetHubTrustedTeleporter: (MultiAssetFilter, MultiLocation) = (T0rnNative::get(), AssetHubLocation::get());
+    pub const Native: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(MultiLocation::here()) });
+    pub AssetHubTrustedTeleporter: (MultiAssetFilter, MultiLocation) = (Native::get(), AssetHubLocation::get());
     pub RUsdtPerSecond: (xcm::v3::AssetId, u128, u128) = (
         MultiLocation::new(1, X3(Parachain(1000), PalletInstance(50), GeneralIndex(1984))).into(),
         default_fee_per_second() * 10,

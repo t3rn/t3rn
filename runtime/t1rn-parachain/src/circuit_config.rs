@@ -157,9 +157,9 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
-        log::debug!("t0rn::force_create_asset");
-        log::debug!("t0rn::asset_id: {asset_id:?}");
-        log::debug!("t0rn::asset_admin: {admin:?}");
+        log::debug!("t1rn::force_create_asset");
+        log::debug!("t1rn::asset_id: {asset_id:?}");
+        log::debug!("t1rn::asset_admin: {admin:?}");
         Assets::force_create(
             origin,
             asset_id,
@@ -170,15 +170,15 @@ impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     }
 
     fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
-        log::debug!("t0rn::freeze_asset ...");
+        log::debug!("t1rn::freeze_asset ...");
         Assets::freeze_asset(origin.clone(), *asset_id)?;
-        log::debug!("t0rn::start_destroy ...");
+        log::debug!("t1rn::start_destroy ...");
         Assets::start_destroy(origin.clone(), *asset_id)?;
-        log::debug!("t0rn::destroy_accounts ...");
+        log::debug!("t1rn::destroy_accounts ...");
         Assets::destroy_accounts(origin.clone(), *asset_id)?;
-        log::debug!("t0rn::destroy_approvals ...");
+        log::debug!("t1rn::destroy_approvals ...");
         Assets::destroy_approvals(origin.clone(), *asset_id)?;
-        log::debug!("t0rn::finish_destroy ...");
+        log::debug!("t1rn::finish_destroy ...");
         Assets::finish_destroy(origin.clone(), *asset_id)?;
 
         Ok(().into())
