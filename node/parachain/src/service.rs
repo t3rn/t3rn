@@ -4,25 +4,13 @@
 use cumulus_client_cli::CollatorOptions;
 use std::{sync::Arc, time::Duration};
 // Local Runtime Types
-#[cfg(all(
-    feature = "t1rn",
-    not(feature = "t3rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
+#[cfg( feature = "t1rn")]
 use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
-#[cfg(all(
-    feature = "t3rn",
-    not(feature = "t1rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
+#[cfg( feature = "t3rn")]
 use t3rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
-#[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
+#[cfg( feature = "t0rn")]
 use t0rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 // Cumulus Imports
