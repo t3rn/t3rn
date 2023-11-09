@@ -13179,7 +13179,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "t1rn-parachain-collator"
+name = "t1rn-collator"
 version = "1.72.0-rc.0"
 dependencies = [
  "clap",
@@ -13260,6 +13260,7 @@ dependencies = [
 name = "t1rn-parachain-runtime"
 version = "1.72.0-rc.0"
 dependencies = [
+ "assets-common",
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -13270,6 +13271,8 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "finality-grandpa",
+ "fp-evm",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13277,15 +13280,39 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal 0.3.4",
+ "impl-trait-for-tuples",
  "log",
+ "num-traits",
+ "pallet-3vm",
+ "pallet-account-manager",
+ "pallet-asset-registry",
+ "pallet-asset-tx-payment",
+ "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-circuit",
+ "pallet-circuit-vacuum",
+ "pallet-clock",
  "pallet-collator-selection",
+ "pallet-contracts 1.72.0-rc.0",
+ "pallet-contracts-primitives 24.0.0",
+ "pallet-contracts-registry",
+ "pallet-eth2-finality-verifier",
+ "pallet-evm",
+ "pallet-grandpa-finality-verifier",
+ "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
+ "pallet-maintenance-mode",
+ "pallet-membership",
+ "pallet-portal",
+ "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
+ "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -13293,9 +13320,14 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
+ "pallet-withdraw-teleport",
  "pallet-xcm",
+ "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",
@@ -13315,9 +13347,13 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "t3rn-abi",
+ "t3rn-primitives",
+ "t3rn-types",
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]

@@ -1,19 +1,16 @@
 use crate::*;
-
-use frame_support::{
-    traits::{ConstBool, NeverEnsureOrigin, PrivilegeCmp},
-    PalletId,
-};
-
+use frame_support::PalletId;
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
+use sp_runtime::impl_opaque_keys;
+use sp_std::prelude::*;
+
+use frame_support::traits::ConstBool;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use sp_runtime::{impl_opaque_keys, Permill};
-use sp_std::{cmp::Ordering, prelude::*};
 
-// TODO: remove when we import t3rn_primitives
-pub(crate) const TRN: u64 = 1_000_000_000_000;
+// XCM Imports
+use xcm::latest::prelude::BodyId;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -49,11 +46,9 @@ impl WeightToFeePolynomial for WeightToFee {
 /// to even the core data structures.
 pub mod opaque {
     use super::*;
-
-    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-
     use sp_runtime::{generic, traits::BlakeTwo256};
 
+    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
     /// Opaque block header type.
     pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// Opaque block type.
@@ -75,6 +70,10 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 }
 
 parameter_types! {
+    pub const Version: RuntimeVersion = VERSION;
+}
+
+parameter_types! {
     pub const UncleGenerations: u32 = 0;
 }
 
@@ -83,29 +82,11 @@ impl pallet_authorship::Config for Runtime {
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 }
 
-parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-}
-
-impl cumulus_pallet_parachain_system::Config for Runtime {
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-    type DmpMessageHandler = DmpQueue;
-    type OnSystemEvent = ();
-    type OutboundXcmpMessageSource = XcmpQueue;
-    type ReservedDmpWeight = ReservedDmpWeight;
-    type ReservedXcmpWeight = ReservedXcmpWeight;
-    type RuntimeEvent = RuntimeEvent;
-    type SelfParaId = parachain_info::Pallet<Runtime>;
-    type XcmpMessageHandler = XcmpQueue;
-}
-
-impl parachain_info::Config for Runtime {}
-
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
     pub const Period: u32 = 6 * HOURS;
+    pub const KickThreshold: u32 = 12 * HOURS;
     pub const Offset: u32 = 0;
     pub const MaxAuthorities: u32 = 100_000;
 }
@@ -135,8 +116,8 @@ parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub const MaxCandidates: u32 = 1000;
     pub const MinCandidates: u32 = 2;
-    pub const SessionLength: BlockNumber = 24 * HOURS;
     pub const MaxInvulnerables: u32 = 100;
+    pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 // We allow root only to execute privileged collator selection operations.
@@ -145,7 +126,7 @@ pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 impl pallet_collator_selection::Config for Runtime {
     type Currency = Balances;
     // should be a multiple of session or things will get inconsistent
-    type KickThreshold = Period;
+    type KickThreshold = KickThreshold;
     type MaxCandidates = MaxCandidates;
     type MaxInvulnerables = MaxInvulnerables;
     type MinEligibleCollators = MinCandidates;
@@ -160,85 +141,37 @@ impl pallet_collator_selection::Config for Runtime {
 
 parameter_types! {
     pub const PreimageMaxSize: u32 = 4096 * 1024;
-    pub const PreimageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreimageByteDeposit: Balance = deposit(0, 1); // FIXME: this is 0 no?
+    pub const PreImageBaseDeposit: Balance = deposit(2, 64);
+    pub const PreImageByteDeposit: Balance = deposit(0, 1);
 }
 
 impl pallet_preimage::Config for Runtime {
-    type BaseDeposit = PreimageBaseDeposit;
-    type ByteDeposit = PreimageByteDeposit;
+    type BaseDeposit = PreImageBaseDeposit;
+    type ByteDeposit = PreImageByteDeposit;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
+
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        circuit_runtime_types::RuntimeBlockWeights::get().max_block;
+        RuntimeBlockWeights::get().max_block;
     pub const MaxScheduledPerBlock: u32 = 50;
+    pub const NoPreimagePostponement: Option<BlockNumber> = Some(10);
 }
 
 impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type MaximumWeight = MaximumSchedulerWeight;
-    type OriginPrivilegeCmp = OriginPrivilegeCmp;
+    type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
-    type Preimages = Preimage;
+    type Preimages = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
-}
-
-/// Used the compare the privilege of an origin inside the scheduler.
-pub struct OriginPrivilegeCmp;
-
-impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
-    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
-        if left == right {
-            return Some(Ordering::Equal)
-        }
-
-        match (left, right) {
-            // Root is greater than anything.
-            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
-            // Check which one has more yes votes.
-            // (
-            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
-            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
-            // ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
-            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
-            _ => None,
-        }
-    }
-}
-
-parameter_types! {
-    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
-    pub const MaxApprovals: u32 = 100;
-    pub const ProposalBond: Permill = Permill::from_percent(3);
-    pub const SpendPeriod: u32 = (60 * 60 * 24) / 12;
-    pub const ProposalBondMinimum: u128 = 10_u128 * (TRN as u128);
-}
-
-impl pallet_treasury::Config for Runtime {
-    type ApproveOrigin = EnsureRoot<AccountId>;
-    type Burn = ();
-    type BurnDestination = ();
-    type Currency = Balances;
-    type MaxApprovals = MaxApprovals;
-    type OnSlash = Treasury;
-    type PalletId = TreasuryId;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMaximum = ();
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type SpendFunds = ();
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type SpendPeriod = SpendPeriod;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 struct CheckInherents;
