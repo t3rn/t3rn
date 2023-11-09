@@ -9,7 +9,6 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
-      - "tests/zombienet/**/*"
       - ".github/workflows/test-circuit.yml"
   merge_group:
 
@@ -128,43 +127,3 @@ jobs:
         with:
           name: code-coverage-report
           path: lcov.info
-
-  # We should run zombienet only when tests are passing
-  smoke-test:
-    name: Zombienet Test
-    runs-on: [self-hosted, rust]
-    needs: [changes, build-test]
-
-    # zombienet is always run before runtime upgrade so any additional run on development is superfluous
-    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
-    steps:
-      - name: ☁️ Checkout git repo
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
-        run: |
-          rustup show
-
-      - name: Print sccache stats
-        working-directory: tests/zombienet
-        run: sccache --show-stats
-
-      - name: 📼 Run zombienet upgrade tests t0rn
-        working-directory: tests/zombienet
-        run: ./zombienet.sh upgrade t0rn local
-
-      - name: 📼 Run zombienet smoke tests t0rn
-        working-directory: tests/zombienet
-        run: ./zombienet.sh smoke t0rn
-
-      - name: 📼 Run zombienet smoke tests t1rn
-        working-directory: tests/zombienet
-        run: ./zombienet.sh smoke t1rn
-
-      - name: 📼 Run zombienet XCM integration tests
-        working-directory: tests/zombienet
-        run: ./zombienet.sh xcm
-
-      - name: Print sccache stats
-        working-directory: tests/zombienet
-        run: sccache --show-stats

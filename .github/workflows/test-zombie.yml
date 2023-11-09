@@ -1,0 +1,85 @@
+name: Zombienet
+
+on:
+  merge_group:
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
+
+env:
+  RUST_BACKTRACE: 1
+  RUSTC_WRAPPER: sccache
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  # This job checks if circuit files has been modified.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - "tests/zombienet/**/*"
+              - ".github/workflows/test-zombie.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  # We should run zombienet only when tests are passing
+  smoke-test:
+    name: Zombienet Test
+    runs-on: [self-hosted, rust]
+    needs: [changes]
+
+    # zombienet is always run before runtime upgrade so any additional run on development is superfluous
+    if: needs.changes.outputs.src == 'true'
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: |
+          rustup show
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats
+
+      - name: 📼 Run zombienet upgrade tests t0rn
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade t0rn local
+
+      - name: 📼 Run zombienet upgrade tests t1rn
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade t1rn local
+
+      - name: 📼 Run zombienet smoke tests t0rn
+        working-directory: tests/zombienet
+        run: ./zombienet.sh smoke t0rn
+
+      - name: 📼 Run zombienet smoke tests t1rn
+        working-directory: tests/zombienet
+        run: ./zombienet.sh smoke t1rn
+
+      - name: 📼 Run zombienet XCM integration tests
+        working-directory: tests/zombienet
+        run: ./zombienet.sh xcm
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats

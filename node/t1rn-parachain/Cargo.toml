@@ -1,10 +1,11 @@
 [package]
 authors     = { workspace = true }
 build       = "build.rs"
+description = "t1rn Parachain to Kusama"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "t1rn-parachain-collator"
+name        = "t1rn-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
@@ -72,7 +73,7 @@ frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
 # Local Dependencies
-t1rn-parachain-runtime      = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime", optional = true }
+t1rn-parachain-runtime      = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime" }
 
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
@@ -109,11 +110,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.
 
 [features]
 default = [
-    "t1rn-parachain-runtime",
 ]
 try-runtime = [
-    "t1rn-parachain-runtime?/try-runtime",
 ]
 runtime-benchmarks = [
-    "t1rn-parachain-runtime?/runtime-benchmarks",
 ]

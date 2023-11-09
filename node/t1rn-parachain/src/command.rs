@@ -4,7 +4,6 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
-// Local Runtime Types
 use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 const COLLATOR_NAME: &str = "t1rn collator";
 
@@ -24,7 +23,9 @@ use crate::{
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
         "local" => Box::new(chain_spec::local_testnet_config()),
+        "polkadot" | "polkadot-live" => Box::new(chain_spec::polkadot_config()),
         "kusama" | "kusama-live" => Box::new(chain_spec::kusama_config()),
+        "rococo" | "rococo-live" => Box::new(chain_spec::rococo_config()),
         path => Box::new(chain_spec::ChainSpec::from_json_file(
             std::path::PathBuf::from(path),
         )?),
