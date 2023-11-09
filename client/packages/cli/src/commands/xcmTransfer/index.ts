@@ -83,37 +83,72 @@ export const handleXcmTransferCommand = async (
     }
 
     if (args.type == 'relay') {
-        await targetApi.tx.xcmPallet
-            .limitedReserveTransferAssets(
-                xcmDestParam,
-                xcmBeneficiaryParam,
-                xcmAssetsParam,
-                xcmAssetFeeItem,
-                xcmWeightLimitParam
-            )
-            .signAndSend(signer, ({ status, events }) => {
-                if (status.isInBlock || status.isFinalized) {
-                    events
-                        // find/filter for failed events
-                        .filter(({ event }) =>
-                            targetApi.events.system.ExtrinsicFailed.is(event)
-                        )
-                        // we know that data for system.ExtrinsicFailed is
-                        // (DispatchError, DispatchInfo)
-                        .forEach(({ event: { data: [error, info] } }) => {
-                            if (error.isModule) {
-                                // for module errors, we have the section indexed, lookup
-                                const decoded = targetApi.registry.findMetaError(error.asModule)
-                                const { docs, method, section } = decoded
+        if (args.dest == 1000) {
+            await targetApi.tx.xcmPallet
+                .limitedTeleportAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
+                .signAndSend(signer, ({ status, events }) => {
+                    if (status.isInBlock || status.isFinalized) {
+                        events
+                            // find/filter for failed events
+                            .filter(({ event }) =>
+                                targetApi.events.system.ExtrinsicFailed.is(event)
+                            )
+                            // we know that data for system.ExtrinsicFailed is
+                            // (DispatchError, DispatchInfo)
+                            .forEach(({ event: { data: [error, info] } }) => {
+                                if (error.isModule) {
+                                    // for module errors, we have the section indexed, lookup
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
+                                    const { docs, method, section } = decoded
 
-                                console.log(`${section}.${method}: ${docs.join(' ')}`)
-                            } else {
-                                // Other, CannotLookup, BadOrigin, no extra info
-                                console.log(error.toString())
-                            }
-                        })
-                }
-            })
+                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
+                                } else {
+                                    // Other, CannotLookup, BadOrigin, no extra info
+                                    console.log(error.toString())
+                                }
+                            })
+                    }
+                })
+        }
+        else {
+            await targetApi.tx.xcmPallet
+                .limitedReserveTransferAssets(
+                    xcmDestParam,
+                    xcmBeneficiaryParam,
+                    xcmAssetsParam,
+                    xcmAssetFeeItem,
+                    xcmWeightLimitParam
+                )
+                .signAndSend(signer, ({status, events}) => {
+                    if (status.isInBlock || status.isFinalized) {
+                        events
+                            // find/filter for failed events
+                            .filter(({event}) =>
+                                targetApi.events.system.ExtrinsicFailed.is(event)
+                            )
+                            // we know that data for system.ExtrinsicFailed is
+                            // (DispatchError, DispatchInfo)
+                            .forEach(({event: {data: [error, info]}}) => {
+                                if (error.isModule) {
+                                    // for module errors, we have the section indexed, lookup
+                                    const decoded = targetApi.registry.findMetaError(error.asModule)
+                                    const {docs, method, section} = decoded
+
+                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
+                                } else {
+                                    // Other, CannotLookup, BadOrigin, no extra info
+                                    console.log(error.toString())
+                                }
+                            })
+                    }
+                })
+        }
     }
     else if (args.type == 'para' && args.targetAsset == 'TRN') {
         const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
