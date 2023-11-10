@@ -13,6 +13,8 @@ use t3rn_primitives::{
     circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
     SpeedMode,
 };
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
 pub type Asset = u32;
 pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
@@ -363,10 +365,10 @@ mod tests {
     use sp_core::H256;
     use sp_runtime::{traits::Keccak256, AccountId32};
     use sp_std::convert::TryInto;
-    use t3rn_mini_mock_runtime::{
+    pub use t3rn_mini_mock_runtime::{
         activate_all_light_clients, hotswap_latest_receipt_header_root,
         initialize_eth2_with_3rd_epoch, prepare_ext_builder_playground, AccountId, AssetId, Assets,
-        Balance, Balances, BlockNumber, Circuit, CircuitError, CircuitEvent, Clock,
+        Balance, Balances, BlockNumber, Circuit, CircuitError, CircuitEvent, Clock, ConfigVacuum,
         EthereumEventInclusionProof, GlobalOnInitQueues, Hash, MiniRuntime, MockedAssetEvent,
         OrderStatusRead, Portal, Rewards, RuntimeEvent as Event, RuntimeOrigin, System, Vacuum,
         VacuumEvent, ASSET_DOT, ASSET_ETH, ASSET_USDT, ETHEREUM_TARGET, POLKADOT_TARGET, XDNS,
@@ -395,7 +397,7 @@ mod tests {
     };
     use t3rn_types::fsx::TargetId;
 
-    fn mint_required_assets_for_optimistic_actors(
+    pub fn mint_required_assets_for_optimistic_actors(
         requester: AccountId,
         executor: AccountId,
         max_reward: Balance,
