@@ -5,46 +5,22 @@ use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
 // Local Runtime Types
-#[cfg(all(
-    feature = "t1rn",
-    not(feature = "t3rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(
-    feature = "t3rn",
-    not(feature = "t1rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
+#[cfg(feature = "t0rn")]
 use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(
-    feature = "t3rn",
-    not(feature = "t1rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
+#[cfg(all(feature = "t3rn", not(feature = "default")))]
 const COLLATOR_NAME: &str = "t3rn collator";
 
-#[cfg(all(
-    feature = "t1rn",
-    not(feature = "t3rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
+#[cfg(all(feature = "t1rn", not(feature = "default")))]
 const COLLATOR_NAME: &str = "t1rn collator";
 
-#[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
+#[cfg(feature = "t0rn")]
 const COLLATOR_NAME: &str = "t0rn collator";
 
 use sc_cli::{
