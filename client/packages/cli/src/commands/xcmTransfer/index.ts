@@ -264,10 +264,14 @@ export const handleXcmTransferCommand = async (
     else {
         throw new Error('Unsupported transaction type!')
     }
-    console.log('XCM Transfer Completed\n')
-    spinner.stop()
-    process.exit(0)
+    spinner.succeed(colorLogMsg('SUCCESS', `Sent XCM transfer`))
+    spinner.stopAndPersist({
+        symbol: '🎉',
+        text: colorLogMsg('SUCCESS', `Sent XCM transfer`),
+    })
   } catch (e) {
     spinner.fail(colorLogMsg('ERROR', e))
   }
+  spinner.stop()
+  process.exit(0)
 }

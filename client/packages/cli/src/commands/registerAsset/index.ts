@@ -175,11 +175,14 @@ export const handleAssetRegistrationCommand = async (
           throw new Error('Unsupported asset registration destination type!')
     }
     // TO DO: Add support for AssetHub registration of a native token of a parachain
-    console.log('Asset Created!\n')
-
-    spinner.stop()
-    process.exit(0)
+    spinner.succeed(colorLogMsg('SUCCESS', `Asset created`))
+    spinner.stopAndPersist({
+      symbol: '🎉',
+      text: colorLogMsg('SUCCESS', `Asset Created`),
+    })
   } catch (e) {
     spinner.fail(colorLogMsg('ERROR', e))
   }
+  spinner.stop()
+  process.exit(0)
 }
