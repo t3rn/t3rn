@@ -105,7 +105,7 @@ export const handleXcmTransferCommand = async (
                     xcmAssetsParam,
                     xcmAssetFeeItem,
                     xcmWeightLimitParam
-                )
+                ),
                 targetApi,
                 signer,
             )
