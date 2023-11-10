@@ -12,7 +12,7 @@ use circuit_t2rn_runtime::{
     XDNSConfig, // EvmConfig
     WASM_BINARY,
 };
-
+use sp_core::crypto::UncheckedInto;
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
@@ -74,7 +74,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 // Initial PoA authorities
                 vec![(
                     hex!("44508827df67092669b027ba98f121991911b13cd4033e18ad605a3a90648d38")
-                        .into(),
+                        .unchecked_into(),
                     hex!("44508827df67092669b027ba98f121991911b13cd4033e18ad605a3a90648d38")
                         .unchecked_into(),
                 )],
@@ -82,10 +82,8 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 hex!("70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26").into(),
                 // Pre-funded accounts
                 vec![
-                    hex!("2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c")
-                        .into(),
-                    hex!("e0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c")
-                        .into(),
+                    hex!("2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c").into(),
+                    hex!("e0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c").into(),
                 ],
                 vec![],
                 standard_sfx_abi(),
