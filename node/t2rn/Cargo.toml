@@ -23,6 +23,7 @@ clap      = { version = "4.0.9", features = [ "derive" ] }
 futures   = "0.3.21"
 jsonrpsee = { workspace = true }
 log       = { workspace = true }
+hex-literal            = "0.4"
 
 sc-cli                  = { workspace = true }
 sc-client-api           = { workspace = true }

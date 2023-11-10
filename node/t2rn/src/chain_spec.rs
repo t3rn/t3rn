@@ -17,6 +17,7 @@ const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
 use codec::Encode;
+use hex_literal::hex;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
@@ -71,13 +72,20 @@ pub fn development_config() -> Result<ChainSpec, String> {
             testnet_genesis(
                 wasm_binary,
                 // Initial PoA authorities
-                vec![authority_keys_from_seed("Alice")],
+                vec![(
+                    hex!("44508827df67092669b027ba98f121991911b13cd4033e18ad605a3a90648d38")
+                        .into(),
+                    hex!("44508827df67092669b027ba98f121991911b13cd4033e18ad605a3a90648d38")
+                        .unchecked_into(),
+                )],
                 // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("0x70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26"),
+                hex!("70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26").into(),
                 // Pre-funded accounts
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("0x2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c"),
-                    get_account_id_from_seed::<sr25519::Public>("0xe0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c"),
+                    hex!("2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c")
+                        .into(),
+                    hex!("e0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c")
+                        .into(),
                 ],
                 vec![],
                 standard_sfx_abi(),
@@ -118,11 +126,17 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                     authority_keys_from_seed("Bob"),
                 ],
                 // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("0x70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26"),
+                get_account_id_from_seed::<sr25519::Public>(
+                    "0x70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26",
+                ),
                 // Pre-funded accounts
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("0x2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c"),
-                    get_account_id_from_seed::<sr25519::Public>("0xe0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c"),
+                    get_account_id_from_seed::<sr25519::Public>(
+                        "0x2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c",
+                    ),
+                    get_account_id_from_seed::<sr25519::Public>(
+                        "0xe0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c",
+                    ),
                 ],
                 vec![],
                 standard_sfx_abi(),
