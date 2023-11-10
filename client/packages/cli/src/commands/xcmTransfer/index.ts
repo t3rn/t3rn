@@ -5,6 +5,7 @@ import { XcmTransferSchema } from '@/schemas/xcm.ts'
 import { colorLogMsg } from '@/utils/log.js'
 import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
 import { XcmTransferParameters } from '@t3rn/sdk/utils'
+import { signAndSendXcm } from '@/utils/xcm.ts'
 
 export const spinner = ora()
 
@@ -84,182 +85,70 @@ export const handleXcmTransferCommand = async (
 
     if (args.type == 'relay') {
         if (args.dest == 1000) {
-            await targetApi.tx.xcmPallet
-                .limitedTeleportAssets(
-                    xcmDestParam,
-                    xcmBeneficiaryParam,
-                    xcmAssetsParam,
-                    xcmAssetFeeItem,
-                    xcmWeightLimitParam
-                )
-                .signAndSend(signer, ({ status, events }) => {
-                    if (status.isInBlock || status.isFinalized) {
-                        events
-                            // find/filter for failed events
-                            .filter(({ event }) =>
-                                targetApi.events.system.ExtrinsicFailed.is(event)
-                            )
-                            // we know that data for system.ExtrinsicFailed is
-                            // (DispatchError, DispatchInfo)
-                            .forEach(({ event: { data: [error, info] } }) => {
-                                if (error.isModule) {
-                                    // for module errors, we have the section indexed, lookup
-                                    const decoded = targetApi.registry.findMetaError(error.asModule)
-                                    const { docs, method, section } = decoded
-
-                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                                } else {
-                                    // Other, CannotLookup, BadOrigin, no extra info
-                                    console.log(error.toString())
-                                }
-                            })
-                    }
-                })
+            await signAndSendXcm(
+                    targetApi.tx.xcmPallet.limitedTeleportAssets(
+                        xcmDestParam,
+                        xcmBeneficiaryParam,
+                        xcmAssetsParam,
+                        xcmAssetFeeItem,
+                        xcmWeightLimitParam
+                    ),
+                    targetApi,
+                    signer,
+            )
         }
         else {
-            await targetApi.tx.xcmPallet
-                .limitedReserveTransferAssets(
+            await signAndSendXcm(
+                targetApi.tx.xcmPallet.limitedReserveTransferAssets(
                     xcmDestParam,
                     xcmBeneficiaryParam,
                     xcmAssetsParam,
                     xcmAssetFeeItem,
                     xcmWeightLimitParam
                 )
-                .signAndSend(signer, ({status, events}) => {
-                    if (status.isInBlock || status.isFinalized) {
-                        events
-                            // find/filter for failed events
-                            .filter(({event}) =>
-                                targetApi.events.system.ExtrinsicFailed.is(event)
-                            )
-                            // we know that data for system.ExtrinsicFailed is
-                            // (DispatchError, DispatchInfo)
-                            .forEach(({event: {data: [error, info]}}) => {
-                                if (error.isModule) {
-                                    // for module errors, we have the section indexed, lookup
-                                    const decoded = targetApi.registry.findMetaError(error.asModule)
-                                    const {docs, method, section} = decoded
-
-                                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                                } else {
-                                    // Other, CannotLookup, BadOrigin, no extra info
-                                    console.log(error.toString())
-                                }
-                            })
-                    }
-                })
+                targetApi,
+                signer,
+            )
         }
     }
     else if (args.type == 'para' && args.targetAsset == 'TRN') {
         const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
         const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, 'ROC', args.type, 2000000000000)
-        await targetApi.tx.withdrawTeleport
-            .withdrawAndTeleport(xcmDestParam, xcmBeneficiaryParam, xcmNativeAssetAmount, xcmFeeAsset)
-            .signAndSend(signer, ({ status, events }) => {
-                if (status.isInBlock || status.isFinalized) {
-                    events
-                        // find/filter for failed events
-                        .filter(({ event }) =>
-                            targetApi.events.system.ExtrinsicFailed.is(event)
-                        )
-                        // we know that data for system.ExtrinsicFailed is
-                        // (DispatchError, DispatchInfo)
-                        .forEach(({ event: { data: [error, info] } }) => {
-                            if (error.isModule) {
-                                // for module errors, we have the section indexed, lookup
-                                const decoded = targetApi.registry.findMetaError(error.asModule)
-                                const { docs, method, section } = decoded
-
-                console.log(`${section}.${method}: ${docs.join(' ')}`)
-              } else {
-                // Other, CannotLookup, BadOrigin, no extra info
-                console.log(error.toString())
-              }
-            },
-          )
-        }
-     })
+        await signAndSendXcm(
+            targetApi.tx.withdrawTeleport.withdrawAndTeleport(
+                xcmDestParam,
+                xcmBeneficiaryParam,
+                xcmNativeAssetAmount,
+                xcmFeeAsset
+            ),
+            targetApi,
+            signer,
+        )
     } else if (args.type == 'system' && args.targetAsset == 'TRN') {
-      await targetApi.tx.polkadotXcm
-        .limitedTeleportAssets(
-          xcmDestParam,
-          xcmBeneficiaryParam,
-          xcmAssetsParam,
-          xcmAssetFeeItem,
-          xcmWeightLimitParam,
+        await signAndSendXcm(
+          targetApi.tx.polkadotXcm.limitedTeleportAssets(
+              xcmDestParam,
+              xcmBeneficiaryParam,
+              xcmAssetsParam,
+              xcmAssetFeeItem,
+              xcmWeightLimitParam,
+          ),
+          targetApi,
+          signer,
         )
-        .signAndSend(signer, ({ status, events }) => {
-          if (status.isInBlock || status.isFinalized) {
-            events
-              // find/filter for failed events
-              .filter(({ event }) =>
-                targetApi.events.system.ExtrinsicFailed.is(event),
-              )
-              // we know that data for system.ExtrinsicFailed is
-              // (DispatchError, DispatchInfo)
-              .forEach(
-                ({
-                  event: {
-                    data: [error, info],
-                  },
-                }) => {
-                  if (error.isModule) {
-                    // for module errors, we have the section indexed, lookup
-                    const decoded = targetApi.registry.findMetaError(
-                      error.asModule,
-                    )
-                    const { docs, method, section } = decoded
-
-                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                  } else {
-                    // Other, CannotLookup, BadOrigin, no extra info
-                    console.log(error.toString())
-                  }
-                },
-              )
-          }
-        })
     } else if(args.type == 'system' || args.type == 'para' ) {
-      console.log('Start XCM Transfer \n')
-      await targetApi.tx.polkadotXcm
-        .limitedReserveTransferAssets(
-          xcmDestParam,
-          xcmBeneficiaryParam,
-          xcmAssetsParam,
-          xcmAssetFeeItem,
-          xcmWeightLimitParam,
+        await signAndSendXcm(
+          targetApi.tx.polkadotXcm
+              .limitedReserveTransferAssets(
+                  xcmDestParam,
+                  xcmBeneficiaryParam,
+                  xcmAssetsParam,
+                  xcmAssetFeeItem,
+                  xcmWeightLimitParam,
+              ),
+              targetApi,
+              signer,
         )
-        .signAndSend(signer, ({ status, events }) => {
-          if (status.isInBlock || status.isFinalized) {
-            events
-              // find/filter for failed events
-              .filter(({ event }) =>
-                targetApi.events.system.ExtrinsicFailed.is(event),
-              )
-              // we know that data for system.ExtrinsicFailed is
-              // (DispatchError, DispatchInfo)
-              .forEach(
-                ({
-                  event: {
-                    data: [error, info],
-                  },
-                }) => {
-                  if (error.isModule) {
-                    // for module errors, we have the section indexed, lookup
-                    const decoded = targetApi.registry.findMetaError(
-                      error.asModule,
-                    )
-                    const { docs, method, section } = decoded
-
-                    console.log(`${section}.${method}: ${docs.join(' ')}`)
-                  } else {
-                    // Other, CannotLookup, BadOrigin, no extra info
-                    console.log(error.toString())
-                  }
-                },
-              )
-          }
-        })
     }
     else {
         throw new Error('Unsupported transaction type!')
