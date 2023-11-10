@@ -1,0 +1,80 @@
+[package]
+authors     = { workspace = true }
+build       = "build.rs"
+description = "t2rn collator"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
+name        = "t2rn"
+repository  = { workspace = true }
+version     = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = [ "x86_64-unknown-linux-gnu" ]
+
+[[bin]]
+name = "t2rn-collator"
+path = "src/main.rs"
+
+[dependencies]
+# Extras
+codec = { workspace = true, features = ["std"] }
+clap      = { version = "4.0.9", features = [ "derive" ] }
+futures   = "0.3.21"
+jsonrpsee = { workspace = true }
+log       = { workspace = true }
+
+sc-cli                  = { workspace = true }
+sc-client-api           = { workspace = true }
+sc-consensus            = { workspace = true }
+sc-consensus-aura       = { workspace = true }
+sc-executor             = { workspace = true }
+sc-consensus-grandpa    = { workspace = true }
+sc-keystore             = { workspace = true }
+sc-service              = { workspace = true }
+sc-telemetry            = { workspace = true }
+sc-transaction-pool     = { workspace = true }
+sc-transaction-pool-api = { workspace = true }
+sp-consensus            = { workspace = true }
+sp-consensus-aura       = { workspace = true }
+sp-core                 = { workspace = true }
+sp-consensus-grandpa    = { workspace = true }
+sp-inherents            = { workspace = true }
+sp-keyring              = { workspace = true }
+sp-runtime              = { workspace = true }
+sp-timestamp            = { workspace = true }
+sc-offchain             = { workspace = true }
+sc-network              = { workspace = true }
+
+# These dependencies are used for the node template's RPCs
+
+pallet-asset-tx-payment        = { workspace = true }
+pallet-transaction-payment-rpc = { workspace = true }
+sc-basic-authorship            = { workspace = true }
+sc-rpc                         = { workspace = true }
+sc-rpc-api                     = { workspace = true }
+sp-api                         = { workspace = true }
+sp-block-builder               = { workspace = true }
+sp-blockchain                  = { workspace = true }
+substrate-frame-rpc-system     = { workspace = true }
+
+# These dependencies are used for runtime benchmarking
+frame-benchmarking     = { workspace = true }
+frame-benchmarking-cli = { workspace = true }
+frame-system           = { workspace = true }
+
+# Local Dependencies
+circuit-t2rn-runtime = { path = "../../runtime/t2rn" }
+pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
+pallet-xdns                = { path = "../../pallets/xdns" }
+pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
+t3rn-abi                   = { path = "../../types/abi" }
+t3rn-primitives            = { path = "../../primitives" }
+t3rn-types                 = { path = "../../types" }
+
+[build-dependencies]
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+
+[features]
+default            = [  ]
+runtime-benchmarks = [  ]
