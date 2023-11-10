@@ -24,4 +24,4 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.
 
 [features]
 default            = [  ]
-runtime-benchmarks = [  ]
+runtime-benchmarks = [ "t3rn-parachain-collator/runtime-benchmarks" ]
