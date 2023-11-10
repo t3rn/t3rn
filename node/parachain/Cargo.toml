@@ -107,6 +107,8 @@ cumulus-relay-chain-interface           = { git = 'https://github.com/paritytech
 cumulus-relay-chain-rpc-interface       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
 xcm                                     = { workspace = true }
 
+try-runtime-cli = { workspace = true, optional = true }
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
@@ -119,7 +121,8 @@ default = [
 try-runtime = [
     "t0rn-parachain-runtime?/try-runtime",
     "t1rn-parachain-runtime?/try-runtime",
-    "t3rn-parachain-runtime?/try-runtime"
+    "t3rn-parachain-runtime?/try-runtime",
+    "try-runtime-cli/try-runtime",
 ]
 runtime-benchmarks = [
     "t0rn-parachain-runtime?/runtime-benchmarks",

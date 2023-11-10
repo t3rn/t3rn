@@ -7854,6 +7854,7 @@ dependencies = [
  "t3rn-parachain-runtime",
  "t3rn-primitives",
  "t3rn-types",
+ "try-runtime-cli",
  "xcm",
 ]
 
@@ -13242,6 +13243,7 @@ dependencies = [
  "sp-consensus-grandpa",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-keyring",
  "sp-keystore",
  "sp-runtime",
@@ -13253,6 +13255,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types",
+ "try-runtime-cli",
  "xcm",
 ]
 
@@ -14158,6 +14161,7 @@ dependencies = [
  "async-trait",
  "clap",
  "frame-remote-externalities",
+ "frame-try-runtime",
  "hex",
  "log",
  "parity-scale-codec",
