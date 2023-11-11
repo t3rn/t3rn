@@ -7,12 +7,12 @@
 
 use std::sync::Arc;
 
-use circuit_t2rn_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use t2rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 use pallet_portal_rpc::{Portal, PortalApiServer};
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};

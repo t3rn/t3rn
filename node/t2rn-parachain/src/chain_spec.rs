@@ -1,4 +1,5 @@
-use circuit_t2rn_runtime::{
+use sp_core::crypto::UncheckedInto;
+use t2rn_parachain_runtime::{
     AccountId,
     AuraConfig,
     BalancesConfig,
@@ -12,7 +13,6 @@ use circuit_t2rn_runtime::{
     XDNSConfig, // EvmConfig
     WASM_BINARY,
 };
-use sp_core::crypto::UncheckedInto;
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
@@ -31,7 +31,7 @@ use t3rn_types::sfx::Sfx4bId;
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<circuit_t2rn_runtime::RuntimeGenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<t2rn_parachain_runtime::RuntimeGenesisConfig>;
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {

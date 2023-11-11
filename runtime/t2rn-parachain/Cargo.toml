@@ -5,7 +5,7 @@ description = "Circuit standalone t2rn runtime"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "circuit-t2rn-runtime"
+name        = "t2rn-parachain-runtime"
 repository  = { workspace = true }
 version     = { workspace = true }
 

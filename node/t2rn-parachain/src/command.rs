@@ -3,7 +3,7 @@ use crate::{
     cli::{Cli, Subcommand},
     service,
 };
-use circuit_t2rn_runtime::Block;
+use t2rn_parachain_runtime::Block;
 
 use sc_cli::{ChainSpec, SubstrateCli};
 use sc_service::PartialComponents;
