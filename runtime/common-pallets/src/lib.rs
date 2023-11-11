@@ -39,7 +39,7 @@ pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core;
 pub use cumulus_primitives_utility;
 pub use pallet_asset_registry;
-pub use pallet_xbi_portal;
+// pub use pallet_xbi_portal;
 pub use pallet_xcm;
 pub use parachain_info;
 pub use parachains_common;

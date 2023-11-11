@@ -101,12 +101,12 @@ pallet-contracts-registry        = { path = "../../pallets/contracts-registry", 
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
-pallet-xbi-portal                = { workspace = true }
+#pallet-xbi-portal                = { workspace = true }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.4", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.10", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.2.0", default-features = false }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.2.0", default-features = false }
 pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 
 # Smart contracts VMs
@@ -163,7 +163,7 @@ std = [
   "pallet-sudo/std",
   "pallet-membership/std",
   "pallet-clock/std",
-  "pallet-xbi-portal/std",
+#  "pallet-xbi-portal/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
@@ -238,7 +238,7 @@ runtime-benchmarks = [
   "pallet-scheduler/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
-  "pallet-xbi-portal/runtime-benchmarks",
+#  "pallet-xbi-portal/runtime-benchmarks",
   "pallet-xdns/runtime-benchmarks",
   "pallet-attesters/runtime-benchmarks",
   "pallet-rewards/runtime-benchmarks",
