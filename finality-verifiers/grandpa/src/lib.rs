@@ -962,7 +962,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
         verify_storage_proof::<T, I>(header, key, storage_proof, ProofTriePointer::Receipts)?;
 
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
-    // https://github.com/paritytech/substrate/issues/11216
+    // https://github.com/t3rn/substrate.git/issues/11216
     ensure!(
         is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()),
         Error::<T, I>::EventNotIncluded

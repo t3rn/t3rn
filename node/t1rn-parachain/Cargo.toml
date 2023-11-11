@@ -106,7 +106,7 @@ cumulus-relay-chain-rpc-interface       = { git = 'https://github.com/paritytech
 xcm                                     = { workspace = true }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+substrate-build-script-utils = { git = "https://github.com/t3rn/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
 default = [

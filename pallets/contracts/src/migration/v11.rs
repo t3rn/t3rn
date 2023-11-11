@@ -16,7 +16,7 @@
 // limitations under the License.
 
 //! Overflowing bounded DeletionQueue.
-//! See <https://github.com/paritytech/substrate/pull/13702>.
+//! See <https://github.com/t3rn/substrate.git/pull/13702>.
 
 use crate::{
     migration::{IsFinished, MigrationStep},
@@ -73,7 +73,7 @@ pub struct Migration<T: Config> {
 impl<T: Config> MigrationStep for Migration<T> {
     const VERSION: u16 = 11;
 
-    // It would be more correct to make our use the now removed [DeletionQueueDepth](https://github.com/paritytech/substrate/pull/13702/files#diff-70e9723e9db62816e35f6f885b6770a8449c75a6c2733e9fa7a245fe52c4656c)
+    // It would be more correct to make our use the now removed [DeletionQueueDepth](https://github.com/t3rn/substrate.git/pull/13702/files#diff-70e9723e9db62816e35f6f885b6770a8449c75a6c2733e9fa7a245fe52c4656c)
     // but in practice the queue is always empty, so 128 is a good enough approximation for not
     // underestimating the weight of our migration.
     fn max_step_weight() -> Weight {

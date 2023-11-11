@@ -40,10 +40,10 @@ circuit-runtime-types = { default-features = false, path = "../../runtime/common
 circuit-mock-runtime    = { path = "../../runtime/mock" }
 circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
 circuit-runtime-types   = { path = "../../runtime/common-types" }
-pallet-balances         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-pallet-sudo             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-sp-core                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-sp-keystore             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+pallet-balances         = { git = "https://github.com/t3rn/substrate.git", branch = 'polkadot-v1.0.0' }
+pallet-sudo             = { git = "https://github.com/t3rn/substrate.git", branch = 'polkadot-v1.0.0' }
+sp-core                 = { git = "https://github.com/t3rn/substrate.git", branch = 'polkadot-v1.0.0' }
+sp-keystore             = { git = "https://github.com/t3rn/substrate.git", branch = 'polkadot-v1.0.0' }
 hex-literal = { workspace = true }
 
 [features]
