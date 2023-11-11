@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@t3rn/sdk": "^0.2.5",
-    "axios": "^1.4.0",
+    "axios": "^1.6.0",
     "dotenv": "^16.0.3",
     "http": "^0.0.1-security",
     "pino": "^8.15.0",
