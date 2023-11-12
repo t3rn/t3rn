@@ -5,7 +5,7 @@ import { XcmTransferSchema } from '@/schemas/xcm.ts'
 import { colorLogMsg } from '@/utils/log.js'
 import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
 import { XcmTransferParameters } from '@t3rn/sdk/utils'
-import { signAndSendXcm } from '@/utils/xcm.ts'
+import { signAndSend } from '@/utils/xcm.ts'
 
 export const spinner = ora()
 
@@ -85,7 +85,7 @@ export const handleXcmTransferCommand = async (
 
     if (args.type == 'relay') {
         if (args.dest == 1000) {
-            await signAndSendXcm(
+            await signAndSend(
                     targetApi.tx.xcmPallet.limitedTeleportAssets(
                         xcmDestParam,
                         xcmBeneficiaryParam,
@@ -98,7 +98,7 @@ export const handleXcmTransferCommand = async (
             )
         }
         else {
-            await signAndSendXcm(
+            await signAndSend(
                 targetApi.tx.xcmPallet.limitedReserveTransferAssets(
                     xcmDestParam,
                     xcmBeneficiaryParam,
@@ -114,7 +114,7 @@ export const handleXcmTransferCommand = async (
     else if (args.type == 'para' && args.targetAsset == 'TRN') {
         const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
         const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, 'ROC', args.type, 2000000000000)
-        await signAndSendXcm(
+        await signAndSend(
             targetApi.tx.withdrawTeleport.withdrawAndTeleport(
                 xcmDestParam,
                 xcmBeneficiaryParam,
@@ -125,7 +125,7 @@ export const handleXcmTransferCommand = async (
             signer,
         )
     } else if (args.type == 'system' && args.targetAsset == 'TRN') {
-        await signAndSendXcm(
+        await signAndSend(
           targetApi.tx.polkadotXcm.limitedTeleportAssets(
               xcmDestParam,
               xcmBeneficiaryParam,
@@ -137,7 +137,7 @@ export const handleXcmTransferCommand = async (
           signer,
         )
     } else if(args.type == 'system' || args.type == 'para' ) {
-        await signAndSendXcm(
+        await signAndSend(
           targetApi.tx.polkadotXcm
               .limitedReserveTransferAssets(
                   xcmDestParam,
