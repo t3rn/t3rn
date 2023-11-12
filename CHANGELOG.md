@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.74.0-rc.0] - 2023-11-12
+### :sparkles: New Features
+- [`a79a5a3`](https://github.com/t3rn/t3rn/commit/a79a5a3cb908a2285f0524120debfd7c0af183b7) - connect Light Client Async API to Attesters and allow generic InfluxMessage attestations  *(PR [#1436](https://github.com/t3rn/t3rn/pull/1436) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.73.0-rc.0] - 2023-11-12
 ### :sparkles: New Features
 - [`0a018f6`](https://github.com/t3rn/t3rn/commit/0a018f66a20d509c9bb72975b94b0a2dee621135) - t2rn *(PR [#1450](https://github.com/t3rn/t3rn/pull/1450) by [@3h4x](https://github.com/3h4x))*
@@ -1911,3 +1916,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.72.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.71.0-rc.0...v1.72.0-rc.0
 [v1.72.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.1-rc.0...v1.72.2-rc.0
 [v1.73.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.2-rc.0...v1.73.0-rc.0
+[v1.74.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.73.0-rc.0...v1.74.0-rc.0
