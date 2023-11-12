@@ -16,6 +16,10 @@ use t2rn_parachain_runtime::{
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
+pub const TRN: u128 = 1_000_000_000_000;
+
+const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
+
 use codec::Encode;
 use hex_literal::hex;
 use sc_service::ChainType;
@@ -82,8 +86,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 hex!("70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26").into(),
                 // Pre-funded accounts
                 vec![
-                    hex!("2252662f0d97138c24e6b4fcd16ab5d90de4b9ee3d7ad66ea4f48a6bc25e101c").into(),
-                    hex!("e0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c").into(),
+                    hex!("70cc1a691b08a41e87a4e78d4ded96b6eb2d0a1311b181abda0b37d03cfa8b26").into(),
                 ],
                 vec![],
                 standard_sfx_abi(),
@@ -189,7 +192,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, (10000 * 10u128.pow(12))))
+                .map(|k| (k, SUPPLY))
                 .collect(),
         },
         // session: SessionConfig {

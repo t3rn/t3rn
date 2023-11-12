@@ -70,11 +70,11 @@ impl frame_system::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-    pub const MinimumPeriod: u64 = SLOT_DURATION / 12;
+    pub const MinimumPeriod: u64 = SLOT_DURATION / 12 / 2;
 }
 
 impl pallet_timestamp::Config for Runtime {
-    type MinimumPeriod = ConstU64<{ SLOT_DURATION / 12 }>;
+    type MinimumPeriod = ConstU64<{ SLOT_DURATION / 12 / 2 }>;
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;
