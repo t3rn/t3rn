@@ -8,7 +8,7 @@ export const spinner = ora()
 
 export const handleResetGatewayCommand = async (
   arg: string,
-  options: { [key: string]: any },
+  options: { [key: string]: string },
 ) => {
   log('INFO', `Resetting ${arg} gateway...`)
 
@@ -22,7 +22,7 @@ export const handleResetGatewayCommand = async (
     process.exit(1)
   }
 
-  const { circuit, sdk, endpoint, signer } = await createCircuitContext()
+  const { circuit, sdk, endpoint } = await createCircuitContext()
 
   if (
     ![

@@ -8,6 +8,10 @@ const Schema = z.object({
   tokenDecimals: z.number(),
 })
 
+process.env.EXECUTION_ENDPOINT = 'https://rpc.ankr.com/'
+process.env.RELAY_ENDPOINT = 'https://rpc.ankr.com/'
+process.env.LODESTAR_ENDPOINT = 'https://lodestar-sepolia.some-domain.io'
+
 describe('validate', () => {
   test('should pass validation if a valid value is passed', () => {
     const value = { tokenId: 123, tokenSymbol: 'ABC', tokenDecimals: 18 }
