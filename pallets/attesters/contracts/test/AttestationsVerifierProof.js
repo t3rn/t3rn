@@ -1,16 +1,19 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const ethUtil = require("ethereumjs-util");
-const { keccak256 } = require("ethereumjs-util");
-const { MerkleTree } = require("merkletreejs");
-const { StandardMerkleTree } = require("@openzeppelin/merkle-tree");
-const { formatBytes32String, hexlify } = require("ethers/lib/utils");
-const { utils } = require("ethers");
-const { address } = require("hardhat/internal/core/config/config-validation");
-const encodedEmptyBatch = "0x00000000";
-
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const ethUtil = require('ethereumjs-util');
+const { keccak256 } = require('ethereumjs-util');
+const { MerkleTree } = require('merkletreejs');
+const { StandardMerkleTree } = require('@openzeppelin/merkle-tree');
+const { formatBytes32String, hexlify } = require('ethers/lib/utils');
+const { utils, Wallet } = require('ethers');
+const { address } = require('hardhat/internal/core/config/config-validation');
+const { concatBytes } = require('ethereum-cryptography/utils');
+const { ecdsaSign } = require('secp256k1/lib/elliptic');
+const { toCompactSig, toRpcSig } = require('ethereumjs-util/dist/signature');
+const encodedEmptyBatch = '0x00000000';
+const { ecsign, toBuffer, privateToPublic, keccak } = 'ethereumjs-util';
 // Standardized prefix for Ethereum signed messages that has message of 32 bytes
-const prefix = "\x19Ethereum Signed Message:\n32";
+const prefix = '\x19Ethereum Signed Message:\n32';
 const prefixBuffer = Buffer.from(prefix);
 
 async function generateSignatures(wallets, messageHash, attestationsVerifier) {
@@ -46,14 +49,14 @@ function constructMerkleRoot(signers) {
 }
 
 function constructMerkleProofs(signers) {
-    console.log("Signers:", signers);
+    console.log('Signers:', signers);
     // Wrap each signer in an array
     const signersArrays = signers.map((signer) => [signer]);
 
-    const tree = StandardMerkleTree.of(signersArrays, ["address"]);
+    const tree = StandardMerkleTree.of(signersArrays, ['address']);
     // const tree = StandardMerkleTree.of(signers, Array(signers.length).fill('address'));
 
-    console.log("Merkle Root:", tree.root);
+    console.log('Merkle Root:', tree.root);
 
     // Create a Merkle tree from the leaves.
 
@@ -61,29 +64,59 @@ function constructMerkleProofs(signers) {
 
     for (const [i, v] of tree.entries()) {
         const proof = tree.getProof(i);
-        console.log("Value:", v);
-        console.log("Proof:", proof);
+        console.log('Value:', v);
+        console.log('Proof:', proof);
         proofs.push(proof);
     }
 
     // Create a multi proof from the leaves.
     const multiProof = tree.getMultiProof(signersArrays);
-    console.log("Multi Proof:", multiProof);
+    console.log('Multi Proof:', multiProof);
 
     // const verified = tree.verifyMultiProof(multiProof);
 
     return proofs;
 }
 
+function calculateExpectedCommitteeHash(committee) {
+    // Eqivalent of leaves[i] = keccak256(bytes.concat(keccak256(abi.encode(committee[i]))));
+    const leaveHashes = [];
+
+    for (let i = 0; i < committee.length; i++) {
+        const committeLeafString = ethers.utils.defaultAbiCoder.encode(
+            Array(1).fill('address'),
+            [committee[i]]
+        );
+
+        // bytes.concat on the solidityPack result
+        const committeeAsLeafBytes = concatBytes(
+            // to Uint8Array
+            ethers.utils.arrayify(
+                ethers.utils.keccak256(ethUtil.toBuffer(committeLeafString))
+            )
+        );
+
+        leaveHashes.push(
+            '0x' +
+                keccak256(ethUtil.toBuffer(committeeAsLeafBytes)).toString(
+                    'hex'
+                )
+        );
+    }
+
+    console.log('leaveHashes:', leaveHashes);
+    return leaveHashes[0];
+}
+
 function constructMultiMerkleProof(signers) {
-    console.log("Signers:", signers);
+    console.log('Signers:', signers);
     // Wrap each signer in an array
     const signersArrays = signers.map((signer) => [signer]);
 
-    const tree = StandardMerkleTree.of(signersArrays, ["address"]);
+    const tree = StandardMerkleTree.of(signersArrays, ['address']);
     // const tree = StandardMerkleTree.of(signers, Array(signers.length).fill('address'));
 
-    console.log("Merkle Root:", tree.root);
+    console.log('Merkle Root:', tree.root);
 
     // Create a Merkle tree from the leaves.
 
@@ -91,25 +124,22 @@ function constructMultiMerkleProof(signers) {
     const leafHashes = [];
     for (const [i, v] of tree.entries()) {
         const proof = tree.getProof(i);
-        // console.log('Value:', v);
-        // console.log('Proof:', proof);
         leafHashes.push(tree.leafHash(v));
         proofs.push(proof);
     }
 
     // Create a multi proof from the leaves.
     const multiProof = tree.getMultiProof(signersArrays);
-    console.log("Multi Proof:", multiProof);
-    console.log("leafHashes Proof:", leafHashes);
-    console.log("leafHashes Lentgth:", leafHashes.length);
+    console.debug('Multi Proof:', multiProof);
 
     const verified = tree.verifyMultiProof(multiProof);
-    console.assert(verified, "Multi proof is not verified");
+    console.assert(verified, 'Multi proof is not verified');
 
     return {
         root: tree.root,
         proof: multiProof.proof,
         flags: multiProof.proofFlags,
+        leaves: leafHashes,
     };
 }
 function getMessageHash(batch) {
@@ -142,13 +172,13 @@ async function parseAllEvents(receipt, contract) {
 function newEmptyBatch() {
     const batch = {
         isHalted: false,
-        currentCommitteeHash: ethers.utils.id("currentCommitteeHash"),
-        nextCommitteeHash: ethers.utils.id("nextCommitteeHash"),
+        currentCommitteeHash: ethers.utils.id('currentCommitteeHash'),
+        nextCommitteeHash: ethers.utils.id('nextCommitteeHash'),
         maybeNextCommittee: [],
         bannedCommittee: [],
-        bannedStake: ethers.utils.id("bannedStake"),
-        newCommitteeStake: ethers.utils.id("newCommitteeStake"),
-        priceUpdates: ethers.utils.id("priceUpdates"),
+        bannedStake: ethers.utils.id('bannedStake'),
+        newCommitteeStake: ethers.utils.id('newCommitteeStake'),
+        priceUpdates: ethers.utils.id('priceUpdates'),
         committedSfx: [],
         revertedSfx: [],
         mintSfx: [],
@@ -162,16 +192,16 @@ function batchEncodePacked(batch) {
     const encodedGMPPayload = batchEncodePackedGMP(batch);
     return ethers.utils.solidityPack(
         [
-            "bool",
-            "bytes32",
-            "bytes32",
-            "address[]",
-            "address[]",
-            "bytes32",
-            "bytes32",
-            "bytes32",
-            "bytes",
-            "uint32",
+            'bool',
+            'bytes32',
+            'bytes32',
+            'address[]',
+            'address[]',
+            'bytes32',
+            'bytes32',
+            'bytes32',
+            'bytes',
+            'uint32',
         ],
         [
             batch.isHalted,
@@ -191,17 +221,17 @@ function batchEncodePacked(batch) {
 // enum OperationType { TransferCommit, TransferRevert, CallCommit, CallRevert }
 
 function batchEncodePackedGMP(batch) {
-    let gmpBytes = "0x";
+    let gmpBytes = '0x';
 
     batch.committedSfx.forEach((sfx) => {
         const mockedAddressBytes = ethers.utils.solidityPack(
-            ["address"],
-            ["0x3333333333333333333333333333333333333333"]
+            ['address'],
+            ['0x3333333333333333333333333333333333333333']
         );
         // encode without packed
 
         const encodedSfxTransferCommitment = ethers.utils.solidityPack(
-            ["uint8", "bytes32", "address"],
+            ['uint8', 'bytes32', 'address'],
             [0, sfx, mockedAddressBytes]
         );
         gmpBytes += encodedSfxTransferCommitment.slice(2); // remove 0x
@@ -209,7 +239,7 @@ function batchEncodePackedGMP(batch) {
 
     batch.revertedSfx.forEach((sfx) => {
         const encodedSfxTransferRevert = ethers.utils.solidityPack(
-            ["uint8", "bytes32"],
+            ['uint8', 'bytes32'],
             [1, sfx]
         );
         gmpBytes += encodedSfxTransferRevert.slice(2); // remove 0x;
@@ -217,19 +247,19 @@ function batchEncodePackedGMP(batch) {
 
     batch.mintSfx.forEach((sfx) => {
         const mockedAddressBytes = ethers.utils.solidityPack(
-            ["address"],
-            ["0x3333333333333333333333333333333333333333"]
+            ['address'],
+            ['0x3333333333333333333333333333333333333333']
         );
         const mockedErcDestinationBytes = ethers.utils.solidityPack(
-            ["address"],
-            ["0x2222222222222222222222222222222222222222"]
+            ['address'],
+            ['0x2222222222222222222222222222222222222222']
         );
         const mockedAmountAsU128Bytes = ethers.utils.solidityPack(
-            ["uint128"],
+            ['uint128'],
             [100]
         );
         const encodedSfxMint = ethers.utils.solidityPack(
-            ["byte", "bytes32", "address", "amount", "address"],
+            ['byte', 'bytes32', 'address', 'amount', 'address'],
             [
                 2,
                 sfx,
@@ -243,7 +273,7 @@ function batchEncodePackedGMP(batch) {
 
     batch.committedEscrowCalls.forEach((sfx) => {
         const encodedSfxEscrowCallCommit = ethers.utils.solidityPack(
-            ["byte", "bytes32"],
+            ['byte', 'bytes32'],
             [3, sfx]
         );
         gmpBytes += encodedSfxEscrowCallCommit;
@@ -251,7 +281,7 @@ function batchEncodePackedGMP(batch) {
 
     batch.revertedEscrowCalls.forEach((sfx) => {
         const encodedSfxEscrowCallCRevert = ethers.utils.solidityPack(
-            ["byte", "bytes32"],
+            ['byte', 'bytes32'],
             [4, sfx]
         );
         gmpBytes += encodedSfxEscrowCallCRevert;
@@ -263,14 +293,14 @@ function batchEncodePackedGMP(batch) {
 function batchDecodePacked(packedBatch) {
     return ethers.utils.defaultAbiCoder.decode(
         [
-            "uint32",
-            "uint32",
-            "uint32",
-            "uint32",
-            "address[]",
-            "address[]",
-            "bytes32[]",
-            "bytes32[]",
+            'uint32',
+            'uint32',
+            'uint32',
+            'uint32',
+            'address[]',
+            'address[]',
+            'bytes32[]',
+            'bytes32[]',
         ],
 
         packedBatch
@@ -280,24 +310,24 @@ function batchDecodePacked(packedBatch) {
 let t3rnVaultContract;
 let escrowGMPContract;
 
-describe("AttestationsVerifierProofs", function () {
+describe('AttestationsVerifierProofs', function () {
     before(async function () {
-        const t3rnVault = await ethers.getContractFactory("t3rnVault");
+        const t3rnVault = await ethers.getContractFactory('t3rnVault');
         t3rnVaultContract = await t3rnVault.deploy();
-        const EscrowGMP = await ethers.getContractFactory("EscrowGMP");
+        const EscrowGMP = await ethers.getContractFactory('EscrowGMP');
         escrowGMPContract = await EscrowGMP.deploy(t3rnVaultContract.address);
         await escrowGMPContract.deployed();
     });
 
-    it("Should recover the correct signer from the signature with ethers.signMessage", async () => {
+    it('Should recover the correct signer from the signature with ethers.signMessage', async () => {
         let messageHash32b =
-            "0x58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd";
+            '0x58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd';
         // Private Key of the signer
         const privateKey =
-            "0x0123456789012345678901234567890123456789012345678901234567890123";
+            '0x0123456789012345678901234567890123456789012345678901234567890123';
         const wallet = new ethers.Wallet(privateKey);
         expect(wallet.address).to.equal(
-            "0x14791697260E4c9A71f18484C9f997B308e59325"
+            '0x14791697260E4c9A71f18484C9f997B308e59325'
         );
         const flatSig = await wallet.signMessage(
             ethers.utils.arrayify(messageHash32b)
@@ -306,7 +336,7 @@ describe("AttestationsVerifierProofs", function () {
 
         expect(signatureBytes.length).to.equal(65);
         expect(flatSig).to.equal(
-            "0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c"
+            '0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c'
         );
         // Recover the signer's address
         const recovered = ethers.utils.recoverAddress(
@@ -317,9 +347,9 @@ describe("AttestationsVerifierProofs", function () {
         expect(recovered).to.equal(wallet.address);
     });
 
-    it("Should recover the correct signer from the signature created with signMessage", async () => {
+    it('Should recover the correct signer from the signature created with signMessage', async () => {
         let messageHash32b =
-            "0x58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd";
+            '0x58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd';
         const messageWithPrefix = ethers.utils.arrayify(
             ethers.utils.keccak256(
                 Buffer.concat([
@@ -329,34 +359,37 @@ describe("AttestationsVerifierProofs", function () {
             )
         );
         const privateKey =
-            "0x115db6b0c74bef87e28879199e3ab3dda09ed0e7f0c3e1ff6cb92e228b221384";
+            '0x115db6b0c74bef87e28879199e3ab3dda09ed0e7f0c3e1ff6cb92e228b221384';
         const privateKeyBuffer = Buffer.from(ethers.utils.arrayify(privateKey));
         const wallet = new ethers.Wallet(privateKey);
         expect(wallet.address).to.equal(
-            "0x3a68c6b6f010017C9b330a7C86D4B19c46ab677a"
+            '0x3a68c6b6f010017C9b330a7C86D4B19c46ab677a'
         );
 
         const flatSig = await wallet.signMessage(
             ethers.utils.arrayify(messageHash32b)
         );
         expect(flatSig).to.equal(
-            "0x3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c"
+            '0x3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c'
         );
 
         const sigObj = ethUtil.ecsign(messageWithPrefix, privateKeyBuffer);
 
         const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s);
         expect(signature).to.equal(
-            "0x3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c"
+            '0x3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c'
         );
 
         // Recover the signer's address with ethers
-        const recovered = ethers.utils.recoverAddress(messageWithPrefix, signature);
+        const recovered = ethers.utils.recoverAddress(
+            messageWithPrefix,
+            signature
+        );
         expect(recovered).to.equal(wallet.address);
 
         // Recover the signer's address with solidity contract
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         // address[] memory initialCommittee, address[] memory nextCommittee, uint256 startingIndex, address _escrowGMP
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
@@ -375,11 +408,11 @@ describe("AttestationsVerifierProofs", function () {
         expect(recoveredByContract).to.equal(wallet.address);
     });
 
-    it("Should recover the correct signer from the signature", async () => {
+    it('Should recover the correct signer from the signature', async () => {
         // Replace these values with the ones used in your test case
         const privateKey =
-            "0x0123456789012345678901234567890123456789012345678901234567890123";
-        const message = "Hello, world!";
+            '0x0123456789012345678901234567890123456789012345678901234567890123';
+        const message = 'Hello, world!';
         const messageHash = ethers.utils.keccak256(
             ethers.utils.toUtf8Bytes(message)
         );
@@ -387,7 +420,7 @@ describe("AttestationsVerifierProofs", function () {
         const wallet = new ethers.Wallet(privateKey);
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
             [],
@@ -413,8 +446,8 @@ describe("AttestationsVerifierProofs", function () {
         expect(recovered).to.equal(expected);
     });
 
-    it("Should recover the correct signer from the signature of initialized committee", async () => {
-        const message = "Hello, world!";
+    it('Should recover the correct signer from the signature of initialized committee', async () => {
+        const message = 'Hello, world!';
         const messageHash = ethers.utils.keccak256(
             ethers.utils.toUtf8Bytes(message)
         );
@@ -430,7 +463,7 @@ describe("AttestationsVerifierProofs", function () {
         for (let i = 0; i < wallets.length; i++) {
             const tx = await defaultSigner.sendTransaction({
                 to: wallets[i].address,
-                value: ethers.utils.parseEther("1"),
+                value: ethers.utils.parseEther('1'),
             });
             await tx.wait();
         }
@@ -439,7 +472,7 @@ describe("AttestationsVerifierProofs", function () {
         const initialCommittee = wallets.map((wallet) => wallet.address);
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
             initialCommittee,
@@ -465,55 +498,284 @@ describe("AttestationsVerifierProofs", function () {
         }
     });
 
-    it.skip("Should produces the correct message hash for filled batch", async function () {
+    it.skip('Should set the correct next committee and current committee hash', async function () {
+        const currentCommittee = [
+            '0x2b7A372d58541c3053793f022Cf28ef971F94EFA',
+            '0x60eA580734420A9C23E51C7FdF455b5e0237E07C',
+            '0x98DF91EF04A5C0695f8050B7Da4facC0E7d9444e',
+            '0x3Cfbc429d7435fD5707390362c210bD272baE8eA',
+            '0x66ed579D14Cbad8dFC352a3cEaeeE9711ea65e41',
+            '0x786402fa462909785A55Ced48aa5682D99902C57',
+            '0x401b7Cb06493eFDB82818F14f9Cd345C01463a81',
+            '0xA2E7607A23B5A744A10a096c936AB033866D3bEe',
+        ];
+
         const nextCommittee = [
-            "0x2b7A372d58541c3053793f022Cf28ef971F94EFA",
-            "0x60eA580734420A9C23E51C7FdF455b5e0237E07C",
-            "0x98DF91EF04A5C0695f8050B7Da4facC0E7d9444e",
-            "0x3Cfbc429d7435fD5707390362c210bD272baE8eA",
-            "0x66ed579D14Cbad8dFC352a3cEaeeE9711ea65e41",
-            "0x786402fa462909785A55Ced48aa5682D99902C57",
-            "0x401b7Cb06493eFDB82818F14f9Cd345C01463a81",
-            "0xA2E7607A23B5A744A10a096c936AB033866D3bEe",
-            "0xac9c643B32916EA52e0fA0c3a3bBdbE120E5CA9e",
-            "0xD53d6Af58A2bD8c0f86b25B1309c91f61700144F",
-            "0x2feF1f5268d9732CAc331785987d45Fad487fcd6",
-            "0xdebc7A55486DbaCB06985ba2415b784e05a35baE",
-            "0xd7b33a07Ee05B604138f94335405b55e2b6bbFdD",
-            "0x1831c8F78C8b59c1300B79E308BfBf9e4fDd13B0",
-            "0x361134E27Af99A288714E428C290d48F82a4895C",
-            "0x5897B47E1357eD81B2D85d8f287759502E33f588",
-            "0xa880bf7e031ed87d422D31BEBcC9D0339c7b95b4",
-            "0xedaB03983D839E6A3a887c3Ee711a724391F8eE1",
-            "0x80D80649e13268382ceA3b0a56a57078c2076fE1",
-            "0xb0DE4907432a9A4aC92F4988dAa6024CD57D1b27",
-            "0x5449D051328dA4cfE8d1eFe7481Ff3B690cF8696",
-            "0x4705522d19458a90F06a15d9836A64e45c182c9f",
-            "0xB6dE743a22A7A43Edda8b5E21E2f0Aeb70354f5B",
-            "0x970c0720316BC03Cd055C5Ec74208Fe0BA3d3c44",
-            "0x7905754a5B6A28D1EDf338d9Be06a49aD60D74b6",
-            "0x93054A6f5eb0E1978D1e3e27AE758F17480E5988",
-            "0xa185b4f947A09286FC028B034f01bAbe53d98301",
-            "0x14C74Ce14e833d76dC0190651C0EbA64f3E67c79",
-            "0x861fa47e5229C9079d087D6354C1Ede95D233F43",
-            "0x6f9925AceFfbe67742257abFf393B123010c4A10",
-            "0xA1Ea906c54379032c9857139C6f796Acf88dDb79",
-            "0x6219f12779268F8A7ddf0f1E44Fd75253219d639",
+            '0xac9c643B32916EA52e0fA0c3a3bBdbE120E5CA9e',
+            '0xD53d6Af58A2bD8c0f86b25B1309c91f61700144F',
+            '0x2feF1f5268d9732CAc331785987d45Fad487fcd6',
+            '0xdebc7A55486DbaCB06985ba2415b784e05a35baE',
+            '0xd7b33a07Ee05B604138f94335405b55e2b6bbFdD',
+            '0x1831c8F78C8b59c1300B79E308BfBf9e4fDd13B0',
+            '0x361134E27Af99A288714E428C290d48F82a4895C',
+            '0x5897B47E1357eD81B2D85d8f287759502E33f588',
+        ];
+
+        const AttestationsVerifierProofs = await ethers.getContractFactory(
+            'AttestationsVerifierProofs'
+        );
+
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy(
+            currentCommittee,
+            nextCommittee,
+            0,
+            escrowGMPContract.address
+        );
+        await attestationsVerifier.deployed();
+
+        // Check that the attester is in the initial committee
+        const initialCommitteeHash =
+            await attestationsVerifier.currentCommitteeHash();
+
+        const expectedCurrentCommitteeHash =
+            calculateExpectedCommitteeHash(currentCommittee);
+        expect(initialCommitteeHash).to.equal(expectedCurrentCommitteeHash);
+
+        const nextCommitteeHash =
+            await attestationsVerifier.nextCommitteeHash();
+        const expectedNextCommitteeHash =
+            calculateExpectedCommitteeHash(nextCommittee);
+        expect(nextCommitteeHash).to.equal(expectedNextCommitteeHash);
+    });
+
+    function sign(message, privateKey) {
+        const prefix = '\x19Ethereum Signed Message:\n32';
+        const prefixBuffer = Buffer.from(prefix);
+        const messageBuffer = ethUtil.toBuffer(message);
+        const privateKeyUint8Array = new Uint8Array(
+            Buffer.from(privateKey.slice(2), 'hex')
+        );
+        // Recover the signer's address
+        const sigObj = ethUtil.ecsign(
+            ethUtil.keccak(Buffer.concat([prefixBuffer, messageBuffer])),
+            // keccak(Buffer.concat([prefixBuffer, messageBuffer])),
+            privateKeyUint8Array
+        );
+
+        // Verify
+        const recovered = ethUtil.ecrecover(
+            ethUtil.keccak(Buffer.concat([prefixBuffer, messageBuffer])),
+            sigObj.v,
+            sigObj.r,
+            sigObj.s
+        );
+        const recoveredAddress = ethUtil
+            .pubToAddress(recovered)
+            .toString('hex');
+        // address from wallet
+        const walletAddress = ethUtil
+            .privateToAddress(ethUtil.toBuffer(privateKey))
+            .toString('hex');
+        expect(recoveredAddress).to.equal(walletAddress);
+        console.log('recoveredAddress', recoveredAddress);
+        return toRpcSig(sigObj.v, sigObj.r, sigObj.s);
+    }
+
+    it('Should process single attestation', async function () {
+        // Assign random wallet
+        const signer = new Wallet(
+            '0x0123456789012345678901234567890123456789012345678901234567890123'
+        );
+        const firstSigner = signer.address;
+
+        const AttestationsVerifierProofs = await ethers.getContractFactory(
+            'AttestationsVerifierProofs'
+        );
+
+        const attestationsVerifier = await AttestationsVerifierProofs.deploy(
+            [firstSigner],
+            [firstSigner],
+            0,
+            escrowGMPContract.address
+        );
+        await attestationsVerifier.deployed();
+
+        const _assignAttestersAddressToGMP =
+            await escrowGMPContract.assignAttesters(
+                attestationsVerifier.address
+            );
+        await _assignAttestersAddressToGMP.wait();
+        // Check that the attester is in the initial committee
+        const initialCommitteeHash =
+            await attestationsVerifier.currentCommitteeHash();
+
+        // Eqivalent of leaves[i] = keccak256(bytes.concat(keccak256(abi.encode(committee[i]))));
+        const initialCommitteeAsLeafString =
+            ethers.utils.defaultAbiCoder.encode(Array(1).fill('address'), [
+                firstSigner,
+            ]);
+
+        expect(initialCommitteeAsLeafString).to.equal(
+            '0x000000000000000000000000' +
+                firstSigner.slice(2).toLocaleLowerCase()
+        );
+
+        // bytes.concat on the solidityPack result
+        const initialCommitteeAsLeafBytes = concatBytes(
+            // to Uint8Array
+            ethers.utils.arrayify(
+                ethers.utils.keccak256(
+                    ethUtil.toBuffer(initialCommitteeAsLeafString)
+                )
+            )
+        );
+
+        expect(initialCommitteeHash).to.equal(
+            '0x' +
+                keccak256(
+                    ethUtil.toBuffer(initialCommitteeAsLeafBytes)
+                ).toString('hex')
+        );
+
+        // Construct Single Attestation message
+        const asSfxId = ethers.utils.id('sfx#1');
+        const asCommitExecutor = '0x2b7a372d58541c3053793f022cf28ef971f94efa';
+        const asCommitGMPByte = '0x00';
+        const messagePayload =
+            asCommitGMPByte + asSfxId.slice(2) + asCommitExecutor.slice(2);
+        console.log('messagePayload', messagePayload);
+        const messagePayloadBytes = ethers.utils.solidityPack(
+            ['bytes'],
+            [messagePayload]
+        );
+        const messagePayloadHash = ethers.utils.keccak256(
+            ethUtil.toBuffer(messagePayloadBytes)
+        );
+        const source4Bytes = '0x03030303';
+        const sourceHeight = 1000;
+        let messageHash = ethers.utils.keccak256(
+            ethers.utils.solidityPack(
+                ['bytes32', 'bytes4', 'uint32'],
+                [messagePayloadHash, source4Bytes, sourceHeight]
+            )
+        );
+
+        let recoveredMsgHash = await attestationsVerifier.singleAttestationHash(
+            messagePayloadBytes,
+            source4Bytes,
+            sourceHeight
+        );
+        expect(recoveredMsgHash).to.equal(messageHash);
+
+        // Store EscrowGMP initial Payload
+        const storeCall = await escrowGMPContract.storeRemoteOrderPayload(
+            asSfxId,
+            messageHash
+        );
+        await storeCall.wait();
+        const flatSigEthers = sign(messageHash, signer.privateKey);
+        const flatSig = await signer.signMessage(ethUtil.toBuffer(messageHash));
+
+        expect(flatSig).to.equal(flatSigEthers);
+
+        // const signatureBytes = ethers.utils.arrayify(flatSig);
+        const signatureBytes = ethers.utils.arrayify(flatSig);
+        // Verify that the signature is correct with JS
+        // Quick check if the signature is correct and signer correctly recovered
+        const recovered = await attestationsVerifier.recoverSigner(
+            messageHash,
+            flatSig
+        );
+        expect(recovered).to.equal(firstSigner);
+
+        const recoveredLeaves =
+            await attestationsVerifier.recoverCurrentSigners(
+                messageHash,
+                [signatureBytes],
+                []
+            );
+        expect(recoveredLeaves[0]).to.equal(
+            '0x' +
+                keccak256(
+                    ethUtil.toBuffer(initialCommitteeAsLeafBytes)
+                ).toString('hex')
+        );
+
+        console.log('recoveredLeaves', recoveredLeaves);
+        console.log(
+            'initialCommitteeHash',
+            await attestationsVerifier.nextCommitteeHash()
+        );
+        // Create multiProof
+        const multiProof = constructMultiMerkleProof([firstSigner]);
+        await attestationsVerifier.receiveSingleAttestation(
+            messagePayload, // actually reading valid singer's address works for messagePayloadHash
+            source4Bytes,
+            sourceHeight,
+            [flatSigEthers],
+            multiProof.proof,
+            multiProof.flags
+        );
+
+        const attestationPayload =
+            await escrowGMPContract.remotePaymentsPayloadHash(asSfxId);
+        expect(attestationPayload).to.equal(
+            '0x03c09cf0e8ccf068c88bd729f9a9acee327d7de5032b8f9b12d1f7d07a584b14'
+        );
+    });
+
+    it.skip('Should produces the correct message hash for filled batch', async function () {
+        const nextCommittee = [
+            '0x2b7A372d58541c3053793f022Cf28ef971F94EFA',
+            '0x60eA580734420A9C23E51C7FdF455b5e0237E07C',
+            '0x98DF91EF04A5C0695f8050B7Da4facC0E7d9444e',
+            '0x3Cfbc429d7435fD5707390362c210bD272baE8eA',
+            '0x66ed579D14Cbad8dFC352a3cEaeeE9711ea65e41',
+            '0x786402fa462909785A55Ced48aa5682D99902C57',
+            '0x401b7Cb06493eFDB82818F14f9Cd345C01463a81',
+            '0xA2E7607A23B5A744A10a096c936AB033866D3bEe',
+            '0xac9c643B32916EA52e0fA0c3a3bBdbE120E5CA9e',
+            '0xD53d6Af58A2bD8c0f86b25B1309c91f61700144F',
+            '0x2feF1f5268d9732CAc331785987d45Fad487fcd6',
+            '0xdebc7A55486DbaCB06985ba2415b784e05a35baE',
+            '0xd7b33a07Ee05B604138f94335405b55e2b6bbFdD',
+            '0x1831c8F78C8b59c1300B79E308BfBf9e4fDd13B0',
+            '0x361134E27Af99A288714E428C290d48F82a4895C',
+            '0x5897B47E1357eD81B2D85d8f287759502E33f588',
+            '0xa880bf7e031ed87d422D31BEBcC9D0339c7b95b4',
+            '0xedaB03983D839E6A3a887c3Ee711a724391F8eE1',
+            '0x80D80649e13268382ceA3b0a56a57078c2076fE1',
+            '0xb0DE4907432a9A4aC92F4988dAa6024CD57D1b27',
+            '0x5449D051328dA4cfE8d1eFe7481Ff3B690cF8696',
+            '0x4705522d19458a90F06a15d9836A64e45c182c9f',
+            '0xB6dE743a22A7A43Edda8b5E21E2f0Aeb70354f5B',
+            '0x970c0720316BC03Cd055C5Ec74208Fe0BA3d3c44',
+            '0x7905754a5B6A28D1EDf338d9Be06a49aD60D74b6',
+            '0x93054A6f5eb0E1978D1e3e27AE758F17480E5988',
+            '0xa185b4f947A09286FC028B034f01bAbe53d98301',
+            '0x14C74Ce14e833d76dC0190651C0EbA64f3E67c79',
+            '0x861fa47e5229C9079d087D6354C1Ede95D233F43',
+            '0x6f9925AceFfbe67742257abFf393B123010c4A10',
+            '0xA1Ea906c54379032c9857139C6f796Acf88dDb79',
+            '0x6219f12779268F8A7ddf0f1E44Fd75253219d639',
         ];
 
         const committedSfx = [
-            ethers.utils.id("sfx#1"),
-            ethers.utils.id("sfx#2"),
-            ethers.utils.id("sfx#3"),
+            ethers.utils.id('sfx#1'),
+            ethers.utils.id('sfx#2'),
+            ethers.utils.id('sfx#3'),
         ];
-        const revertedSfx = [ethers.utils.id("sfx#4"), ethers.utils.id("sfx#5")];
+        const revertedSfx = [
+            ethers.utils.id('sfx#4'),
+            ethers.utils.id('sfx#5'),
+        ];
 
         // Constructing the Batch struct
         let batch = {
             currentCommitteeHash: keccak256(
                 ethUtil.toBuffer(
                     ethers.utils.solidityPack(
-                        Array(nextCommittee.length).fill("address"),
+                        Array(nextCommittee.length).fill('address'),
                         nextCommittee
                     )
                 )
@@ -521,12 +783,16 @@ describe("AttestationsVerifierProofs", function () {
             nextCommitteeHash: keccak256(
                 ethUtil.toBuffer(
                     ethers.utils.solidityPack(
-                        Array(nextCommittee.length).fill("address"),
+                        Array(nextCommittee.length).fill('address'),
                         nextCommittee
                     )
                 )
             ),
-            bannedCommittee: [nextCommittee[0], nextCommittee[1], nextCommittee[2]],
+            bannedCommittee: [
+                nextCommittee[0],
+                nextCommittee[1],
+                nextCommittee[2],
+            ],
             bannedStake: committedSfx,
             revertedSfx,
             index: 1,
@@ -539,15 +805,15 @@ describe("AttestationsVerifierProofs", function () {
         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
         let expectedMessage =
-            "0x0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d6390000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfae23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b1100000001";
+            '0x0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d6390000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfae23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b1100000001';
 
         expect(encodedBatchMessage).to.equal(expectedMessage);
         expect(batchMessageHash).to.equal(
-            "0x92689b8b6360ba49e99b694643ba4c7fedb658496665252ab6de5aed79520a8c"
+            '0x92689b8b6360ba49e99b694643ba4c7fedb658496665252ab6de5aed79520a8c'
         );
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
             [],
@@ -563,7 +829,7 @@ describe("AttestationsVerifierProofs", function () {
         expect(txEncodedBatchOutput).to.equal(encodedBatchMessage);
     });
 
-    it("test_index_only_message_produces_expected_hash", async function () {
+    it('test_index_only_message_produces_expected_hash', async function () {
         // Constructing the Batch struct
         let batch = newEmptyBatch();
 
@@ -574,15 +840,15 @@ describe("AttestationsVerifierProofs", function () {
         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
         let expectedMessage =
-            "0x00aadb1c614fdcc1b1738564b714248fa3a914e0bb84563841f242d71d60ec1066de55ee59fda43e3e7ca3e94a271ba72ac50cdabec20d81d0441c3859401fbe8cc7553a50623d3705821291a2ff38dfc73f8104dc46503ba72801043d7873dcbd137ddf826475c68a494e27ba54146c711adf712128ba74a45bdd1d3615e1093ca3fe5cc6709e0d49b804391b58cfb317f067c9902314a6b669837f012de05a3100000000";
+            '0x00aadb1c614fdcc1b1738564b714248fa3a914e0bb84563841f242d71d60ec1066de55ee59fda43e3e7ca3e94a271ba72ac50cdabec20d81d0441c3859401fbe8cc7553a50623d3705821291a2ff38dfc73f8104dc46503ba72801043d7873dcbd137ddf826475c68a494e27ba54146c711adf712128ba74a45bdd1d3615e1093ca3fe5cc6709e0d49b804391b58cfb317f067c9902314a6b669837f012de05a3100000000';
 
         expect(encodedBatchMessage).to.equal(expectedMessage);
         expect(batchMessageHash).to.equal(
-            "0xa6a0e7d73db1ef131014562b22f40d6e719771706bcde05110be2c78c98e2642"
+            '0xa6a0e7d73db1ef131014562b22f40d6e719771706bcde05110be2c78c98e2642'
         );
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
             [],
@@ -598,40 +864,40 @@ describe("AttestationsVerifierProofs", function () {
         // expect(txEncodedBatchOutput).to.equal(encodedBatchMessage);
     });
 
-    it.skip("test_index_and_next_committee_only_message_produces_expected_hash", async function () {
+    it.skip('test_index_and_next_committee_only_message_produces_expected_hash', async function () {
         const nextCommittee = [
-            "0x2b7A372d58541c3053793f022Cf28ef971F94EFA",
-            "0x60eA580734420A9C23E51C7FdF455b5e0237E07C",
-            "0x98DF91EF04A5C0695f8050B7Da4facC0E7d9444e",
-            "0x3Cfbc429d7435fD5707390362c210bD272baE8eA",
-            "0x66ed579D14Cbad8dFC352a3cEaeeE9711ea65e41",
-            "0x786402fa462909785A55Ced48aa5682D99902C57",
-            "0x401b7Cb06493eFDB82818F14f9Cd345C01463a81",
-            "0xA2E7607A23B5A744A10a096c936AB033866D3bEe",
-            "0xac9c643B32916EA52e0fA0c3a3bBdbE120E5CA9e",
-            "0xD53d6Af58A2bD8c0f86b25B1309c91f61700144F",
-            "0x2feF1f5268d9732CAc331785987d45Fad487fcd6",
-            "0xdebc7A55486DbaCB06985ba2415b784e05a35baE",
-            "0xd7b33a07Ee05B604138f94335405b55e2b6bbFdD",
-            "0x1831c8F78C8b59c1300B79E308BfBf9e4fDd13B0",
-            "0x361134E27Af99A288714E428C290d48F82a4895C",
-            "0x5897B47E1357eD81B2D85d8f287759502E33f588",
-            "0xa880bf7e031ed87d422D31BEBcC9D0339c7b95b4",
-            "0xedaB03983D839E6A3a887c3Ee711a724391F8eE1",
-            "0x80D80649e13268382ceA3b0a56a57078c2076fE1",
-            "0xb0DE4907432a9A4aC92F4988dAa6024CD57D1b27",
-            "0x5449D051328dA4cfE8d1eFe7481Ff3B690cF8696",
-            "0x4705522d19458a90F06a15d9836A64e45c182c9f",
-            "0xB6dE743a22A7A43Edda8b5E21E2f0Aeb70354f5B",
-            "0x970c0720316BC03Cd055C5Ec74208Fe0BA3d3c44",
-            "0x7905754a5B6A28D1EDf338d9Be06a49aD60D74b6",
-            "0x93054A6f5eb0E1978D1e3e27AE758F17480E5988",
-            "0xa185b4f947A09286FC028B034f01bAbe53d98301",
-            "0x14C74Ce14e833d76dC0190651C0EbA64f3E67c79",
-            "0x861fa47e5229C9079d087D6354C1Ede95D233F43",
-            "0x6f9925AceFfbe67742257abFf393B123010c4A10",
-            "0xA1Ea906c54379032c9857139C6f796Acf88dDb79",
-            "0x6219f12779268F8A7ddf0f1E44Fd75253219d639",
+            '0x2b7A372d58541c3053793f022Cf28ef971F94EFA',
+            '0x60eA580734420A9C23E51C7FdF455b5e0237E07C',
+            '0x98DF91EF04A5C0695f8050B7Da4facC0E7d9444e',
+            '0x3Cfbc429d7435fD5707390362c210bD272baE8eA',
+            '0x66ed579D14Cbad8dFC352a3cEaeeE9711ea65e41',
+            '0x786402fa462909785A55Ced48aa5682D99902C57',
+            '0x401b7Cb06493eFDB82818F14f9Cd345C01463a81',
+            '0xA2E7607A23B5A744A10a096c936AB033866D3bEe',
+            '0xac9c643B32916EA52e0fA0c3a3bBdbE120E5CA9e',
+            '0xD53d6Af58A2bD8c0f86b25B1309c91f61700144F',
+            '0x2feF1f5268d9732CAc331785987d45Fad487fcd6',
+            '0xdebc7A55486DbaCB06985ba2415b784e05a35baE',
+            '0xd7b33a07Ee05B604138f94335405b55e2b6bbFdD',
+            '0x1831c8F78C8b59c1300B79E308BfBf9e4fDd13B0',
+            '0x361134E27Af99A288714E428C290d48F82a4895C',
+            '0x5897B47E1357eD81B2D85d8f287759502E33f588',
+            '0xa880bf7e031ed87d422D31BEBcC9D0339c7b95b4',
+            '0xedaB03983D839E6A3a887c3Ee711a724391F8eE1',
+            '0x80D80649e13268382ceA3b0a56a57078c2076fE1',
+            '0xb0DE4907432a9A4aC92F4988dAa6024CD57D1b27',
+            '0x5449D051328dA4cfE8d1eFe7481Ff3B690cF8696',
+            '0x4705522d19458a90F06a15d9836A64e45c182c9f',
+            '0xB6dE743a22A7A43Edda8b5E21E2f0Aeb70354f5B',
+            '0x970c0720316BC03Cd055C5Ec74208Fe0BA3d3c44',
+            '0x7905754a5B6A28D1EDf338d9Be06a49aD60D74b6',
+            '0x93054A6f5eb0E1978D1e3e27AE758F17480E5988',
+            '0xa185b4f947A09286FC028B034f01bAbe53d98301',
+            '0x14C74Ce14e833d76dC0190651C0EbA64f3E67c79',
+            '0x861fa47e5229C9079d087D6354C1Ede95D233F43',
+            '0x6f9925AceFfbe67742257abFf393B123010c4A10',
+            '0xA1Ea906c54379032c9857139C6f796Acf88dDb79',
+            '0x6219f12779268F8A7ddf0f1E44Fd75253219d639',
         ];
 
         let batch = newEmptyBatch();
@@ -639,7 +905,7 @@ describe("AttestationsVerifierProofs", function () {
         batch.currentCommitteeHash = keccak256(
             ethUtil.toBuffer(
                 ethers.utils.solidityPack(
-                    Array(nextCommittee.length).fill("address"),
+                    Array(nextCommittee.length).fill('address'),
                     nextCommittee
                 )
             )
@@ -647,7 +913,7 @@ describe("AttestationsVerifierProofs", function () {
         batch.nextCommitteeHash = keccak256(
             ethUtil.toBuffer(
                 ethers.utils.solidityPack(
-                    Array(nextCommittee.length).fill("address"),
+                    Array(nextCommittee.length).fill('address'),
                     nextCommittee
                 )
             )
@@ -661,15 +927,15 @@ describe("AttestationsVerifierProofs", function () {
         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
         let expectedMessage =
-            "0x0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d63900000001";
+            '0x0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d63900000001';
 
         expect(encodedBatchMessage).to.equal(expectedMessage);
         expect(batchMessageHash).to.equal(
-            "0x571e2e5fc34e6563ebadfc86189cc1b665cefe590fd8015e7d5f3759aaf39ff5"
+            '0x571e2e5fc34e6563ebadfc86189cc1b665cefe590fd8015e7d5f3759aaf39ff5'
         );
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
             [],
@@ -685,7 +951,7 @@ describe("AttestationsVerifierProofs", function () {
         expect(txEncodedBatchOutput).to.equal(encodedBatchMessage);
     });
 
-    it.skip("Should initialize committee and verify signatures for empty batch", async function () {
+    it.skip('Should initialize committee and verify signatures for empty batch', async function () {
         const wallets = Array.from(
             {
                 length: 32,
@@ -697,7 +963,7 @@ describe("AttestationsVerifierProofs", function () {
         for (let i = 0; i < wallets.length; i++) {
             const tx = await defaultSigner.sendTransaction({
                 to: wallets[i].address,
-                value: ethers.utils.parseEther("1"),
+                value: ethers.utils.parseEther('1'),
             });
             await tx.wait();
         }
@@ -706,7 +972,7 @@ describe("AttestationsVerifierProofs", function () {
         const initialCommittee = wallets.map((wallet) => wallet.address);
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
             initialCommittee,
@@ -764,11 +1030,11 @@ describe("AttestationsVerifierProofs", function () {
         // Get the SignerEmitted events from the logs
 
         // Check that the correct addresses and indexes were emitted
-        const parsedBatchAppliedEvents = allEvents["BatchApplied"];
+        const parsedBatchAppliedEvents = allEvents['BatchApplied'];
         expect(parsedBatchAppliedEvents.length).to.equal(1);
     });
 
-    it.skip("Should initialize committee and verify signatures for full batch", async function () {
+    it.skip('Should initialize committee and verify signatures for full batch', async function () {
         const wallets = Array.from(
             {
                 length: 8,
@@ -787,7 +1053,7 @@ describe("AttestationsVerifierProofs", function () {
         for (let i = 0; i < wallets.length; i++) {
             const tx = await defaultSigner.sendTransaction({
                 to: wallets[i].address,
-                value: ethers.utils.parseEther("1"),
+                value: ethers.utils.parseEther('1'),
             });
             await tx.wait();
         }
@@ -804,13 +1070,13 @@ describe("AttestationsVerifierProofs", function () {
         ];
 
         const committedSfx = [
-            ethers.utils.id("sfx#1"),
-            ethers.utils.id("sfx#2"),
-            ethers.utils.id("sfx#3"),
+            ethers.utils.id('sfx#1'),
+            ethers.utils.id('sfx#2'),
+            ethers.utils.id('sfx#3'),
         ];
 
         const AttestationsVerifierProofs = await ethers.getContractFactory(
-            "AttestationsVerifierProofs"
+            'AttestationsVerifierProofs'
         );
 
         const attestationsVerifier = await AttestationsVerifierProofs.deploy(
@@ -821,16 +1087,17 @@ describe("AttestationsVerifierProofs", function () {
         );
         await attestationsVerifier.deployed();
 
-        const _assignAttestersAddressToGMP = await escrowGMPContract.assignAttesters(
-            attestationsVerifier.address,
-        );
+        const _assignAttestersAddressToGMP =
+            await escrowGMPContract.assignAttesters(
+                attestationsVerifier.address
+            );
 
         let batch = newEmptyBatch();
 
         batch.currentCommitteeHash = keccak256(
             ethUtil.toBuffer(
                 ethers.utils.solidityPack(
-                    Array(initialCommittee.length).fill("address"),
+                    Array(initialCommittee.length).fill('address'),
                     initialCommittee
                 )
             )
@@ -838,7 +1105,7 @@ describe("AttestationsVerifierProofs", function () {
         batch.nextCommitteeHash = keccak256(
             ethUtil.toBuffer(
                 ethers.utils.solidityPack(
-                    Array(nextCommittee.length).fill("address"),
+                    Array(nextCommittee.length).fill('address'),
                     nextCommittee
                 )
             )
@@ -851,24 +1118,30 @@ describe("AttestationsVerifierProofs", function () {
         const encodedBatchMessageGMP = batchEncodePackedGMP(batch);
 
         for (let sfxId in batch.committedSfx) {
-            await escrowGMPContract.storeRemoteOrderPayload(formatBytes32String(sfxId), formatBytes32String("payload"));
+            await escrowGMPContract.storeRemoteOrderPayload(
+                formatBytes32String(sfxId),
+                formatBytes32String('payload')
+            );
         }
         for (let sfxId in batch.revertedSfx) {
-            await escrowGMPContract.storeRemoteOrderPayload(formatBytes32String(sfxId), formatBytes32String("payload"));
+            await escrowGMPContract.storeRemoteOrderPayload(
+                formatBytes32String(sfxId),
+                formatBytes32String('payload')
+            );
         }
 
-        console.log("encodedBatchMessageGMP", encodedBatchMessageGMP);
+        console.log('encodedBatchMessageGMP', encodedBatchMessageGMP);
 
         // Verify that the batch message decodes correctly
         let txDecode = await attestationsVerifier.decodeAndProcessPayload(
             encodedBatchMessageGMP
         );
         let out = txDecode;
-        console.log("txDecode receipt = ", out);
+        console.log('txDecode receipt = ', out);
 
         // Hashing the encoded Batch struct
         const messageHash = ethers.utils.keccak256(encodedBatchMessage);
-        console.log("messageHash", messageHash);
+        console.log('messageHash', messageHash);
         const signatures = await generateSignatures(
             wallets,
             messageHash,
@@ -879,7 +1152,17 @@ describe("AttestationsVerifierProofs", function () {
             console.log('"' + ethers.utils.hexlify(sig) + '",')
         );
         // Send the batch message
-        let tx = await attestationsVerifier.receiveAttestationBatch(constructMerkleRoot(initialCommittee), batch.nextCommitteeHash, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, messageHash, signatures, constructMerkleProofs(initialCommittee));
+        let tx = await attestationsVerifier.receiveAttestationBatch(
+            constructMerkleRoot(initialCommittee),
+            batch.nextCommitteeHash,
+            batch.bannedCommittee,
+            batch.committedSfx,
+            batch.revertedSfx,
+            batch.index,
+            messageHash,
+            signatures,
+            constructMerkleProofs(initialCommittee)
+        );
 
         let multiProofData = constructMultiMerkleProof(initialCommittee);
 
@@ -904,11 +1187,11 @@ describe("AttestationsVerifierProofs", function () {
         // Get the SignerEmitted events from the logs
 
         // Check that the correct addresses and indexes were emitted
-        const parsedBatchAppliedEvents = allEvents["BatchApplied"];
+        const parsedBatchAppliedEvents = allEvents['BatchApplied'];
         expect(parsedBatchAppliedEvents.length).to.equal(1);
     });
 
-    describe.skip("AttestationsCommittee", function () {
+    describe.skip('AttestationsCommittee', function () {
         beforeEach(async () => {
             // generate wallets for committees
             committeeSize = 32;
@@ -923,7 +1206,7 @@ describe("AttestationsVerifierProofs", function () {
 
             // initialize contract
             const AttestationsVerifierProofs = await ethers.getContractFactory(
-                "AttestationsVerifierProofs"
+                'AttestationsVerifierProofs'
             );
             attestationsVerifier = await AttestationsVerifierProofs.deploy(
                 committees[index].map((wallet) => wallet.address),
@@ -934,7 +1217,8 @@ describe("AttestationsVerifierProofs", function () {
             await attestationsVerifier.deployed();
 
             // default asserts
-            const initialCommitteeSize = await attestationsVerifier.committeeSize();
+            const initialCommitteeSize =
+                await attestationsVerifier.committeeSize();
             expect(initialCommitteeSize).to.equal(32);
 
             expect(
@@ -942,7 +1226,7 @@ describe("AttestationsVerifierProofs", function () {
             ).to.equal(1);
         });
 
-        it("should correctly calculate committeeSize", async function () {
+        it('should correctly calculate committeeSize', async function () {
             index++;
             await sendBatch(
                 attestationsVerifier,
@@ -955,7 +1239,7 @@ describe("AttestationsVerifierProofs", function () {
             expect(nextCommitteeSize.toNumber()).to.equal(32);
         });
 
-        it("should only keep the current committee without old members", async function () {
+        it('should only keep the current committee without old members', async function () {
             index++;
             await sendBatch(
                 attestationsVerifier,
@@ -980,7 +1264,7 @@ describe("AttestationsVerifierProofs", function () {
             expect(await attestationsVerifier.totalAttesters()).to.equal(64);
         });
 
-        it("should correctly process consecutive batches", async function () {
+        it('should correctly process consecutive batches', async function () {
             // first batch
             index = 1;
             await sendBatch(
@@ -1051,7 +1335,7 @@ describe("AttestationsVerifierProofs", function () {
             );
         });
 
-        it("should increment current committee transition counter for the same set of members", async function () {
+        it('should increment current committee transition counter for the same set of members', async function () {
             // Generate and send batch
             await sendBatch(
                 attestationsVerifier,
@@ -1077,7 +1361,7 @@ describe("AttestationsVerifierProofs", function () {
             }
         });
 
-        it("should mark banned members among the known attester set", async function () {
+        it('should mark banned members among the known attester set', async function () {
             await sendBatch(
                 attestationsVerifier,
                 index + 1,
@@ -1103,7 +1387,7 @@ describe("AttestationsVerifierProofs", function () {
             expect(await attestationsVerifier.totalAttesters()).to.equal(32);
         });
 
-        it("should discard attestations from banned committee set", async function () {
+        it('should discard attestations from banned committee set', async function () {
             await sendBatch(
                 attestationsVerifier,
                 index + 1,
@@ -1135,7 +1419,7 @@ describe("AttestationsVerifierProofs", function () {
                     committees[index],
                     []
                 )
-            ).to.be.revertedWith("Signatures verification failed");
+            ).to.be.revertedWith('Signatures verification failed');
         });
     });
 });
@@ -1155,7 +1439,7 @@ async function sendBatch(
         currentCommitteeHash: keccak256(
             ethUtil.toBuffer(
                 ethers.utils.solidityPack(
-                    Array(prevCommittee.length).fill("address"),
+                    Array(prevCommittee.length).fill('address'),
                     prevCommittee.map((wallet) => wallet.address)
                 )
             )
@@ -1163,7 +1447,7 @@ async function sendBatch(
         nextCommitteeHash: keccak256(
             ethUtil.toBuffer(
                 ethers.utils.solidityPack(
-                    Array(nextCommittee.length).fill("address"),
+                    Array(nextCommittee.length).fill('address'),
                     nextCommittee.map((wallet) => wallet.address)
                 )
             )
@@ -1189,7 +1473,7 @@ async function sendBatch(
 
     const receipt = await result.wait();
     console.log(
-        "receiveAttestationBatch gasUsed: ",
+        'receiveAttestationBatch gasUsed: ',
         receipt.cumulativeGasUsed.toString()
     );
 

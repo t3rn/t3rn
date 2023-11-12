@@ -2,17 +2,23 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-
 function generateId(addr, nonce) {
-    let xtx_id = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
-        ["address", "uint32"],
-        [addr, nonce]
-    ));
+    let xtx_id = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+            ['address', 'uint32'],
+            [addr, nonce]
+        )
+    );
 
-    return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
-        ["bytes32", "bytes32"],
-        [xtx_id, "0x0000000000000000000000000000000000000000000000000000000000000000"]
-    ));
+    return ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+            ['bytes32', 'bytes32'],
+            [
+                xtx_id,
+                '0x0000000000000000000000000000000000000000000000000000000000000000',
+            ]
+        )
+    );
 }
 
 function generateRemotePaymentEncoded(
@@ -24,35 +30,30 @@ function generateRemotePaymentEncoded(
     rewardAmount
 ) {
     return ethers.utils.defaultAbiCoder.encode(
-        ["address", "uint32", "address", "address", "uint256", "uint256"],
+        ['address', 'uint32', 'address', 'address', 'uint256', 'uint256'],
         [sender, nonce, asset, rewardAsset, amount, rewardAmount]
     );
 }
 
-function generateRemotePaymentPayloadEncoded(
-    blockNumber,
-) {
-    return ethers.utils.defaultAbiCoder.encode(
-        ["uint256"],
-        [blockNumber]
-    );
+function generateRemotePaymentPayloadEncoded(blockNumber) {
+    return ethers.utils.defaultAbiCoder.encode(['uint256'], [blockNumber]);
 }
 
-describe("EscrowGMP::storePayloadId", function() {
+describe('EscrowGMP::storePayloadId', function () {
     let EscrowGMP;
     let contract;
     let owner;
     let addr1;
     let addr2;
 
-    beforeEach(async function() {
-        EscrowGMP = await ethers.getContractFactory("EscrowGMP");
+    beforeEach(async function () {
+        EscrowGMP = await ethers.getContractFactory('EscrowGMP');
         [owner, addr1, addr2, _] = await ethers.getSigners();
         contract = await EscrowGMP.deploy(ethers.constants.AddressZero);
         await contract.deployed();
     });
 
-    it("Should store remote order payload", async function() {
+    it('Should store remote order payload', async function () {
         const encodedPaymentEth = generateRemotePaymentEncoded(
             addr1.address,
             0,
@@ -66,15 +67,24 @@ describe("EscrowGMP::storePayloadId", function() {
 
         const encodedPayload = generateRemotePaymentPayloadEncoded(1);
 
-        const storeRemoteOrderPayloadCall = await contract.storeRemoteOrderPayload(encodedPaymentEthHash, encodedPayload);
+        const storeRemoteOrderPayloadCall =
+            await contract.storeRemoteOrderPayload(
+                encodedPaymentEthHash,
+                encodedPayload
+            );
         const receipt = await storeRemoteOrderPayloadCall.wait();
-        console.log("receipt storeRemoteOrderPayloadCall -- gas used", receipt.cumulativeGasUsed.toString());
+        console.log(
+            'receipt storeRemoteOrderPayloadCall -- gas used',
+            receipt.cumulativeGasUsed.toString()
+        );
         // Check the storage entry for the payload
-        const payload = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payload = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payload).to.equal(encodedPayload);
     });
 
-    it("Should not override remote order payload with new payload", async function() {
+    it('Should not override remote order payload with new payload', async function () {
         const encodedPaymentEth = generateRemotePaymentEncoded(
             addr1.address,
             0,
@@ -88,19 +98,30 @@ describe("EscrowGMP::storePayloadId", function() {
 
         const encodedPayload = generateRemotePaymentPayloadEncoded(1);
 
-        await contract.storeRemoteOrderPayload(encodedPaymentEthHash, encodedPayload);
+        await contract.storeRemoteOrderPayload(
+            encodedPaymentEthHash,
+            encodedPayload
+        );
         // Check the storage entry for the payload
-        const payloadFirst = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFirst = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFirst).to.equal(encodedPayload);
-        const encodedPayloadOverrideAttempt = generateRemotePaymentPayloadEncoded(2);
-        await contract.storeRemoteOrderPayload(encodedPaymentEthHash, encodedPayloadOverrideAttempt);
+        const encodedPayloadOverrideAttempt =
+            generateRemotePaymentPayloadEncoded(2);
+        await contract.storeRemoteOrderPayload(
+            encodedPaymentEthHash,
+            encodedPayloadOverrideAttempt
+        );
 
         // Check the storage entry for the payload
-        const payloadFinal = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFinal = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFinal).to.equal(encodedPayload);
     });
 
-    it("commitRemoteBeneficiaryPayload can only be called by attesters", async function() {
+    it('commitRemoteBeneficiaryPayload can only be called by attesters', async function () {
         const encodedPaymentEth = generateRemotePaymentEncoded(
             addr1.address,
             0,
@@ -114,22 +135,41 @@ describe("EscrowGMP::storePayloadId", function() {
 
         const encodedPayload = generateRemotePaymentPayloadEncoded(1);
 
-        await contract.storeRemoteOrderPayload(encodedPaymentEthHash, encodedPayload);
+        await contract.storeRemoteOrderPayload(
+            encodedPaymentEthHash,
+            encodedPayload
+        );
         // Check the storage entry for the payload
-        const payloadFirst = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFirst = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFirst).to.equal(encodedPayload);
 
         // Try calling commitRemoteBeneficiaryPayload as addr2 (not an attester)
-        await expect(contract.connect(addr2).commitRemoteBeneficiaryPayload(encodedPaymentEthHash, addr2.address)).to.be.revertedWith("Only Attesters can call this function");
+        await expect(
+            contract
+                .connect(addr2)
+                .commitRemoteBeneficiaryPayload(
+                    encodedPaymentEthHash,
+                    addr2.address
+                )
+        ).to.be.revertedWith('Only Attesters can call this function');
 
         // Set attesters as addr1
         await contract.assignAttesters(addr1.address);
 
         // Try calling commitRemoteBeneficiaryPayload as addr1 (an attester)
-        await expect(contract.connect(addr1).commitRemoteBeneficiaryPayload(encodedPaymentEthHash, addr2.address)).to.not.be.reverted;
+        await expect(
+            contract
+                .connect(addr1)
+                .commitRemoteBeneficiaryPayload(
+                    encodedPaymentEthHash,
+                    addr2.address
+                )
+        ).to.not.be.reverted;
     });
 
-    it("commitRemoteBeneficiaryPayload assigns the executor as beneficiary and user as incapable of claiming it back", async function() {
+    it('commitRemoteBeneficiaryPayload assigns the executor as beneficiary and user as incapable of claiming it back', async function () {
         const encodedPaymentEth = generateRemotePaymentEncoded(
             addr1.address,
             0,
@@ -143,27 +183,42 @@ describe("EscrowGMP::storePayloadId", function() {
 
         const encodedPayload = generateRemotePaymentPayloadEncoded(1);
 
-        await contract.storeRemoteOrderPayload(encodedPaymentEthHash, encodedPayload);
+        await contract.storeRemoteOrderPayload(
+            encodedPaymentEthHash,
+            encodedPayload
+        );
         // Check the storage entry for the payload
-        const payloadFirst = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFirst = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFirst).to.equal(encodedPayload);
 
         // Set attesters as addr1
         await contract.assignAttesters(addr1.address);
 
         // Try calling commitRemoteBeneficiaryPayload as addr1 (an attester)
-        await expect(contract.connect(addr1).commitRemoteBeneficiaryPayload(encodedPaymentEthHash, addr2.address)).to.not.be.reverted;
+        await expect(
+            contract
+                .connect(addr1)
+                .commitRemoteBeneficiaryPayload(
+                    encodedPaymentEthHash,
+                    addr2.address
+                )
+        ).to.not.be.reverted;
         // Hash the current payload with addr2 as the beneficiary
         // keccak256(abi.encode(currentHash, beneficiary));
-        const encodedPaymentEthHashWithBeneficiary = ethers.utils.keccak256(encodedPayload + "000000000000000000000000" + addr2.address.slice(2));
+        const encodedPaymentEthHashWithBeneficiary = ethers.utils.keccak256(
+            encodedPayload + '000000000000000000000000' + addr2.address.slice(2)
+        );
 
         // Check the storage entry for the payload
-        const payloadFinal = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFinal = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFinal).to.equal(encodedPaymentEthHashWithBeneficiary);
     });
 
-
-    it("revertRemoteOrderPayload assigns the empty address as order beneficiary making user capable of claiming rewards back", async function() {
+    it('revertRemoteOrderPayload assigns the empty address as order beneficiary making user capable of claiming rewards back', async function () {
         const encodedPaymentEth = generateRemotePaymentEncoded(
             addr1.address,
             0,
@@ -177,22 +232,36 @@ describe("EscrowGMP::storePayloadId", function() {
 
         const encodedPayload = generateRemotePaymentPayloadEncoded(1);
 
-        await contract.storeRemoteOrderPayload(encodedPaymentEthHash, encodedPayload);
+        await contract.storeRemoteOrderPayload(
+            encodedPaymentEthHash,
+            encodedPayload
+        );
         // Check the storage entry for the payload
-        const payloadFirst = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFirst = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFirst).to.equal(encodedPayload);
 
         // Set attesters as addr1
         await contract.assignAttesters(addr1.address);
 
         // Try calling commitRemoteBeneficiaryPayload as addr1 (an attester)
-        await expect(contract.connect(addr1).revertRemoteOrderPayload(encodedPaymentEthHash)).to.not.be.reverted;
+        await expect(
+            contract
+                .connect(addr1)
+                .revertRemoteOrderPayload(encodedPaymentEthHash)
+        ).to.not.be.reverted;
         // Hash the current payload with addr2 as the beneficiary
         // keccak256(abi.encode(currentHash, beneficiary));
-        const encodedPaymentEthHashWithBeneficiary = ethers.utils.keccak256(encodedPayload + "0000000000000000000000000000000000000000000000000000000000000000");
+        const encodedPaymentEthHashWithBeneficiary = ethers.utils.keccak256(
+            encodedPayload +
+                '0000000000000000000000000000000000000000000000000000000000000000'
+        );
 
         // Check the storage entry for the payload
-        const payloadFinal = await contract.remotePaymentsPayloadHash(encodedPaymentEthHash);
+        const payloadFinal = await contract.remotePaymentsPayloadHash(
+            encodedPaymentEthHash
+        );
         expect(payloadFinal).to.equal(encodedPaymentEthHashWithBeneficiary);
     });
 });

@@ -133,17 +133,19 @@ pub enum GatewayVendor {
     Ethereum,
     Sepolia,
     XBI,
+    Attesters,
 }
 use sp_std::slice::Iter;
 impl GatewayVendor {
     pub fn iterator() -> Iter<'static, GatewayVendor> {
-        static VENDORS: [GatewayVendor; 6] = [
+        static VENDORS: [GatewayVendor; 7] = [
             GatewayVendor::Polkadot,
             GatewayVendor::Kusama,
             GatewayVendor::Rococo,
             GatewayVendor::Ethereum,
             GatewayVendor::Sepolia,
             GatewayVendor::XBI,
+            GatewayVendor::Attesters,
         ];
         VENDORS.iter()
     }
@@ -153,6 +155,7 @@ impl GatewayVendor {
             GatewayVendor::Polkadot
             | GatewayVendor::Kusama
             | GatewayVendor::Rococo
+            | GatewayVendor::Attesters
             | GatewayVendor::XBI => match speed_mode {
                 SpeedMode::Fast => 4u32.into(),
                 SpeedMode::Rational => 6u32.into(),
@@ -502,6 +505,15 @@ pub enum ProofTriePointer {
 pub struct CircuitInboundResult {
     pub result_format: Bytes,
     pub proof_type: ProofTriePointer,
+}
+
+// XDNS Topology
+// Define a structure to hold the topology data
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct XDNSTopology<AccountId> {
+    pub gateways: Vec<crate::xdns::FullGatewayRecord<AccountId>>,
+    pub assets: Vec<crate::xdns::TokenRecord>,
 }
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step

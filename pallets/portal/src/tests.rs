@@ -366,6 +366,7 @@ mod tests {
                     GatewayVendor::Ethereum => *b"eth2",
                     GatewayVendor::Sepolia => *b"sepl",
                     GatewayVendor::XBI => *b"xbi_",
+                    GatewayVendor::Attesters => *b"atts",
                 };
                 let origin = Origin::root();
                 let result = Portal::turn_on(origin, gateway_id);

@@ -155,6 +155,7 @@ pub fn match_vendor_with_codec(vendor: GatewayVendor) -> Codec {
         GatewayVendor::Ethereum => Codec::Rlp,
         GatewayVendor::Sepolia => Codec::Rlp,
         GatewayVendor::XBI => Codec::Scale,
+        GatewayVendor::Attesters => Codec::Scale,
     }
 }
 
