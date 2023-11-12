@@ -57,6 +57,7 @@ std = [
     "t3rn-primitives/std",
     "t3rn-abi/std",
     "t3rn-types/std",
+    "xcm-builder/std",
 ]
 
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "t3rn-abi/std", "t3rn-types/std" ]
