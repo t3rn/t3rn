@@ -1,4 +1,3 @@
-
 [package]
 authors     = { workspace = true }
 description = "Circuit standalone t2rn runtime"

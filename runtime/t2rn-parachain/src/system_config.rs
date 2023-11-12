@@ -1,6 +1,6 @@
 use crate::{
-    accounts_config::AccountManagerCurrencyAdapter, Version,
-    AllPalletsWithSystem, Assets, Hash as HashPrimitive, Treasury, *,
+    accounts_config::AccountManagerCurrencyAdapter, AllPalletsWithSystem, Assets,
+    Hash as HashPrimitive, Treasury, Version, *,
 };
 use frame_support::{
     parameter_types,
