@@ -9,8 +9,7 @@ pub struct GlobalOnInitQueues;
 
 impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
     fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
-
-        return Zero::zero();
+        return Zero::zero()
         const PROCESS_SIGNAL_SHARE: u8 = 5;
         const XTX_TICK_SHARE: u8 = 30;
         const REVERT_XTX_SHARE: u8 = 5;
