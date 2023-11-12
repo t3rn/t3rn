@@ -142,16 +142,6 @@ jobs:
           asset_name: ${{ env.WASM_RELEASE_ASSET }}.sha256sum
           asset_content_type: text/plain
 
-      - name: 🍔 Provide the runtime WASM blake2_256 as a release asset
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ${{ env.WASM_BINARY }}.blake2_256
-          asset_name: ${{ env.WASM_RELEASE_ASSET }}.blake2_256
-          asset_content_type: text/plain
-
       - name: 🍔 Provide the runtime WASM json info as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
