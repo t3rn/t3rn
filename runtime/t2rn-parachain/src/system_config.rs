@@ -1,5 +1,5 @@
 use crate::{
-    accounts_config::AccountManagerCurrencyAdapter, impl_versioned_runtime_with_api::Version,
+    accounts_config::AccountManagerCurrencyAdapter, Version,
     AllPalletsWithSystem, Assets, Hash as HashPrimitive, Treasury, *,
 };
 use frame_support::{
