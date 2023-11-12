@@ -45,6 +45,8 @@ parameter_types! {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
+use parachains_common::AssetIdForTrustBackedAssets;
+#[cfg(feature = "runtime-benchmarks")]
 pub struct AssetRegistryBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_asset_registry::BenchmarkHelper<AssetIdForTrustBackedAssets>

@@ -162,6 +162,8 @@ impl pallet_assets::Config for Runtime {
     type AssetId = circuit_runtime_types::AssetId;
     type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
     type CallbackHandle = ();
     type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type Currency = Balances;
@@ -260,6 +262,7 @@ construct_runtime!(
     }
 );
 
+use crate::accounts_config::AssetRegistryBenchmarkHelper;
 use frame_system::EventRecord;
 use sp_core::H256;
 use t3rn_primitives::circuit::ReadSFX;
