@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.73.0-rc.0] - 2023-11-12
+### :sparkles: New Features
+- [`0a018f6`](https://github.com/t3rn/t3rn/commit/0a018f66a20d509c9bb72975b94b0a2dee621135) - t2rn *(PR [#1450](https://github.com/t3rn/t3rn/pull/1450) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.72.2-rc.0] - 2023-11-09
 ### :bug: Bug Fixes
 - [`3abf371`](https://github.com/t3rn/t3rn/commit/3abf37168b162d4737c8dc9f5986545435d0b48c) - revert to t3rn spec name for t1rn *(PR [#1448](https://github.com/t3rn/t3rn/pull/1448) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1905,3 +1910,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.71.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.2-rc.0...v1.71.0-rc.0
 [v1.72.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.71.0-rc.0...v1.72.0-rc.0
 [v1.72.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.1-rc.0...v1.72.2-rc.0
+[v1.73.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.2-rc.0...v1.73.0-rc.0
