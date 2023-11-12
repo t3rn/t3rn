@@ -156,7 +156,7 @@ runtime_upgrade() {
     if [[ $# -lt 2 ]]; then
         echo "Expecting 2 or more arguments"
         echo $@
-        echo "Usage: ./zombienet.sh upgrade <t3rn/t0rn> [local/github]"
+        echo "Usage: ./zombienet.sh upgrade <t3rn/t1rn/t0rn> [local/github]"
         return 1
     fi
     
@@ -185,9 +185,12 @@ runtime_upgrade() {
     
     # Run collator and upgrade with built WASM binary
     echo "::group::Zombienet tests..."
-    zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
+    if [ "$NETWORK" = "t0rn" ]; then
+        time zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade.zndsl
+    else
+        time zombienet --provider="$provider" test $working_dir/smoke/9999-runtime_upgrade_t1rn.zndsl
+    fi
     echo "::endgroup::"
-    
     echo "✅ Upgrade tests succeed!"
 }
 
@@ -201,9 +204,9 @@ confirm_sfx() {
 xcm() {
     echo "Running XCM tests.."
     echo "::group::Zombienet tests..."
-
+    
     time zombienet --provider="$provider" test $working_dir/xcm/xcm.zndsl
-
+    
     echo "::endgroup::"
 }
 
@@ -240,8 +243,8 @@ case "$1" in
         runtime_upgrade $@
     ;;
     "xcm")
-          setup_xcm
-          xcm
+        setup_xcm
+        xcm
     ;;
     "spawn")
         setup

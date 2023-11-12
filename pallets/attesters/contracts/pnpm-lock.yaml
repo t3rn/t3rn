@@ -8,9 +8,6 @@ dependencies:
   '@openzeppelin/merkle-tree':
     specifier: ^1.0.5
     version: 1.0.5
-  ethereumjs-util:
-    specifier: ^7.1.5
-    version: 7.1.5
   merkletreejs:
     specifier: ^0.3.10
     version: 0.3.10
@@ -61,6 +58,9 @@ devDependencies:
   ethereum-waffle:
     specifier: ^4.0.10
     version: 4.0.10(@ensdomains/ens@0.4.5)(@ensdomains/resolver@0.2.4)(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2)(ethers@5.7.2)(typescript@5.1.6)
+  ethereumjs-util:
+    specifier: ^7.1.5
+    version: 7.1.5
   ethers:
     specifier: ^5.7.2
     version: 5.7.2

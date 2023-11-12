@@ -1,7 +1,7 @@
 use t1rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TRN, WASM_BINARY,
+    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
 use codec::Encode;
@@ -128,7 +128,7 @@ pub fn local_testnet_config() -> ChainSpec {
         "local_testnet",
         ChainType::Local,
         move || {
-            polkadot_genesis_shell(
+            polkadot_genesis_full(
                 // initial collators.
                 vec![
                     (
@@ -227,7 +227,7 @@ pub fn kusama_config() -> ChainSpec {
         "t1rn",
         ChainType::Live,
         move || {
-            polkadot_genesis_shell(
+            polkadot_genesis_full(
                 vec![
                     (
                         // Collator 1: 5Cyauvc374WEMNDuWVpjb1rBKhqGsCZnbXCS9nAizD97eSLT
@@ -290,6 +290,87 @@ pub fn kusama_config() -> ChainSpec {
     )
 }
 
+pub fn polkadot_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "TRN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t3rn",
+        // Id
+        "t3rn",
+        ChainType::Live,
+        move || {
+            polkadot_genesis_full(
+                vec![
+                    (
+                        // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .into(),
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
+                            .unchecked_into(),
+                    ),
+                    (
+                        // Collator 2: t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
+                            .into(),
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
+                            .unchecked_into(),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    // Genesis Account: SUDO (t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX = hex!("0x00a6769855d6df941f09e0743f8879f66bad2dde6534a268dfe478449a16312b").into()
+                    (get_account_id_from_adrs(SUDO), SUPPLY),
+                ],
+                PARACHAIN_ID.into(),
+                // Sudo
+                get_account_id_from_adrs(SUDO),
+            )
+        },
+        // Bootnodes
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-1.t3rn.io/tcp/33333/p2p/12D3KooWDWGoYHhsVUtLehNEdwp8JNi4DLTJVB2L53HMHarBXw66",
+            )
+                .expect("Failed to parse bootnode #1 address"),
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-2.t3rn.io/tcp/33333/p2p/12D3KooWLGtGEf92p8CbUmzwFYavEtDUaJNJCbBSp4muSqs2cVz1",
+            )
+                .expect("Failed to parse bootnode #2 address"),
+        ],
+        // Telemetry
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+                1,
+            )])
+                .expect("telemetry"),
+        ),
+        // Protocol ID
+        Some("t3rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "polkadot".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
+            bad_blocks: None,
+        },
+    )
+}
+
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t1rn"),
+    not(feature = "t0rn"),
+    not(feature = "default"),
+    not(feature = "runtime-benchmarks")
+))]
 fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
@@ -341,13 +422,217 @@ fn polkadot_genesis_shell(
             safe_xcm_version: Some(SAFE_XCM_VERSION),
             _config: Default::default(),
         },
-        treasury: Default::default(),
         sudo: SudoConfig {
             // Assign network admin rights.
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
     }
+}
+
+fn polkadot_genesis_full(
+    invulnerables: Vec<(AccountId, AuraId)>,
+    endowed_accounts: Vec<(AccountId, u128)>,
+    id: ParaId,
+    root_key: AccountId,
+) -> RuntimeGenesisConfig {
+    #[cfg(all(
+        feature = "t3rn",
+        not(feature = "t1rn"),
+        not(feature = "t0rn"),
+        not(feature = "default"),
+        not(feature = "runtime-benchmarks")
+    ))]
+    #[rustfmt::skip]
+    return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
+
+    return RuntimeGenesisConfig {
+        system: SystemConfig {
+            code: WASM_BINARY
+                .expect("WASM binary was not build, please build it!")
+                .to_vec(),
+            _config: Default::default(),
+        },
+        balances: BalancesConfig {
+            balances: endowed_accounts
+                .iter()
+                .cloned()
+                .map(|(acc, amt)| (acc, amt))
+                .collect(),
+        },
+
+        clock: Default::default(),
+        account_manager: Default::default(),
+        treasury: Default::default(),
+        escrow_treasury: Default::default(),
+        fee_treasury: Default::default(),
+        parachain_treasury: Default::default(),
+        slash_treasury: Default::default(),
+        parachain_info: ParachainInfoConfig {
+            parachain_id: id,
+            _config: Default::default(),
+        },
+        collator_selection: CollatorSelectionConfig {
+            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+            candidacy_bond: CANDIDACY_BOND,
+            desired_candidates: DESIRED_CANDIDATES,
+            ..Default::default()
+        },
+        session: SessionConfig {
+            keys: invulnerables
+                .into_iter()
+                .map(|(acc, aura)| {
+                    (
+                        acc.clone(),        // account id
+                        acc,                // validator id
+                        session_keys(aura), // session keys
+                    )
+                })
+                .collect(),
+        },
+        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
+        // of this.
+        aura: Default::default(),
+        assets: Default::default(),
+        aura_ext: Default::default(),
+        parachain_system: Default::default(),
+        polkadot_xcm: PolkadotXcmConfig {
+            safe_xcm_version: Some(SAFE_XCM_VERSION),
+            _config: Default::default(),
+        },
+        sudo: SudoConfig {
+            // Assign network admin rights.
+            key: Some(root_key),
+        },
+        transaction_payment: Default::default(),
+        contracts_registry: Default::default(),
+        attesters: Default::default(),
+        evm: Default::default(),
+        three_vm: Default::default(),
+        rewards: Default::default(),
+        maintenance: Default::default(),
+        xdns: XDNSConfig {
+            known_gateway_records: vec![],
+            standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi().encode(),
+            _marker: Default::default(),
+        },
+    }
+}
+
+pub fn rococo_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "T0RN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T0RN.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t0rn",
+        // Id
+        "t0rn_testnet",
+        ChainType::Live,
+        move || {
+            polkadot_genesis_full(
+                // Invulnerable collators
+                vec![
+                    (
+                        get_account_id_from_adrs(
+                            "5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW",
+                        ),
+                        get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW"),
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v",
+                        ),
+                        get_aura_id_from_adrs("5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v"),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    (
+                        get_account_id_from_adrs(
+                            "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG",
+                        ),
+                        1 << 60,
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV",
+                        ),
+                        1 << 60,
+                    ),
+                ],
+                PARACHAIN_ID.into(),
+                // Sudo
+                get_account_id_from_adrs(SUDO_T0RN),
+            )
+        },
+        // Bootnodes
+        Vec::new(),
+        // Telemetry
+        None,
+        // Protocol ID
+        Some("t0rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "rococo".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,        // You MUST set this correctly!
+            bad_blocks: None,
+        },
+    )
 }
 
 #[cfg(test)]
@@ -357,5 +642,13 @@ mod tests {
     #[test]
     fn supply_is_right() {
         assert_eq!(SUPPLY, 100_000_000_000_000_000_000);
+    }
+
+    #[test]
+    fn should_match_correct_aura_keys_for_t0rn() {
+        assert_eq!(
+            get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW").encode(),
+            hex!("902c7861618ce57396b7052b9ca769f7ea38cdf7d6287783e11e7ac740423942").to_vec()
+        );
     }
 }

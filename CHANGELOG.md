@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.74.0-rc.0] - 2023-11-12
+### :sparkles: New Features
+- [`a79a5a3`](https://github.com/t3rn/t3rn/commit/a79a5a3cb908a2285f0524120debfd7c0af183b7) - connect Light Client Async API to Attesters and allow generic InfluxMessage attestations  *(PR [#1436](https://github.com/t3rn/t3rn/pull/1436) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.73.0-rc.0] - 2023-11-12
+### :sparkles: New Features
+- [`0a018f6`](https://github.com/t3rn/t3rn/commit/0a018f66a20d509c9bb72975b94b0a2dee621135) - t2rn *(PR [#1450](https://github.com/t3rn/t3rn/pull/1450) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.72.2-rc.0] - 2023-11-09
+### :bug: Bug Fixes
+- [`3abf371`](https://github.com/t3rn/t3rn/commit/3abf37168b162d4737c8dc9f5986545435d0b48c) - revert to t3rn spec name for t1rn *(PR [#1448](https://github.com/t3rn/t3rn/pull/1448) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.72.0-rc.0] - 2023-11-08
+### :sparkles: New Features
+- [`6600fb3`](https://github.com/t3rn/t3rn/commit/6600fb31694f783a200c581130a35b14bad9cb54) - fast writer *(PR [#1428](https://github.com/t3rn/t3rn/pull/1428) by [@3h4x](https://github.com/3h4x))*
+  - :arrow_lower_right: *addresses issue [#28](undefined) opened by [@3h4x](https://github.com/3h4x)*
+- [`b25badc`](https://github.com/t3rn/t3rn/commit/b25badca5dea1907bdc3ea72c31c1d92ad26df5b) - t1rn on kusama *(PR [#1445](https://github.com/t3rn/t3rn/pull/1445) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`2aecaeb`](https://github.com/t3rn/t3rn/commit/2aecaeb70361749762eb12441530ae184cf7f7d0) - **fast-writer**: unrecognized exception handled *(PR [#1442](https://github.com/t3rn/t3rn/pull/1442) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.71.0-rc.0] - 2023-11-03
 ### :sparkles: New Features
 - [`735f315`](https://github.com/t3rn/t3rn/commit/735f3151b874ecea0c8481c93f89ec4eb559a46a) - include SFX evaluation by executors for transfer assets against t0rn *(PR [#1432](https://github.com/t3rn/t3rn/pull/1432) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1888,3 +1913,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.70.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.0-rc.0...v1.70.1-rc.0
 [v1.70.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.1-rc.0...v1.70.2-rc.0
 [v1.71.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.2-rc.0...v1.71.0-rc.0
+[v1.72.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.71.0-rc.0...v1.72.0-rc.0
+[v1.72.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.1-rc.0...v1.72.2-rc.0
+[v1.73.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.2-rc.0...v1.73.0-rc.0
+[v1.74.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.73.0-rc.0...v1.74.0-rc.0

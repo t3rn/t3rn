@@ -1,4 +1,4 @@
-name: t0rn Runtime Upgrade
+name: t2rn Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 env:
-  PARACHAIN_NAME: t0rn
+  PARACHAIN_NAME: t2rn
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
   RUSTC_WRAPPER: sccache
@@ -16,8 +16,8 @@ env:
 jobs:
   build-release:
     runs-on: [self-hosted, rust]
-    name: t0rn Rococo Release
-    concurrency: runtime-upgrade
+    name: t2rn Release
+    concurrency: runtime-upgrade-t2rn
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,26 +162,9 @@ jobs:
           asset_name: ${{ env.WASM_RELEASE_ASSET }}.info.json
           asset_content_type: text/plain
 
-  runtime-upgrade-zombienet-test:
-    runs-on: [self-hosted, rust]
-    concurrency: runtime-upgrade
-    needs: build-release
-    steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
-        run: rustup show
-
-      - name: 📼 Run zombienet runtime upgrade test
-        continue-on-error: false
-        working-directory: tests/zombienet
-        run: ./zombienet.sh upgrade ${{ env.PARACHAIN_NAME }}
-
   runtime-upgrade:
     runs-on: self-hosted
-    needs: runtime-upgrade-zombienet-test
-    concurrency: runtime-upgrade
+    concurrency: runtime-upgrade-t2rn
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v4
@@ -201,28 +184,28 @@ jobs:
           file: ${{ env.WASM_RELEASE_ASSET }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📥 Download runtime WASM hash blake2_256
+      - name: 📥 Download runtime WASM info
         uses: dsaltares/fetch-gh-release-asset@master
         with:
           repo: t3rn/t3rn
           version: "tags/${{ env.PUSHED_TAG }}"
-          file: ${{ env.WASM_RELEASE_ASSET }}.blake2_256
+          file: ${{ env.WASM_RELEASE_ASSET }}.info.json
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🚀 t0rn Runtime Upgrade Dry Run
+      - name: 🚀 t2rn Runtime Upgrade Dry Run
         run: |
           # We want to run it in case it fails because just multiline env variable would obscure that
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T2RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
 
           # This is a workaround for multiline env variable
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "RUNTIME_UPGRADE_OUTPUT<<$EOF" >> $GITHUB_ENV
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T2RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV          
 
-      - name: 🚀 t0rn Runtime Upgrade
+      - name: 🚀 t2rn Runtime Upgrade
         run: |
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T2RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
           
       - name: 📟 Send Telegram Message
         uses: appleboy/telegram-action@v0.1.1
@@ -230,7 +213,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_T0RN_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
-            🚀 t0rn Runtime Upgrade ${{ env.PUSHED_TAG }}
+            🚀 t2rn Runtime Upgrade ${{ env.PUSHED_TAG }}
             
             Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.PUSHED_TAG }}
             Monitoring: https://monitoring.t3rn.io/d/HyX9GHGVz/chain-statistics?orgId=1&refresh=1m&var-parachain=${{ env.PARACHAIN_NAME }}&var-region=All
