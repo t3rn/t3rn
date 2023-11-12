@@ -52,6 +52,7 @@ impl pallet_attesters::Config for Runtime {
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
+    type LightClientAsyncAPI = XDNS;
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;

@@ -127,7 +127,7 @@ impl xcm_executor::Config for XcmConfig {
     type SafeCallFilter = Everything;
     type SubscriptionService = PolkadotXcm;
     type Trader =
-        UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+    UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
     type UniversalAliases = Nothing;
     type UniversalLocation = UniversalLocation;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
@@ -150,6 +150,7 @@ pub type XcmRouter = (
 parameter_types! {
     pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
+
 impl pallet_xcm::Config for Runtime {
     type AdminOrigin = EnsureRoot<crate::AccountId>;
     // type AdminOrigin = EnsureRoot<AccountId>;

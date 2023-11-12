@@ -1011,16 +1011,16 @@ pub(crate) fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
 }
 
 /// (Re)initialize bridge with given header for using it in `pallet-bridge-messages` benchmarks.
-#[cfg(feature = "runtime-benchmarks")]
-pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader<T, I>) {
-    initialize_single_bridge::<T, I>(InitializationData {
-        header,
-        authority_list: sp_std::vec::Vec::new(), // we don't verify any proofs in external benchmarks
-        set_id: 0,
-        is_halted: false,
-        gateway_id: *b"gate",
-    });
-}
+// #[cfg(feature = "runtime-benchmarks")]
+// pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader<T, I>) {
+//     initialize_single_bridge::<T, I>(InitializationData {
+//         header,
+//         authority_list: sp_std::vec::Vec::new(), // we don't verify any proofs in external benchmarks
+//         set_id: 0,
+//         is_halted: false,
+//         gateway_id: *b"gate",
+//     });
+// }
 
 // Catches missing feature flag
 #[cfg(all(not(feature = "testing"), test))]
