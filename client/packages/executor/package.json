@@ -55,7 +55,7 @@
     "ethereumjs-util": "^7.1.5",
     "ethers": "^6.8.0",
     "mocha": "^10.2.0",
-    "node-gyp": "^9.4.0",
+    "node-gyp": "^10.0.1",
     "pino": "^8.16.0",
     "pino-pretty": "^10.2.0",
     "pkg": "^5.8.1",
