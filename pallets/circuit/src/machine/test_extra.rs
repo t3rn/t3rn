@@ -12,7 +12,7 @@ use circuit_runtime_pallets::pallet_circuit::{
     machine::{extra::validate_fsx_against_xtx, Machine, PrecompileResult},
     pallet::*,
     state::{Cause, CircuitStatus, LocalXtxCtx},
-    Config, Error, XExecSignal,
+    Config, Error, FullSideEffects, LocalXtxStates, XExecSignal,
 };
 use t3rn_primitives::{circuit::AdaptiveTimeout, SpeedMode};
 
@@ -262,23 +262,31 @@ pub fn check_all_single_xtx_state_correct(
         (0, 1)
     };
 
-    assert_eq!(
-        XExecSignals::<Runtime>::get(xtx_id),
-        Some(XExecSignal {
-            status: success_state,
-            requester: ALICE,
-            timeouts_at: AdaptiveTimeout::default_401(),
-            delay_steps_at: None,
-            requester_nonce,
-            steps_cnt: expected_steps_cnt,
-            speed_mode: SpeedMode::Finalized,
-        })
-    );
-    let local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
-    assert_ok!(validate_fsx_against_xtx(&local_ctx));
+    if success_state == CircuitStatus::Committed {
+        assert_eq!(XExecSignals::<Runtime>::get(xtx_id), None);
+        assert_eq!(FullSideEffects::<Runtime>::get(xtx_id), None);
+        assert_eq!(LocalXtxStates::<Runtime>::get(xtx_id), None);
+        assert_eq!(PendingXtxTimeoutsMap::<Runtime>::get(xtx_id), None);
+        assert_eq!(PendingXtxBidsTimeoutsMap::<Runtime>::get(xtx_id), None);
+    } else {
+        assert_eq!(
+            XExecSignals::<Runtime>::get(xtx_id),
+            Some(XExecSignal {
+                status: success_state,
+                requester: ALICE,
+                timeouts_at: AdaptiveTimeout::default_401(),
+                delay_steps_at: None,
+                requester_nonce,
+                steps_cnt: expected_steps_cnt,
+                speed_mode: SpeedMode::Finalized,
+            })
+        );
+        let local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
+        assert_ok!(validate_fsx_against_xtx(&local_ctx));
 
-    assert_eq!(PendingXtxTimeoutsMap::<Runtime>::get(xtx_id), None);
-    assert_eq!(PendingXtxBidsTimeoutsMap::<Runtime>::get(xtx_id), None);
+        assert_eq!(PendingXtxTimeoutsMap::<Runtime>::get(xtx_id), None);
+        assert_eq!(PendingXtxBidsTimeoutsMap::<Runtime>::get(xtx_id), None);
+    }
 }
 
 pub fn check_all_state_revert(

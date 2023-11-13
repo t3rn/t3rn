@@ -7,6 +7,8 @@ use frame_support::{
 };
 
 use frame_system::pallet_prelude::*;
+mod weights;
+use crate::weights::WeightInfo;
 pub use pallet::*;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use t3rn_primitives::{
@@ -115,6 +117,7 @@ pub mod pallet {
         type CircuitSubmitAPI: CircuitSubmitAPI<Self, BalanceOf<Self>>;
         type Xdns: Xdns<Self, BalanceOf<Self>>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
+        type WeightInfo: weights::WeightInfo;
     }
 
     #[pallet::pallet]
@@ -137,7 +140,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(100_000)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::single_order())]
         pub fn order(
             origin: OriginFor<T>,
             sfx_actions: Vec<
@@ -160,7 +163,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(100_000)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::single_order())]
         pub fn single_order(
             origin: OriginFor<T>,
             destination: TargetId,
@@ -193,7 +196,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(100_000)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::single_order())]
         pub fn remote_order(
             origin: OriginFor<T>,
             order_remote_proof: Vec<u8>,
@@ -315,7 +318,7 @@ pub mod pallet {
             }
         }
 
-        #[pallet::weight(100_000)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::single_order())]
         pub fn read_order_status(
             _origin: OriginFor<T>,
             xtx_id: T::Hash,

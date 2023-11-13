@@ -6717,6 +6717,8 @@ dependencies = [
  "hex",
  "hex-literal 0.2.2",
  "log",
+ "pallet-circuit",
+ "pallet-xdns",
  "parity-scale-codec",
  "rlp",
  "scale-info",
