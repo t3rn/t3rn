@@ -135,7 +135,7 @@ export const handleXcmTransferCommand = async (
           targetApi,
           signer,
         )
-    } else if(args.type == 'system' || args.type == 'para' ) {
+    } else {
         await signAndSend(
           targetApi.tx.polkadotXcm
               .limitedReserveTransferAssets(
@@ -148,9 +148,6 @@ export const handleXcmTransferCommand = async (
               targetApi,
               signer,
         )
-    }
-    else {
-        throw new Error('Unsupported transaction type!')
     }
     spinner.succeed(colorLogMsg('SUCCESS', `Sent XCM transfer`))
     spinner.stopAndPersist({
