@@ -146,6 +146,10 @@ pub type XcmRouter = (
     XcmpQueue,
 );
 
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}
 impl pallet_xcm::Config for Runtime {
     type AdminOrigin = EnsureRoot<crate::AccountId>;
     // type AdminOrigin = EnsureRoot<AccountId>;

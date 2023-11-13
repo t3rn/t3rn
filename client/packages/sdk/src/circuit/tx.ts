@@ -8,6 +8,14 @@ import {
   ExtrinsicStatus,
 } from "@polkadot/types/interfaces"
 
+type DataToReturnFromSignAndSendTx =
+  | EventRecord[]
+  | {
+      status: ExtrinsicStatus
+      events: EventRecord[]
+      dispatchError: DispatchError | undefined
+    }
+
 /**
  * A class for batching and sending transaction to circuit.
  * The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding.
@@ -172,13 +180,7 @@ export class Tx {
     status: ExtrinsicStatus,
     returnType: "blockHash" | "events" | "statusEventsAndError",
     resolve,
-    dataToReturn?:
-      | EventRecord[]
-      | {
-          status: ExtrinsicStatus
-          events: EventRecord[]
-          dispatchError: DispatchError | undefined
-        },
+    dataToReturn?: DataToReturnFromSignAndSendTx,
   ) {
     if (!status.isInBlock) {
       return

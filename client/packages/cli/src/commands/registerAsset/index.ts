@@ -33,24 +33,24 @@ export const handleAssetRegistrationCommand = async (
   spinner.start()
 
   try {
-      const api = await ApiPromise.create({
-          provider: new WsProvider(args.endpoint),
-      })
+    const api = await ApiPromise.create({
+      provider: new WsProvider(args.endpoint),
+    })
 
-      const assetId = AssetRegistrationParameters.createAssetId(api, args.id)
-      const assetAdmin = AssetRegistrationParameters.createAdmin(
-          api,
-          '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d',
-      )
-      const assetIsSufficient = true
-      const assetMinimumBalance =
-          AssetRegistrationParameters.createMinimumBalance(api)
-      const assetDecimals = AssetRegistrationParameters.createDecimals(
-          api,
-          args.decimals,
-      )
-      const assetMultiLocation =
-          AssetRegistrationParameters.createAssetMultiLocation(api, args.symbol)
+    const assetId = AssetRegistrationParameters.createAssetId(api, args.id)
+    const assetAdmin = AssetRegistrationParameters.createAdmin(
+      api,
+      '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d',
+    )
+    const assetIsSufficient = true
+    const assetMinimumBalance =
+      AssetRegistrationParameters.createMinimumBalance(api)
+    const assetDecimals = AssetRegistrationParameters.createDecimals(
+      api,
+      args.decimals,
+    )
+    const assetMultiLocation =
+      AssetRegistrationParameters.createAssetMultiLocation(api, args.symbol)
 
       const keyring = new Keyring({type: 'sr25519'})
       let signer = keyring.addFromUri('//Alice')

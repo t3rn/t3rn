@@ -145,3 +145,16 @@ construct_runtime!(
         Sudo: pallet_sudo = 255,
     }
 );
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+    define_benchmarks!(
+        [frame_system, SystemBench::<Runtime>]
+        [pallet_balances, Balances]
+        [pallet_session, SessionBench::<Runtime>]
+        [pallet_timestamp, Timestamp]
+        [pallet_collator_selection, CollatorSelection]
+        // [pallet_account_manager, AccountManager]
+        // [pallet_vacuum, Vacuum]
+    );
+}

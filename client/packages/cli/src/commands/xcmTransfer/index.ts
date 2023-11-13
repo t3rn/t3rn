@@ -68,17 +68,16 @@ export const handleXcmTransferCommand = async (
     let signer = keyring.addFromUri(args.signer)
     if (args.signer == '//Circuit') {
       if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
-          console.log('Circuit signer not found... Exit\n')
-          spinner.stop()
-          process.exit(0)
+        console.log('Circuit signer not found... Exit\n')
+        spinner.stop()
+        process.exit(0)
       }
       signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
-    }
-    else if (args.signer == '//Test') {
+    } else if (args.signer == '//Test') {
       if (process.env.XCM_TEST_SIGNER_KEY === undefined) {
-          console.log('XCM test signer key not found... Exit\n')
-          spinner.stop()
-          process.exit(0)
+        console.log('XCM test signer key not found... Exit\n')
+        spinner.stop()
+        process.exit(0)
       }
       signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
     }

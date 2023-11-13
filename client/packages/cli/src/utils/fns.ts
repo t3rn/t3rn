@@ -2,8 +2,8 @@ import z from 'zod'
 import figlet from 'figlet'
 import cleanStack from 'clean-stack'
 import { cryptoWaitReady } from '@t3rn/sdk'
-import { CONFIG_FILE } from '@/consts.ts'
 import { log } from './log.ts'
+import { config } from '@/config/config.ts'
 
 export const greet = () =>
   figlet.textSync('t3rn CLI', {
@@ -14,7 +14,7 @@ export const validate = <T>(
   schema: z.ZodType<T>,
   data: Record<string, unknown>,
   { configFileName } = {
-    configFileName: CONFIG_FILE,
+    configFileName: config().t3rnConfigFile,
   },
 ): T | undefined => {
   try {

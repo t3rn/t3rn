@@ -118,10 +118,53 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
-    use pallet_xbi_portal::{
-        substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
-        xp_format::XbiResult,
-    };
+
+    /// A representation of the status of an XBI execution
+    #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Debug, TypeInfo)]
+    pub enum Status {
+        #[default]
+        /// The XBI message was successful
+        Success,
+        /// Failed to execute an XBI instruction
+        FailedExecution,
+        /// An error occurred whilst sending the XCM message
+        DispatchFailed,
+        /// The execution exceeded the maximum cost provided in the message
+        ExecutionLimitExceeded,
+        /// The notification cost for the message was exceeded
+        NotificationLimitExceeded,
+        /// The XBI reqeuest timed out when trying to dispatch the message
+        SendTimeout,
+        /// The XBI request timed out before the message was received by the target
+        DeliveryTimeout,
+        /// The message timed out before the execution occured on the target
+        ExecutionTimeout,
+    }
+
+    pub type Data = Vec<u8>;
+
+    /// A representation of an Asset Id, this is utilised for xbi instructions relating to multiple assets
+    pub type AssetId = u32;
+    pub type Gas = u64;
+    pub type AccountId32 = sp_runtime::AccountId32;
+    pub type AccountId20 = sp_core::H160;
+
+    pub type Value32 = u32;
+    pub type Value64 = u64;
+    pub type Value128 = u128;
+    pub type Value256 = sp_core::U256;
+
+    pub type Value = Value128;
+    pub type ValueEvm = Value256;
+
+    /// A result containing the status of the call
+    #[derive(Debug, Clone, Eq, Default, PartialEq, Encode, Decode, TypeInfo)]
+    pub struct XbiResult {
+        pub status: Status,
+        pub output: Data,
+        pub witness: Data,
+    }
+
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         attesters::AttestersWriteApi,

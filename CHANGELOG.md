@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.74.2-rc.0] - 2023-11-12
+### :bug: Bug Fixes
+- [`5c9380b`](https://github.com/t3rn/t3rn/commit/5c9380b0a6974ef2f459bee2ffd7f18bb3d295a6) - increase specs *(PR [#1457](https://github.com/t3rn/t3rn/pull/1457) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.74.1-rc.0] - 2023-11-12
+### :bug: Bug Fixes
+- [`9fb63c7`](https://github.com/t3rn/t3rn/commit/9fb63c776b1f14d80589ef4522e362f6f1ab5e6b) - cli reset register light client *(PR [#1435](https://github.com/t3rn/t3rn/pull/1435) by [@gvko](https://github.com/gvko))*
+
+
+## [v1.74.0-rc.0] - 2023-11-12
+### :sparkles: New Features
+- [`a79a5a3`](https://github.com/t3rn/t3rn/commit/a79a5a3cb908a2285f0524120debfd7c0af183b7) - connect Light Client Async API to Attesters and allow generic InfluxMessage attestations  *(PR [#1436](https://github.com/t3rn/t3rn/pull/1436) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.73.0-rc.0] - 2023-11-12
+### :sparkles: New Features
+- [`0a018f6`](https://github.com/t3rn/t3rn/commit/0a018f66a20d509c9bb72975b94b0a2dee621135) - t2rn *(PR [#1450](https://github.com/t3rn/t3rn/pull/1450) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.72.2-rc.0] - 2023-11-09
 ### :bug: Bug Fixes
 - [`3abf371`](https://github.com/t3rn/t3rn/commit/3abf37168b162d4737c8dc9f5986545435d0b48c) - revert to t3rn spec name for t1rn *(PR [#1448](https://github.com/t3rn/t3rn/pull/1448) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1905,3 +1925,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.71.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.70.2-rc.0...v1.71.0-rc.0
 [v1.72.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.71.0-rc.0...v1.72.0-rc.0
 [v1.72.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.1-rc.0...v1.72.2-rc.0
+[v1.73.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.72.2-rc.0...v1.73.0-rc.0
+[v1.74.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.73.0-rc.0...v1.74.0-rc.0
+[v1.74.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.0-rc.0...v1.74.1-rc.0
+[v1.74.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.1-rc.0...v1.74.2-rc.0

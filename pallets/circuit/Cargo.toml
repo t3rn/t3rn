@@ -29,11 +29,11 @@ sp-runtime         = { workspace = true }
 sp-std             = { workspace = true }
 sp-trie            = { workspace = true }
 
-pallet-xbi-portal   = { workspace = true }
 t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
 t3rn-sdk-primitives = { workspace = true }
 t3rn-types          = { default-features = false, path = "../../types", features = [ "runtime" ] }
+xcm-builder         = { workspace = true, default-features = false, optional = true}
 
 [dev-dependencies]
 hex                             = { workspace = true }
@@ -54,8 +54,8 @@ runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
-  "pallet-xbi-portal/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
+  "xcm-builder/runtime-benchmarks",
 ]
 std = [
   "codec/std",
@@ -76,7 +76,7 @@ std = [
   "t3rn-types/std",
   "t3rn-abi/std",
   "t3rn-sdk-primitives/std",
-  "pallet-xbi-portal/std",
+  "xcm-builder/std"
 ]
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime" ]
 test-skip-verification = [  ]

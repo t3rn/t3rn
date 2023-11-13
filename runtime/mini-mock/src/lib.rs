@@ -10,7 +10,7 @@ use frame_system::EnsureSigned;
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, AttestersAgreements, BatchMessage,
     BatchStatus, Batches, CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee,
-    Error as AttestersError, Event as AttestersEvent, LatencyStatus, NextBatch,
+    Error as AttestersError, Event as AttestersEvent, InfluxMessage, LatencyStatus, NextBatch,
     NextCommitteeOnTarget, Nominations, PaidFinalityFees, PendingUnnominations, PermanentSlashes,
     PreviousCommittee, SortedNominatedAttesters,
 };
@@ -304,6 +304,7 @@ impl pallet_attesters::Config for MiniRuntime {
     type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
+    type LightClientAsyncAPI = XDNS;
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
@@ -315,7 +316,6 @@ impl pallet_attesters::Config for MiniRuntime {
     type Rewards = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
-    // type SlashAccount = SlashAccount;
     type TreasuryAccounts = MiniRuntime;
     type Xdns = XDNS;
 }
