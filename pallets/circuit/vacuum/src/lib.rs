@@ -7,7 +7,7 @@ use frame_support::{
 };
 
 use frame_system::pallet_prelude::*;
-mod weights;
+pub mod weights;
 use crate::weights::WeightInfo;
 pub use pallet::*;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
