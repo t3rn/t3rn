@@ -2,13 +2,15 @@ import { z } from 'zod'
 
 export const AssetRegistrationSchema = z.object({
   endpoint: z.string({
-    invalid_type_error: 'Enpoint must be a string',
+    invalid_type_error: 'Endpoint must be a string',
     required_error: 'Endpoint is required',
-  }).startsWith('ws://'),
-  dest: z.string({
-    invalid_type_error: 'Destination type must be a string one of the options: t0rn; local; para',
+  })
+  .startsWith('ws://')
+  .or(z.string().startsWith('wss://')),
+  dest: z.enum(['t0rn', 'local', 'para'], {
+    invalid_type_error: 'Destination type must be a one of the options: t0rn; local; para',
     required_error: 'Destination type is required',
-  }).regex(/^(t0rn|local|para)$/),
+  }),
   name: z.string({
     invalid_type_error: 'Name must be a string',
     required_error: 'Name is required',
@@ -24,7 +26,7 @@ export const AssetRegistrationSchema = z.object({
       required_error: 'Token symbol is required',
     })
     .max(7)
-    .regex(/^[a-zA-Z]+$/),
+    .regex(/^[a-zA-Z]+$/, { message: 'Token symbol must include only letters' }),
   decimals: z.number({
     invalid_type_error: 'Token decimals must be a number',
     required_error: 'Token decimals number is required',

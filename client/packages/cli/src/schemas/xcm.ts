@@ -6,15 +6,16 @@ export const XcmTransferSchema = z.object({
     required_error: 'Signer is required',
   }),
   type: z
-    .string({
-      invalid_type_error: 'XCM transfer type must be a string',
+    .enum(['relay', 'system', 'para'], {
+      invalid_type_error: 'XCM transfer type must be a one of the following values: relay; system; para ',
       required_error: 'XCM transfer type is required',
-    })
-    .regex(/^(relay|system|para)$/),
+    }),
   endpoint: z.string({
-    invalid_type_error: 'Enpoint must be a string',
+    invalid_type_error: 'Endpoint must be a string',
     required_error: 'Endpoint is required',
-  }).startsWith('ws://'),
+  })
+  .startsWith('ws://')
+  .or(z.string().startsWith('wss://')),
   dest: z
     .number({
       invalid_type_error: 'Destination chain ID must be a number',
@@ -26,7 +27,7 @@ export const XcmTransferSchema = z.object({
     required_error: 'Recipient is required',
     invalid_type_error: 'Recipient must be a string',
   })
-  .regex(/0x[0-9a-f]{64}/),
+  .regex(/0x[0-9a-f]{64}$/, { message: 'Recipient value must be a valid substrate address in hex format' }),
   targetAmount: z.number({
     invalid_type_error: 'Target amount must be a number',
     required_error: 'Target amount is required',
@@ -37,5 +38,5 @@ export const XcmTransferSchema = z.object({
     required_error: 'Target asset is required',
   })
   .max(7)
-  .regex(/^[a-zA-Z]+$/),
+  .regex(/^[a-zA-Z]+$/, { message: 'Token symbol must include only letters' }),
 })
