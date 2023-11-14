@@ -644,7 +644,11 @@ pub fn rococo_config() -> ChainSpec {
             )
         },
         // Bootnodes
-        Vec::new(),
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode.t0rn.io/tcp/33333/p2p/12D3KooWKt2YedCEqxmUtidvfQQBRdj84XiebfVPptHLQnGdGkyy",
+            ).expect("Failed to parse bootnode #1 address"),
+        ],
         // Telemetry
         None,
         // Protocol ID
