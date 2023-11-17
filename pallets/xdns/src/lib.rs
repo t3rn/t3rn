@@ -1243,6 +1243,7 @@ pub mod pallet {
                     token_id,
                     gateway_id,
                     token_props,
+                    token_location: None,
                 },
             );
 

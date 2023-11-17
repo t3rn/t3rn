@@ -43,6 +43,9 @@ sp-consensus-grandpa = { workspace = true }
 sp-state-machine    = { workspace = true }
 sp-trie             = { workspace = true }
 
+# XCM
+xcm        = { workspace = true }
+
 t3rn-abi            = { path = "../types/abi", default-features = false, features = [ "runtime" ] }
 t3rn-sdk-primitives = { workspace = true }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }

@@ -13667,6 +13667,7 @@ dependencies = [
  "t3rn-sdk-primitives",
  "t3rn-types",
  "tiny-keccak",
+ "xcm",
 ]
 
 [[package]]

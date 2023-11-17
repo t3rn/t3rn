@@ -19,6 +19,8 @@ use crate::circuit::AdaptiveTimeout;
 use circuit_runtime_types::AssetId;
 use t3rn_types::fsx::TargetId;
 
+use xcm::latest::prelude::MultiLocation;
+
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId = [u8; 4];
 
@@ -86,6 +88,9 @@ pub struct TokenRecord {
 
     /// Token properties - decimals, symbol, name
     pub token_props: TokenInfo,
+
+    /// Token location, assume Option<MultiLocation>
+    pub token_location: Option<MultiLocation>,
 }
 
 /// A preliminary representation of a xdns_record in the onchain registry.
