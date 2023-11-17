@@ -58,7 +58,7 @@ parameter_types! {
 //     type ExpectedBlockTimeMs = ConstU32<6000>;
 //     type FeeConversion = IdentityFee<Balance>;
 //     type NotificationWeight = NotificationWeight;
-//     type ParachainId = ConstU32<3333>;
+//     type ParachainId = ConstU32<3334>;
 //     type ReserveBalanceCustodian = ReserveBalanceCustodian;
 //     type RuntimeCall = RuntimeCall;
 //     type RuntimeEvent = RuntimeEvent;
@@ -103,7 +103,7 @@ parameter_types! {
     pub const SelfLocation: MultiLocation = MultiLocation::here();
 
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub Ancestry: MultiLocation = Parachain(3333).into();
+    pub Ancestry: MultiLocation = Parachain(3334).into();
     pub UniversalLocation: InteriorMultiLocation = (
         GlobalConsensus(NetworkId::Rococo),
         Parachain(ParachainInfo::parachain_id().into()),
@@ -197,7 +197,7 @@ pub type Barrier = TrailingSetTopicAsId<(
 parameter_types! {
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-    pub SelfParaId: ParaId = ParaId::from(3333);
+    pub SelfParaId: ParaId = ParaId::from(3334);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
