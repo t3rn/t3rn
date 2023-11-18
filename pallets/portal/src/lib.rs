@@ -135,8 +135,8 @@ pub mod pallet {
                 escrow_account,
                 allowed_side_effects,
             )?;
-            <T as Config>::Xdns::register_new_token(&origin, token_id, token_props.clone())?;
-            <T as Config>::Xdns::link_token_to_gateway(token_id, gateway_id, token_props)?;
+            <T as Config>::Xdns::register_new_token(&origin, token_id, token_props.clone(), None)?;
+            <T as Config>::Xdns::link_token_to_gateway(token_id, gateway_id, token_props, None)?;
             <Pallet<T> as Portal<T>>::initialize(origin, gateway_id, encoded_registration_data)
                 .map_err(|e| {
                     log::error!("Error during registerGW -- Portal::initialize: {:?}", e);

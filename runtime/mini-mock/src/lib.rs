@@ -1239,6 +1239,7 @@ pub fn link_assets(
                         &RuntimeOrigin::root(),
                         asset_id,
                         token_info.clone(),
+                        None,
                     ).expect("ExtBuilder::link_asset_to_gateway register_new_token = {:?} should not fail after ensuring target_id is registered");
                 }
 
@@ -1246,6 +1247,7 @@ pub fn link_assets(
                     asset_id,
                     target_id,
                     token_info,
+                    None,
                 )
                 .expect("ExtBuilder::link_asset_to_gateway should not fail after ensuring target_id is registered");
             }

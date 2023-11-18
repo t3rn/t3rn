@@ -267,18 +267,21 @@ pub trait Xdns<T: frame_system::Config, Balance> {
         origin: &T::RuntimeOrigin,
         token_id: AssetId,
         token_props: TokenInfo,
+        token_location: Option<MultiLocation>,
     ) -> DispatchResult;
 
     fn link_token_to_gateway(
         token_id: AssetId,
         gateway_id: [u8; 4],
         token_props: TokenInfo,
+        token_location: Option<MultiLocation>,
     ) -> DispatchResult;
 
     fn override_token(
         token_id: AssetId,
         gateway_id: [u8; 4],
         token_props: TokenInfo,
+        token_location: Option<MultiLocation>,
     ) -> DispatchResult;
 
     fn list_available_mint_assets(gateway_id: TargetId) -> Vec<TokenRecord>;

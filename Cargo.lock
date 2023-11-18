@@ -7750,6 +7750,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types",
+ "xcm",
 ]
 
 [[package]]

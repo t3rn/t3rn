@@ -20,6 +20,8 @@ use frame_support::sp_runtime::traits::Saturating;
 use t3rn_primitives::reexport_currency_types;
 pub use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 
+use xcm::latest::prelude::MultiLocation;
+
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
 
@@ -502,13 +504,14 @@ pub mod pallet {
                 log::info!("topology unzip -- asset_id: {:?}", asset.token_id);
                 // Register Asset if not present
                 if !AllTokenIds::<T>::get().contains(&asset.token_id) {
-                    Self::register_new_token(origin, asset.token_id, asset.token_props)?;
+                    Self::register_new_token(origin, asset.token_id, asset.token_props, asset.token_location)?;
                 } else {
                     // Link the asset to the gateway
                     Self::link_token_to_gateway(
                         asset.token_id,
                         asset.gateway_id,
                         asset.token_props,
+                        asset.token_location
                     )?;
                 }
             }
@@ -552,17 +555,18 @@ pub mod pallet {
             asset_id: AssetId,
             target_id: TargetId,
             token_info: TokenInfo,
+            token_location: Option<MultiLocation>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin.clone())?;
 
             assert!(!Self::check_asset_is_mintable(target_id, asset_id));
 
             if !<AllTokenIds<T>>::get().contains(&asset_id) {
-                Self::register_new_token(&origin, asset_id, token_info.clone())?;
+                Self::register_new_token(&origin, asset_id, token_info.clone(), token_location.clone())?;
             }
             // Check that the asset is not already added to the gateway
             if !<Tokens<T>>::contains_key(&asset_id, &target_id) {
-                Self::link_token_to_gateway(asset_id, target_id, token_info)?;
+                Self::link_token_to_gateway(asset_id, target_id, token_info, token_location)?;
             }
 
             <AuthorizedMintAssets<T>>::append((&asset_id, &target_id));
@@ -724,10 +728,11 @@ pub mod pallet {
             gateway_id: TargetId,
             token_id: AssetId,
             token_props: TokenInfo,
+            token_location: Option<MultiLocation>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
+            Self::link_token_to_gateway(token_id, gateway_id, token_props, token_location)?;
 
             Ok(().into())
         }
@@ -1176,6 +1181,7 @@ pub mod pallet {
             origin: &OriginFor<T>,
             token_id: AssetId,
             token_props: TokenInfo,
+            token_location: Option<MultiLocation>,
         ) -> DispatchResult {
             if T::AssetsOverlay::contains_asset(&token_id) {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
@@ -1199,7 +1205,7 @@ pub mod pallet {
 
             let gateway_id = T::SelfGatewayId::get();
 
-            Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
+            Self::link_token_to_gateway(token_id, gateway_id, token_props, token_location)?;
 
             <AllTokenIds<T>>::append(token_id);
 
@@ -1213,6 +1219,7 @@ pub mod pallet {
             token_id: AssetId,
             gateway_id: TargetId,
             token_props: TokenInfo,
+            token_location: Option<MultiLocation>,
         ) -> DispatchResult {
             // fetch record and ensure it exists
             let _record =
@@ -1228,13 +1235,14 @@ pub mod pallet {
                 Error::<T>::TokenRecordNotFoundInAssetsOverlay
             );
 
-            Self::override_token(token_id, gateway_id, token_props)
+            Self::override_token(token_id, gateway_id, token_props, token_location)
         }
 
         fn override_token(
             token_id: AssetId,
             gateway_id: TargetId,
             token_props: TokenInfo,
+            token_location: Option<MultiLocation>,
         ) -> DispatchResult {
             <Tokens<T>>::insert(
                 token_id,
@@ -1243,7 +1251,7 @@ pub mod pallet {
                     token_id,
                     gateway_id,
                     token_props,
-                    token_location: None,
+                    token_location,
                 },
             );
 
