@@ -41,10 +41,22 @@ use std::str::FromStr;
 
 const PARACHAIN_ID: u32 = 3333;
 
-const PARACHAIN_ID_T1RN: u32 = 3334;
+#[cfg(feature = "t7rn")]
+const PARACHAIN_ID_T1RN: u32 = 3337;
+
+#[cfg(not(feature = "t7rn"))]
+const PARACHAIN_ID_T1RN: u32 = 3337;
+
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
+
+#[cfg(not(feature = "t7rn"))]
+const RUNTIME_KSM_NAME: &str = "t1rn";
+
+#[cfg(feature = "t7rn")]
+const RUNTIME_KSM_NAME: &str = "t7rn";
+
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
 const SUDO_T1RN: &str = "t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ"; // @t1rn; 32b = 0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061
@@ -244,9 +256,9 @@ pub fn kusama_config() -> ChainSpec {
 
     ChainSpec::from_genesis(
         // Name
-        "t1rn",
+        RUNTIME_KSM_NAME,
         // Id
-        "t1rn",
+        RUNTIME_KSM_NAME,
         ChainType::Live,
         move || {
             polkadot_genesis_full(
@@ -298,7 +310,7 @@ pub fn kusama_config() -> ChainSpec {
                 .expect("telemetry"),
         ),
         // Protocol ID
-        Some("t1rn"),
+        Some(RUNTIME_KSM_NAME),
         // Fork ID
         None,
         // Properties
@@ -306,7 +318,7 @@ pub fn kusama_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "kusama".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID,          // You MUST set this correctly!
+            para_id: PARACHAIN_ID_T1RN,          // You MUST set this correctly!
             bad_blocks: None,
         },
     )
