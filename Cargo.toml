@@ -236,6 +236,7 @@ members = [
   "node/t1rn-parachain",
   "node/t2rn-parachain",
   "node/t3rn-parachain",
+  "node/t7rn-parachain",
   "pallets/3vm",
   "pallets/account-manager",
   "pallets/circuit",

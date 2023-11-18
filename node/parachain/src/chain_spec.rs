@@ -12,6 +12,13 @@ use t3rn_parachain_runtime::{
     SudoConfig, SystemConfig, TRN, WASM_BINARY,
 };
 
+#[cfg(all(feature = "t7rn", not(feature = "default")))]
+use t3rn_parachain_runtime::{
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, TRN, WASM_BINARY,
+};
+
 #[cfg(feature = "t0rn")]
 use t0rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
@@ -380,6 +387,7 @@ pub fn polkadot_config() -> ChainSpec {
 }
 
 #[cfg(all(feature = "t3rn", not(feature = "default")))]
+#[cfg(all(feature = "t7rn", not(feature = "default")))]
 fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
