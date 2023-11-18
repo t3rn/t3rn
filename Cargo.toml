@@ -263,6 +263,7 @@ members = [
   "runtime/t1rn-parachain",
   "runtime/t2rn-parachain",
   "runtime/t3rn-parachain",
+  "runtime/t7rn-parachain",
   "sdk/crates/primitives",
   "sdk/crates/sdk",
   "types",
