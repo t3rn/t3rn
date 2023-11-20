@@ -228,8 +228,8 @@ mod tests {
                         decimals: 0,
                         symbol: vec![0u8; 1],
                     }),
-                    init.encode(),
                     None,
+                    init.encode(),
                 );
 
                 assert_ok!(result);

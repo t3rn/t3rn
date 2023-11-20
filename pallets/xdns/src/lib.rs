@@ -504,14 +504,19 @@ pub mod pallet {
                 log::info!("topology unzip -- asset_id: {:?}", asset.token_id);
                 // Register Asset if not present
                 if !AllTokenIds::<T>::get().contains(&asset.token_id) {
-                    Self::register_new_token(origin, asset.token_id, asset.token_props, asset.token_location)?;
+                    Self::register_new_token(
+                        origin,
+                        asset.token_id,
+                        asset.token_props,
+                        asset.token_location,
+                    )?;
                 } else {
                     // Link the asset to the gateway
                     Self::link_token_to_gateway(
                         asset.token_id,
                         asset.gateway_id,
                         asset.token_props,
-                        asset.token_location
+                        asset.token_location,
                     )?;
                 }
             }
@@ -562,7 +567,12 @@ pub mod pallet {
             assert!(!Self::check_asset_is_mintable(target_id, asset_id));
 
             if !<AllTokenIds<T>>::get().contains(&asset_id) {
-                Self::register_new_token(&origin, asset_id, token_info.clone(), token_location.clone())?;
+                Self::register_new_token(
+                    &origin,
+                    asset_id,
+                    token_info.clone(),
+                    token_location.clone(),
+                )?;
             }
             // Check that the asset is not already added to the gateway
             if !<Tokens<T>>::contains_key(&asset_id, &target_id) {
