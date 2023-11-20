@@ -229,6 +229,7 @@ mod tests {
                         symbol: vec![0u8; 1],
                     }),
                     init.encode(),
+                    None,
                 );
 
                 assert_ok!(result);
