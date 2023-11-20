@@ -31,6 +31,7 @@ pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
 use t3rn_primitives::{light_client::LightClientHeartbeat, portal::InclusionReceipt};
+use xcm::latest::prelude::MultiLocation;
 
 reexport_currency_types!();
 
@@ -123,6 +124,7 @@ pub mod pallet {
             escrow_account: Option<T::AccountId>,
             allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
             token_props: TokenInfo,
+            token_locatio: MultiLocation,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
             ensure_root(origin.clone())?;

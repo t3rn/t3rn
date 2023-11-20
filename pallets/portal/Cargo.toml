@@ -27,6 +27,8 @@ pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", 
 t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
+xcm              = { workspace = true }
+
 
 [dev-dependencies]
 hex              = "0.4.2"
