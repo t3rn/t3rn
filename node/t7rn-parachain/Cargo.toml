@@ -4,19 +4,20 @@ build       = "build.rs"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "t0rn-parachain-collator"
+name        = "t7rn-parachain-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
+[package.metadata.docs.rs]
+targets = [ "x86_64-unknown-linux-gnu" ]
 
 [[bin]]
-name = "t0rn-collator"
+name = "t7rn-collator"
 path = "src/main.rs"
 
 [dependencies]
 # Extras
-t3rn-parachain-collator = { path = "../parachain", features = [ "t0rn" ], package = "parachain-collator" }
-#t3rn-parachain-collator = { path = "../parachain", features = [ "default" ], package = "parachain-collator" }
+t3rn-parachain-collator = { path = "../parachain", features = [ "t7rn" ], package = "parachain-collator" }
 sc-cli                  = { workspace = true }
 
 [build-dependencies]
@@ -24,4 +25,4 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.
 
 [features]
 default            = [  ]
-runtime-benchmarks = [ "t3rn-parachain-collator/runtime-benchmarks" ]
+runtime-benchmarks = [  ]
