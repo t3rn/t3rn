@@ -571,7 +571,7 @@ pub mod pallet {
                     &origin,
                     asset_id,
                     token_info.clone(),
-                    token_location.clone(),
+                    token_location,
                 )?;
             }
             // Check that the asset is not already added to the gateway
