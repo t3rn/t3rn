@@ -567,12 +567,7 @@ pub mod pallet {
             assert!(!Self::check_asset_is_mintable(target_id, asset_id));
 
             if !<AllTokenIds<T>>::get().contains(&asset_id) {
-                Self::register_new_token(
-                    &origin,
-                    asset_id,
-                    token_info.clone(),
-                    token_location,
-                )?;
+                Self::register_new_token(&origin, asset_id, token_info.clone(), token_location)?;
             }
             // Check that the asset is not already added to the gateway
             if !<Tokens<T>>::contains_key(&asset_id, &target_id) {
