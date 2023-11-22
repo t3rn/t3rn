@@ -1,12 +1,12 @@
 export default {
  circuit: {
   rpc1: {
-   ws: "wss://rpc.t0rn.io",
-   http: "https://rpc.t0rn.io"
+   ws: "wss://rpc.t2rn.io",
+   http: "https://rpc.t2rn.io"
   },
   rpc2: {
-   ws: "wss://rpc.t0rn.io",
-   http: "https://rpc.t0rn.io"
+   ws: "wss://rpc.t2rn.io",
+   http: "https://rpc.t2rn.io"
   },
  },
  target: { // we dont need to specify the http endpoint for the target

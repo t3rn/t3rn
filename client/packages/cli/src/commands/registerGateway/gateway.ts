@@ -139,6 +139,10 @@ const getRegistrationData = (
       return registerSubstrateVerificationVendor(circuit, gatewayData)
     case 'Rococo':
       return registerSubstrateVerificationVendor(circuit, gatewayData)
+    case 'Polkadot':
+      return registerSubstrateVerificationVendor(circuit, gatewayData)
+    case 'Bittensor':
+      return registerSubstrateVerificationVendor(circuit, gatewayData)
     case 'Ethereum':
       return registerEthereumVerificationVendor(circuit, { slot })
     case 'Sepolia':

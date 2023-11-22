@@ -10,6 +10,7 @@
   "scripts": {
     "preinstall": "npm exec -- only-allow pnpm",
     "fmt": "prettier --write src",
+    "register:roco": "RELAY_ENDPOINT=wss://rpc.polkadot.io EXECUTION_ENDPOINT=wss://rpc.polkadot.io CIRCUIT_WS_ENDPOINT=wss://rpc.t2rn.io CIRCUIT_HTTP_ENDPOINT=wss://rpc.t2rn.io  CIRCUIT_SIGNER_KEY=0xd1988909bb46d5dcd0e5c5b43054dec494ffeb46bf2cabc719c969811df406d5 pnpm cli registerGateway -g roco",
     "fmt:check": "prettier --check src",
     "cli": "yarn build && node dist/cli.js",
     "build": "tsup",

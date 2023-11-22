@@ -63,6 +63,39 @@
       }
     },
     {
+      "name": "Bittensor",
+      "id": "bitt",
+      "rpc": "wss://entrypoint-finney.opentensor.ai:443",
+      "subscan": "https://entrypoint-finney.opentensor.ai",
+      "tokenId": 55,
+      "transferData": {
+        "receiver": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            4
+          ]
+        ],
+        "verificationVendor": "Rococo",
+        "executionVendor": "Substrate",
+        "runtimeCodec": "Scale",
+        "tokenInfo": {
+          "Substrate": {
+            "symbol": "TAO",
+            "decimals": 12,
+            "id": 55
+          }
+        }
+      }
+    },
+    {
       "name": "Kusama",
       "id": "kusm",
       "rpc": "wss://kusama-rpc.polkadot.io",

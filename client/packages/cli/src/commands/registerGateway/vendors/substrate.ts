@@ -23,6 +23,8 @@ const registerRelaychain = async (
   target: ApiPromise,
   gatewayData: Required<Gateway>,
 ) => {
+  spinner.info(colorLogMsg('INFO', 'Fetching portal consensus data...'))
+
   const portalConsensusData = await fetchPortalConsensusData(
     circuit,
     target,
@@ -70,17 +72,25 @@ const fetchPortalConsensusData = async (
   target: ApiPromise,
   gatewayData: Required<Gateway>,
 ) => {
-  const registrationHeight = await fetchLatestAuthoritySetUpdateBlock(
-    gatewayData.subscan,
+
+  spinner.info(colorLogMsg('INFO', 'Fetching fetchPortalConsensusData ...'))
+  const processEnvHeight = process.env["REGISTRATION_HEIGHT"] || null ? Number(process.env["REGISTRATION_HEIGHT"]) : null
+
+  spinner.info(colorLogMsg('INFO', 'processEnvHeight ...' + processEnvHeight))
+  const registrationHeight = processEnvHeight ? Number(processEnvHeight) : await fetchLatestAuthoritySetUpdateBlock(
+      gatewayData.subscan,
   )
 
   if (!registrationHeight) {
     return
   }
 
+  console.log('registrationHeight', registrationHeight)
+
   const registrationHeader = await target.rpc.chain.getHeader(
     await target.rpc.chain.getBlockHash(registrationHeight),
   )
+
   const finalityProof =
     await target.rpc.grandpa.proveFinality(registrationHeight)
   const authorities =
