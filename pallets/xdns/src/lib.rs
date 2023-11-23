@@ -826,9 +826,7 @@ pub mod pallet {
                 registrant,
                 escrow_account,
                 allowed_side_effects,
-            );
-
-            Ok(())
+            )
         }
     }
 
