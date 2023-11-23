@@ -106,6 +106,7 @@ const registerGateway = async (
       escrowAccounts,
       allowedSideEffects,
       tokenInfo,
+      //@ts-ignore - TS doesn't know about the type
       tokenLocation,
       registrationData,
     )

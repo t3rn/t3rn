@@ -65,6 +65,10 @@ const RegistrationData = z.object({
     invalid_type_error: 'Runtime codec must be a string',
   }),
   tokenInfo: TokenInfo,
+  tokenLocation: z.string({
+      required_error: 'Runtime codec is required',
+      invalid_type_error: 'Runtime codec must be a string',
+  }),
   allowedSideEffects: z.array(
     z.tuple([
       z.string({
