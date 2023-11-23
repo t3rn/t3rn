@@ -804,6 +804,32 @@ pub mod pallet {
 
             Ok(())
         }
+
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn force_add_new_gateway(
+            origin: OriginFor<T>,
+            gateway_id: TargetId,
+            verification_vendor: GatewayVendor,
+            execution_vendor: ExecutionVendor,
+            codec: Codec,
+            registrant: Option<T::AccountId>,
+            escrow_account: Option<T::AccountId>,
+            allowed_side_effects: Vec<(TargetId, Option<u8>)>,
+        ) -> DispatchResult {
+            let _ = ensure_root(origin.clone())?;
+
+            Self::add_new_gateway(
+                gateway_id,
+                verification_vendor,
+                execution_vendor,
+                codec,
+                registrant,
+                escrow_account,
+                allowed_side_effects,
+            );
+
+            Ok(())
+        }
     }
 
     #[pallet::event]
