@@ -19,7 +19,7 @@ use t3rn_parachain_runtime::{
     SudoConfig, SystemConfig, TRN, WASM_BINARY,
 };
 
-#[cfg(feature = "t0rn")]
+#[cfg(any(feature = "t0rn", feature = "default"))]
 use t0rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,

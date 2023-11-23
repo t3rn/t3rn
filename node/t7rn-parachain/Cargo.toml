@@ -17,7 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Extras
-t3rn-parachain-collator = { path = "../parachain", features = [ "t7rn" ], package = "parachain-collator" }
+t7rn-parachain-collator = { path = "../parachain", features = [ "t7rn" ], package = "parachain-collator" }
 sc-cli                  = { workspace = true }
 
 [build-dependencies]
