@@ -531,7 +531,10 @@ impl_runtime_apis! {
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
             log::info!("try-runtime::on_runtime_upgrade parachain-template.");
-            let weight = Executive::try_runtime_upgrade().unwrap();
+            let weight = Executive::try_runtime_upgrade().map_err(|err|{
+               log::info!("try-runtime::on_runtime_upgrade failed with: {:?}", err);
+               err
+            }).unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
