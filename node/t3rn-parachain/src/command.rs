@@ -6,7 +6,7 @@ use log::{info, warn};
 
 use parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-const COLLATOR_NAME: &str = "t7rn collator";
+const COLLATOR_NAME: &str = "t3rn collator";
 
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
