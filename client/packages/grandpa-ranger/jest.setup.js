@@ -3,5 +3,9 @@ Object.defineProperty(process.env, 'PROFILE', {
 })
 
 Object.defineProperty(process.env, 'CIRCUIT_SIGNER_KEY', {
-  value: 'TEST',
+  value: '//Alice',
+})
+
+Object.defineProperty(process.env, 'CIRCUIT', {
+  value: 't0rn',
 })

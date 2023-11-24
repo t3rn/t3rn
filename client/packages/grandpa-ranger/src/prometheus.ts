@@ -11,9 +11,11 @@ export class Prometheus {
   txSize: any
   target: string
   heightDiff: number = 0
+  port: number = 8080
 
-  constructor(target: string) {
+  constructor(target: string, port: number = 8080) {
     this.target = target
+    this.port = port
     const Registry = client.Registry
     this.register = new Registry()
     this.createMetrics()
@@ -73,7 +75,7 @@ export class Prometheus {
           res.end(
             JSON.stringify({
               heightDiff: this.heightDiff,
-            })
+            }),
           )
         } else {
           res.statusCode = 404
@@ -85,9 +87,8 @@ export class Prometheus {
       }
     })
 
-    const port = 8080
-    server.listen(port, () => {
-      logger.info(`Metrics server listening on port ${port}`)
+    server.listen(this.port, () => {
+      logger.info(`Metrics server listening on port ${this.port}`)
     })
   }
 }

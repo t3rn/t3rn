@@ -17,6 +17,7 @@ export default {
 			ws: "ws://host.docker.internal:9933"
 		},
 	},
+	prometheusPort: 8080,
 	rangeInterval: 10, // time between range submissions in seconds
 	targetGatewayId: "roco",
 	batches_max: 10,

@@ -1,12 +1,12 @@
 export default {
   circuit: {
     rpc1: {
-      ws: 'wss://rpc.t0rn.io',
-      http: 'https://rpc.t0rn.io',
+      ws: 'wss://rpc.t2rn.io',
+      http: 'https://rpc.t2rn.io',
     },
     rpc2: {
-      ws: 'wss://rpc.t0rn.io',
-      http: 'https://rpc.t0rn.io',
+      ws: 'wss://rpc.t2rn.io',
+      http: 'https://rpc.t2rn.io',
     },
   },
   target: {
@@ -18,9 +18,9 @@ export default {
       ws: 'wss://kusama-rpc.dwellir.com',
     },
   },
-  prometheusPort: 8082,
+  prometheusPort: 8081,
   rangeInterval: 10, // time between range submissions in seconds
   targetGatewayId: 'kusm',
   batches_max: 2,
-  batching: true,
+  batching: false,
 }

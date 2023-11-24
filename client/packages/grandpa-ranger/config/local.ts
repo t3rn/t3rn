@@ -17,7 +17,8 @@ export default {
 			ws: "wss://rococo-community-rpc.laminar.codes/ws"
 		},
 	},
-	rangeInterval: 0, // time between range submissions in seconds
+	prometheusPort: 8083,
+	rangeInterval: 10, // time between range submissions in seconds
 	targetGatewayId: "roco",
 	batches_max: 10,
 }
