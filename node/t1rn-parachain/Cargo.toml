@@ -1,11 +1,11 @@
 [package]
 authors     = { workspace = true }
 build       = "build.rs"
-description = "t0rn Parachain bundle node - t3rn's collator to Rococo"
+description = "t1rn Parachain node - t3rn's collator to Kusama"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "t0rn-parachain-collator"
+name        = "t1rn-parachain-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
@@ -13,7 +13,7 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [[bin]]
-name = "t0rn-collator"
+name = "t1rn-collator"
 path = "src/main.rs"
 
 [dependencies]
@@ -72,7 +72,7 @@ frame-benchmarking     = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
-parachain-runtime          = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
+parachain-runtime          = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime" }
 
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
