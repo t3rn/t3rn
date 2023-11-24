@@ -4,29 +4,9 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
-// Local Runtime Types
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
+use parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
-
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
-
-#[cfg(feature = "t0rn")]
-use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
-
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-const COLLATOR_NAME: &str = "t3rn collator";
-
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
 const COLLATOR_NAME: &str = "t7rn collator";
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-const COLLATOR_NAME: &str = "t1rn collator";
-
-#[cfg(feature = "t0rn")]
-const COLLATOR_NAME: &str = "t0rn collator";
 
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,

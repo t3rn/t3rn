@@ -13,24 +13,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-use t1rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
-
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
-
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-use t7rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
-
-#[cfg(feature = "t0rn")]
-use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
-
-#[cfg(not(feature = "t3rn"))]
-use pallet_portal_rpc::{Portal, PortalApiServer};
-
-#[cfg(not(feature = "t7rn"))]
-#[cfg(not(feature = "t3rn"))]
-use pallet_xdns_rpc::{Xdns, XdnsApiServer};
+use parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 pub use sc_rpc_api::DenyUnsafe;
 
@@ -54,8 +37,6 @@ where
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
-    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId, Balance, Hash>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {
@@ -71,13 +52,6 @@ where
 
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-
-    #[cfg(all(feature = "t3rn", not(feature = "default")))]
-    #[cfg(all(feature = "t7rn", not(feature = "default")))]
-    module.merge(Xdns::new(client.clone()).into_rpc())?;
-    #[cfg(all(feature = "t3rn", not(feature = "default")))]
-    #[cfg(all(feature = "t7rn", not(feature = "default")))]
-    module.merge(Portal::new(client).into_rpc())?;
 
     Ok(module)
 }

@@ -1,29 +1,7 @@
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-use t1rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{
+use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(feature = "t0rn")]
-use t0rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
 use codec::Encode;
@@ -39,22 +17,13 @@ use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
-const PARACHAIN_ID: u32 = 3333;
-
-#[cfg(feature = "t7rn")]
-const PARACHAIN_ID_T1RN: u32 = 3337;
-
-#[cfg(not(feature = "t7rn"))]
+const PARACHAIN_ID: u32 = 3337;
 const PARACHAIN_ID_T1RN: u32 = 3337;
 
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 
-#[cfg(not(feature = "t7rn"))]
-const RUNTIME_KSM_NAME: &str = "t1rn";
-
-#[cfg(feature = "t7rn")]
 const RUNTIME_KSM_NAME: &str = "t7rn";
 
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
@@ -162,7 +131,7 @@ pub fn local_testnet_config() -> ChainSpec {
         "local_testnet",
         ChainType::Local,
         move || {
-            polkadot_genesis_full(
+            polkadot_genesis_shell(
                 // initial collators.
                 vec![
                     (
@@ -261,7 +230,7 @@ pub fn kusama_config() -> ChainSpec {
         RUNTIME_KSM_NAME,
         ChainType::Live,
         move || {
-            polkadot_genesis_full(
+            polkadot_genesis_shell(
                 vec![
                     (
                         // Collator 1: 5Cyauvc374WEMNDuWVpjb1rBKhqGsCZnbXCS9nAizD97eSLT
@@ -337,7 +306,7 @@ pub fn polkadot_config() -> ChainSpec {
         "t3rn",
         ChainType::Live,
         move || {
-            polkadot_genesis_full(
+            polkadot_genesis_shell(
                 vec![
                     (
                         // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
@@ -398,8 +367,6 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
 fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
@@ -430,78 +397,7 @@ fn polkadot_genesis_shell(
             desired_candidates: DESIRED_CANDIDATES,
             ..Default::default()
         },
-        session: SessionConfig {
-            keys: invulnerables
-                .into_iter()
-                .map(|(acc, aura)| {
-                    (
-                        acc.clone(),        // account id
-                        acc,                // validator id
-                        session_keys(aura), // session keys
-                    )
-                })
-                .collect(),
-        },
-        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
-        // of this.
-        aura: Default::default(),
-        aura_ext: Default::default(),
-        parachain_system: Default::default(),
-        polkadot_xcm: PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
-            _config: Default::default(),
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
-        },
-        transaction_payment: Default::default(),
-    }
-}
-
-fn polkadot_genesis_full(
-    invulnerables: Vec<(AccountId, AuraId)>,
-    endowed_accounts: Vec<(AccountId, u128)>,
-    id: ParaId,
-    root_key: AccountId,
-) -> RuntimeGenesisConfig {
-    #[cfg(all(feature = "t3rn", not(feature = "default")))]
-    #[rustfmt::skip]
-    return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
-
-    // #[cfg(not(feature = "t3rn"))]
-    return RuntimeGenesisConfig {
-        system: SystemConfig {
-            code: WASM_BINARY
-                .expect("WASM binary was not build, please build it!")
-                .to_vec(),
-            _config: Default::default(),
-        },
-        balances: BalancesConfig {
-            balances: endowed_accounts
-                .iter()
-                .cloned()
-                .map(|(acc, amt)| (acc, amt))
-                .collect(),
-        },
-
-        clock: Default::default(),
-        account_manager: Default::default(),
         treasury: Default::default(),
-        escrow_treasury: Default::default(),
-        fee_treasury: Default::default(),
-        parachain_treasury: Default::default(),
-        slash_treasury: Default::default(),
-        parachain_info: ParachainInfoConfig {
-            parachain_id: id,
-            _config: Default::default(),
-        },
-        collator_selection: CollatorSelectionConfig {
-            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: CANDIDACY_BOND,
-            desired_candidates: DESIRED_CANDIDATES,
-            ..Default::default()
-        },
         session: SessionConfig {
             keys: invulnerables
                 .into_iter()
@@ -517,7 +413,6 @@ fn polkadot_genesis_full(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
-        assets: Default::default(),
         aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: PolkadotXcmConfig {
@@ -529,17 +424,6 @@ fn polkadot_genesis_full(
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
-        contracts_registry: Default::default(),
-        attesters: Default::default(),
-        evm: Default::default(),
-        three_vm: Default::default(),
-        rewards: Default::default(),
-        maintenance: Default::default(),
-        xdns: XDNSConfig {
-            known_gateway_records: vec![],
-            standard_sfx_abi: t3rn_abi::standard::standard_sfx_abi().encode(),
-            _marker: Default::default(),
-        },
     }
 }
 
@@ -556,7 +440,7 @@ pub fn rococo_config() -> ChainSpec {
         "t0rn_testnet",
         ChainType::Live,
         move || {
-            polkadot_genesis_full(
+            polkadot_genesis_shell(
                 // Invulnerable collators
                 vec![
                     (
