@@ -363,7 +363,6 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-
 fn polkadot_genesis_full(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
