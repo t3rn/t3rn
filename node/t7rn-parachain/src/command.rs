@@ -129,6 +129,7 @@ pub fn run() -> Result<()> {
         },
         Some(Subcommand::CheckBlock(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
+                log::info!("👋 collator's name: {:?}", COLLATOR_NAME);
                 Ok(cmd.run(components.client, components.import_queue))
             })
         },
