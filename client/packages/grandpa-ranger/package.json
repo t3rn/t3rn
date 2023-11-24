@@ -10,6 +10,7 @@
     "lint:report": "eslint --ext .ts src --output-file eslint_report.json --format json",
     "start": "ts-node src/index.ts",
     "watch": "ts-node-dev --respawn  --watch -- src/index.ts",
+    "watch:all": "ts-node-dev --respawn  --watch -- src/startAll.ts",
     "test": "jest"
   },
   "dependencies": {

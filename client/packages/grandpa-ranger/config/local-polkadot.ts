@@ -17,8 +17,8 @@ export default {
    ws: "wss://polkadot-rpc.dwellir.com"
   },
  },
- rangeInterval: 0, // time between range submissions in seconds
- quickSyncLimit: 200, // for more than 200 blocks behind, use quick sync
+ rangeInterval: 5, // time between range submissions in seconds
+ quickSyncLimit: 0, // for more than 200 blocks behind, use quick sync
  targetGatewayId: "pdot",
  bridgeName: "polkadotBridge",
  batches_max: 1,

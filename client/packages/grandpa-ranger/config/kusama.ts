@@ -1,12 +1,12 @@
 export default {
  circuit: {
   rpc1: {
-   ws: "wss://rpc.t0rn.io",
-   http: "https://rpc.t0rn.io"
+   ws: "wss://rpc.t2rn.io",
+   http: "https://rpc.t2rn.io"
   },
   rpc2: {
-   ws: "wss://rpc.t0rn.io",
-   http: "https://rpc.t0rn.io"
+   ws: "wss://rpc.t2rn.io",
+   http: "https://rpc.t2rn.io"
   },
  },
  target: { // we dont need to specify the http endpoint for the target
@@ -17,9 +17,9 @@ export default {
    ws: "wss://kusama-rpc.dwellir.com"
   },
  },
- rangeInterval: 0, // time between range submissions in seconds
+ rangeInterval: 5, // time between range submissions in seconds
  targetGatewayId: "kusm",
- quickSyncLimit: 200, // for more than 200 blocks behind, use quick sync
+ quickSyncLimit: 0, // for more than 200 blocks behind, use quick sync
  batches_max: 10,
  bridgeName: "kusamaBridge",
  batching: true,
