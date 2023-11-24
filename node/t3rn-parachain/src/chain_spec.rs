@@ -17,14 +17,14 @@ use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
-const PARACHAIN_ID: u32 = 3337;
-const PARACHAIN_ID_T1RN: u32 = 3337;
+const PARACHAIN_ID: u32 = 3333;
+const PARACHAIN_ID_T1RN: u32 = 3333;
 
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 
-const RUNTIME_KSM_NAME: &str = "t7rn";
+const RUNTIME_KSM_NAME: &str = "t3rn";
 
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
