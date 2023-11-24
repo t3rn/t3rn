@@ -224,7 +224,11 @@ export class GrandpaRanger {
           throw new Error(`Circuit client is not active!`)
         }
       } catch (err) {
-        resolve(err)
+        logger.error(
+          { err },
+          'Failed to submit range tx to circuit -- submitToCircuit outer catch',
+        )
+        reject(err)
       }
     })
   }
