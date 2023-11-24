@@ -231,7 +231,7 @@ exclude = [
 members = [
   "finality-verifiers/grandpa",
   "node/standalone",
-  "node/parachain",
+#  "node/parachain",
   "node/t0rn-parachain",
   "node/t1rn-parachain",
   "node/t2rn-parachain",

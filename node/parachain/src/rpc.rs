@@ -38,11 +38,14 @@ use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 use t7rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 #[cfg(all(
-    feature = "t0rn",
+    any(feature = "t0rn", feature = "default"),
     not(feature = "t3rn"),
     not(feature = "t7rn"),
     not(feature = "t1rn")
 ))]
+use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
+
+#[cfg(all(feature = "t0rn", feature = "default", feature = "t3rn", feature = "t7rn", feature = "t1rn"))]
 use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 use pallet_portal_rpc::{Portal, PortalApiServer};
@@ -95,7 +98,7 @@ where
     Ok(module)
 }
 
-#[cfg(all(any(feature = "t1rn", feature = "t0rn"),))]
+#[cfg(any(feature = "t1rn", feature = "t0rn", feature = "default"))]
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>

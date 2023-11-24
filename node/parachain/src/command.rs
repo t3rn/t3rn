@@ -30,11 +30,15 @@ use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 use t7rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
 #[cfg(all(
-    feature = "t0rn",
+    any(feature = "t0rn", feature = "default"),
     not(feature = "t3rn"),
     not(feature = "t7rn"),
     not(feature = "t1rn")
 ))]
+use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
+
+
+#[cfg(all(feature = "t0rn", feature = "default", feature = "t3rn", feature = "t7rn", feature = "t1rn"))]
 use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
 // For t3rn collator
@@ -66,12 +70,14 @@ const COLLATOR_NAME: &str = "t1rn collator";
 
 // For t0rn collator
 #[cfg(all(
-    feature = "t0rn",
+    any(feature = "t0rn", feature = "default"),
     not(feature = "t3rn"),
     not(feature = "t7rn"),
     not(feature = "t1rn")
 ))]
 const COLLATOR_NAME: &str = "t0rn collator";
+#[cfg(all(feature = "default", feature = "t0rn", feature = "t3rn", feature = "t7rn", feature = "t1rn"))]
+const COLLATOR_NAME: &str = "default collator";
 
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,

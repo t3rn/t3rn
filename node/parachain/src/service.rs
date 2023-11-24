@@ -30,11 +30,14 @@ use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 use t3rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 #[cfg(all(
-    feature = "t0rn",
+    any(feature = "t0rn", feature = "default"),
     not(feature = "t3rn"),
     not(feature = "t7rn"),
     not(feature = "t1rn")
 ))]
+use t0rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
+
+#[cfg(all(feature = "t0rn", feature = "default", feature = "t3rn", feature = "t7rn", feature = "t1rn"))]
 use t0rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 // Cumulus Imports

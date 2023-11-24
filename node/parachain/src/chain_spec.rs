@@ -35,11 +35,18 @@ use t3rn_parachain_runtime::{
 };
 
 #[cfg(all(
-    feature = "t0rn",
+    any(feature = "t0rn", feature = "default"),
     not(feature = "t3rn"),
     not(feature = "t7rn"),
     not(feature = "t1rn")
 ))]
+use t0rn_parachain_runtime::{
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
+};
+
+#[cfg(all(feature = "t0rn", feature = "default", feature = "t3rn", feature = "t7rn", feature = "t1rn"))]
 use t0rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
