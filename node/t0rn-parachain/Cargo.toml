@@ -15,7 +15,6 @@ path = "src/main.rs"
 
 [dependencies]
 # Extras
-#t3rn-parachain-collator = { path = "../parachain", features = [ "t0rn" ], package = "parachain-collator" }
 t0rn-parachain-collator = { path = "../parachain", features = [ "t0rn" ], package = "parachain-collator" }
 sc-cli                  = { workspace = true }
 
@@ -23,5 +22,4 @@ sc-cli                  = { workspace = true }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default            = [  ]
 runtime-benchmarks = [ "t0rn-parachain-collator/runtime-benchmarks" ]

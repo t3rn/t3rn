@@ -5,27 +5,72 @@ use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
 // Local Runtime Types
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t1rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t0rn")
+))]
 use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t7rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
+#[cfg(all(
+    feature = "t7rn",
+    not(feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
+use t7rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(any(feature = "t0rn", feature = "default"))]
+#[cfg(all(
+    feature = "t0rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t1rn")
+))]
 use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
+// For t3rn collator
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t7rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 const COLLATOR_NAME: &str = "t3rn collator";
 
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
+// For t7rn collator
+#[cfg(all(
+    feature = "t7rn",
+    not(feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 const COLLATOR_NAME: &str = "t7rn collator";
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
+
+// For t1rn collator
+#[cfg(all(
+    feature = "t1rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t0rn")
+))]
 const COLLATOR_NAME: &str = "t1rn collator";
 
-#[cfg(any(feature = "t0rn", feature = "default"))]
+// For t0rn collator
+#[cfg(all(
+    feature = "t0rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t1rn")
+))]
 const COLLATOR_NAME: &str = "t0rn collator";
 
 use sc_cli::{
@@ -43,7 +88,7 @@ use crate::{
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
-        "local" | "dev" => Box::new(chain_spec::local_testnet_config()),
+        "local" => Box::new(chain_spec::local_testnet_config()),
         "polkadot" | "polkadot-live" => Box::new(chain_spec::polkadot_config()),
         "kusama" | "kusama-live" => Box::new(chain_spec::kusama_config()),
         "rococo" | "rococo-live" => Box::new(chain_spec::rococo_config()),
@@ -149,6 +194,9 @@ pub fn run() -> Result<()> {
         },
         Some(Subcommand::CheckBlock(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
+                // Log collator's name
+                log::warn!("⚠️  Hello from {:?}", COLLATOR_NAME);
+
                 Ok(cmd.run(components.client, components.import_queue))
             })
         },

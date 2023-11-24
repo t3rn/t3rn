@@ -1,25 +1,45 @@
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t1rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t0rn")
+))]
 use t1rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
 };
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t7rn",
+    not(feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
+use t7rn_parachain_runtime::{
+    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
+    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, TRN, WASM_BINARY,
+};
+
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t7rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 use t3rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, TRN, WASM_BINARY,
 };
 
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(any(feature = "t0rn", feature = "default"))]
+#[cfg(all(
+    feature = "t0rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t1rn")
+))]
 use t0rn_parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
@@ -398,8 +418,11 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
+#[cfg(all(
+    any(feature = "t7rn", feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 fn polkadot_genesis_shell(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
@@ -455,6 +478,7 @@ fn polkadot_genesis_shell(
             // Assign network admin rights.
             key: Some(root_key),
         },
+        treasury: Default::default(),
         transaction_payment: Default::default(),
     }
 }
@@ -465,11 +489,15 @@ fn polkadot_genesis_full(
     id: ParaId,
     root_key: AccountId,
 ) -> RuntimeGenesisConfig {
-    #[cfg(all(feature = "t3rn", not(feature = "default")))]
+    #[cfg(all(
+        any(feature = "t7rn", feature = "t3rn"),
+        not(feature = "t1rn"),
+        not(feature = "t0rn")
+    ))]
     #[rustfmt::skip]
     return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
 
-    // #[cfg(not(feature = "t3rn"))]
+    #[cfg(any(feature = "t1rn", feature = "t0rn"))]
     return RuntimeGenesisConfig {
         system: SystemConfig {
             code: WASM_BINARY

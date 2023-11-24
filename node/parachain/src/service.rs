@@ -3,17 +3,38 @@
 // std
 use cumulus_client_cli::CollatorOptions;
 use std::{sync::Arc, time::Duration};
-// Local Runtime Types
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
-
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t7rn",
+    not(feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 use t7rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
-#[cfg(any(feature = "t0rn", feature = "default"))]
+// Local Runtime Types
+#[cfg(all(
+    feature = "t1rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t0rn")
+))]
+use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
+
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t7rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
+use t3rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
+
+#[cfg(all(
+    feature = "t0rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t1rn")
+))]
 use t0rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 // Cumulus Imports

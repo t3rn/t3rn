@@ -13,16 +13,36 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t1rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t0rn")
+))]
 use t1rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t3rn",
+    not(feature = "t7rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 use t3rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
+#[cfg(all(
+    feature = "t7rn",
+    not(feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
 use t7rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
-#[cfg(any(feature = "t0rn", feature = "default"))]
+#[cfg(all(
+    feature = "t0rn",
+    not(feature = "t3rn"),
+    not(feature = "t7rn"),
+    not(feature = "t1rn")
+))]
 use t0rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 use pallet_portal_rpc::{Portal, PortalApiServer};
@@ -42,6 +62,40 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all full RPC extensions.
+#[cfg(all(
+    any(feature = "t7rn", feature = "t3rn"),
+    not(feature = "t1rn"),
+    not(feature = "t0rn")
+))]
+pub fn create_full<C, P>(
+    deps: FullDeps<C, P>,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>,
+    C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
+    C: Send + Sync + 'static,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: BlockBuilder<Block>,
+    P: TransactionPool + 'static,
+{
+    use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+    use substrate_frame_rpc_system::{System, SystemApiServer};
+
+    let mut module = RpcModule::new(());
+    let FullDeps {
+        client,
+        pool,
+        deny_unsafe,
+    } = deps;
+
+    module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+    module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+
+    Ok(module)
+}
+
+#[cfg(all(any(feature = "t1rn", feature = "t0rn"),))]
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
@@ -69,9 +123,7 @@ where
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
-    #[cfg(not(any(feature = "t3rn", feature = "t7rn")))]
     module.merge(Xdns::new(client.clone()).into_rpc())?;
-    #[cfg(not(any(feature = "t3rn", feature = "t7rn")))]
     module.merge(Portal::new(client).into_rpc())?;
 
     Ok(module)

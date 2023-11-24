@@ -112,7 +112,10 @@ xcm                                     = { workspace = true }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default = [ ]
+#default = [
+#    "t0rn-parachain-runtime",
+#    "t0rn"
+#]
 try-runtime = [
     "t0rn-parachain-runtime?/try-runtime",
     "t1rn-parachain-runtime?/try-runtime",
@@ -121,9 +124,6 @@ try-runtime = [
 ]
 runtime-benchmarks = [
     "t0rn-parachain-runtime?/runtime-benchmarks",
-    "t1rn-parachain-runtime?/runtime-benchmarks",
-    "t3rn-parachain-runtime?/runtime-benchmarks",
-    "t7rn-parachain-runtime?/runtime-benchmarks",
 ]
 t0rn = ["t0rn-parachain-runtime"]
 t1rn = ["t1rn-parachain-runtime"]
