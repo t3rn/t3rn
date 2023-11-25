@@ -145,6 +145,7 @@ pub mod pallet {
                 )?;
             }
             Self::deposit_event(Event::GatewayRegistered(gateway_id));
+            Ok(())
         }
     }
 }
