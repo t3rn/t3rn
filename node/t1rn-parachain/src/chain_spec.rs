@@ -1,26 +1,4 @@
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-use t1rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TRN, WASM_BINARY,
-};
-
-#[cfg(feature = "t0rn")]
-use t0rn_parachain_runtime::{
+use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
@@ -38,25 +16,12 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-
 const PARACHAIN_ID: u32 = 3333;
-
-#[cfg(feature = "t7rn")]
-const PARACHAIN_ID_T1RN: u32 = 3337;
-
-#[cfg(not(feature = "t7rn"))]
-const PARACHAIN_ID_T1RN: u32 = 3337;
-
+const PARACHAIN_ID_KUSAMA: u32 = 3334;
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
-
-#[cfg(not(feature = "t7rn"))]
 const RUNTIME_KSM_NAME: &str = "t1rn";
-
-#[cfg(feature = "t7rn")]
-const RUNTIME_KSM_NAME: &str = "t7rn";
-
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
 const SUDO_T1RN: &str = "t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ"; // @t1rn; 32b = 0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061
@@ -284,7 +249,7 @@ pub fn kusama_config() -> ChainSpec {
                     // (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
                     (hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(), SUPPLY),
                 ],
-                PARACHAIN_ID_T1RN.into(),
+                PARACHAIN_ID_KUSAMA.into(),
                 // Sudo
                 // get_account_id_from_adrs(SUDO_T1RN),1
                 hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(),
@@ -318,7 +283,7 @@ pub fn kusama_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "kusama".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID_T1RN,          // You MUST set this correctly!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
             bad_blocks: None,
         },
     )
@@ -398,78 +363,12 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-#[cfg(all(feature = "t7rn", not(feature = "default")))]
-fn polkadot_genesis_shell(
-    invulnerables: Vec<(AccountId, AuraId)>,
-    endowed_accounts: Vec<(AccountId, u128)>,
-    id: ParaId,
-    root_key: AccountId,
-) -> RuntimeGenesisConfig {
-    RuntimeGenesisConfig {
-        system: SystemConfig {
-            code: WASM_BINARY
-                .expect("WASM binary was not build, please build it!")
-                .to_vec(),
-            _config: Default::default(),
-        },
-        balances: BalancesConfig {
-            balances: endowed_accounts
-                .iter()
-                .cloned()
-                .map(|(acc, amt)| (acc, amt))
-                .collect(),
-        },
-        parachain_info: ParachainInfoConfig {
-            parachain_id: id,
-            _config: Default::default(),
-        },
-        collator_selection: CollatorSelectionConfig {
-            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: CANDIDACY_BOND,
-            desired_candidates: DESIRED_CANDIDATES,
-            ..Default::default()
-        },
-        session: SessionConfig {
-            keys: invulnerables
-                .into_iter()
-                .map(|(acc, aura)| {
-                    (
-                        acc.clone(),        // account id
-                        acc,                // validator id
-                        session_keys(aura), // session keys
-                    )
-                })
-                .collect(),
-        },
-        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
-        // of this.
-        aura: Default::default(),
-        aura_ext: Default::default(),
-        parachain_system: Default::default(),
-        polkadot_xcm: PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
-            _config: Default::default(),
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
-        },
-        transaction_payment: Default::default(),
-    }
-}
-
 fn polkadot_genesis_full(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<(AccountId, u128)>,
     id: ParaId,
     root_key: AccountId,
 ) -> RuntimeGenesisConfig {
-    #[cfg(all(feature = "t3rn", not(feature = "default")))]
-    #[rustfmt::skip]
-    return polkadot_genesis_shell(invulnerables, endowed_accounts, id, root_key);
-
-    // #[cfg(not(feature = "t3rn"))]
     return RuntimeGenesisConfig {
         system: SystemConfig {
             code: WASM_BINARY
