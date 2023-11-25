@@ -34,6 +34,7 @@
     "dotenv": "^16.3.1",
     "env-var": "^7.4.1",
     "figlet": "^1.6.0",
+    "lookup": "link:@polkadot/types/lookup",
     "node-fetch": "^3.3.2",
     "node-gyp-build": "^4.6.1",
     "ora": "^5.4.1",

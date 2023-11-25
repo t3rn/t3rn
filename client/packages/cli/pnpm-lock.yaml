@@ -41,6 +41,9 @@ dependencies:
   figlet:
     specifier: ^1.6.0
     version: 1.6.0
+  lookup:
+    specifier: link:@polkadot/types/lookup
+    version: link:@polkadot/types/lookup
   node-fetch:
     specifier: ^3.3.2
     version: 3.3.2
@@ -428,6 +431,13 @@ packages:
 
   /@babel/runtime@7.22.11:
     resolution: {integrity: sha512-ee7jVNlWN09+KftVOu9n7S8gQzD/Z6hN/I8VBRXW4P1+Xe7kJGXMwu8vds4aGIMHZnNbdpSWCfZZtinytpcAvA==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.14.0
+    dev: false
+
+  /@babel/runtime@7.23.4:
+    resolution: {integrity: sha512-2Yv65nlWnWlSpe3fXEyX5i7fx5kIKo4Qbcj+hMO0odwaneFjfXw5fdum+4yL20O0QiaHpia0cYQ9xpNMqrBwHg==}
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.0
@@ -1448,9 +1458,9 @@ packages:
     resolution: {integrity: sha512-oMAdF8Y9CLBI0EUZBcycHcvbQQdbkJHevPJ/lwnZXJTaueXuav/Xm2yiFj5J3V8meIjLocURlMawgsAVItXOBQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@polkadot/util': 9.7.2
-      '@substrate/ss58-registry': 1.43.0
+      '@substrate/ss58-registry': 1.44.0
     dev: false
 
   /@polkadot/rpc-augment@8.14.1:
@@ -1588,7 +1598,7 @@ packages:
     peerDependencies:
       '@polkadot/util': 9.7.2
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@noble/hashes': 1.1.2
       '@noble/secp256k1': 1.6.0
       '@polkadot/networks': 9.7.2
@@ -1618,12 +1628,12 @@ packages:
     resolution: {integrity: sha512-ivTmA+KkPCq5i3O0Gk+dTds/hwdwlYCh89aKfeaG9ni3XHUbbuBgTqHneo648HqxwAwSAyiDiwE9EdXrzAdO4Q==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@polkadot/x-bigint': 9.7.2
       '@polkadot/x-global': 9.7.2
       '@polkadot/x-textdecoder': 9.7.2
       '@polkadot/x-textencoder': 9.7.2
-      '@types/bn.js': 5.1.1
+      '@types/bn.js': 5.1.5
       bn.js: 5.2.1
       ip-regex: 4.3.0
     dev: false
@@ -1790,7 +1800,7 @@ packages:
     resolution: {integrity: sha512-qi8/DTGypFSt5vvNOsYcEaqH72lymfyidGlsHlZ6e7nNASnEhk/NaOcINiTr1ds+fpu4dtKXWAIPZufujf2JeQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@polkadot/x-global': 9.7.2
     dev: false
 
@@ -1815,7 +1825,7 @@ packages:
     resolution: {integrity: sha512-3NN5JhjosaelaFWBJSlv9mb/gDAlt7RuZ8NKlOjB+LQHd9g6ZbnYi5wwjW+i/x/3E4IVbBx66uvWgNaw7IBrkg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
     dev: false
 
   /@polkadot/x-randomvalues@10.4.2:
@@ -1830,7 +1840,7 @@ packages:
     resolution: {integrity: sha512-819slnXNpoVtqdhjI19ao7w5m+Zwx11VfwCZkFQypVv3b/1UEoKG/baJA9dVI6yMvhnBN//i8mLgNy3IXWbVVw==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@polkadot/x-global': 9.7.2
     dev: false
 
@@ -1846,7 +1856,7 @@ packages:
     resolution: {integrity: sha512-hhrMNZwJBmusdpqjDRpOHZoMB4hpyJt9Gu9Bi9is7/D/vq/hpxq8z7s6NxrbRyXJf1SIk6NMK0jf5XjRLdKdbw==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@polkadot/x-global': 9.7.2
     dev: false
 
@@ -1862,7 +1872,7 @@ packages:
     resolution: {integrity: sha512-GHbSdbMPixDAOnJ9cvL/x9sPNeHegPoDSqCAzY5H6/zHc/fNn0vUu0To9VpPgPhp/Jb9dbc0h8YqEyvOcOlphw==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@babel/runtime': 7.22.11
+      '@babel/runtime': 7.23.4
       '@polkadot/x-global': 9.7.2
     dev: false
 
@@ -1942,6 +1952,10 @@ packages:
 
   /@substrate/ss58-registry@1.43.0:
     resolution: {integrity: sha512-USEkXA46P9sqClL7PZv0QFsit4S8Im97wchKG0/H/9q3AT/S76r40UHfCr4Un7eBJPE23f7fU9BZ0ITpP9MCsA==}
+    dev: false
+
+  /@substrate/ss58-registry@1.44.0:
+    resolution: {integrity: sha512-7lQ/7mMCzVNSEfDS4BCqnRnKCFKpcOaPrxMeGTXHX1YQzM/m2BBHjbK2C3dJvjv7GYxMiaTq/HdWQj1xS6ss+A==}
     dev: false
 
   /@szmarczak/http-timer@4.0.6:
@@ -2045,6 +2059,12 @@ packages:
       '@types/node': 20.8.7
     dev: false
 
+  /@types/bn.js@5.1.5:
+    resolution: {integrity: sha512-V46N0zwKRF5Q00AZ6hWtN0T8gGmDUaUzLWQvHFo5yThtVwK/VCenFY3wXVbOvNfajEpsTfQM4IN9k/d6gUVX3A==}
+    dependencies:
+      '@types/node': 20.10.0
+    dev: false
+
   /@types/cacheable-request@6.0.3:
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
     dependencies:
@@ -2119,6 +2139,12 @@ packages:
 
   /@types/node@12.20.55:
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
+    dev: false
+
+  /@types/node@20.10.0:
+    resolution: {integrity: sha512-D0WfRmU9TQ8I9PFx9Yc+EBHw+vSpIub4IDvQivcp26PtPrdMGAq5SDcpXEo/epqa/DXotVpekHiLNTg3iaKXBQ==}
+    dependencies:
+      undici-types: 5.26.5
     dev: false
 
   /@types/node@20.8.7:
@@ -2837,7 +2863,7 @@ packages:
       normalize-path: 3.0.0
       readdirp: 3.6.0
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /chownr@1.1.4:
@@ -3943,8 +3969,8 @@ packages:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
     dev: true
 
-  /fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+  /fsevents@2.3.3:
+    resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
     requiresBuild: true
@@ -4716,7 +4742,7 @@ packages:
       micromatch: 4.0.5
       walker: 1.0.8
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /jest-leak-detector@29.7.0:
@@ -6041,7 +6067,7 @@ packages:
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /run-applescript@5.0.0:
@@ -6680,6 +6706,10 @@ packages:
 
   /undici-types@5.25.3:
     resolution: {integrity: sha512-Ga1jfYwRn7+cP9v8auvEXN1rX3sWqlayd4HP7OKk4mZWylEmu3KzXDUGrQUN6Ol7qo1gPvB2e5gX6udnyEPgdA==}
+
+  /undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+    dev: false
 
   /universalify@0.1.2:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}

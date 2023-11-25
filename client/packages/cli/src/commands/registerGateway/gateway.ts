@@ -6,6 +6,7 @@ import {
   T3rnAbiRecodeCodec,
   T3rnPrimitivesExecutionVendor,
   T3rnPrimitivesGatewayVendor,
+  //@ts-ignore - TS doesn't know about the type
 } from '@polkadot/types/lookup'
 import { Gateway } from '@/schemas/setup.ts'
 import { colorLogMsg, log } from '@/utils/log.ts'
@@ -100,6 +101,7 @@ const registerGateway = async (
       codec.toJSON(),
       registrant,
       escrowAccounts,
+      //@ts-ignore - TS doesn't know about the type
       allowedSideEffects,
       tokenInfo,
       registrationData,

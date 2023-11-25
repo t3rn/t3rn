@@ -72,14 +72,16 @@ const fetchPortalConsensusData = async (
   target: ApiPromise,
   gatewayData: Required<Gateway>,
 ) => {
-
   spinner.info(colorLogMsg('INFO', 'Fetching fetchPortalConsensusData ...'))
-  const processEnvHeight = process.env["REGISTRATION_HEIGHT"] || null ? Number(process.env["REGISTRATION_HEIGHT"]) : null
+  const processEnvHeight =
+    process.env['REGISTRATION_HEIGHT'] || null
+      ? (parseInt(process.env['REGISTRATION_HEIGHT']) as number)
+      : null
 
   spinner.info(colorLogMsg('INFO', 'processEnvHeight ...' + processEnvHeight))
-  const registrationHeight = processEnvHeight ? Number(processEnvHeight) : await fetchLatestAuthoritySetUpdateBlock(
-      gatewayData.subscan,
-  )
+  const registrationHeight =
+    processEnvHeight ||
+    (await fetchLatestAuthoritySetUpdateBlock(gatewayData.subscan))
 
   if (!registrationHeight) {
     return
