@@ -51,6 +51,9 @@ jobs:
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: rustup show
 
+      - name: ⚙️ Make sure we have the wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
+
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
