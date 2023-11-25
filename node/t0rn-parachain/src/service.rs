@@ -4,14 +4,7 @@
 use cumulus_client_cli::CollatorOptions;
 use std::{sync::Arc, time::Duration};
 // Local Runtime Types
-#[cfg(all(feature = "t1rn", not(feature = "default")))]
-use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
-
-#[cfg(all(feature = "t3rn", not(feature = "default")))]
-use t3rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
-
-#[cfg(feature = "t0rn")]
-use t0rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
+use parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};

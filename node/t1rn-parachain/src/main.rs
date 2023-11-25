@@ -1,5 +1,12 @@
 //! Substrate Node Template CLI library.
-use t3rn_parachain_collator::command;
+#![warn(missing_docs)]
+
+mod chain_spec;
+#[macro_use]
+mod service;
+mod cli;
+mod command;
+mod rpc;
 
 fn main() -> sc_cli::Result<()> {
     command::run()
