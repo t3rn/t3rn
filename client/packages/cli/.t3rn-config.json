@@ -181,6 +181,223 @@
       }
     },
     {
+      "name": "Ethereum",
+      "id": "aeth",
+      "tokenId": 100,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Sepolia",
+      "id": "lcsp",
+      "tokenId": 100,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Sepolia",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "name": "optimism-sepolia",
+      "id": "opsp",
+      "tokenId": 101,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "name": "arbitrum-sepolia",
+      "id": "arbt",
+      "tokenId": 102,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "name": "base-sepolia",
+      "id": "bssp",
+      "tokenId": 103,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "name": "binance-testnet",
+      "id": "bsct",
+      "tokenId": 104,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "bsc",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "name": "scroll-sepolia",
+      "id": "scrt",
+      "tokenId": 104,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "eth",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ],
+          [
+            "tass",
+            5
+          ]
+        ]
+      }
+    },
+    {
       "name": "Sepolia",
       "id": "sepl",
       "tokenId": 200,
@@ -190,7 +407,34 @@
       },
       "registrationData": {
         "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-        "verificationVendor": "Sepolia",
+        "verificationVendor": "Attesters",
+        "executionVendor": "EVM",
+        "runtimeCodec": "RLP",
+        "tokenInfo": {
+          "Ethereum": {
+            "symbol": "sepl",
+            "decimals": 18
+          }
+        },
+        "allowedSideEffects": [
+          [
+            "tran",
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Sepolia",
+      "id": "asep",
+      "tokenId": 201,
+      "transferData": {
+        "receiver": "0x1234567890123456789012345678901234567890",
+        "fee": 0
+      },
+      "registrationData": {
+        "owner": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+        "verificationVendor": "Attesters",
         "executionVendor": "EVM",
         "runtimeCodec": "RLP",
         "tokenInfo": {
