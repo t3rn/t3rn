@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.74.9-rc.0] - 2023-11-25
+### :bug: Bug Fixes
+- [`1d6b86b`](https://github.com/t3rn/t3rn/commit/1d6b86bb0be6481a545ec9ce2cd00a7e32c07ed2) - set correct weights to Vacuum & Circuit orders; mitigate state bloat *(PR [#1459](https://github.com/t3rn/t3rn/pull/1459) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.74.3-rc.0] - 2023-11-13
 ### :wrench: Chores
 - [`fc1d6d2`](https://github.com/t3rn/t3rn/commit/fc1d6d22d975c612f21dd7de112d4ca0be57c9b7) - update t0rn specs updated and wasm  *(PR [#1463](https://github.com/t3rn/t3rn/pull/1463) by [@3h4x](https://github.com/3h4x))*
@@ -1935,3 +1940,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.74.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.0-rc.0...v1.74.1-rc.0
 [v1.74.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.1-rc.0...v1.74.2-rc.0
 [v1.74.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.2-rc.0...v1.74.3-rc.0
+[v1.74.9-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.8-rc.0...v1.74.9-rc.0
