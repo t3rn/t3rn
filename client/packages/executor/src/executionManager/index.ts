@@ -658,15 +658,13 @@ export class ExecutionManager {
    */
   initSfxListeners(sfx: SideEffect) {
     sfx.on("Notification", (notification: Notification) => {
+      // fixme: apply correct SFX strategies here and remove line below
       notification.payload.bidAmount = new BN(1);
       switch (notification.type) {
         case NotificationType.SubmitBid: {
           // Increment nonce in case we want to send multiple bids in a single block
           this.circuitRelayer
-            .bidSfx(
-              notification.payload.sfxId,
-              notification.payload.bidAmount as BN,
-            )
+            .bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .then((status: any) => {
               sfx.bidAccepted(status, notification.payload.bidAmount as number);
