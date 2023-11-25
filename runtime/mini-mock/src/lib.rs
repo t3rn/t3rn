@@ -131,6 +131,8 @@ impl pallet_assets::Config for MiniRuntime {
     // type AssetIdParameter = codec::Compact<u32>;
     type AssetIdParameter = u32;
     type Balance = Balance;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
     type CallbackHandle = ();
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type Currency = Balances;
@@ -492,6 +494,7 @@ impl pallet_circuit_vacuum::Config for MiniRuntime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_circuit_vacuum::weights::SubstrateWeight<MiniRuntime>;
     type Xdns = XDNS;
 }
 

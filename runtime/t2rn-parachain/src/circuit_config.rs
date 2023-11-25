@@ -123,6 +123,7 @@ impl pallet_vacuum::Config for Runtime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_vacuum::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
 
@@ -290,7 +291,7 @@ impl pallet_circuit::Config for Runtime {
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
     type TreasuryAccounts = Runtime;
-    type WeightInfo = ();
+    type WeightInfo = pallet_circuit::weights::SubstrateWeight<Runtime>;
     // type XBIPortal = XBIPortalRuntimeEntry;
     // type XBIPromise = XBIPortal;
     type Xdns = XDNS;

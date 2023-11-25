@@ -92,6 +92,7 @@ impl pallet_vacuum::Config for Runtime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_vacuum::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
 

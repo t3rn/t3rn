@@ -43,6 +43,8 @@ impl pallet_assets::Config for Runtime {
     type AssetId = circuit_runtime_types::AssetId;
     type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
     type CallbackHandle = ();
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type Currency = Balances;
@@ -80,6 +82,8 @@ impl pallet_asset_registry::Config for Runtime {
     type Assets = Assets;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = AssetRegistryBenchmarkHelper;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
     type ReserveAssetModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_asset_registry::weights::SubstrateWeight<Runtime>;
