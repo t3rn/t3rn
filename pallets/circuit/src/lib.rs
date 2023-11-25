@@ -219,6 +219,11 @@ pub mod pallet {
     pub type PendingXtxBidsTimeoutsMap<T> =
         StorageMap<_, Identity, XExecSignalId<T>, BlockNumberFor<T>, OptionQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn get_finalized_xtx)]
+    pub type FinalizedXtx<T> =
+        StorageMap<_, Identity, XExecSignalId<T>, BlockNumberFor<T>, OptionQuery>;
+
     /// Current Circuit's context of all accepted for execution cross-chain transactions.
     ///
     /// All Xtx that has been initially paid out by users will be left here.
@@ -1655,6 +1660,16 @@ impl<T: Config> Pallet<T> {
                     }
                 })
                 .count();
+
+            // Go over all unfinished Xtx to find those that should be killed
+            let _processed_xtx_commit_count = <FinalizedXtx<T>>::iter()
+                .map(|(xtx_id, _)| {
+                    if current_weight <= max_allowed_weight.ref_time() {
+                        current_weight = current_weight
+                            .saturating_add(Self::process_tick_two(xtx_id).ref_time());
+                    }
+                })
+                .count();
         }
         Weight::from_parts(current_weight, 0u64)
     }
@@ -1928,6 +1943,32 @@ impl<T: Config> Pallet<T> {
                     Some(local_ctx.xtx.clone()),
                     None,
                 );
+            },
+        );
+
+        T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
+    }
+
+    pub fn process_tick_two(xtx_id: XExecSignalId<T>) -> Weight {
+        const KILL_WRITES: u64 = 4;
+        const KILL_READS: u64 = 1;
+
+        // If doesn't exist, early return
+        let mut xtx_context = match Machine::<T>::load_xtx(xtx_id) {
+            Ok(ctx) => ctx,
+            Err(_) => return T::DbWeight::get().reads_writes(KILL_READS, 0),
+        };
+
+        Machine::<T>::compile_infallible(
+            &mut xtx_context,
+            |current_fsx, _local_state, _steps_cnt, status, _requester| match status {
+                CircuitStatus::FinishedAllSteps =>
+                    PrecompileResult::ForceUpdateStatus(CircuitStatus::Committed),
+                _ => PrecompileResult::TryKill(Cause::Timeout),
+            },
+            |_status_change, local_ctx| {
+                // Account fees and charges happens internally in Machine::apply
+                Self::emit_status_update(local_ctx.xtx_id, Some(local_ctx.xtx.clone()), None);
             },
         );
 
