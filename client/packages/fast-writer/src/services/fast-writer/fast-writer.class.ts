@@ -55,12 +55,17 @@ export class FastWriter {
   private async scheduleSubmissionsToCircuit() {
     // eslint-disable-next-line no-constant-condition
     while (true) {
+      const randomSleepTime = Math.random() * 3000 + 2000;
+      logger.info(
+          { randomSleepTime: randomSleepTime / 1000 },
+          "🎲 Sleeping for random time between 2-5sec before confirming SFXs",
+      );
+      await sleep(randomSleepTime / 1000, '🎲 Sleeping for random time before confirming SFXs')
       logger.info('Starting new submission loop to Circuit')
       const nonce = await this.fetchNonce(
-        this.circuitClient.sdk.client,
-        this.circuitClient.sdk.signer.address,
+          this.circuitClient.sdk.client,
+          this.circuitClient.sdk.signer.address,
       )
-
       // TODO submit SFXs
       for (const sideEffect of this.config.sideEffects) {
         const order = new Order(
