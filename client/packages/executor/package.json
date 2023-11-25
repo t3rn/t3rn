@@ -46,6 +46,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.8.0",
     "axios": "^1.6.0",
+    "bn.js": "^5.2.1",
     "chai": "^4.3.8",
     "chai-as-promised": "^7.1.1",
     "debug": "4.3.4",

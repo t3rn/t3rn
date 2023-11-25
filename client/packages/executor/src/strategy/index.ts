@@ -245,7 +245,9 @@ export class StrategyEngine {
   ): void | Error {
     if (strategy.minInsuranceAmountUsd) {
       if (sfx.insurance < strategy.minInsuranceAmountUsd) {
-        throw new Error("Min Insurance Amount  condition not met!");
+        throw new Error(
+          `Min Insurance Amount  condition not met! ${sfx.insurance}, ${strategy.minInsuranceAmountUsd}, ${sfx.maybeRewardAsset}, ${sfx.target}`,
+        );
       }
     }
   }

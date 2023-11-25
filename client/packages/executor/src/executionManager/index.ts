@@ -19,7 +19,7 @@ import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/side-effects/types";
 import { Config, Gateway } from "../../config/config";
 import { Logger } from "pino";
-import BN from "bn.js";
+import { BN } from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
 import { getBalanceWithDecimals } from "../utils";
@@ -556,6 +556,19 @@ export class ExecutionManager {
         },
         "SFXs ready for confirmation",
       );
+      // Wait random time between 2 and 5 seconds
+      const randomSleepTime = Math.random() * 3000 + 2000;
+      logger.info(
+        { randomSleepTime: randomSleepTime / 1000 },
+        "🎲 Sleeping for random time between 2-5s before confirming SFXs",
+      );
+      await new Promise((resolve) => setTimeout(resolve));
+      // Update this.sdk.nonce
+      this.sdk.nonce = (
+        await this.circuitClient.rpc.system.accountNextIndex(
+          this.sdk.signer.address,
+        )
+      ).toNumber();
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
         // TODO: we should be getting status and events like we do when we do signAndSend
@@ -645,6 +658,7 @@ export class ExecutionManager {
    */
   initSfxListeners(sfx: SideEffect) {
     sfx.on("Notification", (notification: Notification) => {
+      notification.payload.bidAmount = new BN(1);
       switch (notification.type) {
         case NotificationType.SubmitBid: {
           // Increment nonce in case we want to send multiple bids in a single block

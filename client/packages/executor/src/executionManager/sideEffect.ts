@@ -296,7 +296,7 @@ export class SideEffect extends EventEmitter {
    * used to determine if another bid should be placed.
    */
   recomputeMaxProfit() {
-    logger.debug("Recomputing max profit");
+    logger.info("🪆 Recomputing max profit");
     const txCostUsd =
       this.gateway.toFloat(this.txCostNative.getValue()) *
       this.nativeAssetPrice.getValue();
@@ -317,7 +317,13 @@ export class SideEffect extends EventEmitter {
 
   /** Triggers the bidding engine to place a new bid for the SFX. */
   triggerBid() {
-    const result = this.generateBid();
+    let result;
+    try {
+      result = this.generateBid();
+    } catch (e) {
+      logger.error(e.stack, "👱 Error generating bid in SideEffect.triggerBid");
+      return;
+    }
     if (result?.trigger) {
       logger.info(
         {
