@@ -5,15 +5,24 @@ import { createType } from '@t3rn/types'
 import {
   T3rnAbiRecodeCodec,
   T3rnPrimitivesExecutionVendor,
-  T3rnPrimitivesGatewayVendor,
   //@ts-ignore - TS doesn't know about the type
 } from '@polkadot/types/lookup'
+
 import { Gateway } from '@/schemas/setup.ts'
 import { colorLogMsg, log } from '@/utils/log.ts'
 import { createCircuitContext } from '@/utils/circuit.ts'
 import { getConfig } from '@/utils/config.ts'
 import { registerSubstrateVerificationVendor } from './vendors/substrate.ts'
 import { registerEthereumVerificationVendor } from './vendors/eth.ts'
+
+type GatewayVendor =
+  | 'Polkadot'
+  | 'Kusama'
+  | 'Rococo'
+  | 'Ethereum'
+  | 'Sepolia'
+  | 'XBI'
+  | 'Attesters'
 
 export const spinner = ora()
 
@@ -51,10 +60,8 @@ const registerGateway = async (
 
   const gatewayId = createType('[u8; 4]', gatewayData.id)
   const tokenId = createType('u32', gatewayData.tokenId)
-  const verificationVendor: T3rnPrimitivesGatewayVendor = createType(
-    'T3rnPrimitivesGatewayVendor',
-    gatewayData.registrationData.verificationVendor as never,
-  )
+  const verificationVendor: GatewayVendor = gatewayData.registrationData
+    .verificationVendor as GatewayVendor
   const executionVendor: T3rnPrimitivesExecutionVendor = createType(
     'T3rnPrimitivesExecutionVendor',
     gatewayData.registrationData.executionVendor as never,
@@ -75,11 +82,12 @@ const registerGateway = async (
   )
 
   try {
-    const registrationData = await getRegistrationData(
-      circuit,
-      gatewayData,
-      slot,
-    )
+    const emptyRegistrationDataVec = circuit.createType('Vec<u8>', [])
+
+    const registrationData =
+      verificationVendor == 'XBI' || verificationVendor == 'Attesters'
+        ? emptyRegistrationDataVec
+        : await getRegistrationData(circuit, gatewayData, slot)
 
     if (!registrationData) {
       throw new Error(
@@ -94,7 +102,7 @@ const registerGateway = async (
       gatewayId,
       tokenId,
       //@ts-ignore - TS doesn't know about the type
-      verificationVendor.toJSON(),
+      verificationVendor,
       //@ts-ignore - TS doesn't know about the type
       executionVendor.toJSON(),
       //@ts-ignore - TS doesn't know about the type
@@ -107,6 +115,7 @@ const registerGateway = async (
       registrationData,
     )
     const response = await sdk.circuit.tx.signAndSendSafe(
+      //@ts-ignore - TS doesn't know about the type
       sdk.circuit.tx.createSudo(tx),
     )
 
