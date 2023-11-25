@@ -58,6 +58,71 @@ fn standard_sfx_abi() -> Vec<(Sfx4bId, SFXAbi)> {
     t3rn_abi::standard::standard_sfx_abi()
 }
 
+pub(crate) const SS58_FORMAT_T1RN: u16 = 4815;
+pub const TRN: u128 = 1_000_000_000_000;
+const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
+
+/// Derive an Aura id from a SS58 address.
+///
+/// This function's return type must always match the session keys of the chain in tuple format.
+pub fn get_aura_id_from_adrs(adrs: &str) -> AuraId {
+    use sp_core::crypto::Ss58Codec;
+    AuraId::from_string(adrs).expect("aura id from SS58 address")
+}
+
+pub fn get_grandpa_id_from_adrs(adrs: &str) -> GrandpaId {
+    use sp_core::crypto::Ss58Codec;
+    GrandpaId::from_string(adrs).expect("grandpa id from SS58 address")
+}
+
+const SUDO_T1RN: &str = "t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ"; // @t1rn; 32b = 0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061
+
+pub fn t2rn_config() -> Result<ChainSpec, String> {
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+
+    Ok(ChainSpec::from_genesis(
+        // Name
+        "t2rn",
+        // ID
+        "t2rn",
+        ChainType::Live,
+        move || {
+            testnet_genesis(
+                wasm_binary,
+                // Initial PoA authorities
+                vec![(
+                    get_aura_id_from_adrs(SUDO_T1RN),
+                    get_grandpa_id_from_adrs(SUDO_T1RN),
+                )],
+                // Sudo account
+                hex_literal::hex!(
+                    "5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061"
+                )
+                .into(),
+                // Pre-funded accounts
+                vec![hex_literal::hex!(
+                    "5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061"
+                )
+                .into()],
+                vec![],
+                standard_sfx_abi(),
+                true,
+            )
+        },
+        // Bootnodes
+        vec![],
+        // Telemetry
+        None,
+        // Protocol ID
+        None,
+        None,
+        // Properties
+        None,
+        // Extensions
+        None,
+    ))
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -192,7 +257,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, (10000 * 10u128.pow(12))))
+                .map(|k| (k, SUPPLY))
                 .collect(),
         },
         // session: SessionConfig {

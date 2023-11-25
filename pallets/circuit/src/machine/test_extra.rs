@@ -292,26 +292,12 @@ pub fn check_all_single_xtx_state_correct(
 pub fn check_all_state_revert(
     xtx_id: H256,
     _reverted_sfx: Vec<SideEffect<AccountId, Balance>>,
-    requester_nonce: u32,
+    _requester_nonce: u32,
 ) {
-    assert_eq!(
-        XExecSignals::<Runtime>::get(xtx_id),
-        Some(XExecSignal {
-            status: CircuitStatus::Reverted(Cause::Timeout),
-            requester: ALICE,
-            timeouts_at: AdaptiveTimeout::default_401(),
-            delay_steps_at: None,
-            requester_nonce,
-            steps_cnt: (0, 1),
-            speed_mode: SpeedMode::Finalized,
-        })
-    );
-
-    let local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
-    assert_ok!(validate_fsx_against_xtx(&local_ctx));
-
+    assert_eq!(XExecSignals::<Runtime>::get(xtx_id), None);
+    assert_eq!(FullSideEffects::<Runtime>::get(xtx_id), None);
+    assert_eq!(LocalXtxStates::<Runtime>::get(xtx_id), None);
     assert_eq!(PendingXtxTimeoutsMap::<Runtime>::get(xtx_id), None);
-    assert!(LocalXtxStates::<Runtime>::get(xtx_id).is_some());
     assert_eq!(PendingXtxBidsTimeoutsMap::<Runtime>::get(xtx_id), None);
 }
 

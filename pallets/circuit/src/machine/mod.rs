@@ -552,12 +552,11 @@ impl<T: Config> Machine<T> {
                 CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished,
                 CircuitStatus::Reverted(_cause),
             ) => {
-                <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-
+                <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::FullSideEffects::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::DLQ::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
 
                 SquareUp::<T>::finalize(local_ctx);
 
