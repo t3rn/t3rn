@@ -173,8 +173,9 @@ runtime-benchmarks = [
 ]
 
 try-runtime = [
-  "frame-executive/try-runtime",
+  "try-runtime-cli",
   "frame-try-runtime",
+  "frame-executive/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-treasury/try-runtime",
