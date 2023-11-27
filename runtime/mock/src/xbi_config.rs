@@ -143,7 +143,10 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // The account to use for tracking teleports.
     CheckingAccount,
 >;
-
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}
 pub type AssetTransactors = LocalAssetTransactor;
 
 match_types! {

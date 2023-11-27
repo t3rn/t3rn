@@ -113,6 +113,7 @@ impl pallet_vacuum::Config for Runtime {
     type Currency = Balances;
     type ReadSFX = Circuit;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_vacuum::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
 
@@ -125,7 +126,7 @@ impl pallet_xdns::Config for Runtime {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SelfGatewayId = SelfGatewayId;
-    type SelfTokenId = ConstU32<3333>;
+    type SelfTokenId = ConstU32<3334>;
     type Time = Timestamp;
     type TreasuryAccounts = Runtime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
@@ -276,10 +277,10 @@ impl pallet_circuit::Config for Runtime {
     type SFXBiddingPeriod = ConstU32<3u32>;
     type SelfAccountId = crate::accounts_config::EscrowAccount;
     type SelfGatewayId = SelfGatewayId;
-    type SelfParaId = ConstU32<3333u32>;
+    type SelfParaId = ConstU32<3334u32>;
     type SignalQueueDepth = ConstU32<5u32>;
     type TreasuryAccounts = Runtime;
-    type WeightInfo = ();
+    type WeightInfo = pallet_circuit::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
     type XtxTimeoutDefault = ConstU32<400u32>;

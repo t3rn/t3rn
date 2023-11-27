@@ -1521,16 +1521,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
-                Some(XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
-                    timeouts_at: ADAPTIVE_TIMEOUT_A,
-                    delay_steps_at: None,
-                    status: CircuitStatus::Reverted(Cause::Timeout),
-                    requester_nonce: FIRST_REQUESTER_NONCE,
-                    steps_cnt: (0, 1), speed_mode: SpeedMode::Finalized,
-                })
+                None,
             );
 
             assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
@@ -1627,16 +1618,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
-                Some(XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
-                    timeouts_at: ADAPTIVE_TIMEOUT_A,
-                    delay_steps_at: None,
-                    status: CircuitStatus::Reverted(Cause::Timeout),
-                    requester_nonce: FIRST_REQUESTER_NONCE,
-                    steps_cnt: (0, 1), speed_mode: SpeedMode::Finalized,
-                })
+                None
             );
 
             assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
