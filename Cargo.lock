@@ -13042,6 +13042,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
+ "frame-try-runtime",
  "futures",
  "hex-literal 0.4.1",
  "jsonrpsee",
@@ -13097,6 +13098,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types",
+ "try-runtime-cli",
  "xcm",
 ]
 
@@ -13221,6 +13223,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
+ "frame-try-runtime",
  "futures",
  "hex-literal 0.4.1",
  "jsonrpsee",
@@ -13276,6 +13279,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types",
+ "try-runtime-cli",
  "xcm",
 ]
 
@@ -13600,6 +13604,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
+ "frame-try-runtime",
  "futures",
  "hex-literal 0.4.1",
  "jsonrpsee",
@@ -13655,6 +13660,7 @@ dependencies = [
  "t3rn-parachain-runtime",
  "t3rn-primitives",
  "t3rn-types",
+ "try-runtime-cli",
  "xcm",
 ]
 

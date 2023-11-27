@@ -72,6 +72,10 @@ frame-benchmarking     = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
+# try-runtime CLI dependencies
+frame-try-runtime = { workspace = true, default-features = true, optional = true }
+try-runtime-cli   = { workspace = true, optional = true }
+
 parachain-runtime          = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
 
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
@@ -108,8 +112,10 @@ xcm                                     = { workspace = true }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
+cli = [ "try-runtime-cli" ]
 try-runtime = [
     "parachain-runtime/try-runtime",
+    "try-runtime-cli",
 ]
 runtime-benchmarks = [
     "parachain-runtime/runtime-benchmarks",

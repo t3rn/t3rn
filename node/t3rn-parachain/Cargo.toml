@@ -72,6 +72,10 @@ frame-benchmarking     = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
+# try-runtime CLI dependencies
+frame-try-runtime = { workspace = true, default-features = true, optional = true }
+try-runtime-cli   = { workspace = true, optional = true }
+
 # Local Dependencies
 parachain-runtime      = { path = "../../runtime/t3rn-parachain", package = "t3rn-parachain-runtime" }
 

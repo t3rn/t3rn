@@ -124,6 +124,7 @@ pub mod pallet {
             escrow_account: Option<T::AccountId>,
             allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
             token_props: TokenInfo,
+            token_location: Option<MultiLocation>,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
             ensure_root(origin.clone())?;
