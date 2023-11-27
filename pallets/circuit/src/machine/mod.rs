@@ -552,23 +552,20 @@ impl<T: Config> Machine<T> {
                 CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished,
                 CircuitStatus::Reverted(_cause),
             ) => {
-                <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-
+                <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::FullSideEffects::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::DLQ::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
 
                 SquareUp::<T>::finalize(local_ctx);
 
                 true
             },
             (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => {
-                <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-
-                SquareUp::<T>::commit(local_ctx);
+                <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::FullSideEffects::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
 
                 true
             },
@@ -590,12 +587,14 @@ impl<T: Config> Machine<T> {
                     *x = Some(local_ctx.full_side_effects.clone())
                 });
 
+                <pallet::Pallet<T> as Store>::FinalizedXtx::insert(
+                    local_ctx.xtx_id,
+                    <frame_system::Pallet<T>>::block_number(),
+                );
+
                 SquareUp::<T>::finalize(local_ctx);
 
                 true
-                // <pallet::Pallet<T> as Store>::LocalXtxStates::remove::<XExecSignalId<T>>(
-                //     local_ctx.xtx_id,
-                // );
             },
             // ongoing execution - update FSX and Xtx status
             (

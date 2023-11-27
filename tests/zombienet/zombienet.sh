@@ -139,6 +139,20 @@ setup_xcm() {
     build_collator
 }
 
+setup_alles() {
+    make_bin_dir
+    fetch_zombienet
+    build_polkadot
+    NETWORK=t0rn
+    build_collator
+    NETWORK=t1rn
+    build_collator
+    NETWORK=t3rn
+    build_collator
+    NETWORK=t7rn
+    build_collator
+}
+
 smoke() {
     echo "Running smoke tests.."
     # TODO[Optimisation]: loop through directory and test all
@@ -210,6 +224,13 @@ xcm() {
     echo "::endgroup::"
 }
 
+
+spawn_alles() {
+    setup_alles
+    echo "Spawning zombienet for t0rn, t1rn, t7rn, t3rn using provider: $provider..."
+    zombienet --provider="$provider" spawn ./zombienet-alles.toml
+}
+
 spawn_xcm() {
     setup_xcm
     echo "Spawning zombienet using provider: $provider..."
@@ -218,7 +239,7 @@ spawn_xcm() {
 
 spawn() {
     setup
-    echo "Spawning zombienet for t1rn using provider: $provider..."
+    echo "Spawning zombienet for ${NETWORK} using provider: $provider..."
     zombienet --provider="$provider" spawn ./zombienet-${NETWORK}.toml
 }
 
@@ -249,6 +270,10 @@ case "$1" in
     "spawn")
         setup
         spawn
+    ;;
+    "spawn_alles")
+        setup
+        spawn_alles
     ;;
     "spawn_xcm")
         spawn_xcm

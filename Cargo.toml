@@ -26,7 +26,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.74.4-rc.0"
+version    = "1.75.1-rc.0"
 
 workspace.resolver = "2"
 
@@ -231,7 +231,6 @@ exclude = [
 members = [
   "finality-verifiers/grandpa",
   "node/standalone",
-  "node/parachain",
   "node/t0rn-parachain",
   "node/t1rn-parachain",
   "node/t2rn-parachain",
