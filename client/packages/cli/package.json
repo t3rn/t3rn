@@ -22,6 +22,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@polkadot/types": "^8.9.1",
     "@chainsafe/ssz": "^0.11.1",
     "@lodestar/config": "^1.11.3",
     "@lodestar/types": "^1.11.3",
