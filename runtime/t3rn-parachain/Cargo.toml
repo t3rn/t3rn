@@ -31,7 +31,10 @@ frame-executive              = { git = "https://github.com/paritytech/substrate"
 frame-support                = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 frame-system                 = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+
+# try-runtime CLI
 frame-try-runtime            = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v1.0.0" }
+try-runtime-cli              = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v1.0.0" }
 
 pallet-aura                                = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 pallet-authorship                          = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
@@ -141,6 +144,7 @@ std = [
   "xcm-executor/std",
   "xcm/std",
   "circuit-runtime-types/std",
+  "frame-try-runtime/std"
 ]
 
 runtime-benchmarks = [
@@ -169,8 +173,9 @@ runtime-benchmarks = [
 ]
 
 try-runtime = [
-  "frame-executive/try-runtime",
+  "try-runtime-cli",
   "frame-try-runtime",
+  "frame-executive/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-treasury/try-runtime",
