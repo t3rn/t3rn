@@ -378,8 +378,7 @@ impl<T: ConfigSystem, Balance> ModuleOperations<T, Balance> for ThreeVmInfo<T, B
     }
 }
 
-pub const  EvmAddress: usize = 14;
-
+pub const H160_POSITION_ASSET_ID_TYPE: usize = 14;
 
 pub trait Erc20Mapping {
     /// Encode the AssetId to EvmAddress.
