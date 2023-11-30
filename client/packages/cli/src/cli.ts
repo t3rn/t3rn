@@ -53,6 +53,7 @@ withExportMode(
     .command('rebootGateway')
     .argument('vendor')
     .description('Reboot a gateway')
+    .option('-f, --force', 'Force on live chain')
     .action(wrapCryptoWaitReady(handleRebootCommand)),
 )
 
