@@ -54,6 +54,8 @@ hex         = "0.4"
 hex-literal = { version = '0.3.1' }
 serde_json  = "1.0.41"
 mini-mock =  { path = "../runtime/mini-mock", package = "t3rn-mini-mock-runtime" }
+# XCM
+xcm        = { workspace = true }
 
 [features]
 default = [ "std" ]
