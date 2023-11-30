@@ -429,6 +429,7 @@ mod tests {
             escrow_account: Default::default(),
             allowed_side_effects: Default::default(),
             token_props: Default::default(),
+            token_location: None,
             encoded_registration_data: Default::default(),
         }
         .into();
