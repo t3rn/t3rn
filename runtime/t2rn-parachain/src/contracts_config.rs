@@ -17,6 +17,9 @@ use pallet_3vm_evm_primitives::FeeCalculator;
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
+use t3rn_primitives::threevm::H160_POSITION_ASSET_ID_TYPE;
+use circuit_runtime_tyoes::AssetId;
+
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -159,4 +162,28 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightInfo = ();
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
+}
+
+// AssetId to EvmAddress mapping
+impl Erc20Mapping for Runtime {
+    fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
+        let mut address = [0u8; 20];
+        let mut asset_id_bytes: Vec<u8> = asset_id.to_be_bytes().to_vec();
+
+        for byte_index in 0..asset_id_bytes.len() {
+            address[byte_index + H160_POSITION_ASSET_ID_TYPE] = asset_id_bytes.as_slice()[byte_index];
+        }
+
+        Some(EvmAddress::from_slice(asset_id_bytes))
+    }
+
+    fn decode_evm_address(v: EvmAddress) -> Option<AssetId> {
+        let address = v.as_bytes();
+        let mut asset_id_bytes = [2u8; 4];
+        for byte_index in H160_POSITION_ASSET_ID_TYPE {
+            asset_id_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE ] = address[byte_index];
+        }
+        let asset_id = u32::from_be_bytes(asset_id_bytes);
+        Some(asset_id)
+    }
 }
