@@ -32,7 +32,10 @@ frame-support                = { workspace = true }
 frame-system                 = { workspace = true }
 frame-system-benchmarking    = { workspace = true, optional = true }
 frame-system-rpc-runtime-api = { workspace = true }
+
+# try-runtime CLI
 frame-try-runtime            = { workspace = true, optional = true }
+try-runtime-cli              = { workspace = true, optional = true }
 
 pallet-asset-tx-payment                    = { workspace = true }
 pallet-assets                              = { workspace = true }
@@ -227,7 +230,8 @@ std = [
   # Trappist pallets
   "xcm-primitives/std",
   "pallet-asset-registry/std",
-  "pallet-withdraw-teleport/std"
+  "pallet-withdraw-teleport/std",
+  "try-runtime-cli/std"
 ]
 
 runtime-benchmarks = [
@@ -278,8 +282,9 @@ runtime-benchmarks = [
 
 ]
 try-runtime = [
-  "frame-executive/try-runtime",
+  "try-runtime-cli",
   "frame-try-runtime",
+  "frame-executive/try-runtime",
   "frame-support/try-runtime",
   "frame-system/try-runtime",
   "pallet-attesters/try-runtime",
