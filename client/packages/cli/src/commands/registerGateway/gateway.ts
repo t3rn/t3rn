@@ -72,6 +72,11 @@ const registerGateway = async (
     'TokenInfo',
     gatewayData.registrationData.tokenInfo,
   )
+  const tokenLocation = circuit.createType(
+      'Option<MultiLocation>',
+      'None',
+  )
+
 
   try {
     const registrationData = await getRegistrationData(
@@ -102,6 +107,8 @@ const registerGateway = async (
       escrowAccounts,
       allowedSideEffects,
       tokenInfo,
+      //@ts-ignore - TS doesn't know about the type
+      tokenLocation,
       registrationData,
     )
     const response = await sdk.circuit.tx.signAndSendSafe(

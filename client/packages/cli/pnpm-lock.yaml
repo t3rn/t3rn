@@ -21,8 +21,8 @@ dependencies:
     specifier: ^0.4.11
     version: 0.4.11(typescript@5.1.6)(zod@3.22.4)
   '@t3rn/types':
-    specifier: ^0.1.11
-    version: 0.1.11(@polkadot/util-crypto@9.7.2)(@polkadot/util@9.7.2)(@types/node@20.8.7)(typescript@5.1.6)
+    specifier: ^0.1.12
+    version: 0.1.12(@polkadot/util-crypto@9.7.2)(@polkadot/util@9.7.2)(@types/node@20.8.7)(typescript@5.1.6)
   chalk:
     specifier: ^4.1.2
     version: 4.1.2
@@ -1979,8 +1979,8 @@ packages:
       - zod
     dev: false
 
-  /@t3rn/types@0.1.11(@polkadot/util-crypto@9.7.2)(@polkadot/util@9.7.2)(@types/node@20.8.7)(typescript@5.1.6):
-    resolution: {integrity: sha512-h2DDAu1qmSPZmUcNc6cU4s41IfkmQ5qRFPzn8i54c+VWDsQHKmWkBssXf0RwuxJsGrAaDnZpt8Jc/VzAsvezcA==}
+  /@t3rn/types@0.1.12(@polkadot/util-crypto@9.7.2)(@polkadot/util@9.7.2)(@types/node@20.8.7)(typescript@5.1.6):
+    resolution: {integrity: sha512-x7Kyznb/preKtJmKuMYu3R4ZKAzTr9EzD6R6y4G5WqNeU63OT8Q9Z5Nq1ehZUQhLFbq+6pELc7w3Hk30Lso+5w==}
     engines: {node: '>=14.0.0', yarn: ^1.22.0}
     requiresBuild: true
     dependencies:
