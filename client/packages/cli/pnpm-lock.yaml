@@ -18,7 +18,7 @@ dependencies:
     specifier: ^8.9.1
     version: 8.14.1
   '@t3rn/sdk':
-    specifier: ^0.4.11
+    specifier: ^0.4.10
     version: 0.4.11(typescript@5.1.6)(zod@3.22.4)
   '@t3rn/types':
     specifier: ^0.1.12
