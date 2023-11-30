@@ -179,7 +179,7 @@ impl Erc20Mapping for Runtime {
 
     fn decode_evm_address(v: EvmAddress) -> Option<AssetId> {
         let address = v.as_bytes();
-        let mut asset_id_bytes = [2u8; 4];
+        let mut asset_id_bytes = [2u8; 5];
         for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
             asset_id_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE ] = address[byte_index];
         }
