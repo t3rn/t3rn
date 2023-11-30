@@ -1,11 +1,11 @@
 [package]
 authors     = { workspace = true }
 build       = "build.rs"
-description = "t1rn Parachain to Kusama"
+description = "t1rn Parachain node - t3rn's collator to Kusama"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "t1rn-collator"
+name        = "t1rn-parachain-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
@@ -72,8 +72,7 @@ frame-benchmarking     = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
-# Local Dependencies
-t1rn-parachain-runtime      = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime" }
+parachain-runtime          = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime" }
 
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
@@ -109,9 +108,9 @@ xcm                                     = { workspace = true }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
 [features]
-default = [
-]
 try-runtime = [
+    "parachain-runtime/try-runtime",
 ]
 runtime-benchmarks = [
+    "parachain-runtime/runtime-benchmarks",
 ]

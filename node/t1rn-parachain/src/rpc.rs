@@ -13,9 +13,10 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-use t1rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
+use parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 use pallet_portal_rpc::{Portal, PortalApiServer};
+
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 
 pub use sc_rpc_api::DenyUnsafe;
@@ -57,6 +58,7 @@ where
 
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+
     module.merge(Xdns::new(client.clone()).into_rpc())?;
     module.merge(Portal::new(client).into_rpc())?;
 

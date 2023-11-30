@@ -1,11 +1,11 @@
 [package]
 authors     = { workspace = true }
 build       = "build.rs"
-description = "t3rn Parachain bundle (for multiple runtimes) node - not meant to run on its own"
+description = "t7rn Parachain node - t3rn's collator to Kusama"
 edition     = { workspace = true }
 homepage    = { workspace = true }
 license     = { workspace = true }
-name        = "parachain-collator"
+name        = "t7rn-parachain-collator"
 repository  = { workspace = true }
 version     = { workspace = true }
 
@@ -13,7 +13,7 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [[bin]]
-name = "t3rn-bundled-collator"
+name = "t7rn-collator"
 path = "src/main.rs"
 
 [dependencies]
@@ -73,9 +73,7 @@ frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
 # Local Dependencies
-t0rn-parachain-runtime      = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime", optional = true }
-t1rn-parachain-runtime      = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime", optional = true }
-t3rn-parachain-runtime      = { path = "../../runtime/t3rn-parachain", package = "t3rn-parachain-runtime", optional = true }
+parachain-runtime      = { path = "../../runtime/t7rn-parachain", package = "t7rn-parachain-runtime" }
 
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
@@ -109,23 +107,3 @@ xcm                                     = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-
-[features]
-default = [
-    "t0rn-parachain-runtime",
-    "t1rn-parachain-runtime",
-    "t3rn-parachain-runtime"
-]
-try-runtime = [
-    "t0rn-parachain-runtime?/try-runtime",
-    "t1rn-parachain-runtime?/try-runtime",
-    "t3rn-parachain-runtime?/try-runtime"
-]
-runtime-benchmarks = [
-    "t0rn-parachain-runtime?/runtime-benchmarks",
-    "t1rn-parachain-runtime?/runtime-benchmarks",
-    "t3rn-parachain-runtime?/runtime-benchmarks",
-]
-t0rn = ["t0rn-parachain-runtime"]
-t1rn = ["t1rn-parachain-runtime"]
-t3rn = ["t3rn-parachain-runtime"]

@@ -4,48 +4,9 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 
-// Local Runtime Types
-#[cfg(all(
-    feature = "t1rn",
-    not(feature = "t3rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
-use t1rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
+use parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
-#[cfg(all(
-    feature = "t3rn",
-    not(feature = "t1rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
-use t3rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
-
-#[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
-use t0rn_parachain_runtime::{Block, MILLISECS_PER_BLOCK};
-
-#[cfg(all(
-    feature = "t3rn",
-    not(feature = "t1rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
-const COLLATOR_NAME: &str = "t3rn collator";
-
-#[cfg(all(
-    feature = "t1rn",
-    not(feature = "t3rn"),
-    not(feature = "t0rn"),
-    not(feature = "default"),
-    not(feature = "runtime-benchmarks")
-))]
-const COLLATOR_NAME: &str = "t1rn collator";
-
-#[cfg(any(feature = "t0rn", feature = "default", feature = "runtime-benchmarks"))]
-const COLLATOR_NAME: &str = "t0rn collator";
+const COLLATOR_NAME: &str = "t7rn collator";
 
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -168,6 +129,7 @@ pub fn run() -> Result<()> {
         },
         Some(Subcommand::CheckBlock(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
+                log::info!("👋 collator's name: {:?}", COLLATOR_NAME);
                 Ok(cmd.run(components.client, components.import_queue))
             })
         },

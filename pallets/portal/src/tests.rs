@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use ::pallet_eth2_finality_verifier::mock::{generate_epoch_update, generate_initialization};
-    use circuit_mock_runtime::{ExtBuilder, Portal, RuntimeOrigin as Origin, *};
+    use circuit_mock_runtime::{ExtBuilder, Portal, RuntimeOrigin as Origin, XDNS, *};
     use codec::Encode;
     use frame_support::assert_ok;
     use pallet_grandpa_finality_verifier::{
@@ -9,8 +9,6 @@ mod tests {
         mock::produce_mock_headers_range,
         types::RelaychainRegistrationData,
     };
-
-    use std::fs;
 
     use t3rn_primitives::{
         portal::{HeaderResult, HeightResult, Portal as PortalT},
@@ -240,6 +238,73 @@ mod tests {
         test_register_ethereum_light_client();
     }
 
+    #[test]
+    fn test_register_gateway_at_attesters_vendor() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let result = Portal::register_gateway(
+                    Origin::root(),
+                    [55u8; 4],
+                    101u32,
+                    GatewayVendor::Attesters,
+                    ExecutionVendor::EVM,
+                    t3rn_abi::Codec::Rlp,
+                    None,
+                    None,
+                    vec![(*b"tran", None)],
+                    TokenInfo::Ethereum(EthereumToken {
+                        address: Some([0u8; 20]),
+                        decimals: 0,
+                        symbol: vec![0u8; 1],
+                    }),
+                    vec![],
+                );
+
+                assert_ok!(result);
+
+                // Lookup for the gateway in XDNS storage
+                let gateway = XDNS::gateways([55u8; 4]).unwrap();
+
+                // Check if the gateway is registered at Attesters
+                assert_eq!(gateway.verification_vendor, GatewayVendor::Attesters);
+            });
+    }
+
+    #[test]
+    fn test_register_gateway_at_xbi_vendor() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let result = Portal::register_gateway(
+                    Origin::root(),
+                    [56u8; 4],
+                    101u32,
+                    GatewayVendor::XBI,
+                    ExecutionVendor::Substrate,
+                    t3rn_abi::Codec::Scale,
+                    None,
+                    None,
+                    vec![(*b"tran", None)],
+                    TokenInfo::Ethereum(EthereumToken {
+                        address: Some([0u8; 20]),
+                        decimals: 0,
+                        symbol: vec![0u8; 1],
+                    }),
+                    vec![],
+                );
+
+                // Lookup for the gateway in XDNS storage
+                let gateway = XDNS::gateways([56u8; 4]).unwrap();
+
+                // Check if the gateway is registered at Attesters
+                assert_eq!(gateway.verification_vendor, GatewayVendor::XBI);
+            });
+    }
     #[test]
     fn test_initialize_and_submit_rococo() {
         let data = produce_mock_headers_range(1, 5);

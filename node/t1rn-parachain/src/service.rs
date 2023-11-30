@@ -3,8 +3,8 @@
 // std
 use cumulus_client_cli::CollatorOptions;
 use std::{sync::Arc, time::Duration};
-
-use t1rn_parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
+// Local Runtime Types
+use parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
