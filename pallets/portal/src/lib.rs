@@ -26,6 +26,8 @@ use t3rn_primitives::{
     xdns::Xdns,
     ChainId, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo,
 };
+use xcm::latest::prelude::MultiLocation;
+
 pub mod weights;
 pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
@@ -123,6 +125,7 @@ pub mod pallet {
             escrow_account: Option<T::AccountId>,
             allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
             token_props: TokenInfo,
+            token_location: Option<MultiLocation>,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
             ensure_root(origin.clone())?;
@@ -135,8 +138,18 @@ pub mod pallet {
                 escrow_account,
                 allowed_side_effects,
             )?;
-            <T as Config>::Xdns::register_new_token(&origin, token_id, token_props.clone())?;
-            <T as Config>::Xdns::link_token_to_gateway(token_id, gateway_id, token_props)?;
+            <T as Config>::Xdns::register_new_token(
+                &origin,
+                token_id,
+                token_props.clone(),
+                token_location,
+            )?;
+            <T as Config>::Xdns::link_token_to_gateway(
+                token_id,
+                gateway_id,
+                token_props,
+                token_location,
+            )?;
             if encoded_registration_data.len() > 0 {
                 <Pallet<T> as Portal<T>>::initialize(
                     origin,

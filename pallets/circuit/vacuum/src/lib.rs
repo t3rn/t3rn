@@ -1361,7 +1361,8 @@ mod tests {
                     decimals: 18,
                     symbol: b"sepl".to_vec(),
                     address: Some([0; 20])
-                })
+                }),
+                None,
             ));
 
             let rlp_encoded_remote_order_local_reward_event = EthereumEventInclusionProof {

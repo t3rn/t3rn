@@ -45,9 +45,14 @@ use t3rn_primitives::{
 };
 
 use t3rn_types::fsx::SecurityLvl;
+use xcm::latest::{prelude::MultiLocation, Junctions::Here};
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
 const STANDARD_SFX_ABI_COUNT: usize = 6;
+const DEFAULT_MULTI_LOCATION: MultiLocation = MultiLocation {
+    parents: 1,
+    interior: Here,
+};
 
 #[test]
 fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
@@ -292,7 +297,8 @@ fn should_allow_to_link_token_via_extrinsic_on_sudo_permission() {
                 id: 1,
                 symbol: b"test".to_vec(),
                 decimals: 1,
-            })
+            }),
+            None,
         ));
 
         assert_ok!(XDNS::link_token(
@@ -303,7 +309,8 @@ fn should_allow_to_link_token_via_extrinsic_on_sudo_permission() {
                 id: 1,
                 symbol: b"test".to_vec(),
                 decimals: 1,
-            })
+            }),
+            Some(DEFAULT_MULTI_LOCATION)
         ));
 
         // no duplicates
@@ -316,7 +323,8 @@ fn should_allow_to_link_token_via_extrinsic_on_sudo_permission() {
                     decimals: 18,
                     symbol: b"test".to_vec(),
                     id: 5
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ),
             pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
@@ -331,7 +339,8 @@ fn should_allow_to_link_token_via_extrinsic_on_sudo_permission() {
                     decimals: 18,
                     symbol: b"test".to_vec(),
                     address: Some([1; 20])
-                })
+                }),
+                None
             ),
             pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
@@ -366,7 +375,8 @@ fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
                 id: 1,
                 symbol: b"test".to_vec(),
                 decimals: 1,
-            })
+            }),
+            None
         ));
 
         assert_ok!(XDNS::link_token_to_gateway(
@@ -376,7 +386,8 @@ fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
                 id: 1,
                 symbol: b"test".to_vec(),
                 decimals: 1,
-            })
+            }),
+            Some(DEFAULT_MULTI_LOCATION)
         ));
 
         // no duplicates
@@ -388,7 +399,8 @@ fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
                     decimals: 18,
                     symbol: b"test".to_vec(),
                     id: 5
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ),
             pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
@@ -402,7 +414,8 @@ fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
                     decimals: 18,
                     symbol: b"test".to_vec(),
                     address: Some([1; 20])
-                })
+                }),
+                None
             ),
             pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
@@ -423,7 +436,8 @@ fn should_not_link_token_without_gateway_record() {
                     decimals: 18,
                     symbol: b"test".to_vec(),
                     id: 5
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ),
             pallet_xdns::pallet::Error::<Runtime>::GatewayRecordNotFound
         );
@@ -534,7 +548,8 @@ fn should_register_token_and_populate_assets_storage_successfully() {
                     id: 1,
                     symbol: b"test".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
@@ -563,7 +578,8 @@ fn mints_and_burns_registered_token_on_ownership_permissions() {
                     id: 9999,
                     symbol: b"9999".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             let beneficiary = AccountId::from([5; 32]);
@@ -624,7 +640,8 @@ fn should_purge_token_and_destroy_asset_as_root_successfully() {
                     id: 1,
                     symbol: b"test".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
@@ -658,7 +675,8 @@ fn should_purge_token_and_destroy_asset_storage_successfully() {
                     id: 1,
                     symbol: b"test".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
@@ -696,7 +714,8 @@ fn should_purge_a_gateway_record_successfully() {
                     id: 1,
                     symbol: b"test".to_vec(),
                     decimals: 1,
-                })
+                }),
+                None
             ));
 
             assert_ok!(XDNS::link_token_to_gateway(
@@ -706,7 +725,8 @@ fn should_purge_a_gateway_record_successfully() {
                     id: 1,
                     symbol: b"test".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             assert_eq!(
@@ -1405,7 +1425,8 @@ fn adds_and_lists_supported_bridging_assets_when_authorized_by_root() {
                     id: 1,
                     symbol: b"mint".to_vec(),
                     decimals: 1,
-                })
+                }),
+                None
             ));
 
             assert_ok!(XDNS::link_token_to_gateway(
@@ -1415,7 +1436,8 @@ fn adds_and_lists_supported_bridging_assets_when_authorized_by_root() {
                     id: 1,
                     symbol: b"mint".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             assert_ok!(XDNS::add_supported_bridging_asset(
@@ -1435,6 +1457,7 @@ fn adds_and_lists_supported_bridging_assets_when_authorized_by_root() {
                         symbol: b"mint".to_vec(),
                         decimals: 1
                     })
+                    token_location: Some(DEFAULT_MULTI_LOCATION),
                 }]
             );
 
@@ -1470,7 +1493,8 @@ fn enrolls_supported_bridging_assets_when_authorized_by_root() {
                     id: 1,
                     symbol: b"mint".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             // Check that the asset is added
@@ -1483,7 +1507,8 @@ fn enrolls_supported_bridging_assets_when_authorized_by_root() {
                         id: 1,
                         symbol: b"mint".to_vec(),
                         decimals: 1
-                    })
+                    }),
+                    token_location: Some(DEFAULT_MULTI_LOCATION),
                 }]
             );
 
@@ -1518,7 +1543,8 @@ fn purges_previously_added_supported_bridging_assets_when_authorized_by_root() {
                     id: 1,
                     symbol: b"mint".to_vec(),
                     decimals: 1,
-                })
+                }),
+                None
             ));
 
             assert_ok!(XDNS::link_token_to_gateway(
@@ -1528,7 +1554,8 @@ fn purges_previously_added_supported_bridging_assets_when_authorized_by_root() {
                     id: 1,
                     symbol: b"mint".to_vec(),
                     decimals: 1,
-                })
+                }),
+                Some(DEFAULT_MULTI_LOCATION)
             ));
 
             assert_ok!(XDNS::add_supported_bridging_asset(

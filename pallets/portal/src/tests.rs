@@ -226,6 +226,7 @@ mod tests {
                         decimals: 0,
                         symbol: vec![0u8; 1],
                     }),
+                    None,
                     init.encode(),
                 );
 
@@ -260,6 +261,7 @@ mod tests {
                         decimals: 0,
                         symbol: vec![0u8; 1],
                     }),
+                    None,
                     vec![],
                 );
 
@@ -295,6 +297,7 @@ mod tests {
                         decimals: 0,
                         symbol: vec![0u8; 1],
                     }),
+                    None,
                     vec![],
                 );
 

@@ -27,6 +27,7 @@ pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", 
 t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
+xcm             = { workspace = true }
 
 [dev-dependencies]
 hex              = "0.4.2"
@@ -61,5 +62,6 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "sp-std/std",
+  "xcm/std",
 ]
 testing = [ "pallet-grandpa-finality-verifier/testing" ]

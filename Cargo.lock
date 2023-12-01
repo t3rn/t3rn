@@ -7341,6 +7341,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types",
+ "xcm",
 ]
 
 [[package]]
@@ -7753,6 +7754,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types",
+ "xcm",
 ]
 
 [[package]]
@@ -13728,6 +13730,7 @@ dependencies = [
  "t3rn-sdk-primitives",
  "t3rn-types",
  "tiny-keccak",
+ "xcm",
 ]
 
 [[package]]

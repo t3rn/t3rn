@@ -48,14 +48,15 @@ t3rn-sdk-primitives = { workspace = true }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 
 circuit-runtime-types = { path = "../runtime/common-types", default-features = false }
+# XCM
+xcm        = { workspace = true }
 
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = { version = '0.3.1' }
 serde_json  = "1.0.41"
 mini-mock =  { path = "../runtime/mini-mock", package = "t3rn-mini-mock-runtime" }
-# XCM
-xcm        = { workspace = true }
+
 
 [features]
 default = [ "std" ]
@@ -90,4 +91,5 @@ std = [
   "circuit-runtime-types/std",
   "t3rn-types/runtime-std",
   "finality-grandpa/std",
+  "xcm/std",
 ]
