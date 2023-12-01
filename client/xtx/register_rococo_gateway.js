@@ -93,6 +93,7 @@ async function triggerRegister(circuit, params) {
     //List of current rococo authorities
     circuit.createType("Option<Vec<AccountId>>", authorities),
     circuit.createType("Option<SetId>", authoritySetId),
+    circuit.createType("Option<MultiLocation>", "None"),
     //SideEffects that are allowed on gateway instance
     circuit.createType("Vec<AllowedSideEffect>", ["tran"]) // allowed side effects
   )
