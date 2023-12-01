@@ -1456,7 +1456,7 @@ fn adds_and_lists_supported_bridging_assets_when_authorized_by_root() {
                         id: 1,
                         symbol: b"mint".to_vec(),
                         decimals: 1
-                    })
+                    }),
                     token_location: Some(DEFAULT_MULTI_LOCATION),
                 }]
             );
