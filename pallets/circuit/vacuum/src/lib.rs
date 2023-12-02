@@ -363,6 +363,8 @@ pub mod pallet {
 #[cfg(test)]
 mod tests {
     use codec::{Decode, Encode};
+    use t3rn_primitives::circuit::OrderOrigin;
+
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
     use sp_core::H256;
@@ -374,7 +376,8 @@ mod tests {
         Balance, Balances, BlockNumber, Circuit, CircuitError, CircuitEvent, Clock, ConfigVacuum,
         EthereumEventInclusionProof, GlobalOnInitQueues, Hash, MiniRuntime, MockedAssetEvent,
         OrderStatusRead, Portal, Rewards, RuntimeEvent as Event, RuntimeOrigin, System, Vacuum,
-        VacuumEvent, ASSET_DOT, ASSET_ETH, ASSET_USDT, ETHEREUM_TARGET, POLKADOT_TARGET, XDNS,
+        VacuumEvent, ASSET_ASTAR, ASSET_DOT, ASSET_ETH, ASSET_USDT, ASTAR_TARGET, ETHEREUM_TARGET,
+        POLKADOT_TARGET, XDNS,
     };
 
     use t3rn_primitives::{
@@ -594,6 +597,88 @@ mod tests {
                 xtx_id,
                 Hash::from(hex!(
                     "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
+                ))
+            );
+
+            // Expect balance of requester to be reduced by max_reward
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &requester),
+                EXISTENTIAL_DEPOSIT as Balance
+            );
+        });
+    }
+
+    #[test]
+    fn multi_escrow_and_optimistic_order_single_sfx_vacuum_delivers_to_circuit() {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([2u8; 32]);
+            let requester_on_dest = AccountId32::from([3u8; 32]);
+
+            mint_required_assets_for_optimistic_actors(
+                requester.clone(),
+                executor,
+                200u128,
+                20u128,
+                ASSET_DOT,
+            );
+
+            // Assume ASTAR_TARGET is a remote chain with Optimistic action (no escrow account) and T3RN_TARGET_POLKADOT is a destination chain with Escrow action.
+            // Scenario: Requester wants to obtain 200 DOTs on t3rn, offering 500 ASTARs on ASTAR_TARGET chain.
+            // Success path: Executor picks up the order and deposits 200 DOTs on t3rn's escrow account.
+            // Requester then transfers 500 ASTARs to executor's account on ASTAR_TARGET chain, and confirms it against the associated to ASTAR_TARGET finality verifier (Vendor::Polkadot)
+            // Success Path: Circuit unlocks 200DOTs to requester. Executor is already rewarded with 500 ASTARs on ASTAR_TARGET chain.
+            // Failure Path#1 - no bid: Order expires as per target's timeout.
+            // Failure Path#2 - bid: Executor has placed the bid but didn't escrow the funds. Executor looses its insurance.
+            // Failure Path#3 - bid: Executor has placed the bid, as well as escrowed the funds. Requester didn't transfer the reward. Outcome: Requester looses its insurance. Executor is refunded with 200DOTs on t3rn.
+
+            let sfx_optimistic_action = SFXAction::Transfer(
+                ASTAR_TARGET,
+                ASSET_ASTAR,
+                requester_on_dest.clone(),
+                500u128,
+            );
+            let sfx_optimistic_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+                sfx_action: sfx_optimistic_action,
+                max_reward: 500u128,
+                insurance: 50u128,
+                reward_asset: ASSET_ASTAR,
+                remote_origin_nonce: Some(1u32), // Remote origin won't deduct max_reward from requester
+            };
+
+            let sfx_escrow_action =
+                SFXAction::Transfer(POLKADOT_TARGET, ASSET_DOT, requester_on_dest, 200u128);
+            let sfx_escrow_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+                sfx_action: sfx_escrow_action,
+                max_reward: 200u128,
+                insurance: 20u128,
+                reward_asset: ASSET_DOT,
+                remote_origin_nonce: None,
+            };
+
+            activate_all_light_clients();
+
+            // Move to next block
+            System::set_block_number(System::block_number() + 1);
+            let remote_origin = OrderOrigin::from_remote_nonce(1u32);
+
+            assert_ok!(Circuit::on_remote_origin_trigger(
+                RuntimeOrigin::signed(requester.clone()),
+                remote_origin.to_account_id(),
+                vec![
+                    sfx_escrow_order.try_into().unwrap(),
+                    sfx_optimistic_order.try_into().unwrap()
+                ],
+                SpeedMode::Fast,
+            ));
+
+            let xtx_id = expect_last_event_to_emit_xtx_id();
+
+            assert_eq!(
+                xtx_id,
+                Hash::from(hex!(
+                    "ada5013122d395ba3c54772283fb069b10426056ef8ca54750cb9bb552a59e7d"
                 ))
             );
 

@@ -86,7 +86,6 @@ pub mod tests;
 mod benchmarking;
 
 pub mod bids;
-pub mod escrow;
 pub mod machine;
 pub mod square_up;
 pub mod state;
@@ -1357,11 +1356,12 @@ impl<T: Config> Pallet<T> {
                 Error::<T>::SideEffectsValidationFailedAgainstABI
             })?;
 
-            if let Some(next) = side_effects.get(index + 1) {
-                if sfx.reward_asset_id != next.reward_asset_id {
-                    return Err(Error::<T>::ForNowOnlySingleRewardAssetSupportedForMultiSFX)
-                }
-            }
+            // if let Some(next) = side_effects.get(index + 1) {
+            //     if sfx.reward_asset_id != next.reward_asset_id {
+            //         // ToDo: Allow for remote orders
+            //         return Err(Error::<T>::ForNowOnlySingleRewardAssetSupportedForMultiSFX)
+            //     }
+            // }
 
             let submission_target_height = match T::Portal::get_finalized_height(sfx.target)
                 .map_err(|_| Error::<T>::TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight)?
@@ -1380,8 +1380,9 @@ impl<T: Config> Pallet<T> {
                 index: index as u32,
             });
         }
+        // Skip automatic ordering of SFX for now, allow user to decide.
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
-        full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
+        // full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
         let mut escrow_sfx_step: Vec<
             FullSideEffect<
