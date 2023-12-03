@@ -103,7 +103,7 @@ impl<T: Config> Bids<T> {
 
         SquareUp::<T>::try_bid(sfx_id, requester, bidder, &bid, current_accepted_bid).map_err(
             |e| {
-                log::error!("Error while trying to SquareUp::try_bid: {:?}", e);
+                println!("Error while trying to SquareUp::try_bid: {:?}", e);
                 Error::<T>::BiddingRejectedFailedToDepositBidderBond
             },
         )?;

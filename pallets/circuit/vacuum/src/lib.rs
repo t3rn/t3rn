@@ -415,8 +415,8 @@ mod tests {
         let issuer_is_escrow_account = MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
         Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
         Balances::deposit_creating(&executor, (100_000 * TRN) as Balance); // To cover fees
-        let requester_starting_balance = Assets::balance(ASSET_DOT, &requester);
-        let executor_starting_balance = Assets::balance(ASSET_DOT, &executor);
+        let requester_starting_balance = Assets::balance(asset_id, &requester);
+        let executor_starting_balance = Assets::balance(asset_id, &executor);
         assert_ok!(Assets::mint(
             RuntimeOrigin::signed(issuer_is_escrow_account.clone()),
             asset_id,
@@ -618,9 +618,17 @@ mod tests {
 
             mint_required_assets_for_optimistic_actors(
                 requester.clone(),
-                executor,
+                executor.clone(),
+                0u128,
+                530u128,
+                ASSET_ASTAR,
+            );
+
+            mint_required_assets_for_optimistic_actors(
+                requester.clone(),
+                executor.clone(),
                 200u128,
-                20u128,
+                530u128,
                 ASSET_DOT,
             );
 
@@ -663,13 +671,13 @@ mod tests {
             System::set_block_number(System::block_number() + 1);
             let remote_origin = OrderOrigin::from_remote_nonce(1u32);
 
+            let sfx_escrow: SideEffect<AccountId32, u128> = sfx_escrow_order.try_into().unwrap();
+            let sfx_optimistic: SideEffect<AccountId32, u128> =
+                sfx_optimistic_order.try_into().unwrap();
             assert_ok!(Circuit::on_remote_origin_trigger(
                 RuntimeOrigin::signed(requester.clone()),
                 remote_origin.to_account_id(),
-                vec![
-                    sfx_escrow_order.try_into().unwrap(),
-                    sfx_optimistic_order.try_into().unwrap()
-                ],
+                vec![sfx_escrow.clone(), sfx_optimistic.clone()],
                 SpeedMode::Fast,
             ));
 
@@ -682,11 +690,28 @@ mod tests {
                 ))
             );
 
-            // Expect balance of requester to be reduced by max_reward
+            // Expect balance of requester should not be reduced by max_reward since remote order
             assert_eq!(
                 Assets::balance(ASSET_DOT, &requester),
-                EXISTENTIAL_DEPOSIT as Balance
+                EXISTENTIAL_DEPOSIT as Balance + 200u128
             );
+
+            // Now Bid for both orders and confirm them
+            let sfx_escrow_order_id = sfx_escrow.generate_id::<Keccak256>(xtx_id.0.as_slice(), 0);
+
+            assert_ok!(Circuit::bid_sfx(
+                RuntimeOrigin::signed(executor.clone()),
+                sfx_escrow_order_id,
+                200 as Balance,
+            ));
+            //
+            // let sfx_optimistic_order_id = sfx_optimistic.generate_id::<Keccak256>(xtx_id.0.as_slice(), 1);
+            //
+            // assert_ok!(Circuit::bid_sfx(
+            //     RuntimeOrigin::signed(requester.clone()),
+            //     sfx_optimistic_order_id,
+            //     500 as Balance,
+            // ));
         });
     }
 
