@@ -53,7 +53,7 @@ pub use t3rn_types::{
 };
 
 pub use t3rn_primitives::{
-    account_manager::{AccountManager, Outcome},
+    account_manager::{AccountManager, Outcome, RequestCharge},
     attesters::AttestersReadApi,
     circuit::{XExecSignalId, XExecStepSideEffectId},
     claimable::{BenefitSource, CircuitRole},
@@ -900,9 +900,147 @@ pub mod pallet {
             )
         }
 
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::confirm_side_effect())]
+        pub fn escrow(origin: OriginFor<T>, sfx_id: SideEffectId<T>) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let executor = Self::authorize(origin, CircuitRole::Executor)?;
+            // Retrieve xtx_id
+            let xtx_id =
+                <Self as Store>::SFX2XTXLinksMap::get(sfx_id).ok_or(Error::<T>::XtxNotFound)?;
+            // Load xtx context
+            let mut local_ctx = Machine::<T>::load_xtx(xtx_id)?;
+            // Ensure that the xtx is in the ready state
+            if local_ctx.xtx.status != CircuitStatus::Ready {
+                return Err(Error::<T>::EscrowExecutionNotApplicableWithoutReadyState.into())
+            }
+            // Ensure that SFX to escrow is under SecurityLvl::Escrow
+            let fsx = local_ctx
+                .full_side_effects
+                .iter()
+                .flat_map(|fsx_vec| fsx_vec.iter())
+                .find(|fsx| {
+                    fsx.input
+                        .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0)
+                        == sfx_id
+                })
+                .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+            // Ensure caller is the executor of the SFX
+            if fsx.input.enforce_executor != Some(executor.clone()) {
+                return Err(Error::<T>::EscrowExecutionNotApplicableForThisSFX.into())
+            }
+
+            // Decode the action and its arguments from the SFX encoded args
+            let (escrow_asset, target_account, escrow_amount) = match &fsx.input.action {
+                b"tran" => {
+                    let target_account_bytes = fsx
+                        .input
+                        .encoded_args
+                        .get(0)
+                        .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+                    let target_account = T::AccountId::decode(&mut &target_account_bytes[..])
+                        .map_err(|_| Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let escrow_amount_bytes = fsx
+                        .input
+                        .encoded_args
+                        .get(1)
+                        .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let escrow_amount = BalanceOf::<T>::decode(&mut &escrow_amount_bytes[..])
+                        .map_err(|_| Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+                    (None, target_account, escrow_amount)
+                },
+                b"tass" => {
+                    let asset_bytes = fsx
+                        .input
+                        .encoded_args
+                        .get(0)
+                        .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let asset = AssetId::decode(&mut &asset_bytes[..])
+                        .map_err(|_| Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let target_account_bytes = fsx
+                        .input
+                        .encoded_args
+                        .get(1)
+                        .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let target_account = T::AccountId::decode(&mut &target_account_bytes[..])
+                        .map_err(|_| Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let escrow_amount_bytes = fsx
+                        .input
+                        .encoded_args
+                        .get(2)
+                        .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    let escrow_amount = BalanceOf::<T>::decode(&mut &escrow_amount_bytes[..])
+                        .map_err(|_| Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+                    (Some(asset), target_account, escrow_amount)
+                },
+                _ => return Err(Error::<T>::EscrowExecutionNotApplicableForThisSFX.into()),
+            };
+
+            // Proceed with Escrow of the funds for this SFX - transfer funds to the escrow account
+            let escrow_account = T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow);
+
+            T::AccountManager::deposit(
+                sfx_id,
+                RequestCharge {
+                    payee: executor.clone(),
+                    offered_reward: escrow_amount,
+                    charge_fee: Zero::zero(),
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::Executor,
+                    recipient: Some(escrow_account),
+                    maybe_asset_id: escrow_asset,
+                },
+            )?;
+
+            // Transition the Machine state to PendingExecution / FinishedAllSteps marking the current SFX as completed and confirmed
+            Machine::<T>::compile(
+                &mut local_ctx,
+                |current_fsx, _local_state, _steps_cnt, _status, _requester| {
+                    // Check if Xtx is in the bidding state
+                    Ok(PrecompileResult::TryConfirm(
+                        sfx_id,
+                        ConfirmedSideEffect {
+                            err: None,
+                            output: None,
+                            inclusion_data: vec![],
+                            executioner: executor.clone(),
+                            received_at: frame_system::Pallet::<T>::block_number(),
+                            cost: None,
+                        },
+                    ))
+                },
+                |status_change, local_ctx| {
+                    Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+                    if status_change.1 == CircuitStatus::FinishedAllSteps
+                        || status_change.1 == CircuitStatus::Committed
+                    {
+                        Self::request_sfx_attestation(local_ctx);
+                    }
+                    // Emit: From Circuit events
+                    Self::emit_status_update(
+                        local_ctx.xtx_id,
+                        Some(local_ctx.xtx.clone()),
+                        Some(local_ctx.full_side_effects.clone()),
+                    );
+                    Ok(())
+                },
+            )?;
+
+            Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+
+            Ok(().into())
+        }
+
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
         pub fn bid_sfx(
-            origin: OriginFor<T>, // Active relayer
+            origin: OriginFor<T>,
             sfx_id: SideEffectId<T>,
             bid_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -1147,6 +1285,8 @@ pub mod pallet {
         FSXNotFoundById,
         XtxNotFound,
         LocalSideEffectExecutionNotApplicable,
+        EscrowExecutionNotApplicableWithoutReadyState,
+        EscrowExecutionNotApplicableForThisSFX,
         LocalExecutionUnauthorized,
         OnLocalTriggerFailedToSetupXtx,
         UnauthorizedCancellation,

@@ -619,7 +619,7 @@ mod tests {
             mint_required_assets_for_optimistic_actors(
                 requester.clone(),
                 executor.clone(),
-                0u128,
+                530u128,
                 530u128,
                 ASSET_ASTAR,
             );
@@ -704,14 +704,20 @@ mod tests {
                 sfx_escrow_order_id,
                 200 as Balance,
             ));
-            //
-            // let sfx_optimistic_order_id = sfx_optimistic.generate_id::<Keccak256>(xtx_id.0.as_slice(), 1);
-            //
-            // assert_ok!(Circuit::bid_sfx(
-            //     RuntimeOrigin::signed(requester.clone()),
-            //     sfx_optimistic_order_id,
-            //     500 as Balance,
-            // ));
+
+            let sfx_optimistic_order_id = sfx_optimistic.generate_id::<Keccak256>(xtx_id.0.as_slice(), 1);
+
+            assert_ok!(Circuit::bid_sfx(
+                RuntimeOrigin::signed(requester.clone()),
+                sfx_optimistic_order_id,
+                500 as Balance,
+            ));
+
+            // Execute first order - escrow deposit DOT via Circuit::escrow(sfx_escrow_order_id)
+            assert_ok!(Circuit::escrow(
+                RuntimeOrigin::signed(executor.clone()),
+                sfx_escrow_order_id,
+            ));
         });
     }
 
