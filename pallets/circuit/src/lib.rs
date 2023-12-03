@@ -986,8 +986,13 @@ pub mod pallet {
             // Proceed with Escrow of the funds for this SFX - transfer funds to the escrow account
             let escrow_account = T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow);
 
+            // Standardize escrow_account IDs as re-hash of sfx_id with 3333
+            let escrow_id = fsx
+                .input
+                .generate_id::<SystemHashing<T>>(sfx_id.as_ref(), 3333);
+
             T::AccountManager::deposit(
-                sfx_id,
+                escrow_id,
                 RequestCharge {
                     payee: executor.clone(),
                     offered_reward: escrow_amount,

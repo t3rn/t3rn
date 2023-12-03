@@ -620,7 +620,7 @@ mod tests {
                 requester.clone(),
                 executor.clone(),
                 530u128,
-                530u128,
+                830u128,
                 ASSET_ASTAR,
             );
 
@@ -628,7 +628,7 @@ mod tests {
                 requester.clone(),
                 executor.clone(),
                 200u128,
-                530u128,
+                830u128,
                 ASSET_DOT,
             );
 
@@ -705,13 +705,18 @@ mod tests {
                 200 as Balance,
             ));
 
-            let sfx_optimistic_order_id = sfx_optimistic.generate_id::<Keccak256>(xtx_id.0.as_slice(), 1);
+            let sfx_optimistic_order_id =
+                sfx_optimistic.generate_id::<Keccak256>(xtx_id.0.as_slice(), 1);
 
             assert_ok!(Circuit::bid_sfx(
                 RuntimeOrigin::signed(requester.clone()),
                 sfx_optimistic_order_id,
                 500 as Balance,
             ));
+
+            // Complete bidding
+            System::set_block_number(System::block_number() + 3);
+            Clock::on_initialize(System::block_number());
 
             // Execute first order - escrow deposit DOT via Circuit::escrow(sfx_escrow_order_id)
             assert_ok!(Circuit::escrow(
