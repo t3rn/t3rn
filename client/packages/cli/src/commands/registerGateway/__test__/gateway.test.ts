@@ -4,7 +4,6 @@ import { fetchLatestAuthoritySetUpdateBlock } from '../vendors/substrate.ts'
 
 // @TODO: node fetch is an esm module. We need to update and other tests to support ESM module testing
 // for now lets skip this test
-
 jest.mock('node-fetch', () => ({
   default: jest.fn(),
 }))

@@ -109,12 +109,12 @@ export type Strategy = {
  *         roco: {
  *             supportedAssets: ["ROC"],
  *             sfx: {
- *                 minProfitUsd: 3,
- *                 minYield: 0.05,
+ *                 minProfitUsd: 0,
+ *                 minYield: 0.00,
  *             },
  *             xtx: {
- *                 minInsuranceAmountUsd: 1,
- *                 minInsuranceShare: 0.1,
+ *                 minInsuranceAmountUsd: 0,
+ *                 minInsuranceShare: 0,
  *             },
  *         },
  *     },
@@ -231,24 +231,24 @@ export const config: Config = {
         id: "kusama",
       },
     ],
-    BSX: [
-      {
-        priceSource: "coingecko",
-        id: "basilisk",
-      },
-    ],
+    // BSX: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "basilisk",
+    //   },
+    // ],
     ROC: [
       {
         priceSource: "coingecko",
-        id: "polkadot",
+        id: "tether",
       },
     ],
-    DOT: [
-      {
-        priceSource: "coingecko",
-        id: "polkadot",
-      },
-    ],
+    // DOT: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "polkadot",
+    //   },
+    // ],
     TRN: [
       {
         priceSource: "coingecko",
@@ -261,42 +261,42 @@ export const config: Config = {
         id: "polkadot",
       },
     ],
-    USDT: [
-      {
-        priceSource: "coingecko",
-        id: "tether",
-      },
-    ],
-    USDC: [
-      {
-        priceSource: "coingecko",
-        id: "usd-coin",
-      },
-    ],
-    ETH: [
-      {
-        priceSource: "coingecko",
-        id: "ethereum",
-      },
-    ],
+    // USDT: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "tether",
+    //   },
+    // ],
+    // USDC: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "usd-coin",
+    //   },
+    // ],
+    // ETH: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "ethereum",
+    //   },
+    // ],
     SEPL: [
       {
         priceSource: "coingecko",
         id: "ethereum",
       },
     ],
-    MATIC: [
-      {
-        priceSource: "coingecko",
-        id: "matic-network",
-      },
-    ],
-    OP: [
-      {
-        priceSource: "coingecko",
-        id: "optimism",
-      },
-    ],
+    // MATIC: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "matic-network",
+    //   },
+    // ],
+    // OP: [
+    //   {
+    //     priceSource: "coingecko",
+    //     id: "optimism",
+    //   },
+    // ],
   },
   assetIdToTickerMap: {
     0: "TRN",
@@ -315,45 +315,45 @@ export const config: Config = {
     ksm: {
       supportedAssets: ["KSM"],
       sfx: {
-        minProfitUsd: 3,
-        minYield: 0.05,
+        minProfitUsd: 0,
+        minYield: 0.0,
       },
       xtx: {
-        minInsuranceAmountUsd: 1,
-        minInsuranceShare: 0.1,
+        minInsuranceAmountUsd: 0,
+        minInsuranceShare: 0,
       },
     },
     roco: {
       supportedAssets: ["ROC", "SLOW", "TRN"],
       sfx: {
-        minProfitUsd: 3,
-        minYield: 0.05,
+        minProfitUsd: 0,
+        minYield: 0.0,
       },
       xtx: {
-        minInsuranceAmountUsd: 1,
-        minInsuranceShare: 0.1,
+        minInsuranceAmountUsd: 0,
+        minInsuranceShare: 0,
       },
     },
     pdot: {
       supportedAssets: ["DOT"],
       sfx: {
         minProfitUsd: 1,
-        minYield: 0.05,
+        minYield: 0.0,
       },
       xtx: {
-        minInsuranceAmountUsd: 1,
-        minInsuranceShare: 0.1,
+        minInsuranceAmountUsd: 0,
+        minInsuranceShare: 0,
       },
     },
     bslk: {
       supportedAssets: ["BSX"],
       sfx: {
-        minProfitUsd: 3,
-        minYield: 0.05,
+        minProfitUsd: 0,
+        minYield: 0.0,
       },
       xtx: {
-        minInsuranceAmountUsd: 1,
-        minInsuranceShare: 0.1,
+        minInsuranceAmountUsd: 0,
+        minInsuranceShare: 0,
       },
     },
   },

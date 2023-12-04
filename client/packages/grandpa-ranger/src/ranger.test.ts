@@ -38,7 +38,7 @@ generateRangeSpy.mockImplementation(async () => {
 })
 const setCheckpointMetricsSpy = jest.spyOn(
   collectModule,
-  'setCheckpointMetrics'
+  'setCheckpointMetrics',
 )
 setCheckpointMetricsSpy.mockImplementation(async () => {
   return

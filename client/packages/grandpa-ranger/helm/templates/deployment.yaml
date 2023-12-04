@@ -56,6 +56,8 @@ spec:
               value: {{ $logLevel }}
             - name: PROFILE
               value: "{{ $profile }}"
+            - name: CIRCUIT
+              value: "{{ $circuit }}"
             - name: CIRCUIT_SIGNER_KEY
               valueFrom:
                 secretKeyRef:

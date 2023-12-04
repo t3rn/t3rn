@@ -102,7 +102,9 @@ export class Executor {
           this.signer.address,
         )
       ).toNumber();
-      logger.info(`Set nonce for circuit to ${this.sdk.nonce}`);
+      logger.info(
+        `🦻 On new circuit block registered. My current tx nonce is ${this.sdk.nonce}`,
+      );
     });
   }
 }

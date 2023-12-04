@@ -8,11 +8,11 @@ export const setCheckpointMetrics = async (
   config: any,
   circuitConnection: Connection,
   targetConnection: Connection,
-  prometheus: Prometheus
+  prometheus: Prometheus,
 ) => {
   const circuitHeight = await currentGatewayHeight(
     circuitConnection,
-    config.targetGatewayId
+    config.targetGatewayId,
   )
   let targetHeight = await currentTargetHeight(targetConnection)
 
@@ -24,13 +24,13 @@ export const generateRange = async (
   config: any,
   circuitConnection: Connection,
   targetConnection: Connection,
-  target: string
+  target: string,
 ): Promise<any[]> => {
   return new Promise(async (resolve, reject) => {
     try {
       const circuitHeight = await currentGatewayHeight(
         circuitConnection,
-        config.targetGatewayId
+        config.targetGatewayId,
       )
       let targetHeight = await currentTargetHeight(targetConnection)
 
@@ -39,7 +39,7 @@ export const generateRange = async (
           circuitHeight,
           targetHeight,
         },
-        'Current heights'
+        'Current heights',
       )
 
       if (targetHeight > circuitHeight) {
@@ -48,7 +48,7 @@ export const generateRange = async (
           targetConnection.client,
           config.targetGatewayId,
           circuitHeight + 1,
-          targetHeight
+          targetHeight,
         )
         return resolve(batches)
       } else {
@@ -65,7 +65,7 @@ const generateBatchProof = async (
   targetClient: ApiPromise,
   targetGatewayId: string,
   from: number,
-  to: number
+  to: number,
 ): Promise<any[]> => {
   let transactionArguments: any[] = []
 
@@ -77,10 +77,10 @@ const generateBatchProof = async (
       Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
 
     const justificationSize = Math.floor(
-      Buffer.from(JSON.stringify(justification)).length / 1024
+      Buffer.from(JSON.stringify(justification)).length / 1024,
     )
     const headersSize = Math.floor(
-      Buffer.from(JSON.stringify(headers)).length / 1024
+      Buffer.from(JSON.stringify(headers)).length / 1024,
     )
     logger.debug('Fetched finality proof from target chain')
     logger.debug(`Justification size: ${justificationSize}kb`)
@@ -114,14 +114,14 @@ const generateBatchProof = async (
 
 const currentTargetHeight = async (connection: Connection): Promise<number> => {
   const header = await connection.client.rpc.chain.getHeader(
-    await connection.client.rpc.chain.getFinalizedHead()
+    await connection.client.rpc.chain.getFinalizedHead(),
   )
   return header.number.toNumber()
 }
 
 const currentGatewayHeight = async (
   client: Connection,
-  targetGatewayId: string
+  targetGatewayId: string,
 ) => {
   // client.rpc.portal.
   return axios
@@ -137,15 +137,15 @@ const currentGatewayHeight = async (
         headers: {
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
-    .then((response) => {
+    .then(response => {
       if (response.data.error) throw new Error(response.data.error.message)
       return response.data.result
     })
-    .catch((error) => {
+    .catch(error => {
       throw new Error(
-        `Gateway height couldnt be fetched! Err: ${error.toString()}`
+        `Gateway height couldnt be fetched! Err: ${error.toString()}`,
       )
     })
 }
@@ -153,7 +153,7 @@ const currentGatewayHeight = async (
 const getHeader = async (client: ApiPromise, height: number) => {
   return (
     await client.rpc.chain.getHeader(
-      await client.rpc.chain.getBlockHash(height)
+      await client.rpc.chain.getBlockHash(height),
     )
   ).toJSON()
 }
