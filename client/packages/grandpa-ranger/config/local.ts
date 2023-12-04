@@ -17,7 +17,9 @@ export default {
 			ws: "wss://rococo-community-rpc.laminar.codes/ws"
 		},
 	},
-	rangeInterval: 0, // time between range submissions in seconds
-	targetGatewayId: "roco",
+	rangeInterval: 5, // time between range submissions in seconds
+	targetGatewayId: "pdot",
+	bridgeName: "polkadotBridge",
 	batches_max: 10,
+	quickSyncLimit: 0, // for more than 200 blocks behind, use quick sync
 }

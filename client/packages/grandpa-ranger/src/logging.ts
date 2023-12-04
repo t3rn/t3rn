@@ -7,7 +7,7 @@ const isPrettyPrintEnabled =
 const loggerConfig = {
   level: process.env.LOG_LEVEL || 'info',
   formatters: {
-    level: (label) => {
+    level: label => {
       return { level: label }
     },
   },
