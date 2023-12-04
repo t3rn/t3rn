@@ -909,10 +909,6 @@ pub mod pallet {
                 <Self as Store>::SFX2XTXLinksMap::get(sfx_id).ok_or(Error::<T>::XtxNotFound)?;
             // Load xtx context
             let mut local_ctx = Machine::<T>::load_xtx(xtx_id)?;
-            // Ensure that the xtx is in the ready state
-            if local_ctx.xtx.status != CircuitStatus::Ready {
-                return Err(Error::<T>::EscrowExecutionNotApplicableWithoutReadyState.into())
-            }
             // Ensure that SFX to escrow is under SecurityLvl::Escrow
             let fsx = local_ctx
                 .full_side_effects
@@ -1290,7 +1286,6 @@ pub mod pallet {
         FSXNotFoundById,
         XtxNotFound,
         LocalSideEffectExecutionNotApplicable,
-        EscrowExecutionNotApplicableWithoutReadyState,
         EscrowExecutionNotApplicableForThisSFX,
         LocalExecutionUnauthorized,
         OnLocalTriggerFailedToSetupXtx,
