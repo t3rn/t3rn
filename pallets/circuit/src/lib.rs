@@ -88,10 +88,10 @@ mod benchmarking;
 pub mod bids;
 pub mod escrow;
 pub mod machine;
+pub mod migration;
 pub mod square_up;
 pub mod state;
 pub mod weights;
-pub mod migration;
 
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -399,7 +399,7 @@ pub mod pallet {
         fn offchain_worker(_n: frame_system::pallet_prelude::BlockNumberFor<T>) {}
 
         fn on_runtime_upgrade() -> Weight {
-           migration::migration::migrate::<T>()
+            migration::migration::migrate::<T>()
         }
     }
 

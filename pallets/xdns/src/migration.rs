@@ -1,13 +1,15 @@
 use super::*;
-use frame_support::{traits::{Get, StorageVersion, GetStorageVersion}, weights::Weight};
-use t3rn_abi::SFXAbi;
+use frame_support::{
+    traits::{Get, GetStorageVersion, StorageVersion},
+    weights::Weight,
+};
 use sp_runtime::DispatchError;
-
+use t3rn_abi::SFXAbi;
 
 pub mod migration {
     use super::*;
 
-   // pub mod v2 {...} // only contains V1 storage format
+    // pub mod v2 {...} // only contains V1 storage format
 
     pub fn migrate<T: Config>() -> Weight {
         // Define the maximum weight of this migration.

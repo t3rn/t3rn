@@ -1,13 +1,15 @@
 use super::*;
-use frame_support::{traits::{Get, StorageVersion, GetStorageVersion}, weights::Weight};
+use frame_support::{
+    traits::{Get, GetStorageVersion, StorageVersion},
+    weights::Weight,
+};
 use sp_runtime::DispatchError;
 use t3rn_types::migrations::v13::FullSideEffectV13;
-
 
 pub mod migration {
     use super::*;
 
-   // pub mod v2 {...} // only contains V1 storage format
+    // pub mod v2 {...} // only contains V1 storage format
 
     pub fn migrate<T: Config>() -> Weight {
         // Define the maximum weight of this migration.
@@ -24,14 +26,14 @@ pub mod migration {
                     FullSideEffects::<T>::translate(
                         |_,
                          value: Vec<
-                             Vec<
-                                 FullSideEffectV13<
-                                     T::AccountId,
-                                     frame_system::pallet_prelude::BlockNumberFor<T>,
-                                     BalanceOf<T>,
-                                 >,
-                             >,
-                         >| {
+                            Vec<
+                                FullSideEffectV13<
+                                    T::AccountId,
+                                    frame_system::pallet_prelude::BlockNumberFor<T>,
+                                    BalanceOf<T>,
+                                >,
+                            >,
+                        >| {
                             Some(
                                 value
                                     .into_iter()
@@ -54,6 +56,6 @@ pub mod migration {
                 },
             }
         })
-            .unwrap_or(Weight::zero())
+        .unwrap_or(Weight::zero())
     }
 }
