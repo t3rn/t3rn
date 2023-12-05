@@ -22,7 +22,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-use scale_codec::Encode;
+use circuit_runtime_types::{AccountIndex, EvmAddress};
 use frame_support::{
     ensure,
     pallet_prelude::*,
@@ -32,16 +32,14 @@ use frame_support::{
 use frame_system::{ensure_signed, pallet_prelude::*};
 use orml_traits::currency::TransferAll;
 use pallet_3vm_evm_primitives::AddressMapping;
-use circuit_runtime_types::{AccountIndex, EvmAddress};
-use sp_core::crypto::AccountId32;
-use sp_core::{H160, H256};
+use scale_codec::Encode;
+use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::{
     crypto::secp256k1_ecdsa_recover,
     hashing::{blake2_256, keccak_256},
 };
-use sp_runtime::traits::Saturating;
 use sp_runtime::{
-    traits::{LookupError, StaticLookup},
+    traits::{LookupError, Saturating, StaticLookup},
     MultiAddress,
 };
 use sp_std::{marker::PhantomData, vec::Vec};
@@ -86,7 +84,7 @@ pub mod pallet {
     use super::*;
 
     pub(crate) type BalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -145,14 +143,16 @@ pub mod pallet {
     /// Accounts: map EvmAddress => Option<AccountId>
     #[pallet::storage]
     #[pallet::getter(fn accounts)]
-    pub type Accounts<T: Config> = StorageMap<_, Twox64Concat, EvmAddress, T::AccountId, OptionQuery>;
+    pub type Accounts<T: Config> =
+        StorageMap<_, Twox64Concat, EvmAddress, T::AccountId, OptionQuery>;
 
     /// The EvmAddress for Substrate Accounts
     ///
     /// EvmAddresses: map AccountId => Option<EvmAddress>
     #[pallet::storage]
     #[pallet::getter(fn evm_addresses)]
-    pub type EvmAddresses<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, EvmAddress, OptionQuery>;
+    pub type EvmAddresses<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, EvmAddress, OptionQuery>;
 
     #[pallet::pallet]
     pub struct Pallet<T>(_);
@@ -178,15 +178,19 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             // check if user already mapped account
-            ensure!(!EvmAddresses::<T>::contains_key(&who), Error::<T>::AccountIdHasMapped);
             ensure!(
-				!Accounts::<T>::contains_key(eth_address),
-				Error::<T>::EthAddressHasMapped
-			);
+                !EvmAddresses::<T>::contains_key(&who),
+                Error::<T>::AccountIdHasMapped
+            );
+            ensure!(
+                !Accounts::<T>::contains_key(eth_address),
+                Error::<T>::EthAddressHasMapped
+            );
 
             // recover evm address from signature
             let data = eth_address.using_encoded(to_ascii_hex);
-            let address = Self::eth_recover(&eth_signature, &data, &[][..]).ok_or(Error::<T>::BadSignature)?;
+            let address = Self::eth_recover(&eth_signature, &data, &[][..])
+                .ok_or(Error::<T>::BadSignature)?;
             ensure!(eth_address == address, Error::<T>::InvalidSignature);
 
             // check if the evm padded address already exists
@@ -225,7 +229,10 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             // ensure account_id has not been mapped
-            ensure!(!EvmAddresses::<T>::contains_key(&who), Error::<T>::AccountIdHasMapped);
+            ensure!(
+                !EvmAddresses::<T>::contains_key(&who),
+                Error::<T>::AccountIdHasMapped
+            );
 
             // Transfer storage deposit fee
             <T as Config>::Currency::transfer(
@@ -314,8 +321,8 @@ fn account_to_default_evm_address(account_id: &impl Encode) -> EvmAddress {
 pub struct EvmAddressMapping<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> AddressMapping<T::AccountId> for EvmAddressMapping<T>
-    where
-        T::AccountId: IsType<AccountId32>,
+where
+    T::AccountId: IsType<AccountId32>,
 {
     // Returns the AccountId used go generate the given EvmAddress.
     fn get_account_id(address: &EvmAddress) -> T::AccountId {
@@ -395,7 +402,9 @@ impl<T: Config> StaticLookup for Pallet<T> {
 
     fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
         match a {
-            MultiAddress::Address20(i) => Ok(T::AddressMapping::get_account_id(&EvmAddress::from_slice(&i))),
+            MultiAddress::Address20(i) => Ok(T::AddressMapping::get_account_id(
+                &EvmAddress::from_slice(&i),
+            )),
             _ => Err(LookupError),
         }
     }
