@@ -49,6 +49,9 @@ pub type Hash = sp_core::H256;
 /// EVM Address
 pub type EvmAddress = sp_core::H160;
 
+/// The type for looking up accounts. We don't expect more than 4 billion of them.
+pub type AccountIndex = u32;
+
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
 pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
