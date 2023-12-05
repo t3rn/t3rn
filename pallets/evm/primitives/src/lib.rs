@@ -21,6 +21,11 @@
 mod precompile;
 mod validation;
 
+use circuit_runtime_types::{AssetId, EvmAddress};
+pub use evm::{
+    backend::{Basic as Account, Log},
+    Config, ExitReason, Opcode,
+};
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -29,11 +34,6 @@ use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-
-pub use evm::{
-    backend::{Basic as Account, Log},
-    Config, ExitReason, Opcode,
-};
 
 pub use self::{
     precompile::{
@@ -67,6 +67,15 @@ pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 pub const WRITE_PROOF_SIZE: u64 = 32;
 /// Account basic proof size + 5 bytes max of `decode_len` call.
 pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+/// The index from which the endoded AssetId bytes will be encoded into an EVM address
+pub const H160_POSITION_ASSET_ID_TYPE: usize = 15;
+
+pub trait Erc20Mapping {
+    /// Encode the AssetId to EvmAddress.
+    fn encode_evm_address(v: AssetId) -> Option<EvmAddress>;
+    /// Decode the AssetId from EvmAddress.
+    fn decode_evm_address(v: EvmAddress) -> Option<AssetId>;
+}
 
 pub enum AccessedStorage {
     AccountCodes(H160),

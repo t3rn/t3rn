@@ -10,16 +10,14 @@ use frame_support::{
 };
 
 // use evm_precompile_util::KnownPrecompile;
+use circuit_runtime_types::AssetId;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
-use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
+use pallet_3vm_evm_primitives::{Erc20Mapping, FeeCalculator, H160_POSITION_ASSET_ID_TYPE};
 use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
-use t3rn_primitives::threevm::{ Erc20Mapping, H160_POSITION_ASSET_ID_TYPE };
-use circuit_runtime_types::AssetId;
-
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -171,7 +169,8 @@ impl Erc20Mapping for Runtime {
         let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
-            address[byte_index + H160_POSITION_ASSET_ID_TYPE] = asset_id_bytes.as_slice()[byte_index];
+            address[byte_index + H160_POSITION_ASSET_ID_TYPE] =
+                asset_id_bytes.as_slice()[byte_index];
         }
 
         Some(EvmAddress::from_slice(&asset_id_bytes.as_slice()))
@@ -179,9 +178,9 @@ impl Erc20Mapping for Runtime {
 
     fn decode_evm_address(v: EvmAddress) -> Option<AssetId> {
         let address = v.as_bytes();
-        let mut asset_id_bytes = [2u8; 5];
+        let mut asset_id_bytes = [0u8; 4];
         for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
-            asset_id_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE ] = address[byte_index];
+            asset_id_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE] = address[byte_index];
         }
         let asset_id = u32::from_be_bytes(asset_id_bytes);
         Some(asset_id)

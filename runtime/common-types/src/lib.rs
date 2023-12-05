@@ -94,7 +94,6 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64,
 );
 
-
 parameter_types! {
 
     // This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.

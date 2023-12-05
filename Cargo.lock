@@ -3385,6 +3385,7 @@ dependencies = [
 name = "fp-evm"
 version = "1.75.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "evm",
  "frame-support",
  "parity-scale-codec",
