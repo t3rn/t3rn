@@ -7,6 +7,7 @@ use sp_std::prelude::*;
 pub fn standard_sfx_abi() -> Vec<(Sfx4bId, SFXAbi)> {
     vec![
         (*b"data", get_data_abi()),
+        (*b"tddd", get_dynamic_destination_deal_abi()),
         (*b"tran", get_sfx_transfer_abi()),
         (*b"tass", get_sfx_transfer_asset_abi()),
         (*b"swap", get_swap_abi()),
@@ -32,7 +33,25 @@ impl SFXAbi {
 pub fn standard_sfx_abi_ids() -> Vec<Sfx4bId> {
     vec![
         *b"data", *b"tran", *b"tass", *b"orml", *b"swap", *b"aliq", *b"cevm", *b"wasm", *b"comp",
+        *b"tddd",
     ]
+}
+
+pub fn get_dynamic_destination_deal_abi() -> SFXAbi {
+    SFXAbi {
+        args_names: vec![(b"asset_id".to_vec(), true), (b"amount".to_vec(), true)],
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
+            // DynamicDestinationDeal should not be confirmed - it is an transitionary SFX to be replaced by the actual SFX
+            for_rlp: b"".to_vec(),
+            for_scale: b"".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            // DynamicDestinationDeal is a struct with two fields: asset_id and amount
+            for_rlp: b"DynamicDestinationDeal:Tuple(asset_id+:Value32,amount+:Value256)".to_vec(),
+            for_scale: b"DynamicDestinationDeal:Tuple(asset_id:Value32,amount:Value128)".to_vec(),
+        },
+        maybe_prefix_memo: None,
+    }
 }
 
 pub fn get_sfx_transfer_abi() -> SFXAbi {
@@ -286,6 +305,22 @@ mod test_abi_standards {
         );
 
         println!("{res:?}");
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_dynamic_destination_deal_to_validate_arguments_against_received_substrate_balances_event(
+    ) {
+        let ddd_interface = get_dynamic_destination_deal_abi();
+        let ordered_args = vec![
+            1u32.encode(),    // assert
+            100u128.encode(), // amount
+        ];
+
+        let res = ddd_interface.validate_ordered_arguments(&ordered_args, &Codec::Scale);
+
+        println!("{res:?}");
+
         assert!(res.is_ok());
     }
 

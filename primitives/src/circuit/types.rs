@@ -489,6 +489,7 @@ pub enum SFXAction<Account, Asset, Balance, Destination, Input, MaxCost> {
     Call(Destination, Account, Balance, MaxCost, Input),
     // All of the DEX-related SFXs are vacuumed into a Transfer SFX in the protocol level: swap, add_liquidity, remove_liquidity, transfer asset, transfer native
     Transfer(Destination, Asset, Account, Balance),
+    DynamicDestinationDeal(Destination, Asset, Balance),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -558,6 +559,128 @@ impl<AccountId: Encode + Decode + Clone> OrderOrigin<AccountId> {
     }
 }
 
+// impl<AccountId, Asset, Balance, Destination, Input, MaxCost>
+//     TryFrom<SideEffect<AccountId, Balance>>
+//     for OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost>
+// where
+//     u32: From<Asset>,
+//     Balance: Encode,
+//     MaxCost: Encode,
+//     AccountId: Encode,
+//     Input: AsBytesRef,
+//     Destination: From<[u8; 4]>,
+//     [u8; 4]: From<Destination>,
+// {
+//     type Error = DispatchError;
+//
+//     fn try_from(side_effect: SideEffect<AccountId, Balance>) -> Result<Self, Self::Error> {
+//         let sfx_action = match side_effect.action {
+//             [116, 114, 97, 110] => {
+//                 let mut args = side_effect.encoded_args;
+//                 let destination = args.remove(0);
+//                 let value = args.remove(0);
+//                 let input = args.remove(0);
+//                 let max_cost = args.remove(0);
+//                 let destination = Destination::from_slice(&destination).unwrap();
+//                 let value = Balance::decode(&mut &value[..]).unwrap();
+//                 let input = Vec::<u8>::decode(&mut &input[..]).unwrap();
+//                 let max_cost = Balance::decode(&mut &max_cost[..]).unwrap();
+//                 SFXAction::Call(destination, side_effect.target, value, max_cost, input)
+//             },
+//             *&b"tass" => {
+//                 let mut args = side_effect.encoded_args;
+//                 let asset_id = args.remove(0);
+//                 let destination = args.remove(0);
+//                 let amount = args.remove(0);
+//                 let asset_id = u32::decode(&mut &asset_id[..]).unwrap();
+//                 let destination = Destination::from_slice(&destination).unwrap();
+//                 let amount = Balance::decode(&mut &amount[..]).unwrap();
+//                 SFXAction::Transfer(destination, asset_id, side_effect.target, amount)
+//             },
+//             _ => return Err("UnsupportedSFXAction".into()),
+//         };
+//
+//         let reward_asset = if let Some(reward_asset_id) = side_effect.reward_asset_id {
+//             <Asset as From<u32>>::from(reward_asset_id)
+//         } else {
+//             <Asset as From<u32>>::from(0)
+//         };
+//     }
+// }
+
+// impl<AccountId, Asset: Clone, Balance, Destination, Input, MaxCost> OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost>
+//     where
+//         u32: From<Asset>,
+//         Balance: Encode,
+//         MaxCost: Encode,
+//         AccountId: Encode,
+//         Input: AsBytesRef,
+//         Destination: From<[u8; 4]>,
+//         [u8; 4]: From<Destination>,
+// {
+//     // Implement opposite conversion from SideEffect into OrderSFX as a function
+//     pub fn from_sfx(
+//         sfx: SideEffect<AccountId, Balance>,
+//     ) -> Result<Self, DispatchError> {
+//         let sfx_action = &match sfx.action {
+//             b"call" => {
+//                 let mut args = sfx.encoded_args;
+//                 let destination = args.remove(0);
+//                 let value = args.remove(0);
+//                 let input = args.remove(0);
+//                 let max_cost = args.remove(0);
+//                 let destination = Destination::from_slice(&destination).unwrap();
+//                 let value = Balance::decode(&mut &value[..]).unwrap();
+//                 let input = Vec::<u8>::decode(&mut &input[..]).unwrap();
+//                 let max_cost = Balance::decode(&mut &max_cost[..]).unwrap();
+//                 SFXAction::Call(sfx.target, destination, value, max_cost, input)
+//             },
+//             b"tddd" => {
+//                 let mut args = sfx.encoded_args;
+//                 let asset_id = args.remove(0);
+//                 let amount = args.remove(0);
+//                 let asset_id = u32::decode(&mut &asset_id[..]).unwrap();
+//                 let amount = Balance::decode(&mut &amount[..]).unwrap();
+//                 SFXAction::DynamicDestinationDeal(sfx.target, asset_id, amount)
+//             },
+//             b"tass" => {
+//                 let mut args = sfx.encoded_args;
+//                 let asset_id = args.remove(0);
+//                 let destination = args.remove(0);
+//                 let amount = args.remove(0);
+//                 let asset_id = u32::decode(&mut &asset_id[..]).unwrap();
+//                 let destination = AccountId::decode(&mut &destination[..]).unwrap();
+//                 let amount = Balance::decode(&mut &amount[..]).unwrap();
+//                 SFXAction::Transfer(destination, asset_id, sfx.target, amount)
+//             },
+//             b"tran" => {
+//                 let mut args = sfx.encoded_args;
+//                 let destination = args.remove(0);
+//                 let amount = args.remove(0);
+//                 let destination = AccountId::decode(&mut &destination[..]).unwrap();
+//                 let amount = Balance::decode(&mut &amount[..]).unwrap();
+//                 SFXAction::Transfer(destination, 0u32, sfx.target, amount)
+//             },
+//             _ => return Err("UnsupportedSFXAction".into()),
+//         };
+//
+//         let reward_asset = if let Some(reward_asset_id) = sfx.reward_asset_id {
+//             reward_asset_id
+//         } else {
+//             Zero::zero()
+//         };
+//
+//         Ok(OrderSFX {
+//             sfx_action: sfx_action.clone(),
+//             max_reward: sfx.max_reward,
+//             insurance: sfx.insurance,
+//             reward_asset,
+//             remote_origin_nonce: None,
+//         })
+//     }
+//
+// }
+
 impl<AccountId, Asset: Clone, Balance, Destination, Input, MaxCost>
     TryInto<SideEffect<AccountId, Balance>>
     for OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost>
@@ -593,6 +716,14 @@ where
                     *b"tran"
                 };
                 encoded_args.push(destination.encode());
+                encoded_args.push(amount.encode());
+                (action_id, target.into(), encoded_args)
+            },
+            SFXAction::DynamicDestinationDeal(target, asset, amount) => {
+                let mut encoded_args: Vec<Vec<u8>> = vec![];
+                let asset_id: u32 = <Asset as Into<u32>>::into(asset);
+                let action_id = *b"tddd";
+                encoded_args.push(asset_id.to_le_bytes().to_vec());
                 encoded_args.push(amount.encode());
                 (action_id, target.into(), encoded_args)
             },
@@ -771,6 +902,36 @@ mod tests {
             side_effect.encoded_args[2],
             vec![100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         );
+    }
+
+    #[test]
+    fn test_try_into_dynamic_destination_deal() {
+        let order_sfx = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+            sfx_action: SFXAction::DynamicDestinationDeal([3u8; 4], 1u32, 100u128),
+            max_reward: 200u128,
+            insurance: 50u128,
+            reward_asset: 1u32,
+            remote_origin_nonce: None,
+        };
+
+        let result: Result<SideEffect<AccountId32, u128>, _> = order_sfx.try_into();
+        assert_ok!(&result);
+
+        let side_effect = result.unwrap();
+        assert_eq!(side_effect.max_reward, 200);
+        assert_eq!(side_effect.insurance, 50);
+        assert_eq!(side_effect.target, [3u8; 4]);
+        assert_eq!(side_effect.action, *b"tddd");
+        assert_eq!(side_effect.reward_asset_id, Some(1u32));
+        assert_eq!(side_effect.encoded_args.len(), 2);
+        assert_eq!(side_effect.encoded_args[0], vec![1u8, 0, 0, 0]);
+        assert_eq!(
+            side_effect.encoded_args[1],
+            vec![100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        // Transformation of SFXAction::DynamicDestinationDeal into SFXAction::Transfer is also supported
+        // let order_converted_back = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128>::from_sfx(side_effect);
     }
 
     #[test]

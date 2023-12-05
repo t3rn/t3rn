@@ -22,7 +22,7 @@ use t3rn_primitives::{
 
 use crate::monetary::Monetary;
 use substrate_abi::{SubstrateAbiConverter as Sabi, Value256};
-use t3rn_primitives::circuit::OrderOrigin;
+use t3rn_primitives::{circuit::OrderOrigin, claimable::BenefitSource};
 
 pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
     amt: BalanceOf,
@@ -116,9 +116,10 @@ impl<T: Config>
             return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
         };
 
-        if total_reserve_deposit == Zero::zero() {
-            return Err(Error::<T>::SkippingEmptyCharges.into())
-        }
+        // Allow empty deposits for remote origin order
+        // if total_reserve_deposit == Zero::zero() {
+        //     return Err(Error::<T>::SkippingEmptyCharges.into())
+        // }
 
         Ok(total_reserve_deposit)
     }
@@ -213,6 +214,16 @@ impl<T: Config>
                         if OrderOrigin::<T::AccountId>::new(&charge.payee).is_remote() {
                             PendingCharges::<T>::remove(charge_id);
                             return false
+                        }
+
+                        // Deposit funds out of Escrow executions to recipient account immediately
+                        if charge.source == BenefitSource::EscrowUnlock {
+                            Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                                &recipient,
+                                maybe_asset_id,
+                                charge.offered_reward,
+                            );
+                            return true
                         }
 
                         SettlementsPerRound::<T>::insert(

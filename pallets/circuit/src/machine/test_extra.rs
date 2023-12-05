@@ -11,7 +11,7 @@ use circuit_mock_runtime::{AccountId, Balance, Balances, BlockNumber, Runtime, S
 use circuit_runtime_pallets::pallet_circuit::{
     machine::{extra::validate_fsx_against_xtx, Machine, PrecompileResult},
     pallet::*,
-    state::{Cause, CircuitStatus, LocalXtxCtx},
+    state::{CircuitStatus, LocalXtxCtx},
     Config, Error, FullSideEffects, LocalXtxStates, XExecSignal,
 };
 use t3rn_primitives::{circuit::AdaptiveTimeout, SpeedMode};

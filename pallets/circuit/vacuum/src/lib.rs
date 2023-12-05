@@ -615,20 +615,29 @@ mod tests {
             let executor = AccountId32::from([1u8; 32]);
             let requester = AccountId32::from([2u8; 32]);
             let requester_on_dest = AccountId32::from([3u8; 32]);
+            // Deposit Finality Fee sum to cover up for requester's request
+            Balances::deposit_creating(
+                &requester,
+                (13_200_000_000_000 + EXISTENTIAL_DEPOSIT) as Balance,
+            ); // To cover insurance
+            Balances::deposit_creating(
+                &executor,
+                (13_200_000_000_000 + EXISTENTIAL_DEPOSIT) as Balance,
+            ); // To cover insurance
+
+            // mint_required_assets_for_optimistic_actors(
+            //     requester.clone(),
+            //     executor.clone(),
+            //     1030u128,
+            //     830u128,
+            //     ASSET_ASTAR,
+            // );
 
             mint_required_assets_for_optimistic_actors(
                 requester.clone(),
                 executor.clone(),
-                530u128,
-                830u128,
-                ASSET_ASTAR,
-            );
-
-            mint_required_assets_for_optimistic_actors(
-                requester.clone(),
-                executor.clone(),
+                0u128,
                 200u128,
-                830u128,
                 ASSET_DOT,
             );
 
@@ -640,13 +649,8 @@ mod tests {
             // Failure Path#1 - no bid: Order expires as per target's timeout.
             // Failure Path#2 - bid: Executor has placed the bid but didn't escrow the funds. Executor looses its insurance.
             // Failure Path#3 - bid: Executor has placed the bid, as well as escrowed the funds. Requester didn't transfer the reward. Outcome: Requester looses its insurance. Executor is refunded with 200DOTs on t3rn.
-
-            let sfx_optimistic_action = SFXAction::Transfer(
-                ASTAR_TARGET,
-                ASSET_ASTAR,
-                requester_on_dest.clone(),
-                500u128,
-            );
+            let sfx_optimistic_action =
+                SFXAction::DynamicDestinationDeal(ASTAR_TARGET, ASSET_ASTAR, 500u128);
             let sfx_optimistic_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
                 sfx_action: sfx_optimistic_action,
                 max_reward: 500u128,
@@ -655,8 +659,12 @@ mod tests {
                 remote_origin_nonce: Some(1u32), // Remote origin won't deduct max_reward from requester
             };
 
-            let sfx_escrow_action =
-                SFXAction::Transfer(POLKADOT_TARGET, ASSET_DOT, requester_on_dest, 200u128);
+            let sfx_escrow_action = SFXAction::Transfer(
+                POLKADOT_TARGET,
+                ASSET_DOT,
+                requester_on_dest.clone(),
+                200u128,
+            );
             let sfx_escrow_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
                 sfx_action: sfx_escrow_action,
                 max_reward: 200u128,
@@ -690,10 +698,10 @@ mod tests {
                 ))
             );
 
-            // Expect balance of requester should not be reduced by max_reward since remote order
+            // Expect balance of requester should not be reduced by max_reward since remote order + nothing on requesters account yet
             assert_eq!(
                 Assets::balance(ASSET_DOT, &requester),
-                EXISTENTIAL_DEPOSIT as Balance + 200u128
+                EXISTENTIAL_DEPOSIT as Balance
             );
 
             // Now Bid for both orders and confirm them
@@ -723,6 +731,102 @@ mod tests {
                 RuntimeOrigin::signed(executor.clone()),
                 sfx_escrow_order_id,
             ));
+
+            // Execute second order - optimistic order transfer ASTAR via Circuit::confirm_side_effect(sfx_optimistic_order_id)
+            let mut scale_encoded_transfer_event_wrong_dest =
+                MockedAssetEvent::<MiniRuntime>::Transferred {
+                    asset_id: ASSET_ASTAR,
+                    from: requester.clone(),
+                    to: requester_on_dest.clone(),
+                    amount: 500 as Balance,
+                }
+                .encode();
+            // append an extra pallet event index byte as the second byte
+            scale_encoded_transfer_event_wrong_dest.insert(0, 4u8);
+
+            let confirmation_transfer_wrong_dest =
+                ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+                    err: None,
+                    output: None,
+                    inclusion_data: scale_encoded_transfer_event_wrong_dest,
+                    executioner: executor.clone(),
+                    received_at: System::block_number(),
+                    cost: None,
+                };
+            // Execute second order - optimistic order transfer ASTAR via Circuit::confirm_side_effect(sfx_optimistic_order_id)
+            let mut scale_encoded_transfer_event_correct_dest =
+                MockedAssetEvent::<MiniRuntime>::Transferred {
+                    asset_id: ASSET_ASTAR,
+                    from: requester.clone(),
+                    to: executor.clone(),
+                    amount: 500 as Balance,
+                }
+                .encode();
+            // append an extra pallet event index byte as the second byte
+            scale_encoded_transfer_event_correct_dest.insert(0, 4u8);
+
+            let confirmation_transfer_executor_as_dest =
+                ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+                    err: None,
+                    output: None,
+                    inclusion_data: scale_encoded_transfer_event_correct_dest,
+                    executioner: executor.clone(),
+                    received_at: System::block_number(),
+                    cost: None,
+                };
+
+            // Dynamic Destination Deal should return error while trying to confirm with wrong destination
+            assert_err!(
+                Circuit::confirm_side_effect(
+                    RuntimeOrigin::signed(executor.clone()),
+                    sfx_optimistic_order_id,
+                    confirmation_transfer_wrong_dest
+                ),
+                CircuitError::<MiniRuntime>::ConfirmationFailed
+            );
+
+            assert_ok!(Circuit::confirm_side_effect(
+                RuntimeOrigin::signed(executor.clone()),
+                sfx_optimistic_order_id,
+                confirmation_transfer_executor_as_dest
+            ));
+
+            assert_ok!(Vacuum::read_order_status(
+                RuntimeOrigin::signed(requester.clone()),
+                xtx_id
+            ));
+            // Recover XTX status to see if it's FinishedAllSteps
+            let order_status_read = expect_last_event_to_read_order_status();
+
+            assert_eq!(order_status_read.status, CircuitStatus::FinishedAllSteps);
+
+            // Verify balances of requester and executor have refunded insurances + expected amount on their accounts
+            assert_eq!(Assets::balance(ASSET_DOT, &requester_on_dest), 200u128);
+
+            assert_eq!(Assets::balance(ASSET_ASTAR, &executor), 0u128);
+
+            // Executor has spent their DOTs
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                EXISTENTIAL_DEPOSIT as Balance
+            );
+
+            // Verify that escrow account did not collect any funds
+            assert_eq!(
+                Assets::balance(
+                    ASSET_DOT,
+                    &MiniRuntime::get_treasury_account(TreasuryAccount::Escrow)
+                ),
+                0u128
+            );
+
+            assert_eq!(
+                Assets::balance(
+                    ASSET_ASTAR,
+                    &MiniRuntime::get_treasury_account(TreasuryAccount::Escrow)
+                ),
+                0u128
+            );
         });
     }
 
@@ -1065,10 +1169,10 @@ mod tests {
                 198 as Balance,
             ));
 
-            // Assert executor has insurance amount locked
+            // Assert executor has insurance amount locked only in Native
             assert_eq!(
                 Assets::balance(ASSET_DOT, &executor),
-                EXISTENTIAL_DEPOSIT as Balance
+                EXISTENTIAL_DEPOSIT as Balance + 50 as Balance
             );
 
             // Complete bidding
@@ -1271,11 +1375,12 @@ mod tests {
                 198 as Balance,
             ));
 
-            // Assert executor has insurance amount locked
+            // Assert executor has insurance amount locked in Native asset
             assert_eq!(
                 Assets::balance(ASSET_USDT, &executor),
-                EXISTENTIAL_DEPOSIT as Balance
+                EXISTENTIAL_DEPOSIT as Balance + 50 as Balance
             );
+
 
             // Complete bidding
             System::set_block_number(System::block_number() + 3);
