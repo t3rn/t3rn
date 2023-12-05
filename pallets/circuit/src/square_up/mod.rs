@@ -149,10 +149,6 @@ impl<T: Config> SquareUp<T> {
             .checked_add(&bid.insurance)
             .ok_or(Error::<T>::ArithmeticErrorOverflow)?;
 
-        println!(
-            "total bid deposit: {:?} for sfx id {:?}",
-            total_bid_deposit, sfx_id
-        );
         match current_best_bid {
             Some(current_best_bid) => {
                 if bid.amount >= current_best_bid.amount {
