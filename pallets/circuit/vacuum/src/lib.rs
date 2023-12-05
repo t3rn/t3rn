@@ -625,14 +625,6 @@ mod tests {
                 (13_200_000_000_000 + EXISTENTIAL_DEPOSIT) as Balance,
             ); // To cover insurance
 
-            // mint_required_assets_for_optimistic_actors(
-            //     requester.clone(),
-            //     executor.clone(),
-            //     1030u128,
-            //     830u128,
-            //     ASSET_ASTAR,
-            // );
-
             mint_required_assets_for_optimistic_actors(
                 requester.clone(),
                 executor.clone(),
