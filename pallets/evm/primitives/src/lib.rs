@@ -96,7 +96,6 @@ pub trait AddressMapping<AccountId> {
     fn is_linked(account_id: &AccountId, evm: &EvmAddress) -> bool;
 }
 
-
 pub enum AccessedStorage {
     AccountCodes(H160),
     AccountStorages((H160, H256)),

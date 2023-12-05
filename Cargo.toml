@@ -203,6 +203,9 @@ substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrat
 substrate-wasm-builder         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
+# ORML Dependencies
+orml-traits                     = { git = "https://github.com/open-web3-stack/open-runtime-module-library/", branch = "polkadot-v1.0.0", default-features = false }
+
 # Trappist dependencies
 xcm-primitives                 = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
 pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
@@ -245,6 +248,7 @@ members = [
   "pallets/contracts-registry/rpc",
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
+  "pallets/evm/account-mapping",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
   "pallets/portal",

@@ -1,0 +1,62 @@
+[package]
+name = "pallet-3vm-evm-account-mapping"
+version = "1.0.0-dev"
+license = "Apache-2.0"
+description = "Package to hande EVM-to-Substrate and Substrate-to-EVM address conversion"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+serde = { workspace = true, optional = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+libsecp256k1 = { workspace = true, optional = true }
+scale-info = { workspace = true }
+
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+
+orml-traits                     = { workspace = true }
+# t3rn packages
+pallet-3vm-evm-primitives       = { default-features = false, path = "../primitives", package = "fp-evm" }
+circuit-runtime-types           = { default-features = false, path = "../../../runtime/common-types" }
+
+[dev-dependencies]
+pallet-balances = { workspace = true }
+#orml-currencies = { workspace = true }
+#orml-tokens = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "scale-codec/std",
+    "libsecp256k1",
+    "libsecp256k1/std",
+    "scale-info/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-io/std",
+    "sp-std/std",
+    "frame-support/std",
+    "frame-system/std",
+    # ORML
+    "orml-traits/std",
+    #"orml-tokens/std",
+    #"orml-currencies/std",
+    # t3rn
+    "circuit-runtime-types/std",
+    "pallet-3vm-evm-primitives/std",
+]
+runtime-benchmarks = [
+    "libsecp256k1",
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]
