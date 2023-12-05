@@ -424,7 +424,7 @@ impl pallet_eth2_finality_verifier::Config for MiniRuntime {
     type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_eth2_finality_verifier::weights::SubstrateWeight<MiniRuntime>;
 }
 
 impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
@@ -436,7 +436,7 @@ impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
     type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_sepolia_finality_verifier::weights::SubstrateWeight<MiniRuntime>;
 }
 
 impl pallet_timestamp::Config for MiniRuntime {
@@ -912,6 +912,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(2)),
                 (*b"tass", Some(4)),
+                (*b"tddd", Some(4)),
                 // (*b"call", Some(10)),
                 // (*b"cevm", Some(88)),
                 // (*b"wasm", Some(99)),
@@ -943,7 +944,11 @@ impl ExtBuilder {
             codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
-            allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"tddd", Some(4)),
+            ],
         });
         self
     }
@@ -963,6 +968,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(132)),
                 (*b"tass", Some(132)),
+                (*b"tddd", Some(132)),
                 (*b"cevm", Some(132)),
             ],
         });
@@ -984,6 +990,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(133)),
                 (*b"tass", Some(133)),
+                (*b"tddd", Some(133)),
                 (*b"cevm", Some(133)),
             ],
         });
@@ -1002,6 +1009,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(2)),
                 (*b"tass", Some(4)),
+                (*b"tddd", Some(4)),
                 (*b"call", Some(10)),
                 (*b"cevm", Some(88)),
                 (*b"wasm", Some(99)),
