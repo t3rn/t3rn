@@ -18,6 +18,8 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
+use circuit_runtime_types::{AssetId, EvmAddress};
+
 // Precompile pointers baked into the binary.
 // Genesis exists only to map hashes to pointers.
 pub const GET_STATE: u8 = 55;
@@ -375,4 +377,33 @@ impl<T: ConfigSystem, Balance> ModuleOperations<T, Balance> for ThreeVmInfo<T, B
     fn set_type(&mut self, kind: ContractType) {
         self.kind = kind;
     }
+}
+
+/// The index from which the endoded AssetId bytes will be encoded into an EVM address
+pub const H160_POSITION_ASSET_ID_TYPE: usize = 15;
+
+pub trait Erc20Mapping {
+    /// Encode the AssetId to EvmAddress.
+    fn encode_evm_address(v: AssetId) -> Option<EvmAddress>;
+    /// Decode the AssetId from EvmAddress.
+    fn decode_evm_address(v: EvmAddress) -> Option<AssetId>;
+}
+
+/// A mapping between `AccountId` and `EvmAddress`.
+pub trait AddressMapping<AccountId> {
+    /// Returns the AccountId used go generate the given EvmAddress.
+    fn get_account_id(evm: &EvmAddress) -> AccountId;
+    /// Returns the EvmAddress associated with a given AccountId or the
+    /// underlying EvmAddress of the AccountId.
+    /// Returns None if there is no EvmAddress associated with the AccountId
+    /// and there is no underlying EvmAddress in the AccountId.
+    fn get_evm_address(account_id: &AccountId) -> Option<EvmAddress>;
+    /// Returns the EVM address associated with an account ID and generates an
+    /// account mapping if no association exists.
+    fn get_or_create_evm_address(account_id: &AccountId) -> EvmAddress;
+    /// Returns the default EVM address associated with an account ID.
+    fn get_default_evm_address(account_id: &AccountId) -> EvmAddress;
+    /// Returns true if a given AccountId is associated with a given EvmAddress
+    /// and false if is not.
+    fn is_linked(account_id: &AccountId, evm: &EvmAddress) -> bool;
 }

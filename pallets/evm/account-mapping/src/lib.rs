@@ -31,7 +31,7 @@ use frame_support::{
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use orml_traits::currency::TransferAll;
-use pallet_3vm_evm_primitives::AddressMapping;
+use t3rn_primitives::threevm::AddressMapping;
 use scale_codec::Encode;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::{

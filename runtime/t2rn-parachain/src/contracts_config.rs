@@ -15,7 +15,8 @@ use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
-use pallet_3vm_evm_primitives::{Erc20Mapping, FeeCalculator, H160_POSITION_ASSET_ID_TYPE};
+use pallet_3vm_evm_primitives::FeeCalculator;
+use t3rn_primitives::threevm::{Erc20Mapping,  H160_POSITION_ASSET_ID_TYPE};
 use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
 

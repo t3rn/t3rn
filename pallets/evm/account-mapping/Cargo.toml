@@ -22,8 +22,9 @@ frame-system = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 orml-traits                     = { workspace = true }
+
 # t3rn packages
-pallet-3vm-evm-primitives       = { default-features = false, path = "../primitives", package = "fp-evm" }
+t3rn-primitives                 = { default-features = false, path = "../../../primitives" }
 circuit-runtime-types           = { default-features = false, path = "../../../runtime/common-types" }
 
 [dev-dependencies]
@@ -51,7 +52,7 @@ std = [
     #"orml-currencies/std",
     # t3rn
     "circuit-runtime-types/std",
-    "pallet-3vm-evm-primitives/std",
+    "t3rn-primitives/std",
 ]
 runtime-benchmarks = [
     "libsecp256k1",
