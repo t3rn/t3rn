@@ -278,6 +278,7 @@ mod benches {
         // [pallet_timestamp, Timestamp]
         // [pallet_collator_selection, CollatorSelection]
         // [pallet_account_manager, AccountManager]
+        [pallet_eth2_finality_verifier, EthereumBridge]
         [pallet_vacuum, Vacuum]
     );
 }
