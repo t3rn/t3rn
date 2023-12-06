@@ -248,7 +248,7 @@ members = [
   "pallets/contracts-registry/rpc",
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
-  "pallets/evm/account-mapping",
+  "pallets/3vm/account-mapping",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
   "pallets/portal",
