@@ -10,6 +10,8 @@ use frame_system::pallet_prelude::*;
 pub mod weights;
 use crate::weights::WeightInfo;
 pub use pallet::*;
+use sp_runtime::traits::Keccak256;
+
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use t3rn_primitives::{
     circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
@@ -28,11 +30,8 @@ use t3rn_abi::{
     recode::recode_bytes_with_descriptor,
     Codec,
 };
-use t3rn_primitives::{
-    circuit::{
-        AdaptiveTimeout, CircuitStatus, OrderOrigin, ReadSFX, SFXAction, SecurityLvl, SideEffect,
-    },
-    xdns::Xdns,
+use t3rn_primitives::circuit::{
+    AdaptiveTimeout, CircuitStatus, OrderOrigin, ReadSFX, SFXAction, SecurityLvl, SideEffect,
 };
 use t3rn_types::sfx::TargetId;
 t3rn_primitives::reexport_currency_types!();
@@ -164,6 +163,70 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::single_order())]
+        pub fn dynamic_destination_deal(
+            origin: OriginFor<T>,
+            destination: TargetId,
+            asset: Asset,
+            amount: BalanceOf<T>,
+            reward_asset: Asset,
+            max_reward: BalanceOf<T>,
+            remote_origin_nonce: u32,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            let requester_here = ensure_signed(origin.clone())?;
+
+            let min_insurance = <T as Config>::Currency::minimum_balance();
+
+            let sfx_optimistic_order =
+                OrderSFX::<T::AccountId, Asset, BalanceOf<T>, TargetId, Vec<u8>, BalanceOf<T>> {
+                    sfx_action: SFXAction::DynamicDestinationDeal(
+                        destination,
+                        reward_asset,
+                        max_reward,
+                    ),
+                    max_reward,
+                    insurance: min_insurance, // will be auto-adjusted to current Finality Fee
+                    reward_asset,
+                    remote_origin_nonce: Some(remote_origin_nonce), // Remote origin won't deduct max_reward from requester
+                };
+
+            let sfx_escrow_order =
+                OrderSFX::<T::AccountId, Asset, BalanceOf<T>, TargetId, Vec<u8>, BalanceOf<T>> {
+                    sfx_action: SFXAction::Transfer([3u8; 4], asset, requester_here, amount),
+                    max_reward: amount,
+                    insurance: min_insurance, // will be auto-adjusted to current Finality Fee
+                    reward_asset: asset,
+                    remote_origin_nonce: None,
+                };
+
+            let sfx_escrow: SideEffect<T::AccountId, BalanceOf<T>> = sfx_escrow_order.try_into()?;
+            let sfx_optimistic: SideEffect<T::AccountId, BalanceOf<T>> =
+                sfx_optimistic_order.try_into()?;
+
+            let remote_origin = OrderOrigin::from_remote_nonce(remote_origin_nonce);
+
+            T::CircuitSubmitAPI::on_remote_origin_trigger(
+                origin.clone(),
+                remote_origin.to_account_id(),
+                vec![sfx_escrow.clone(), sfx_optimistic.clone()],
+                speed_mode,
+            )?;
+
+            // Recover XTX_ID + SFX ID of Dynamic Destination Deal and Bid for it as a requester
+            let xtx_id = T::ReadSFX::recover_latest_submitted_xtx_id()?;
+
+            // Now Bid as a requester for Dynamic Destination Deal
+            let sfx_dynamic_order_id: H256 =
+                sfx_escrow.generate_id::<Keccak256>(xtx_id.encode().as_slice(), 1u32);
+
+            let mut ddd_sfx_id: T::Hash = T::Hash::default();
+            ddd_sfx_id
+                .as_mut()
+                .copy_from_slice(&sfx_dynamic_order_id.as_ref()[..32]);
+            T::CircuitSubmitAPI::bid(origin, ddd_sfx_id, min_insurance)
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::single_order())]
         pub fn single_order(
             origin: OriginFor<T>,
             destination: TargetId,
@@ -277,14 +340,14 @@ pub mod pallet {
                 let amount = BalanceOf::<T>::decode(
                     &mut &decoded_remote_order.amount.as_u128().encode()[..],
                 )
-                .map_err(|e| {
+                .map_err(|_e| {
                     DispatchError::Other("Vacuum::remote_order -- error decoding amount")
                 })?;
                 // In the context of minting assets, max reward is the net reward to executor.
                 let max_reward = BalanceOf::<T>::decode(
                     &mut &decoded_remote_order.max_reward.as_u128().encode()[..],
                 )
-                .map_err(|e| {
+                .map_err(|_e| {
                     DispatchError::Other("Vacuum::remote_order -- error decoding amount")
                 })?;
 
@@ -297,7 +360,7 @@ pub mod pallet {
 
                 let target_account =
                     T::AccountId::decode(&mut &decoded_remote_order.target_account.encode()[..])
-                        .map_err(|e| {
+                        .map_err(|_e| {
                             DispatchError::Other(
                                 "Vacuum::remote_order -- error decoding target_account",
                             )
@@ -362,7 +425,7 @@ pub mod pallet {
 
 #[cfg(test)]
 mod tests {
-    use codec::{Decode, Encode};
+    use codec::Encode;
     use t3rn_primitives::circuit::OrderOrigin;
 
     use frame_support::{assert_err, assert_ok, traits::Hooks};
@@ -609,6 +672,161 @@ mod tests {
     }
 
     #[test]
+    fn multi_escrow_and_optimistic_order_delivers_via_dynamic_destination_deal() {
+        let mut ext = prepare_ext_builder_playground();
+        ext.execute_with(|| {
+            let executor = AccountId32::from([1u8; 32]);
+            let requester = AccountId32::from([2u8; 32]);
+            // Deposit Finality Fee sum to cover up for requester's request
+            Balances::deposit_creating(
+                &requester,
+                (13_200_000_000_000 + EXISTENTIAL_DEPOSIT) as Balance,
+            ); // To cover insurance
+            Balances::deposit_creating(
+                &executor,
+                (13_200_000_000_000 + EXISTENTIAL_DEPOSIT) as Balance,
+            ); // To cover insurance
+
+            mint_required_assets_for_optimistic_actors(
+                requester.clone(),
+                executor.clone(),
+                0u128,
+                200u128,
+                ASSET_DOT,
+            );
+            let sfx_optimistic_action =
+                SFXAction::DynamicDestinationDeal(ASTAR_TARGET, ASSET_ASTAR, 500u128);
+            let sfx_optimistic_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+                sfx_action: sfx_optimistic_action,
+                max_reward: 500u128,
+                insurance: 50u128,
+                reward_asset: ASSET_ASTAR,
+                remote_origin_nonce: Some(1u32), // Remote origin won't deduct max_reward from requester
+            };
+
+            let sfx_escrow_action =
+                SFXAction::Transfer(POLKADOT_TARGET, ASSET_DOT, requester.clone(), 200u128);
+            let sfx_escrow_order = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+                sfx_action: sfx_escrow_action,
+                max_reward: 200u128,
+                insurance: 20u128,
+                reward_asset: ASSET_DOT,
+                remote_origin_nonce: None,
+            };
+
+            activate_all_light_clients();
+
+            // Move to next block
+            System::set_block_number(System::block_number() + 1);
+
+            let sfx_escrow: SideEffect<AccountId32, u128> = sfx_escrow_order.try_into().unwrap();
+            let sfx_optimistic: SideEffect<AccountId32, u128> =
+                sfx_optimistic_order.try_into().unwrap();
+
+            assert_ok!(Vacuum::dynamic_destination_deal(
+                RuntimeOrigin::signed(requester.clone()),
+                ASTAR_TARGET,
+                ASSET_DOT,
+                200u128,
+                ASSET_ASTAR,
+                500u128,
+                1u32,
+                SpeedMode::Fast,
+            ));
+
+            let xtx_id = Hash::from(hex!(
+                "ada5013122d395ba3c54772283fb069b10426056ef8ca54750cb9bb552a59e7d"
+            ));
+
+            // Now Bid for remaining escrow order and confirm both of them
+            let sfx_escrow_order_id = sfx_escrow.generate_id::<Keccak256>(xtx_id.0.as_slice(), 0);
+            let sfx_optimistic_order_id =
+                sfx_optimistic.generate_id::<Keccak256>(xtx_id.0.as_slice(), 1);
+
+            assert_ok!(Circuit::bid_sfx(
+                RuntimeOrigin::signed(executor.clone()),
+                sfx_escrow_order_id,
+                200 as Balance,
+            ));
+
+            // Complete bidding
+            System::set_block_number(System::block_number() + 3);
+            Clock::on_initialize(System::block_number());
+
+            // Execute first order - escrow deposit DOT via Circuit::escrow(sfx_escrow_order_id)
+            assert_ok!(Circuit::escrow(
+                RuntimeOrigin::signed(executor.clone()),
+                sfx_escrow_order_id,
+            ));
+            // Execute second order - optimistic order transfer ASTAR via Circuit::confirm_side_effect(sfx_optimistic_order_id)
+            let mut scale_encoded_transfer_event_correct_dest =
+                MockedAssetEvent::<MiniRuntime>::Transferred {
+                    asset_id: ASSET_ASTAR,
+                    from: requester.clone(),
+                    to: executor.clone(),
+                    amount: 500 as Balance,
+                }
+                .encode();
+            // append an extra pallet event index byte as the second byte
+            scale_encoded_transfer_event_correct_dest.insert(0, 4u8);
+
+            let confirmation_transfer_executor_as_dest =
+                ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+                    err: None,
+                    output: None,
+                    inclusion_data: scale_encoded_transfer_event_correct_dest,
+                    executioner: executor.clone(),
+                    received_at: System::block_number(),
+                    cost: None,
+                };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                RuntimeOrigin::signed(executor.clone()),
+                sfx_optimistic_order_id,
+                confirmation_transfer_executor_as_dest
+            ));
+
+            assert_ok!(Vacuum::read_order_status(
+                RuntimeOrigin::signed(requester.clone()),
+                xtx_id
+            ));
+            // Recover XTX status to see if it's FinishedAllSteps
+            let order_status_read = expect_last_event_to_read_order_status();
+
+            assert_eq!(order_status_read.status, CircuitStatus::FinishedAllSteps);
+
+            // Verify balances of requester and executor have refunded insurances + expected amount on their accounts
+            assert_eq!(Assets::balance(ASSET_DOT, &requester), 201u128);
+            assert_eq!(Assets::balance(ASSET_DOT, &executor), 1u128);
+
+            assert_eq!(Assets::balance(ASSET_ASTAR, &executor), 0u128);
+
+            // Executor has spent their DOTs
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                EXISTENTIAL_DEPOSIT as Balance
+            );
+
+            // Verify that escrow account did not collect any funds
+            assert_eq!(
+                Assets::balance(
+                    ASSET_DOT,
+                    &MiniRuntime::get_treasury_account(TreasuryAccount::Escrow)
+                ),
+                0u128
+            );
+
+            assert_eq!(
+                Assets::balance(
+                    ASSET_ASTAR,
+                    &MiniRuntime::get_treasury_account(TreasuryAccount::Escrow)
+                ),
+                0u128
+            );
+        });
+    }
+
+    #[test]
     fn multi_escrow_and_optimistic_order_single_sfx_vacuum_delivers_to_circuit() {
         let mut ext = prepare_ext_builder_playground();
         ext.execute_with(|| {
@@ -674,6 +892,7 @@ mod tests {
             let sfx_escrow: SideEffect<AccountId32, u128> = sfx_escrow_order.try_into().unwrap();
             let sfx_optimistic: SideEffect<AccountId32, u128> =
                 sfx_optimistic_order.try_into().unwrap();
+
             assert_ok!(Circuit::on_remote_origin_trigger(
                 RuntimeOrigin::signed(requester.clone()),
                 remote_origin.to_account_id(),
@@ -959,7 +1178,7 @@ mod tests {
 
             activate_all_light_clients();
 
-            for loop_index in 0..3 {
+            for _loop_index in 0..3 {
                 make_whole_vacuum_trip_including_minting_and_confirmation(
                     ASSET_DOT,
                     executor.clone(),
@@ -1496,7 +1715,7 @@ mod tests {
 
             let executor = AccountId32::from([1u8; 32]);
             let requester = AccountId32::from([2u8; 32]);
-            let requester_on_dest = AccountId32::from(hex!("000000000000000000000000F85A57d965aEcD289c625Cae6161d0Ab5141bC66")); // 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
+            let _requester_on_dest = AccountId32::from(hex!("000000000000000000000000F85A57d965aEcD289c625Cae6161d0Ab5141bC66")); // 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
 
             mint_required_assets_for_optimistic_actors(
                 requester.clone(),
@@ -1595,7 +1814,7 @@ mod tests {
 
             let executor = AccountId32::from([1u8; 32]);
             let requester = AccountId32::from([0u8; 32]);
-            let requester_on_dest = AccountId32::from(hex!("000000000000000000000000F85A57d965aEcD289c625Cae6161d0Ab5141bC66")); // 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
+            let _requester_on_dest = AccountId32::from(hex!("000000000000000000000000F85A57d965aEcD289c625Cae6161d0Ab5141bC66")); // 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
 
             assert!(hotswap_latest_receipt_header_root(hex!("76435ece9646ad97cbaf7e8190af314df7f577b31f02f9c8ff12d3ea5a68b966").into()));
 
