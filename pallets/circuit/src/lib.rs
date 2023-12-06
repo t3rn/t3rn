@@ -486,6 +486,13 @@ pub mod pallet {
             Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
+        fn recover_latest_submitted_xtx_id() -> Result<T::Hash, DispatchError> {
+            let xtx_id = Self::get_pending_xtx_ids()
+                .pop()
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+            Ok(xtx_id)
+        }
+
         fn get_fsx_executor(fsx_id: T::Hash) -> Result<Option<T::AccountId>, DispatchError> {
             let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
@@ -637,6 +644,14 @@ pub mod pallet {
             }
             <GMP<T>>::insert(id, payload);
             true
+        }
+
+        fn bid(
+            origin: OriginFor<T>,
+            sfx_id: SideEffectId<T>,
+            amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            Self::bid_sfx(origin, sfx_id, amount)
         }
 
         fn get_gmp_payload(id: H256) -> Option<H256> {
@@ -898,7 +913,7 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
-            let local_ctx = Self::do_on_extrinsic_trigger(
+            let _local_ctx = Self::do_on_extrinsic_trigger(
                 requester.clone(),
                 side_effects,
                 speed_mode,
@@ -942,7 +957,8 @@ pub mod pallet {
                 })?;
 
             // Proceed with Escrow of the funds for this SFX - transfer funds to the escrow account
-            let escrow_account = T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow);
+            let _escrow_account =
+                T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow);
 
             // Standardize escrow_account IDs as re-hash of sfx_id with 3333
             let escrow_id = fsx
@@ -1100,10 +1116,7 @@ pub mod pallet {
         }
     }
 
-    use crate::{
-        machine::{no_mangle, Machine},
-        square_up::SquareUp,
-    };
+    use crate::machine::{no_mangle, Machine};
 
     /// Events for the pallet.
     #[pallet::event]
@@ -1403,7 +1416,7 @@ impl<T: Config> Pallet<T> {
         // Charge finality fees for each Escrow SFX
         let call_origin = maybe_call_origin.clone().unwrap_or(requester.clone());
         SquareUp::<T>::charge_finality_fee(&fresh_xtx, &call_origin)
-            .map_err(|e| Error::<T>::XtxChargeFailedOnEscrowFee)?;
+            .map_err(|_e| Error::<T>::XtxChargeFailedOnEscrowFee)?;
 
         // Compile: apply the new state post squaring up and emit
         Machine::<T>::compile(
@@ -1411,7 +1424,7 @@ impl<T: Config> Pallet<T> {
             |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
             |_status_change, local_ctx| {
                 // Emit: circuit events
-                let call_origin = maybe_call_origin.unwrap_or(requester.clone());
+                let _call_origin = maybe_call_origin.unwrap_or(requester.clone());
 
                 Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
                 Ok(())
@@ -1442,7 +1455,7 @@ impl<T: Config> Pallet<T> {
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
-        preferred_security_lvl: &SecurityLvl,
+        _preferred_security_lvl: &SecurityLvl,
     ) -> Result<(), Error<T>> {
         let mut full_side_effects: Vec<
             FullSideEffect<
@@ -2238,7 +2251,7 @@ impl<T: Config> Pallet<T> {
                 FullSideEffects::<T>::mutate(local_ctx.xtx_id, |full_side_effects| {
                     if let Some(fsx_vec_of_vec) = full_side_effects {
                         for fsx_vec in fsx_vec_of_vec.iter_mut() {
-                            for (index, fsx) in fsx_vec.iter_mut().enumerate() {
+                            for (_index, fsx) in fsx_vec.iter_mut().enumerate() {
                                 if fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
                                     == override_sfx_id
                                 {
