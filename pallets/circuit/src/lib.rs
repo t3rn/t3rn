@@ -1448,7 +1448,7 @@ impl<T: Config> Pallet<T> {
             // ToDo: Handle bonded Executor authorisation
             CircuitRole::Executor => ensure_signed(origin),
             // ToDo: Handle other CircuitRoles
-            _ => unimplemented!(),
+            _ => return Err(sp_runtime::traits::BadOrigin.into()),
         }
     }
 
