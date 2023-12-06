@@ -5,7 +5,7 @@ use crate::{
     ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall, RuntimeEvent, ThreeVm,
     Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
-use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
+use frame_support::{PalletId, pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 
 use crate::pallet_3vm_contracts::NoopMigration;
 use circuit_runtime_pallets::{
@@ -18,7 +18,8 @@ use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
-use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
+use sp_runtime::{traits::{AccountIdConversion, Keccak256}, ConsensusEngineId, RuntimeAppPublic};
+pub use pallet_3vm_account_mapping::EvmAddressMapping;
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -182,3 +183,20 @@ impl pallet_3vm_evm::Config for Runtime {
 //     type WeightInfo = ();
 //     type WeightPerGas = WeightPerGas;
 //     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+
+parameter_types! {
+    pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
+    pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
+    pub const StorageDepositFee: Balance = 1;
+}
+
+impl pallet_3vm_account_mapping::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type ChainId = ChainId;
+    type NetworkTreasuryAccount = TreasuryModuleAccount;
+    type StorageDepositFee = StorageDepositFee;
+}
+
+

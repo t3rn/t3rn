@@ -35,6 +35,9 @@ pub use crate::circuit_config::GlobalOnInitQueues;
 use frame_support::traits::GenesisBuild;
 pub use pallet_3vm_evm::Config as ConfigEvm;
 pub use pallet_contracts_registry::ContractsRegistry as ContractsRegistryStorage;
+use sp_io::hashing::keccak_256;
+pub use pallet_3vm_account_mapping::{EcdsaSignature, ethereum_signable_message, to_ascii_hex};
+use sp_core::crypto::AccountId32;
 
 use smallvec::smallvec;
 use sp_runtime::BuildStorage;
@@ -94,6 +97,7 @@ frame_support::construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
+        AccountMapping: pallet_3vm_account_mapping = 126,
 
         // Portal
         Portal: pallet_portal = 128,
@@ -324,7 +328,9 @@ impl ExtBuilder {
         };
         sudo_genesis_config.assimilate_storage(&mut t).unwrap();
 
-        pallet_balances::GenesisConfig::<Runtime> { balances: vec![] }
+        pallet_balances::GenesisConfig::<Runtime> {
+                balances: vec![(bob_account_id(), 100000), (ALICE, 10000)]
+            }
             .assimilate_storage(&mut t)
             .expect("Pallet balances storage can be assimilated");
 
@@ -366,3 +372,49 @@ pub const EXECUTOR_SECOND: AccountId = AccountId::new([
     2, 119, 209, 36, 229, 1, 136, 124, 36, 112, 226, 96, 200, 240, 218, 96, 219, 158, 211, 219,
     168, 8, 166, 130, 240, 154, 251, 57, 239, 240, 197, 99,
 ]);
+
+pub fn alice() -> libsecp256k1::SecretKey {
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+}
+
+pub fn bob() -> libsecp256k1::SecretKey {
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
+}
+
+// Folowing two functions are duplicated to avoid build errors... TODO: fix this
+pub fn public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
+    libsecp256k1::PublicKey::from_secret_key(secret)
+}
+
+pub fn eth(secret: &libsecp256k1::SecretKey) -> EvmAddress {
+    let mut res = EvmAddress::default();
+    res.0
+        .copy_from_slice(&keccak_256(&public(secret).serialize()[1..65])[12..]);
+    res
+}
+
+pub fn sig(
+    secret: &libsecp256k1::SecretKey,
+    what: &[u8],
+    extra: &[u8],
+) -> EcdsaSignature {
+    let msg = keccak_256(&ethereum_signable_message(
+        &to_ascii_hex(what)[..],
+        extra,
+    ));
+    let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
+    let mut r = [0u8; 65];
+    r[0..64].copy_from_slice(&sig.serialize()[..]);
+    r[64] = recovery_id.serialize();
+    EcdsaSignature(r)
+}
+
+// Substrate account of bob which derive from eth address of bob
+pub fn bob_account_id() -> AccountId32 {
+    let address = eth(&bob());
+    let mut data = [0u8; 32];
+    data[0..4].copy_from_slice(b"evm:");
+    data[4..24].copy_from_slice(&address[..]);
+    AccountId32::from(Into::<[u8; 32]>::into(data))
+}
+

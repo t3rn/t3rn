@@ -1014,6 +1014,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "hex-literal 0.3.4",
+ "libsecp256k1",
  "log",
  "node-primitives",
  "num-traits",
@@ -1067,6 +1068,7 @@ dependencies = [
  "hex-literal 0.4.1",
  "log",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
@@ -6486,6 +6488,7 @@ dependencies = [
 name = "pallet-3vm-account-mapping"
 version = "1.0.0-dev"
 dependencies = [
+ "circuit-mock-runtime",
  "circuit-runtime-types",
  "frame-benchmarking",
  "frame-support",
@@ -13149,6 +13152,7 @@ dependencies = [
  "log",
  "num-traits",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",

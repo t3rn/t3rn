@@ -30,7 +30,6 @@ use frame_support::{
     transactional,
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
-//use orml_traits::currency::TransferAll;
 use scale_codec::Encode;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::{
@@ -47,8 +46,6 @@ use t3rn_primitives::threevm::AddressMapping;
 
 //#[cfg(feature = "runtime-benchmarks")]
 //pub mod benchmarking;
-
-mod mock;
 mod tests;
 //pub mod weights;
 pub use pallet::*;
@@ -69,7 +66,7 @@ impl sp_std::fmt::Debug for EcdsaSignature {
 }
 
 /// Converts the given binary data into ASCII-encoded hex. It will be twice the length.
-fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
+pub fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
     let mut r = Vec::with_capacity(data.len() * 2);
     let mut push_nibble = |n| r.push(if n < 10 { b'0' + n } else { b'a' - 10 + n });
     for &b in data.iter() {
@@ -77,6 +74,23 @@ fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
         push_nibble(b % 16);
     }
     r
+}
+
+/// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
+pub fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
+    let prefix: &'static [u8] = b"T3rn claim EVM account with:";
+    let mut l = prefix.len() + what.len() + extra.len();
+    let mut rev = Vec::new();
+    while l > 0 {
+        rev.push(b'0' + (l % 10) as u8);
+        l /= 10;
+    }
+    let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
+    v.extend(rev.into_iter().rev());
+    v.extend_from_slice(&prefix[..]);
+    v.extend_from_slice(what);
+    v.extend_from_slice(extra);
+    v
 }
 
 #[frame_support::pallet]
@@ -288,7 +302,7 @@ impl<T: Config> Pallet<T> {
 
     // Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
     fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-        let prefix: &'static [u8] = b"Pioneer.Network claim EVM account with:";
+        let prefix: &'static [u8] = b"T3rn claim EVM account with:";
         let mut l = prefix.len() + what.len() + extra.len();
         let mut rev = Vec::new();
         while l > 0 {
