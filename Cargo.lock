@@ -6428,41 +6428,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orml-traits"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library/?branch=polkadot-v1.0.0#2b41f29e749fda52522cb4c7ea0e47f517f6a59d"
-dependencies = [
- "frame-support",
- "impl-trait-for-tuples",
- "num-traits",
- "orml-utilities",
- "parity-scale-codec",
- "paste",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 8.0.0",
- "xcm",
-]
-
-[[package]]
-name = "orml-utilities"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library/?branch=polkadot-v1.0.0#2b41f29e749fda52522cb4c7ea0e47f517f6a59d"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 8.0.0",
-]
-
-[[package]]
 name = "p256"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6518,7 +6483,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-3vm-evm-account-mapping"
+name = "pallet-3vm-account-mapping"
 version = "1.0.0-dev"
 dependencies = [
  "circuit-runtime-types",
@@ -6526,7 +6491,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "libsecp256k1",
- "orml-traits",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",

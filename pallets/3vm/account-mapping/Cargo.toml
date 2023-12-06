@@ -1,5 +1,5 @@
 [package]
-name = "pallet-3vm-evm-account-mapping"
+name = "pallet-3vm-account-mapping"
 version = "1.0.0-dev"
 license = "Apache-2.0"
 description = "Package to hande EVM-to-Substrate and Substrate-to-EVM address conversion"
@@ -21,16 +21,12 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
-orml-traits                     = { workspace = true }
-
 # t3rn packages
 t3rn-primitives                 = { default-features = false, path = "../../../primitives" }
 circuit-runtime-types           = { default-features = false, path = "../../../runtime/common-types" }
 
 [dev-dependencies]
 pallet-balances = { workspace = true }
-#orml-currencies = { workspace = true }
-#orml-tokens = { workspace = true }
 
 [features]
 default = ["std"]
@@ -46,10 +42,6 @@ std = [
     "sp-std/std",
     "frame-support/std",
     "frame-system/std",
-    # ORML
-    "orml-traits/std",
-    #"orml-tokens/std",
-    #"orml-currencies/std",
     # t3rn
     "circuit-runtime-types/std",
     "t3rn-primitives/std",

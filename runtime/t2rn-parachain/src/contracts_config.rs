@@ -13,12 +13,12 @@ use frame_support::{
 use circuit_runtime_types::AssetId;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
+use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
-use pallet_3vm_evm_primitives::FeeCalculator;
-use t3rn_primitives::threevm::{Erc20Mapping,  H160_POSITION_ASSET_ID_TYPE};
 use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
+use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;

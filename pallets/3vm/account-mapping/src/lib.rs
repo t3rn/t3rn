@@ -30,8 +30,7 @@ use frame_support::{
     transactional,
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
-use orml_traits::currency::TransferAll;
-use t3rn_primitives::threevm::AddressMapping;
+//use orml_traits::currency::TransferAll;
 use scale_codec::Encode;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::{
@@ -43,13 +42,14 @@ use sp_runtime::{
     MultiAddress,
 };
 use sp_std::{marker::PhantomData, vec::Vec};
+use t3rn_primitives::threevm::AddressMapping;
 //pub use weights::WeightInfo;
 
 //#[cfg(feature = "runtime-benchmarks")]
 //pub mod benchmarking;
 
-//mod mock;
-//mod tests;
+mod mock;
+mod tests;
 //pub mod weights;
 pub use pallet::*;
 
@@ -103,9 +103,6 @@ pub mod pallet {
         /// The network treasury account
         #[pallet::constant]
         type NetworkTreasuryAccount: Get<Self::AccountId>;
-
-        /// Merge free balance from source to dest.
-        type TransferAll: TransferAll<Self::AccountId>;
 
         /// Storage deposit free charged when saving data into the blockchain.
         #[pallet::constant]
@@ -197,7 +194,13 @@ pub mod pallet {
             let account_id = T::AddressMapping::get_account_id(&eth_address);
             if frame_system::Pallet::<T>::account_exists(&account_id) {
                 // merge balance from `evm padded address` to `origin`
-                T::TransferAll::transfer_all(&account_id, &who)?;
+                <T as Config>::Currency::transfer(
+                    &account_id,
+                    &who,
+                    <T as Config>::Currency::free_balance(&account_id),
+                    ExistenceRequirement::AllowDeath,
+                )?;
+                //T::TransferAll::transfer_all(&account_id, &who)?;
             }
 
             // Transfer storage deposit fee
