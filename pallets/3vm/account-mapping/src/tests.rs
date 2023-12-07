@@ -21,13 +21,18 @@ use frame_support::assert_ok;
 
 use crate::Event;
 use circuit_mock_runtime::{
-    alice, bob, eth, sig, AccountMapping, ExtBuilder, Runtime, RuntimeEvent, RuntimeOrigin, System,
-    ALICE, BOB,
+    alice, bob, eth, sig, AccountMapping, Balances, ExtBuilder, Runtime, RuntimeEvent,
+    RuntimeOrigin, System, ALICE, BOB,
 };
 
 #[test]
 fn claim_account_work() {
     ExtBuilder::default().build().execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(ALICE),
+            100000
+        ));
         assert_ok!(AccountMapping::claim_eth_account(
 			RuntimeOrigin::signed(ALICE),
 			eth(&alice()),
