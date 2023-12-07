@@ -27,6 +27,7 @@ circuit-runtime-types           = { default-features = false, path = "../../../r
 
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../../runtime/mock" }
+circuit-runtime-pallets = { path = "../../../runtime/common-pallets" }
 pallet-balances         = { workspace = true }
 
 [features]
@@ -45,6 +46,7 @@ std = [
     "frame-system/std",
     # t3rn
     "circuit-runtime-types/std",
+    "circuit-runtime-pallets/std",
     "t3rn-primitives/std",
 ]
 runtime-benchmarks = [

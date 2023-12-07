@@ -15,17 +15,15 @@
 // limitations under the License.
 
 #![cfg(test)]
+use super::*;
 
-use std::str::FromStr;
-
-use frame_support::{assert_noop, assert_ok};
+use frame_support::assert_ok;
 
 use circuit_mock_runtime::{
     alice, bob, AccountMapping, ExtBuilder, Runtime, RuntimeEvent, RuntimeOrigin, System, ALICE, BOB,
     eth, sig
 };
-
-use super::*;
+use crate::Event;
 
 #[test]
 fn claim_account_work() {
@@ -35,10 +33,20 @@ fn claim_account_work() {
 			eth(&alice()),
 			sig(&alice(), &eth(&alice()).encode(), &[][..])
 		));
-        System::assert_last_event(RuntimeEvent::AccountMapping(crate::Event<Runtime>::ClaimAccount {
-            account_id: ALICE,
-            evm_address: eth(&alice()),
-        }));
-        assert!(Accounts::<Runtime>::contains_key(eth(&alice())) && EvmAddresses::<Runtime>::contains_key(ALICE));
+        let system_event = System::events();
+        let last_system_event = system_event.last();
+        assert_eq!(last_system_event.is_some(), true);
+        assert_eq!(
+            last_system_event.unwrap().event,
+            RuntimeEvent::AccountMapping(
+                circuit_runtime_pallets::pallet_3vm_account_mapping::Event::<Runtime>::ClaimAccount {
+                    account_id: ALICE,
+                    evm_address: eth(&alice()),
+                }
+            )
+        );
+        assert_eq!(AccountMapping::accounts(eth(&alice())).is_some(), true);
+        assert_eq!(AccountMapping::evm_addresses(ALICE).is_some(), true);
+
     });
 }

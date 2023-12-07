@@ -6489,6 +6489,7 @@ name = "pallet-3vm-account-mapping"
 version = "1.0.0-dev"
 dependencies = [
  "circuit-mock-runtime",
+ "circuit-runtime-pallets",
  "circuit-runtime-types",
  "frame-benchmarking",
  "frame-support",
