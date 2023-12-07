@@ -19,11 +19,11 @@ use super::*;
 
 use frame_support::assert_ok;
 
-use circuit_mock_runtime::{
-    alice, bob, AccountMapping, ExtBuilder, Runtime, RuntimeEvent, RuntimeOrigin, System, ALICE, BOB,
-    eth, sig
-};
 use crate::Event;
+use circuit_mock_runtime::{
+    alice, bob, eth, sig, AccountMapping, ExtBuilder, Runtime, RuntimeEvent, RuntimeOrigin, System,
+    ALICE, BOB,
+};
 
 #[test]
 fn claim_account_work() {

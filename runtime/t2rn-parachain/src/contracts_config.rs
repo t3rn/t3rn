@@ -7,17 +7,22 @@ use frame_support::{
     pallet_prelude::ConstU32,
     parameter_types,
     traits::{ConstBool, FindAuthor},
+    PalletId,
 };
 
 // use evm_precompile_util::KnownPrecompile;
-use circuit_runtime_types::AssetId;
+use circuit_runtime_types::{AssetId, EvmAddress};
+pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
-use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
+use sp_runtime::{
+    traits::{AccountIdConversion, Keccak256},
+    ConsensusEngineId, RuntimeAppPublic,
+};
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
 
 // Unit = the base number of indivisible units for balances
@@ -161,6 +166,21 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightInfo = ();
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
+}
+
+parameter_types! {
+    pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
+    pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
+    pub const StorageDepositFee: Balance = MILLIUNIT / 100;
+}
+
+impl pallet_3vm_account_mapping::Config for Runtime {
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type ChainId = ChainId;
+    type Currency = Balances;
+    type NetworkTreasuryAccount = TreasuryModuleAccount;
+    type RuntimeEvent = RuntimeEvent;
+    type StorageDepositFee = StorageDepositFee;
 }
 
 // AssetId to EvmAddress mapping

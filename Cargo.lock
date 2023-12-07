@@ -13473,6 +13473,7 @@ dependencies = [
  "node-primitives",
  "num-traits",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-tx-payment",
  "pallet-assets",

@@ -19,7 +19,7 @@
 
 use super::*;
 use circuit_mock_runtime::{ExtBuilder, Portal, RuntimeOrigin as Origin, *};
-use codec::Decode;F
+use codec::Decode;
 
 use frame_support::pallet_prelude::Weight;
 
