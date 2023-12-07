@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.78.0-rc.0] - 2023-12-06
+### :sparkles: New Features
+- [`9ae04f4`](https://github.com/t3rn/t3rn/commit/9ae04f48239ed940c9ea743e14ce0552097e7732) - enable multi optimistic & escrow orders with Dynamic Destination Deal  *(PR [#1489](https://github.com/t3rn/t3rn/pull/1489) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.77.0-rc.0] - 2023-11-30
+### :sparkles: New Features
+- [`d59af68`](https://github.com/t3rn/t3rn/commit/d59af68a81ffc266a59b4cfb0e1842a356b050bb) - added XCM SDK support for automated sending of RUSD  and USDT from AssetHub to t0rn *(PR [#1444](https://github.com/t3rn/t3rn/pull/1444) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.76.0-rc.0] - 2023-11-30
+### :sparkles: New Features
+- [`ef380dd`](https://github.com/t3rn/t3rn/commit/ef380dd49c5d0901af2d763aa1323801e8ee8f8d) - enable multiple blocks per slot for t0rn *(PR [#1426](https://github.com/t3rn/t3rn/pull/1426) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.75.0-rc.0] - 2023-11-25
 ### :sparkles: New Features
 - [`b7075d4`](https://github.com/t3rn/t3rn/commit/b7075d458d0ec3d0697346674b3ea6589d2219ae) - skip light clients registration for empty init data *(PR [#1476](https://github.com/t3rn/t3rn/pull/1476) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1947,3 +1962,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.74.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.2-rc.0...v1.74.3-rc.0
 [v1.74.9-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.8-rc.0...v1.74.9-rc.0
 [v1.75.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.10-rc.0...v1.75.0-rc.0
+[v1.76.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.75.3-rc.0...v1.76.0-rc.0
+[v1.77.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.76.0-rc.0...v1.77.0-rc.0
+[v1.78.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.77.0-rc.0...v1.78.0-rc.0

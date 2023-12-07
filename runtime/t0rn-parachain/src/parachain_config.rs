@@ -106,7 +106,7 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_aura::Config for Runtime {
-    type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type AllowMultipleBlocksPerSlot = ConstBool<true>;
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;

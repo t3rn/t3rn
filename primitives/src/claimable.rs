@@ -23,6 +23,7 @@ pub enum BenefitSource {
     Inflation,
     TrafficFees,
     TrafficRewards,
+    EscrowUnlock,
     Unsettled,
     SlashTreasury,
 }

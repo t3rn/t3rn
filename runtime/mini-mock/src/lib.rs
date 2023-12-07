@@ -424,7 +424,7 @@ impl pallet_eth2_finality_verifier::Config for MiniRuntime {
     type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_eth2_finality_verifier::weights::SubstrateWeight<MiniRuntime>;
 }
 
 impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
@@ -436,7 +436,7 @@ impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
     type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_sepolia_finality_verifier::weights::SubstrateWeight<MiniRuntime>;
 }
 
 impl pallet_timestamp::Config for MiniRuntime {
@@ -774,6 +774,7 @@ pub const POLKADOT_TARGET: TargetId = [1u8; 4];
 pub const KUSAMA_TARGET: TargetId = [2u8; 4];
 
 pub const ASSET_ETH: u32 = 1u32;
+
 pub fn get_asset_eth_with_info() -> (u32, TokenInfo) {
     (
         ASSET_ETH,
@@ -901,20 +902,20 @@ impl ExtBuilder {
     }
 
     pub fn with_astar_gateway_record(mut self) -> Self {
-        let mock_escrow_account: AccountId = AccountId::new([8u8; 32]);
         self.known_gateway_records.push(GatewayRecord {
             gateway_id: ASTAR_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
             codec: t3rn_abi::Codec::Scale,
             registrant: None,
-            escrow_account: Some(mock_escrow_account),
+            escrow_account: None,
             allowed_side_effects: vec![
                 (*b"tran", Some(2)),
                 (*b"tass", Some(4)),
-                (*b"call", Some(10)),
-                (*b"cevm", Some(88)),
-                (*b"wasm", Some(99)),
+                (*b"tddd", Some(4)),
+                // (*b"call", Some(10)),
+                // (*b"cevm", Some(88)),
+                // (*b"wasm", Some(99)),
             ],
         });
         self
@@ -943,7 +944,11 @@ impl ExtBuilder {
             codec: t3rn_abi::Codec::Scale,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
-            allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"tddd", Some(4)),
+            ],
         });
         self
     }
@@ -963,6 +968,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(132)),
                 (*b"tass", Some(132)),
+                (*b"tddd", Some(132)),
                 (*b"cevm", Some(132)),
             ],
         });
@@ -984,6 +990,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(133)),
                 (*b"tass", Some(133)),
+                (*b"tddd", Some(133)),
                 (*b"cevm", Some(133)),
             ],
         });
@@ -1002,6 +1009,7 @@ impl ExtBuilder {
             allowed_side_effects: vec![
                 (*b"tran", Some(2)),
                 (*b"tass", Some(4)),
+                (*b"tddd", Some(4)),
                 (*b"call", Some(10)),
                 (*b"cevm", Some(88)),
                 (*b"wasm", Some(99)),
@@ -1115,9 +1123,9 @@ pub fn activate_all_light_clients() {
 pub fn prepare_ext_builder_playground() -> TestExternalities {
     let mut ext = ExtBuilder::default()
         .with_standard_sfx_abi()
-        .with_astar_gateway_record()
         .with_kusama_gateway_record()
         .with_polkadot_gateway_record()
+        .with_astar_gateway_record()
         .with_eth_gateway_record()
         .with_sepl_gateway_record()
         .with_t3rn_gateway_record_on_polkadot()

@@ -78,9 +78,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 5,
-    spec_version: 5,
-    impl_version: 5,
+    authoring_version: 4,
+    spec_version: 4,
+    impl_version: 4,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 5,
     // https://github.com/paritytech/cumulus/issues/998
@@ -279,6 +279,7 @@ mod benches {
         // [pallet_timestamp, Timestamp]
         // [pallet_collator_selection, CollatorSelection]
         // [pallet_account_manager, AccountManager]
+        [pallet_eth2_finality_verifier, EthereumBridge]
         [pallet_vacuum, Vacuum]
     );
 }
