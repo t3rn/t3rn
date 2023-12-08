@@ -328,9 +328,11 @@ impl ExtBuilder {
         };
         sudo_genesis_config.assimilate_storage(&mut t).unwrap();
 
-        pallet_balances::GenesisConfig::<Runtime> { balances: vec![] }
-            .assimilate_storage(&mut t)
-            .expect("Pallet balances storage can be assimilated");
+        pallet_balances::GenesisConfig::<Runtime> {
+            balances: vec![],
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet balances storage can be assimilated");
 
         pallet_attesters::GenesisConfig::<Runtime> {
             _marker: Default::default(),
