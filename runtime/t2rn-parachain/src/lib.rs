@@ -122,6 +122,7 @@ construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountMapping: pallet_3vm_account_mapping = 126,
+        //Ethereum: pallet_ethereum = 227,
 
          // Portal
         Portal: pallet_portal = 128,

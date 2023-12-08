@@ -167,6 +167,17 @@ impl pallet_3vm_evm::Config for Runtime {
     type WithdrawOrigin = EnsureAddressTruncated;
 }
 
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
+impl pallet_ethereum::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
+    type ExtraDataLength = ConstU32<30>;
+}
+
 //     type AddressMapping = IdentityAddressMapping;
 //     type BlockGasLimit = BlockGasLimit;
 //     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;

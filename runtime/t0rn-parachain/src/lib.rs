@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -245,6 +245,7 @@ construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountMapping: pallet_3vm_account_mapping = 126,
+        //Ethereum: pallet_ethereum = 227,
 
          // Portal
         Portal: pallet_portal = 128,

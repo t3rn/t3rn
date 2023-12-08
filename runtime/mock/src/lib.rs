@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 //! Runtime utilities
 
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
@@ -98,6 +98,7 @@ frame_support::construct_runtime!(
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
         AccountMapping: pallet_3vm_account_mapping = 126,
+       // Ethereum: pallet_ethereum = 227,
 
         // Portal
         Portal: pallet_portal = 128,

@@ -1008,6 +1008,7 @@ dependencies = [
  "log",
  "node-primitives",
  "num-traits",
+ "pallet-ethereum",
  "pallet-treasury",
  "parachain-info",
  "parity-scale-codec",
@@ -1047,7 +1048,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1076,7 +1077,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -1200,7 +1201,7 @@ name = "circuit-standalone-runtime"
 version = "1.78.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1226,7 +1227,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -3384,6 +3385,51 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-account"
+version = "1.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "hex",
+ "impl-serde 0.4.0",
+ "libsecp256k1",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std 8.0.0",
+]
+
+[[package]]
+name = "fp-consensus"
+version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "ethereum",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
+name = "fp-ethereum"
+version = "1.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm 3.0.0-dev",
+ "frame-support",
+ "num_enum",
+ "parity-scale-codec",
+ "sp-std 8.0.0",
+]
+
+[[package]]
 name = "fp-evm"
 version = "1.78.0-rc.0"
 dependencies = [
@@ -3396,6 +3442,47 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std 8.0.0",
+]
+
+[[package]]
+name = "fp-evm"
+version = "3.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "evm",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
+name = "fp-rpc"
+version = "3.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm 3.0.0-dev",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 8.0.0",
+]
+
+[[package]]
+name = "fp-storage"
+version = "2.0.0"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "parity-scale-codec",
+ "serde",
 ]
 
 [[package]]
@@ -6313,6 +6400,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_enum"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a015b430d3c108a207fd776d2e2196aaf8b1cf8cf93253e3a097ff3085076a1"
+dependencies = [
+ "num_enum_derive",
+]
+
+[[package]]
+name = "num_enum_derive"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96667db765a921f7b295ffee8b60472b686a51d4f21c2ee4ffdb94c7013b65a6"
+dependencies = [
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.35",
+]
+
+[[package]]
 name = "number_prefix"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7036,13 +7144,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ethereum"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "evm",
+ "fp-consensus",
+ "fp-ethereum",
+ "fp-evm 3.0.0-dev",
+ "fp-rpc",
+ "fp-storage",
+ "frame-support",
+ "frame-system",
+ "pallet-evm 6.0.0-dev",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
 name = "pallet-evm"
 version = "1.78.0-rc.0"
 dependencies = [
  "environmental",
  "evm",
- "fp-account",
- "fp-evm",
+ "fp-account 1.0.0-dev",
+ "fp-evm 1.78.0-rc.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7064,12 +7195,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm"
+version = "6.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+dependencies = [
+ "environmental",
+ "evm",
+ "fp-account 1.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
+ "fp-evm 3.0.0-dev",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.4.1",
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "1.78.0-rc.0"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-support",
- "pallet-evm",
+ "pallet-evm 1.78.0-rc.0",
  "t3rn-primitives",
 ]
 
@@ -7077,7 +7233,7 @@ dependencies = [
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "pallet-evm-test-vector-support",
 ]
 
@@ -7085,7 +7241,7 @@ dependencies = [
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "pallet-evm-test-vector-support",
  "sp-core",
  "substrate-bn",
@@ -7096,18 +7252,18 @@ name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek 4.1.0",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-evm",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-timestamp",
  "pallet-utility",
  "parity-scale-codec",
@@ -7124,14 +7280,14 @@ name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
 dependencies = [
  "ed25519-dalek 1.0.1",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "hex",
  "num",
  "pallet-evm-test-vector-support",
@@ -7141,7 +7297,7 @@ dependencies = [
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "tiny-keccak",
 ]
 
@@ -7149,7 +7305,7 @@ dependencies = [
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "pallet-evm-test-vector-support",
  "ripemd",
  "sp-io",
@@ -7160,7 +7316,7 @@ name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
 dependencies = [
  "evm",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "hex",
  "serde",
  "serde_json",
@@ -9283,10 +9439,10 @@ checksum = "31114a898e107c51bb1609ffaf55a0e011cf6a4d7f1170d0015a165082c0338b"
 name = "portal-precompile"
 version = "1.5.0-rc.0"
 dependencies = [
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-support",
  "frame-system",
- "pallet-evm",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-portal",
  "parity-scale-codec",
  "rlp",
@@ -9305,8 +9461,8 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 name = "precompile-util"
 version = "1.78.0-rc.0"
 dependencies = [
- "fp-evm",
- "pallet-evm",
+ "fp-evm 1.78.0-rc.0",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -13119,7 +13275,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "finality-grandpa",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13149,7 +13305,8 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm",
+ "pallet-ethereum",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
@@ -13298,7 +13455,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "finality-grandpa",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13327,7 +13484,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
@@ -13440,7 +13597,7 @@ name = "t2rn-parachain-runtime"
 version = "1.78.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm",
+ "fp-evm 1.78.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13467,7 +13624,8 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm",
+ "pallet-ethereum",
+ "pallet-evm 1.78.0-rc.0",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",

@@ -39,7 +39,7 @@ node-primitives              = { git = "https://github.com/paritytech/substrate"
 sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-block-builder    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-consensus-aura   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-sp-core              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-inherents        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-offchain         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
@@ -51,6 +51,7 @@ sp-trie             = { git = "https://github.com/paritytech/substrate", branch 
 sp-version          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+pallet-ethereum = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 # Mock only
 sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }

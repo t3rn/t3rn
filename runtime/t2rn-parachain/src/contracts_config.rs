@@ -169,6 +169,17 @@ impl pallet_3vm_evm::Config for Runtime {
 }
 
 parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
+impl pallet_ethereum::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
+    type ExtraDataLength = ConstU32<30>;
+}
+
+parameter_types! {
     pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
     pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
     pub const StorageDepositFee: Balance = MILLIUNIT / 100;
