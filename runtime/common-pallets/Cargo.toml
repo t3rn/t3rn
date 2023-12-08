@@ -117,6 +117,7 @@ pallet-3vm-contracts            = { default-features = false, path = "../../pall
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
+pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/evm/ethereum", package = "pallet-ethereum" }
 
 [features]
 default = [ "std" ]
@@ -157,6 +158,7 @@ std = [
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
+  "pallet-3vm-ethereum/std",
   "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-preimage/std",
@@ -232,6 +234,7 @@ runtime-benchmarks = [
   "pallet-3vm-account-mapping/runtime-benchmarks",
   "pallet-3vm-contracts/runtime-benchmarks",
   "pallet-3vm-evm/runtime-benchmarks",
+  "pallet-3vm-ethereum/runtime-benchmarks",
   "pallet-vacuum/runtime-benchmarks",
   "pallet-grandpa/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
@@ -272,6 +275,7 @@ try-runtime = [
   "pallet-3vm/try-runtime",
   "pallet-3vm-account-mapping/try-runtime",
   "pallet-3vm-contracts/try-runtime",
+  "pallet-3vm-ethereum/try-runtime",
   "pallet-vacuum/try-runtime",
   "pallet-collator-selection/try-runtime",
   "pallet-identity/try-runtime",

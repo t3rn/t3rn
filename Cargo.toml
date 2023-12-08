@@ -219,7 +219,7 @@ t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = fal
 fp-evm                            = { path = "./pallets/evm/primitives" }
 fp-account                        = { path = "./pallets/evm/account" }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support" }
-pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+#pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0.2.8", features = [ "js" ] }

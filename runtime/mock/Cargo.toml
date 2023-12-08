@@ -51,7 +51,7 @@ sp-trie             = { git = "https://github.com/paritytech/substrate", branch 
 sp-version          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-pallet-ethereum = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false, optional = true }
+#pallet-ethereum = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false, optional = true }
 
 # Mock only
 sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }

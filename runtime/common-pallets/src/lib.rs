@@ -19,6 +19,7 @@ pub use pallet_3vm_account_mapping;
 pub use pallet_3vm_contracts;
 pub use pallet_3vm_evm;
 pub use pallet_3vm_evm_primitives;
+pub use pallet_3vm_ethereum;
 pub use pallet_account_manager;
 pub use pallet_attesters;
 pub use pallet_circuit;
