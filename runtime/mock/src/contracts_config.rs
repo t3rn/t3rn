@@ -13,6 +13,7 @@ use circuit_runtime_pallets::{
     pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
 };
 
+use crate::pallet_3vm_ethereum::PostLogContent;
 use circuit_runtime_types::{AssetId, EvmAddress};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_evm::{EnsureAddressTruncated, SubstrateBlockHashMapping};
@@ -25,7 +26,6 @@ use sp_runtime::{
     ConsensusEngineId, RuntimeAppPublic,
 };
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
-use crate::pallet_3vm_ethereum::PostLogContent;
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -173,10 +173,10 @@ parameter_types! {
 }
 
 impl pallet_3vm_ethereum::Config for Runtime {
+    type ExtraDataLength = ConstU32<30>;
+    type PostLogContent = PostBlockAndTxnHashes;
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_3vm_ethereum::IntermediateStateRoot<Self>;
-    type PostLogContent = PostBlockAndTxnHashes;
-    type ExtraDataLength = ConstU32<30>;
 }
 
 //     type AddressMapping = IdentityAddressMapping;
