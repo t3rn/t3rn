@@ -59,7 +59,7 @@ fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
             value: U256::from(1),
             input: Default::default(),
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         let call = crate::Call::<Test>::transact { transaction };
         let source = call.check_self_contained().unwrap().unwrap();
@@ -69,8 +69,8 @@ fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
         };
 
         assert_ok!(call
-			.pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
-			.unwrap());
+            .pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
+            .unwrap());
     });
 }
 
@@ -98,7 +98,7 @@ fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatc
             value: U256::from(1),
             input: Default::default(),
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         let call = crate::Call::<Test>::transact { transaction };
         let source = call.check_self_contained().unwrap().unwrap();
@@ -108,10 +108,10 @@ fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatc
         };
 
         assert_err!(
-			call.pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
-				.unwrap(),
-			InvalidTransaction::ExhaustsResources
-		);
+            call.pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
+                .unwrap(),
+            InvalidTransaction::ExhaustsResources
+        );
     });
 }
 
@@ -136,7 +136,7 @@ fn transaction_without_enough_gas_should_not_work() {
         let mut transaction = eip1559_erc20_creation_transaction(alice);
         match &mut transaction {
             Transaction::EIP1559(t) => t.max_fee_per_gas = U256::from(11_000_000),
-            _ => {}
+            _ => {},
         }
 
         let call = crate::Call::<Test>::transact { transaction };
@@ -147,10 +147,10 @@ fn transaction_without_enough_gas_should_not_work() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-			call.validate_self_contained(&source, &dispatch_info, 0)
-				.unwrap(),
-			InvalidTransaction::Payment
-		);
+            call.validate_self_contained(&source, &dispatch_info, 0)
+                .unwrap(),
+            InvalidTransaction::Payment
+        );
     });
 }
 
@@ -201,11 +201,11 @@ fn transaction_with_to_low_nonce_should_not_work() {
         };
 
         assert_err!(
-			call2
-				.validate_self_contained(&source2, &extrinsic2.get_dispatch_info(), 0)
-				.unwrap(),
-			InvalidTransaction::Stale
-		);
+            call2
+                .validate_self_contained(&source2, &extrinsic2.get_dispatch_info(), 0)
+                .unwrap(),
+            InvalidTransaction::Stale
+        );
     });
 }
 
@@ -229,9 +229,9 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-			extrinsic.apply::<Test>(&dispatch_info, 0),
-			TransactionValidityError::Invalid(InvalidTransaction::Future)
-		);
+            extrinsic.apply::<Test>(&dispatch_info, 0),
+            TransactionValidityError::Invalid(InvalidTransaction::Future)
+        );
     });
 }
 
@@ -252,11 +252,11 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-			extrinsic.apply::<Test>(&dispatch_info, 0),
-			TransactionValidityError::Invalid(InvalidTransaction::Custom(
-				fp_ethereum::TransactionValidationError::InvalidChainId as u8,
-			))
-		);
+            extrinsic.apply::<Test>(&dispatch_info, 0),
+            TransactionValidityError::Invalid(InvalidTransaction::Custom(
+                fp_ethereum::TransactionValidationError::InvalidChainId as u8,
+            ))
+        );
     });
 }
 
@@ -292,7 +292,7 @@ fn source_should_be_derived_from_signature() {
             RawOrigin::EthereumTransaction(alice.address).into(),
             eip1559_erc20_creation_transaction(alice),
         )
-            .expect("Failed to execute transaction");
+        .expect("Failed to execute transaction");
 
         // We verify the transaction happened with alice account.
         assert_eq!(
@@ -334,7 +334,7 @@ fn transaction_should_generate_correct_gas_used() {
         match info {
             CallOrCreateInfo::Create(info) => {
                 assert_eq!(info.used_gas.standard, expected_gas);
-            }
+            },
             CallOrCreateInfo::Call(_) => panic!("expected create info"),
         }
     });
@@ -355,7 +355,7 @@ fn call_should_handle_errors() {
             value: U256::zero(),
             input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
 
         let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
@@ -371,7 +371,7 @@ fn call_should_handle_errors() {
             value: U256::zero(),
             input: foo,
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         // calling foo will succeed
         let (_, _, info) = Ethereum::execute(alice.address, &t2, None).unwrap();
@@ -382,7 +382,7 @@ fn call_should_handle_errors() {
                     hex::encode(info.value),
                     "0000000000000000000000000000000000000000000000000000000000000001"
                 );
-            }
+            },
             CallOrCreateInfo::Create(_) => panic!("expected call info"),
         }
 
@@ -395,7 +395,7 @@ fn call_should_handle_errors() {
             value: U256::zero(),
             input: bar,
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         // calling should always succeed even if the inner EVM execution fails.
         Ethereum::execute(alice.address, &t3, None).ok().unwrap();
@@ -419,7 +419,7 @@ fn event_extra_data_should_be_handle_properly() {
             value: U256::zero(),
             input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t,));
 
         let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
@@ -435,7 +435,7 @@ fn event_extra_data_should_be_handle_properly() {
             value: U256::zero(),
             input: foo,
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         // calling foo
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2,));
@@ -445,7 +445,7 @@ fn event_extra_data_should_be_handle_properly() {
             transaction_hash: H256::from_str(
                 "0x66036e60bafa1fabb847679d86d1f0a027ae52afde7690aaadf6f81c7e8ecda2",
             )
-                .unwrap(),
+            .unwrap(),
             exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
             extra_data: vec![],
         }));
@@ -459,7 +459,7 @@ fn event_extra_data_should_be_handle_properly() {
             value: U256::zero(),
             input: bar,
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         // calling bar revert
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3,));
@@ -469,7 +469,7 @@ fn event_extra_data_should_be_handle_properly() {
             transaction_hash: H256::from_str(
                 "0xf14cd5e6d0535a8407339dabce26616a3f19c2048937450859ea65d5201fb7e4",
             )
-                .unwrap(),
+            .unwrap(),
             exit_reason: ExitReason::Revert(ExitRevert::Reverted),
             extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
         }));
@@ -484,9 +484,9 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
         Weight::from_parts(2000000000000, u64::MAX),
         sp_runtime::Perbill::from_percent(75),
     )
-        .per_class
-        .get(DispatchClass::Normal)
-        .base_extrinsic;
+    .per_class
+    .get(DispatchClass::Normal)
+    .base_extrinsic;
 
     ext.execute_with(|| {
         let mut transaction = eip1559_erc20_creation_unsigned_transaction();
@@ -527,7 +527,8 @@ fn validated_transaction_apply_zero_gas_price_works() {
     let bob = &pairs[1];
     let substrate_alice =
         <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
-    let substrate_bob = <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
+    let substrate_bob =
+        <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
 
     ext.execute_with(|| {
         let transaction = EIP1559UnsignedTransaction {
@@ -539,12 +540,12 @@ fn validated_transaction_apply_zero_gas_price_works() {
             value: U256::from(100),
             input: Default::default(),
         }
-            .sign(&alice.private_key, None);
+        .sign(&alice.private_key, None);
 
         assert_ok!(crate::ValidatedTransaction::<Test>::apply(
-			alice.address,
-			transaction
-		));
+            alice.address,
+            transaction
+        ));
         // Alice didn't pay fees, transfer 100 to Bob.
         assert_eq!(Balances::free_balance(&substrate_alice), 900);
         // Bob received 100 from Alice.

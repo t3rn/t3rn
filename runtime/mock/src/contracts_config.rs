@@ -7,7 +7,7 @@ use crate::{
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor, PalletId};
 
-use crate::pallet_3vm_contracts::NoopMigration;
+use crate::{pallet_3vm_contracts::NoopMigration, pallet_3vm_ethereum::Transaction};
 use circuit_runtime_pallets::{
     evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
     pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
@@ -15,18 +15,19 @@ use circuit_runtime_pallets::{
 
 use crate::pallet_3vm_ethereum::PostLogContent;
 use circuit_runtime_types::{AssetId, EvmAddress};
+use ethereum::{TransactionAction, TransactionSignature};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_evm::{EnsureAddressTruncated, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
+use rlp::RlpStream;
 use sp_core::{H160, U256};
 use sp_runtime::{
     traits::{AccountIdConversion, Keccak256},
     ConsensusEngineId, RuntimeAppPublic,
 };
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
-//use rlp::RlpStream;
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -242,7 +243,6 @@ impl Erc20Mapping for Runtime {
     }
 }
 
-/*
 pub struct LegacyUnsignedTransaction {
     pub nonce: U256,
     pub gas_price: U256,
@@ -290,7 +290,7 @@ impl LegacyUnsignedTransaction {
             H256::from_slice(&sig[0..32]),
             H256::from_slice(&sig[32..64]),
         )
-            .unwrap();
+        .unwrap();
 
         Transaction::Legacy(ethereum::LegacyTransaction {
             nonce: self.nonce,
@@ -404,4 +404,3 @@ impl EIP1559UnsignedTransaction {
         })
     }
 }
-*/

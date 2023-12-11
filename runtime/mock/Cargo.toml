@@ -21,6 +21,8 @@ smallvec = { workspace = true }
 serde       = { version = "1.0", optional = true, features = [ "derive" ] }
 num-traits = { workspace = true }
 libsecp256k1 = { workspace = true }
+rlp = { workspace = true }
+ethereum = { workspace = true, features = ["with-codec"] }
 
 t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }

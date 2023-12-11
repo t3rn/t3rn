@@ -999,6 +999,7 @@ version = "1.78.0-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
+ "ethereum",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1011,6 +1012,7 @@ dependencies = [
  "pallet-treasury",
  "parachain-info",
  "parity-scale-codec",
+ "rlp",
  "scale-info",
  "serde",
  "smallvec",
