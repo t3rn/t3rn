@@ -25,6 +25,7 @@ use sp_runtime::{
     ConsensusEngineId, RuntimeAppPublic,
 };
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use crate::pallet_3vm_ethereum::PostLogContent;
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -166,7 +167,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
 }
-/*
+
 parameter_types! {
     pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
@@ -177,7 +178,7 @@ impl pallet_3vm_ethereum::Config for Runtime {
     type PostLogContent = PostBlockAndTxnHashes;
     type ExtraDataLength = ConstU32<30>;
 }
-*/
+
 //     type AddressMapping = IdentityAddressMapping;
 //     type BlockGasLimit = BlockGasLimit;
 //     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
