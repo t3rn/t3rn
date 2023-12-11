@@ -36,7 +36,7 @@ use frame_support::traits::GenesisBuild;
 pub use pallet_3vm_account_mapping::{ethereum_signable_message, to_ascii_hex, EcdsaSignature};
 pub use pallet_3vm_evm::Config as ConfigEvm;
 pub use pallet_contracts_registry::ContractsRegistry as ContractsRegistryStorage;
-use sp_core::crypto::AccountId32;
+use sp_core::{crypto::AccountId32, H160};
 use sp_io::hashing::keccak_256;
 
 use smallvec::smallvec;
@@ -407,4 +407,26 @@ pub fn bob_account_id() -> AccountId32 {
     data[0..4].copy_from_slice(b"evm:");
     data[4..24].copy_from_slice(&address[..]);
     AccountId32::from(Into::<[u8; 32]>::into(data))
+}
+
+pub struct AccountInfo {
+    pub address: H160,
+    pub account_id: AccountId32,
+    pub private_key: H256,
+}
+
+fn address_build(seed: u8) -> AccountInfo {
+    let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
+    let secret_key = libsecp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
+    let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
+    let address = H160::from(H256::from(keccak_256(public_key)));
+
+    let mut data = [0u8; 32];
+    data[0..20].copy_from_slice(&address[..]);
+
+    AccountInfo {
+        private_key,
+        account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
+        address,
+    }
 }

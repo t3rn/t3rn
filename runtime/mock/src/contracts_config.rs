@@ -1,17 +1,16 @@
 use crate::*;
 
 use crate::{
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
+    accounts_config::EscrowAccount, pallet_3vm_contracts::NoopMigration,
+    pallet_3vm_ethereum::Transaction, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
     ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall, RuntimeEvent, ThreeVm,
     Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
-use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor, PalletId};
-
-use crate::{pallet_3vm_contracts::NoopMigration, pallet_3vm_ethereum::Transaction};
 use circuit_runtime_pallets::{
     evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
     pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
 };
+use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor, PalletId};
 
 use crate::pallet_3vm_ethereum::PostLogContent;
 use circuit_runtime_types::{AssetId, EvmAddress};
@@ -24,7 +23,8 @@ pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use rlp::RlpStream;
 use sp_core::{H160, U256};
 use sp_runtime::{
-    traits::{AccountIdConversion, Keccak256},
+    traits::{AccountIdConversion, DispatchInfoOf, Dispatchable, Keccak256},
+    transaction_validity::{TransactionValidity, TransactionValidityError},
     ConsensusEngineId, RuntimeAppPublic,
 };
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
@@ -241,6 +241,77 @@ impl Erc20Mapping for Runtime {
         let asset_id = u32::from_be_bytes(asset_id_bytes);
         Some(asset_id)
     }
+}
+
+impl fp_self_contained::SelfContainedCall for RuntimeCall {
+    type SignedInfo = H160;
+
+    fn is_self_contained(&self) -> bool {
+        match self {
+            RuntimeCall::Ethereum(call) => call.is_self_contained(),
+            _ => false,
+        }
+    }
+
+    fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        match self {
+            RuntimeCall::Ethereum(call) => call.check_self_contained(),
+            _ => None,
+        }
+    }
+
+    fn validate_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<TransactionValidity> {
+        match self {
+            RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn pre_dispatch_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<Result<(), TransactionValidityError>> {
+        match self {
+            RuntimeCall::Ethereum(call) =>
+                call.pre_dispatch_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn apply_self_contained(
+        self,
+        info: Self::SignedInfo,
+    ) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>>
+    {
+        match self {
+            call @ RuntimeCall::Ethereum(crate::pallet_3vm_ethereum::Call::transact { .. }) =>
+                Some(call.dispatch(RuntimeOrigin::from(
+                    crate::pallet_3vm_ethereum::RawOrigin::EthereumTransaction(info),
+                ))),
+            _ => None,
+        }
+    }
+}
+
+pub fn contract_address(sender: H160, nonce: u64) -> H160 {
+    let mut rlp = RlpStream::new_list(2);
+    rlp.append(&sender);
+    rlp.append(&nonce);
+
+    H160::from_slice(&keccak_256(&rlp.out())[12..])
+}
+
+pub fn storage_address(sender: H160, slot: H256) -> H256 {
+    H256::from(keccak_256(
+        [&H256::from(sender)[..], &slot[..]].concat().as_slice(),
+    ))
 }
 
 pub struct LegacyUnsignedTransaction {

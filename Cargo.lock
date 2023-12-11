@@ -1000,6 +1000,7 @@ dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
  "ethereum",
+ "fp-self-contained",
  "frame-executive",
  "frame-support",
  "frame-system",
