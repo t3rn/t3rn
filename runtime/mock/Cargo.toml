@@ -55,3 +55,4 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "p
 
 # Mock only
 sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+#signature = { version = "1.6.4" }

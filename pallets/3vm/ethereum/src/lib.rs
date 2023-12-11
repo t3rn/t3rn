@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // This file is  inspired by pallet-ethereum part of Frontier.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +23,8 @@
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
 #![warn(unused_crate_dependencies)]
 
-//#[cfg(all(feature = "std", test))]
-//mod tests;
+#[cfg(all(feature = "std", test))]
+mod tests;
 
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;

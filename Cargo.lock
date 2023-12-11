@@ -7139,6 +7139,8 @@ dependencies = [
 name = "pallet-ethereum"
 version = "1.0.0-dev"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
  "environmental",
  "ethereum",
  "ethereum-types",
