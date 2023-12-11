@@ -219,6 +219,12 @@ t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = fal
 fp-evm                            = { path = "./pallets/evm/primitives" }
 fp-account                        = { path = "./pallets/evm/account" }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support" }
+fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fp-ethereum                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fp-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 #pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
@@ -242,6 +248,7 @@ members = [
   "node/t3rn-parachain",
   "node/t7rn-parachain",
   "pallets/3vm",
+  "pallets/3vm/account-mapping",
   "pallets/account-manager",
   "pallets/circuit",
   "pallets/clock",
@@ -250,7 +257,7 @@ members = [
   "pallets/contracts-registry/rpc",
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
-  "pallets/3vm/account-mapping",
+  "pallets/3vm/ethereum",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
   "pallets/portal",

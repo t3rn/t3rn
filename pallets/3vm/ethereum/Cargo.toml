@@ -11,6 +11,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+environmental = { version = "1.1.4", default-features = false, optional = true }
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
@@ -25,10 +26,10 @@ sp-std = { workspace = true }
 # Frontier
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
-pallet-3vm-evm-primitives    = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
+pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
 fp-rpc = { workspace = true }
 fp-storage = { workspace = true }
-pallet-3vm-evm               = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
+pallet-3vm-evm               = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
 
 [dev-dependencies]
 hex = { workspace = true }
@@ -56,23 +57,23 @@ std = [
     "sp-io/std",
     "sp-runtime/std",
     "sp-std/std",
-    # Frontier
+    # EVM
     "fp-consensus/std",
     "fp-ethereum/std",
-    "fp-evm/std",
+    "pallet-3vm-evm-primitives/std",
     "fp-rpc/std",
     "fp-self-contained/std",
     "fp-storage/std",
-    "pallet-evm/std",
+    "pallet-3vm-evm/std",
 ]
 runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-    "pallet-evm/runtime-benchmarks",
+    "pallet-3vm-evm/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-support/try-runtime",
     "frame-system/try-runtime",
-    "pallet-evm/try-runtime",
+    "pallet-3vm-evm/try-runtime",
 ]
-forbid-evm-reentrancy = ["pallet-evm/forbid-evm-reentrancy"]
+forbid-evm-reentrancy = ["dep:environmental"]

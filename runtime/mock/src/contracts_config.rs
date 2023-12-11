@@ -166,7 +166,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
 }
-
+/*
 parameter_types! {
     pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
@@ -177,7 +177,7 @@ impl pallet_3vm_ethereum::Config for Runtime {
     type PostLogContent = PostBlockAndTxnHashes;
     type ExtraDataLength = ConstU32<30>;
 }
-
+*/
 //     type AddressMapping = IdentityAddressMapping;
 //     type BlockGasLimit = BlockGasLimit;
 //     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;

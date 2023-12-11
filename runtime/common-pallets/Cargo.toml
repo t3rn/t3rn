@@ -117,7 +117,7 @@ pallet-3vm-contracts            = { default-features = false, path = "../../pall
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
-pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/evm/ethereum", package = "pallet-ethereum" }
+pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
 
 [features]
 default = [ "std" ]

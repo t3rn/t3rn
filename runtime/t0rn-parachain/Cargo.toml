@@ -128,7 +128,7 @@ pallet-3vm-contracts            = { default-features = false, path = "../../pall
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
-pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/evm/ethereum", package = "pallet-ethereum" }
+pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
 #pallet-ethereum                 = { workspace = true }
 
 # Commons
@@ -175,7 +175,7 @@ std = [
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
-  "pallet-3vm-ethereum/std",
+  #"pallet-3vm-ethereum/std",
   "pallet-vacuum/std",
 #  "evm-precompile-util/std",
   "pallet-account-manager/std",
@@ -253,17 +253,12 @@ runtime-benchmarks = [
   "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
   "pallet-treasury/runtime-benchmarks",
-  "pallet-3vm/runtime-benchmarks",
-  "pallet-3vm-account-mapping/runtime-benchmarks",
   "pallet-asset-registry/runtime-benchmarks",
   "pallet-withdraw-teleport/runtime-benchmarks",
   "pallet-assets/runtime-benchmarks",
   "pallet-circuit/runtime-benchmarks",
   "pallet-clock/runtime-benchmarks",
   "pallet-vacuum/runtime-benchmarks",
-  "pallet-3vm-contracts/runtime-benchmarks",
-  "pallet-3vm-evm/runtime-benchmarks",
-  "pallet-3vm-ethereum/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-membership/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
@@ -282,7 +277,12 @@ runtime-benchmarks = [
   "pallet-asset-tx-payment/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
   "assets-common/runtime-benchmarks",
-
+  # 3VM
+  "pallet-3vm/runtime-benchmarks",
+  "pallet-3vm-evm/runtime-benchmarks",
+  "pallet-3vm-ethereum/runtime-benchmarks",
+  "pallet-3vm-contracts/runtime-benchmarks",
+  "pallet-3vm-account-mapping/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -291,7 +291,6 @@ try-runtime = [
   "frame-system/try-runtime",
   "pallet-attesters/try-runtime",
   "pallet-rewards/try-runtime",
-  "pallet-3vm/try-runtime",
   "pallet-account-manager/try-runtime",
   "pallet-asset-registry/try-runtime",
   "pallet-withdraw-teleport/try-runtime",
@@ -303,8 +302,6 @@ try-runtime = [
   "pallet-circuit/try-runtime",
   "pallet-clock/try-runtime",
   "pallet-collator-selection/try-runtime",
-  "pallet-3vm-ethereum/try-runtime",
-  "pallet-3vm-contracts/try-runtime",
   "pallet-contracts-registry/try-runtime",
   "pallet-identity/try-runtime",
   "pallet-membership/try-runtime",
@@ -332,6 +329,9 @@ try-runtime = [
   "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
+  "pallet-3vm/try-runtime",
   "pallet-3vm-evm/try-runtime",
+  "pallet-3vm-ethereum/try-runtime",
+  "pallet-3vm-contracts/try-runtime",
   "pallet-3vm-account-mapping/try-runtime",
 ]
