@@ -5,7 +5,7 @@ use crate::{
     ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall, RuntimeEvent, ThreeVm,
     Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
-use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
+use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor, PalletId};
 
 use crate::pallet_3vm_contracts::NoopMigration;
 use circuit_runtime_pallets::{
@@ -13,12 +13,18 @@ use circuit_runtime_pallets::{
     pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
 };
 
+use circuit_runtime_types::{AssetId, EvmAddress};
+pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_evm::{EnsureAddressTruncated, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
-use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
+use sp_runtime::{
+    traits::{AccountIdConversion, Keccak256},
+    ConsensusEngineId, RuntimeAppPublic,
+};
+use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -182,3 +188,43 @@ impl pallet_3vm_evm::Config for Runtime {
 //     type WeightInfo = ();
 //     type WeightPerGas = WeightPerGas;
 //     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+
+parameter_types! {
+    pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
+    pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
+    pub const StorageDepositFee: Balance = 1;
+}
+
+impl pallet_3vm_account_mapping::Config for Runtime {
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type ChainId = ChainId;
+    type Currency = Balances;
+    type NetworkTreasuryAccount = TreasuryModuleAccount;
+    type RuntimeEvent = RuntimeEvent;
+    type StorageDepositFee = StorageDepositFee;
+}
+
+// AssetId to EvmAddress mapping
+impl Erc20Mapping for Runtime {
+    fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
+        let mut address = [0u8; 20];
+        let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
+
+        for byte_index in 0..asset_id_bytes.len() {
+            address[byte_index + H160_POSITION_ASSET_ID_TYPE] =
+                asset_id_bytes.as_slice()[byte_index];
+        }
+
+        Some(EvmAddress::from_slice(&asset_id_bytes.as_slice()))
+    }
+
+    fn decode_evm_address(v: EvmAddress) -> Option<AssetId> {
+        let address = v.as_bytes();
+        let mut asset_id_bytes = [0u8; 4];
+        for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
+            asset_id_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE] = address[byte_index];
+        }
+        let asset_id = u32::from_be_bytes(asset_id_bytes);
+        Some(asset_id)
+    }
+}

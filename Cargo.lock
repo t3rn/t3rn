@@ -1004,6 +1004,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "hex-literal 0.3.4",
+ "libsecp256k1",
  "log",
  "node-primitives",
  "num-traits",
@@ -1057,6 +1058,7 @@ dependencies = [
  "hex-literal 0.4.1",
  "log",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
@@ -1136,6 +1138,7 @@ dependencies = [
  "parachains-common",
  "sp-core",
  "sp-runtime",
+ "sp-std 8.0.0",
  "xcm",
 ]
 
@@ -3384,6 +3387,7 @@ dependencies = [
 name = "fp-evm"
 version = "1.78.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "evm",
  "frame-support",
  "parity-scale-codec",
@@ -6471,6 +6475,28 @@ dependencies = [
  "sp-std 8.0.0",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
+]
+
+[[package]]
+name = "pallet-3vm-account-mapping"
+version = "1.0.0-dev"
+dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "libsecp256k1",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -13106,6 +13132,7 @@ dependencies = [
  "log",
  "num-traits",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
@@ -13425,6 +13452,7 @@ dependencies = [
  "node-primitives",
  "num-traits",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-tx-payment",
  "pallet-assets",

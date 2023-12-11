@@ -20,6 +20,7 @@ parachain-info = { workspace = true }
 smallvec = { workspace = true }
 serde       = { version = "1.0", optional = true, features = [ "derive" ] }
 num-traits = { workspace = true }
+libsecp256k1 = { workspace = true }
 
 t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }
@@ -38,7 +39,7 @@ node-primitives              = { git = "https://github.com/paritytech/substrate"
 sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-block-builder    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-consensus-aura   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
-sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+sp-core              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-inherents        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
 sp-offchain         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
