@@ -44,7 +44,7 @@ tiny-keccak           = { version = "2.0.2" }
 
 ed25519-dalek         = { version = "1.0.1", features = [ "u64_backend" ], default-features = false }
 libsecp256k1          = { version = "0.7", default-features = false }
-k256                  = { version = "0.13.1", features = ["ecdsa"], default_features = false }
+k256                  = { version = "0.13.2", features = ["ecdsa"], default_features = false }
 
 bn                    = { package = "substrate-bn", version = "0.6", default-features = false }
 ethereum              = { version = "0.14.0", default-features = false }
@@ -58,15 +58,15 @@ impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log                   = { version = "0.4", default-features = false }
 num                   = { version = "0.4.0", default-features = false }
 num-traits            = { version = "0.2", default-features = false }
-primitive-types       = { version = "0.12.1", features = [ "scale-info", "rlp", "byteorder" ], default-features = false }
+primitive-types       = { version = "0.12.2", features = [ "scale-info", "rlp", "byteorder" ], default-features = false }
 rand                  = { version = "0.8", default-features = false }
 rand_pcg              = { version = "0.3", default-features = false }
 rlp                   = { version = "0.5", features = [ "derive" ], default-features = false }
 serde                 = { version = "1.0", features = [ "derive", "alloc"], default-features = false }
 impl-serde            = { version = "0.4.0", default-features = false }
-serde_json            = { version = "1.0.41" }
+serde_json            = { version = "1.0.108" }
 sha3                  = { version = "0.10.1", default-features = false }
-smallvec              = { version = "1.0", default-features = false, features = [ "const_generics" ] }
+smallvec              = { version = "1.11", default-features = false, features = [ "const_generics" ] }
 wasm-instrument       = { version = "0.4", default-features = false }
 wasmi                 = { version = "0.20", default-features = false }
 wasmi-validation      = { version = "0.4", default-features = false }
@@ -74,10 +74,10 @@ wasmparser            = { package = "wasmparser-nostd", version = "0.91", defaul
 
 # parity
 codec              = { version = "3.6.1", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
-parity-scale-codec = { version = "3.6.1", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
+parity-scale-codec = { version = "3.6.9", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
 scale-codec        = { version = "3.6.1", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
 frame-metadata     = { version = "15", features = [ "v13", "v14" ], default-features = false }
-scale-info         = { version = "2.5.0", features = [ "derive" ], default-features = false }
+scale-info         = { version = "2.10.0", features = [ "derive" ], default-features = false }
 
 
 frame-benchmarking             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
@@ -211,7 +211,7 @@ xcm-primitives                 = { git = "https://github.com/paritytech/trappist
 pallet-asset-registry          = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
 pallet-withdraw-teleport       = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
 
-jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
+jsonrpsee = { version = "0.17.1", features = [ "server", "macros" ] }
 
 t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = false }
 
@@ -220,7 +220,7 @@ fp-account                        = { path = "./pallets/evm/account" }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support" }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
-getrandom = { version = "0.2.8", features = [ "js" ] }
+getrandom = { version = "0.2.11", features = [ "js" ] }
 
 [workspace]
 exclude = [
