@@ -175,7 +175,7 @@ std = [
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
-  #"pallet-3vm-ethereum/std",
+  "pallet-3vm-ethereum/std",
   "pallet-vacuum/std",
 #  "evm-precompile-util/std",
   "pallet-account-manager/std",
