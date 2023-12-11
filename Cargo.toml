@@ -218,10 +218,10 @@ t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = fal
 # EVM
 fp-evm                            = { path = "./pallets/evm/primitives" }
 fp-account                        = { path = "./pallets/evm/account" }
+#fp-ethereum                       = { path = "./pallets/3vm/ethereum/primitives" }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support" }
 fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-fp-ethereum                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
@@ -249,6 +249,8 @@ members = [
   "node/t7rn-parachain",
   "pallets/3vm",
   "pallets/3vm/account-mapping",
+  "pallets/3vm/ethereum",
+  "pallets/3vm/ethereum/primitives",
   "pallets/account-manager",
   "pallets/circuit",
   "pallets/clock",
@@ -296,5 +298,6 @@ members = [
 
 [patch."https://github.com/t3rn/t3rn"]
 fp-evm                      = { path = "./pallets/evm/primitives" }
+fp-ethereum                 = { path = "./pallets/3vm/ethereum/primitives" }
 pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
 t3rn-primitives             = { path = "./primitives" }

@@ -3099,11 +3099,10 @@ dependencies = [
 [[package]]
 name = "fp-ethereum"
 version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.78.0-rc.0",
  "frame-support",
  "num_enum",
  "parity-scale-codec",
