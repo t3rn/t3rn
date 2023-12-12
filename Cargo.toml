@@ -26,7 +26,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.78.0-rc.0"
+version    = "1.79.0-rc.0"
 
 workspace.resolver = "2"
 
@@ -260,6 +260,7 @@ members = [
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
   "pallets/3vm/ethereum",
+  "pallets/3vm/account-mapping",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
   "pallets/portal",
