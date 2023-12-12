@@ -17,9 +17,9 @@
 
 use super::*;
 use circuit_mock_runtime::{
-    contract_address, new_test_ext, new_test_ext_with_initial_balance, storage_address,
-    AccountMapping, Balances, EIP1559UnsignedTransaction, Ethereum, Evm, ExtBuilder, Runtime,
-    RuntimeCall, RuntimeEvent, RuntimeOrigin, SignedExtra, System, ALICE, BOB,
+    contracts_config::{contract_address, storage_address, EIP1559UnsignedTransaction},
+    new_test_ext, new_test_ext_with_initial_balance, AccountMapping, Balances, Ethereum, Evm,
+    ExtBuilder, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, SignedExtra, System, ALICE, BOB,
 };
 use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::ValidatedTransaction;
@@ -301,7 +301,10 @@ fn source_should_be_derived_from_signature() {
 
     ext.execute_with(|| {
         Ethereum::transact(
-            RawOrigin::EthereumTransaction(alice.address).into(),
+            circuit_mock_runtime::pallet_3vm_ethereum::RawOrigin::EthereumTransaction(
+                alice.address,
+            )
+            .into(),
             eip1559_erc20_creation_transaction(alice),
         )
         .expect("Failed to execute transaction");
@@ -598,8 +601,13 @@ fn proof_size_weight_limit_validation_works() {
         let tx = tx.sign(&alice.private_key, None);
 
         // Execute
-        assert!(
-            Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
-        );
+        assert!(Ethereum::transact(
+            circuit_mock_runtime::pallet_3vm_ethereum::RawOrigin::EthereumTransaction(
+                alice.address
+            )
+            .into(),
+            tx,
+        )
+        .is_err());
     });
 }

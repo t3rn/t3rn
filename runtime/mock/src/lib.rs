@@ -22,7 +22,7 @@ pub use crate::signed_extrinsics_config::*;
 mod accounts_config;
 mod circuit_config;
 mod consensus_aura_config;
-mod contracts_config;
+pub mod contracts_config;
 mod hooks;
 mod system_no_version_config;
 pub mod test_utils;
