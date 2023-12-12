@@ -16,13 +16,22 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use circuit_mock_runtime::{
+    contract_address, new_test_ext, new_test_ext_with_initial_balance, storage_address,
+    AccountMapping, Balances, Ethereum, Evm, ExtBuilder, LegacyUnsignedTransaction, Runtime,
+    RuntimeCall, RuntimeEvent, RuntimeOrigin, SignedExtra, System, ALICE, BOB,
+};
 use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::ValidatedTransaction;
+use fp_self_contained::CheckedExtrinsic;
 use frame_support::{
+    assert_err,
     dispatch::{DispatchClass, GetDispatchInfo},
     weights::Weight,
 };
 use pallet_3vm_evm::AddressMapping;
+use sp_core::{H256, U256};
+use std::str::FromStr;
 
 fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
     LegacyUnsignedTransaction {
@@ -48,7 +57,7 @@ fn transaction_should_increment_nonce() {
         let t = legacy_erc20_creation_transaction(alice);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_eq!(
-            pallet_3vm_evm::Pallet::<Test>::account_basic(&alice.address)
+            pallet_3vm_evm::Pallet::<Runtime>::account_basic(&alice.address)
                 .0
                 .nonce,
             U256::from(1)
@@ -68,7 +77,8 @@ fn transaction_without_enough_gas_should_not_work() {
             _ => {},
         }
 
-        let call = crate::Call::<Test>::transact { transaction };
+        let call =
+            circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact { transaction };
         let source = call.check_self_contained().unwrap().unwrap();
         let extrinsic = CheckedExtrinsic::<u64, _, SignedExtra, _> {
             signed: fp_self_contained::CheckedSignature::SelfContained(source),
@@ -95,7 +105,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
         transaction.nonce = U256::from(1);
 
         let signed = transaction.sign(&alice.private_key);
-        let call = crate::Call::<Test>::transact {
+        let call = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed,
         };
         let source = call.check_self_contained().unwrap().unwrap();
@@ -123,7 +133,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
         transaction.nonce = U256::from(0);
 
         let signed2 = transaction.sign(&alice.private_key);
-        let call2 = crate::Call::<Test>::transact {
+        let call2 = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed2,
         };
         let source2 = call2.check_self_contained().unwrap().unwrap();
@@ -151,7 +161,7 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
         transaction.nonce = U256::one();
 
         let signed = transaction.sign(&alice.private_key);
-        let call = crate::Call::<Test>::transact {
+        let call = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed,
         };
         let source = call.check_self_contained().unwrap().unwrap();
@@ -161,7 +171,7 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-            extrinsic.apply::<Test>(&dispatch_info, 0),
+            extrinsic.apply::<Runtime>(&dispatch_info, 0),
             TransactionValidityError::Invalid(InvalidTransaction::Future)
         );
     });
@@ -176,7 +186,8 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
         let transaction =
             legacy_erc20_creation_unsigned_transaction().sign_with_chain_id(&alice.private_key, 1);
 
-        let call = crate::Call::<Test>::transact { transaction };
+        let call =
+            circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact { transaction };
         let source = call.check_self_contained().unwrap().unwrap();
         let extrinsic = CheckedExtrinsic::<_, _, SignedExtra, _> {
             signed: fp_self_contained::CheckedSignature::SelfContained(source),
@@ -184,7 +195,7 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-            extrinsic.apply::<Test>(&dispatch_info, 0),
+            extrinsic.apply::<Runtime>(&dispatch_info, 0),
             TransactionValidityError::Invalid(InvalidTransaction::Custom(
                 fp_ethereum::TransactionValidationError::InvalidChainId as u8,
             ))
@@ -204,7 +215,7 @@ fn contract_constructor_should_get_executed() {
 
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_eq!(
-            pallet_3vm_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
+            pallet_3vm_evm::AccountStorages::<Runtime>::get(erc20_address, alice_storage_address),
             H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
                 .unwrap()
         )
@@ -228,7 +239,7 @@ fn source_should_be_derived_from_signature() {
 
         // We verify the transaction happened with alice account.
         assert_eq!(
-            pallet_3vm_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
+            pallet_3vm_evm::AccountStorages::<Runtime>::get(erc20_address, alice_storage_address),
             H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
                 .unwrap()
         )
@@ -246,7 +257,7 @@ fn contract_should_be_created_at_given_address() {
         let t = legacy_erc20_creation_transaction(alice);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_ne!(
-            pallet_3vm_evm::AccountCodes::<Test>::get(erc20_address).len(),
+            pallet_3vm_evm::AccountCodes::<Runtime>::get(erc20_address).len(),
             0
         );
     });
@@ -366,16 +377,18 @@ fn event_extra_data_should_be_handle_properly() {
 
         // calling foo
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2,));
-        System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
-            from: alice.address,
-            to: H160::from_slice(&contract_address),
-            transaction_hash: H256::from_str(
-                "0xc256587e4b2718d2798e9e895821a72e6aa751b8fcc03ce754246cc0d8a541c0",
-            )
-            .unwrap(),
-            exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
-            extra_data: vec![],
-        }));
+        System::assert_last_event(RuntimeEvent::Ethereum(
+            circuit_mock_runtime::pallet_3vm_ethereum::Event::Executed {
+                from: alice.address,
+                to: H160::from_slice(&contract_address),
+                transaction_hash: H256::from_str(
+                    "0xc256587e4b2718d2798e9e895821a72e6aa751b8fcc03ce754246cc0d8a541c0",
+                )
+                .unwrap(),
+                exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
+                extra_data: vec![],
+            },
+        ));
 
         let t3 = LegacyUnsignedTransaction {
             nonce: U256::from(2),
@@ -389,16 +402,18 @@ fn event_extra_data_should_be_handle_properly() {
 
         // calling bar revert
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3,));
-        System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
-            from: alice.address,
-            to: H160::from_slice(&contract_address),
-            transaction_hash: H256::from_str(
-                "0x27a75747783eb8959f1fe7b23e8b1152a9ec945d9b90354582cb7c3ea1481287",
-            )
-            .unwrap(),
-            exit_reason: ExitReason::Revert(ExitRevert::Reverted),
-            extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
-        }));
+        System::assert_last_event(RuntimeEvent::Ethereum(
+            circuit_mock_runtime::pallet_3vm_ethereum::Event::Executed {
+                from: alice.address,
+                to: H160::from_slice(&contract_address),
+                transaction_hash: H256::from_str(
+                    "0x27a75747783eb8959f1fe7b23e8b1152a9ec945d9b90354582cb7c3ea1481287",
+                )
+                .unwrap(),
+                exit_reason: ExitReason::Revert(ExitRevert::Reverted),
+                extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
+            },
+        ));
     });
 }
 
@@ -418,17 +433,17 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
         let mut transaction = legacy_erc20_creation_unsigned_transaction();
         transaction.gas_limit = 9_000_000.into();
         let signed = transaction.sign(&alice.private_key);
-        let call = crate::Call::<Test>::transact {
+        let call = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed,
         };
         let source = call.check_self_contained().unwrap().unwrap();
-        let extrinsic = CheckedExtrinsic::<_, _, frame_system::CheckWeight<Test>, _> {
+        let extrinsic = CheckedExtrinsic::<_, _, frame_system::CheckWeight<Runtime>, _> {
             signed: fp_self_contained::CheckedSignature::SelfContained(source),
             function: RuntimeCall::Ethereum(call),
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         let post_dispatch_weight = extrinsic
-            .apply::<Test>(&dispatch_info, 0)
+            .apply::<Runtime>(&dispatch_info, 0)
             .unwrap()
             .unwrap()
             .actual_weight
@@ -436,7 +451,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 
         let expected_weight = base_extrinsic_weight.saturating_add(post_dispatch_weight);
         let actual_weight =
-            *frame_system::Pallet::<Test>::block_weight().get(DispatchClass::Normal);
+            *frame_system::Pallet::<Runtime>::block_weight().get(DispatchClass::Normal);
         assert_eq!(
             expected_weight,
             actual_weight,
@@ -452,9 +467,9 @@ fn validated_transaction_apply_zero_gas_price_works() {
     let alice = &pairs[0];
     let bob = &pairs[1];
     let substrate_alice =
-        <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
     let substrate_bob =
-        <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
 
     ext.execute_with(|| {
         let transaction = LegacyUnsignedTransaction {
@@ -467,10 +482,12 @@ fn validated_transaction_apply_zero_gas_price_works() {
         }
         .sign(&alice.private_key);
 
-        assert_ok!(crate::ValidatedTransaction::<Test>::apply(
-            alice.address,
-            transaction
-        ));
+        assert_ok!(
+            circuit_mock_runtime::pallet_3vm_ethereum::ValidatedTransaction::<Runtime>::apply(
+                alice.address,
+                transaction
+            )
+        );
         // Alice didn't pay fees, transfer 100 to Bob.
         assert_eq!(Balances::free_balance(&substrate_alice), 900);
         // Bob received 100 from Alice.
@@ -499,7 +516,7 @@ fn proof_size_weight_limit_validation_works() {
         tx.gas_limit = U256::from(gas_limit);
 
         let weight_limit =
-            <Test as pallet_3vm_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+            <Runtime as pallet_3vm_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
 
         // Gas limit cannot afford the extra byte and thus is expected to exhaust.
         tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];

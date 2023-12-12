@@ -35,7 +35,7 @@ mod legacy;
 // contract MyToken is ERC20 {
 //	 constructor() public { _mint(msg.sender, 2**256 - 1); }
 // }
-pub const ERC20_CONTRACT_BYTECODE: &str = include_str!("./res/erc20_contract_bytecode.txt");
+pub const ERC20_CONTRACT_BYTECODE: &str = include_str!("tests/res/erc20_contract_bytecode.txt");
 
 // pragma solidity ^0.6.6;
 // contract Test {

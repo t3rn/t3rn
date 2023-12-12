@@ -41,6 +41,7 @@ use sp_io::hashing::keccak_256;
 
 use smallvec::smallvec;
 use sp_runtime::BuildStorage;
+pub type SignedExtra = (frame_system::CheckSpecVersion<Runtime>,);
 frame_support::construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -429,4 +430,53 @@ fn address_build(seed: u8) -> AccountInfo {
         account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
         address,
     }
+}
+
+// This function basically just builds a genesis storage key/value store according to
+// our desired mockup.
+pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+    // sc_cli::init_logger("");
+    let mut ext = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
+        .unwrap();
+
+    let pairs = (0..accounts_len)
+        .map(|i| address_build(i as u8))
+        .collect::<Vec<_>>();
+
+    let balances: Vec<_> = (0..accounts_len)
+        .map(|i| (pairs[i].account_id.clone(), 10_000_000))
+        .collect();
+
+    pallet_balances::GenesisConfig::<Runtime> { balances }
+        .assimilate_storage(&mut ext)
+        .unwrap();
+
+    (pairs, ext.into())
+}
+
+// This function basically just builds a genesis storage key/value store according to
+// our desired mockup.
+pub fn new_test_ext_with_initial_balance(
+    accounts_len: usize,
+    initial_balance: u128,
+) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+    // sc_cli::init_logger("");
+    let mut ext = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
+        .unwrap();
+
+    let pairs = (0..accounts_len)
+        .map(|i| address_build(i as u8))
+        .collect::<Vec<_>>();
+
+    let balances: Vec<_> = (0..accounts_len)
+        .map(|i| (pairs[i].account_id.clone(), initial_balance))
+        .collect();
+
+    pallet_balances::GenesisConfig::<Runtime> { balances }
+        .assimilate_storage(&mut ext)
+        .unwrap();
+
+    (pairs, ext.into())
 }

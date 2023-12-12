@@ -16,18 +16,24 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use circuit_mock_runtime::{
+    contract_address, new_test_ext, new_test_ext_with_initial_balance, storage_address,
+    AccountMapping, Balances, EIP1559UnsignedTransaction, Ethereum, Evm, ExtBuilder, Runtime,
+    RuntimeCall, RuntimeEvent, RuntimeOrigin, SignedExtra, System, ALICE, BOB,
+};
 use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::ValidatedTransaction;
-use frame_support::{
-    dispatch::{DispatchClass, GetDispatchInfo},
-    weights::Weight,
-};
-use pallet_3vm_evm::AddressMapping;
+use fp_self_contained::CheckedExtrinsic;
+use frame_support::{assert_err, dispatch::DispatchClass, traits::Get, weights::Weight};
+use pallet_3vm_evm::{AddressMapping, GasWeightMapping};
+use sp_core::{H256, U256};
+use std::str::FromStr;
 
-fn eip2930_erc20_creation_unsigned_transaction() -> EIP2930UnsignedTransaction {
-    EIP2930UnsignedTransaction {
+fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
+    EIP1559UnsignedTransaction {
         nonce: U256::zero(),
-        gas_price: U256::from(1),
+        max_priority_fee_per_gas: U256::from(1),
+        max_fee_per_gas: U256::from(1),
         gas_limit: U256::from(0x100000),
         action: ethereum::TransactionAction::Create,
         value: U256::zero(),
@@ -35,8 +41,88 @@ fn eip2930_erc20_creation_unsigned_transaction() -> EIP2930UnsignedTransaction {
     }
 }
 
-fn eip2930_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
-    eip2930_erc20_creation_unsigned_transaction().sign(&account.private_key, None)
+fn eip1559_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
+    eip1559_erc20_creation_unsigned_transaction().sign(&account.private_key, None)
+}
+
+#[test]
+fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
+    let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+    let alice = &pairs[0];
+    let bob = &pairs[1];
+
+    let limits: frame_system::limits::BlockWeights =
+        <Runtime as frame_system::Config>::BlockWeights::get();
+    let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
+    let max_extrinsic_gas =
+        <Runtime as pallet_3vm_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
+
+    ext.execute_with(|| {
+        let transaction = EIP1559UnsignedTransaction {
+            nonce: U256::zero(),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
+            gas_limit: U256::from(max_extrinsic_gas),
+            action: ethereum::TransactionAction::Call(bob.address),
+            value: U256::from(1),
+            input: Default::default(),
+        }
+        .sign(&alice.private_key, None);
+
+        let call =
+            circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact { transaction };
+        let source = call.check_self_contained().unwrap().unwrap();
+        let extrinsic = CheckedExtrinsic::<u64, _, SignedExtra, _> {
+            signed: fp_self_contained::CheckedSignature::SelfContained(source),
+            function: RuntimeCall::Ethereum(call.clone()),
+        };
+
+        assert_ok!(call
+            .pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
+            .unwrap());
+    });
+}
+
+#[test]
+fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatch() {
+    let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+    let alice = &pairs[0];
+    let bob = &pairs[1];
+
+    let limits: frame_system::limits::BlockWeights =
+        <Runtime as frame_system::Config>::BlockWeights::get();
+    let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
+    let base_extrinsic = limits.get(DispatchClass::Normal).base_extrinsic;
+    let max_extrinsic_gas = <Runtime as pallet_3vm_evm::Config>::GasWeightMapping::weight_to_gas(
+        max_extrinsic + base_extrinsic,
+    );
+
+    ext.execute_with(|| {
+        let transaction = EIP1559UnsignedTransaction {
+            nonce: U256::zero(),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
+            gas_limit: U256::from(max_extrinsic_gas + 1),
+            action: ethereum::TransactionAction::Call(bob.address),
+            value: U256::from(1),
+            input: Default::default(),
+        }
+        .sign(&alice.private_key, None);
+
+        let call =
+            circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact { transaction };
+        let source = call.check_self_contained().unwrap().unwrap();
+        let extrinsic = CheckedExtrinsic::<u64, _, SignedExtra, _> {
+            signed: fp_self_contained::CheckedSignature::SelfContained(source),
+            function: RuntimeCall::Ethereum(call.clone()),
+        };
+
+        assert_err!(
+            call.pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
+                .unwrap(),
+            InvalidTransaction::ExhaustsResources
+        );
+    });
 }
 
 #[test]
@@ -45,14 +131,9 @@ fn transaction_should_increment_nonce() {
     let alice = &pairs[0];
 
     ext.execute_with(|| {
-        let t = eip2930_erc20_creation_transaction(alice);
+        let t = eip1559_erc20_creation_transaction(alice);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
-        assert_eq!(
-            pallet_3vm_evm::Pallet::<Test>::account_basic(&alice.address)
-                .0
-                .nonce,
-            U256::from(1)
-        );
+        assert_eq!(Evm::account_basic(&alice.address).0.nonce, U256::from(1));
     });
 }
 
@@ -62,20 +143,20 @@ fn transaction_without_enough_gas_should_not_work() {
     let alice = &pairs[0];
 
     ext.execute_with(|| {
-        let mut transaction = eip2930_erc20_creation_transaction(alice);
+        let mut transaction = eip1559_erc20_creation_transaction(alice);
         match &mut transaction {
-            Transaction::EIP2930(t) => t.gas_price = U256::from(11_000_000),
+            Transaction::EIP1559(t) => t.max_fee_per_gas = U256::from(11_000_000),
             _ => {},
         }
 
-        let call = crate::Call::<Test>::transact { transaction };
+        let call =
+            circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact { transaction };
         let source = call.check_self_contained().unwrap().unwrap();
         let extrinsic = CheckedExtrinsic::<u64, _, SignedExtra, _> {
             signed: fp_self_contained::CheckedSignature::SelfContained(source),
             function: RuntimeCall::Ethereum(call.clone()),
         };
         let dispatch_info = extrinsic.get_dispatch_info();
-
         assert_err!(
             call.validate_self_contained(&source, &dispatch_info, 0)
                 .unwrap(),
@@ -91,11 +172,10 @@ fn transaction_with_to_low_nonce_should_not_work() {
 
     ext.execute_with(|| {
         // nonce is 0
-        let mut transaction = eip2930_erc20_creation_unsigned_transaction();
+        let mut transaction = eip1559_erc20_creation_unsigned_transaction();
         transaction.nonce = U256::from(1);
-
         let signed = transaction.sign(&alice.private_key, None);
-        let call = crate::Call::<Test>::transact {
+        let call = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed,
         };
         let source = call.check_self_contained().unwrap().unwrap();
@@ -115,15 +195,14 @@ fn transaction_with_to_low_nonce_should_not_work() {
                 .build()
         );
 
-        let t = eip2930_erc20_creation_transaction(alice);
+        let t = eip1559_erc20_creation_transaction(alice);
 
         // nonce is 1
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
-
         transaction.nonce = U256::from(0);
 
         let signed2 = transaction.sign(&alice.private_key, None);
-        let call2 = crate::Call::<Test>::transact {
+        let call2 = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed2,
         };
         let source2 = call2.check_self_contained().unwrap().unwrap();
@@ -147,11 +226,11 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
     let alice = &pairs[0];
 
     ext.execute_with(|| {
-        let mut transaction = eip2930_erc20_creation_unsigned_transaction();
+        let mut transaction = eip1559_erc20_creation_unsigned_transaction();
         transaction.nonce = U256::one();
 
         let signed = transaction.sign(&alice.private_key, None);
-        let call = crate::Call::<Test>::transact {
+        let call = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed,
         };
         let source = call.check_self_contained().unwrap().unwrap();
@@ -161,7 +240,7 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-            extrinsic.apply::<Test>(&dispatch_info, 0),
+            extrinsic.apply::<Runtime>(&dispatch_info, 0),
             TransactionValidityError::Invalid(InvalidTransaction::Future)
         );
     });
@@ -174,9 +253,10 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
 
     ext.execute_with(|| {
         let transaction =
-            eip2930_erc20_creation_unsigned_transaction().sign(&alice.private_key, Some(1));
+            eip1559_erc20_creation_unsigned_transaction().sign(&alice.private_key, Some(1));
 
-        let call = crate::Call::<Test>::transact { transaction };
+        let call =
+            circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact { transaction };
         let source = call.check_self_contained().unwrap().unwrap();
         let extrinsic = CheckedExtrinsic::<_, _, SignedExtra, _> {
             signed: fp_self_contained::CheckedSignature::SelfContained(source),
@@ -184,7 +264,7 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         assert_err!(
-            extrinsic.apply::<Test>(&dispatch_info, 0),
+            extrinsic.apply::<Runtime>(&dispatch_info, 0),
             TransactionValidityError::Invalid(InvalidTransaction::Custom(
                 fp_ethereum::TransactionValidationError::InvalidChainId as u8,
             ))
@@ -200,11 +280,11 @@ fn contract_constructor_should_get_executed() {
     let alice_storage_address = storage_address(alice.address, H256::zero());
 
     ext.execute_with(|| {
-        let t = eip2930_erc20_creation_transaction(alice);
+        let t = eip1559_erc20_creation_transaction(alice);
 
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_eq!(
-            pallet_3vm_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
+            pallet_3vm_evm::AccountStorages::<Runtime>::get(erc20_address, alice_storage_address),
             H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
                 .unwrap()
         )
@@ -222,13 +302,13 @@ fn source_should_be_derived_from_signature() {
     ext.execute_with(|| {
         Ethereum::transact(
             RawOrigin::EthereumTransaction(alice.address).into(),
-            eip2930_erc20_creation_transaction(alice),
+            eip1559_erc20_creation_transaction(alice),
         )
         .expect("Failed to execute transaction");
 
         // We verify the transaction happened with alice account.
         assert_eq!(
-            pallet_3vm_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
+            pallet_3vm_evm::AccountStorages::<Runtime>::get(erc20_address, alice_storage_address),
             H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
                 .unwrap()
         )
@@ -243,10 +323,10 @@ fn contract_should_be_created_at_given_address() {
     let erc20_address = contract_address(alice.address, 0);
 
     ext.execute_with(|| {
-        let t = eip2930_erc20_creation_transaction(alice);
+        let t = eip1559_erc20_creation_transaction(alice);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_ne!(
-            pallet_3vm_evm::AccountCodes::<Test>::get(erc20_address).len(),
+            pallet_3vm_evm::AccountCodes::<Runtime>::get(erc20_address).len(),
             0
         );
     });
@@ -260,7 +340,7 @@ fn transaction_should_generate_correct_gas_used() {
     let expected_gas = U256::from(894198);
 
     ext.execute_with(|| {
-        let t = eip2930_erc20_creation_transaction(alice);
+        let t = eip1559_erc20_creation_transaction(alice);
         let (_, _, info) = Ethereum::execute(alice.address, &t, None).unwrap();
 
         match info {
@@ -278,9 +358,10 @@ fn call_should_handle_errors() {
     let alice = &pairs[0];
 
     ext.execute_with(|| {
-        let t = EIP2930UnsignedTransaction {
+        let t = EIP1559UnsignedTransaction {
             nonce: U256::zero(),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: ethereum::TransactionAction::Create,
             value: U256::zero(),
@@ -293,9 +374,10 @@ fn call_should_handle_errors() {
         let foo = hex::decode("c2985578").unwrap();
         let bar = hex::decode("febb0f7e").unwrap();
 
-        let t2 = EIP2930UnsignedTransaction {
+        let t2 = EIP1559UnsignedTransaction {
             nonce: U256::from(1),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: TransactionAction::Call(H160::from_slice(&contract_address)),
             value: U256::zero(),
@@ -316,9 +398,10 @@ fn call_should_handle_errors() {
             CallOrCreateInfo::Create(_) => panic!("expected call info"),
         }
 
-        let t3 = EIP2930UnsignedTransaction {
+        let t3 = EIP1559UnsignedTransaction {
             nonce: U256::from(2),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: TransactionAction::Call(H160::from_slice(&contract_address)),
             value: U256::zero(),
@@ -339,9 +422,10 @@ fn event_extra_data_should_be_handle_properly() {
     ext.execute_with(|| {
         System::set_block_number(1);
 
-        let t = EIP2930UnsignedTransaction {
+        let t = EIP1559UnsignedTransaction {
             nonce: U256::zero(),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: ethereum::TransactionAction::Create,
             value: U256::zero(),
@@ -354,9 +438,10 @@ fn event_extra_data_should_be_handle_properly() {
         let foo = hex::decode("c2985578").unwrap();
         let bar = hex::decode("febb0f7e").unwrap();
 
-        let t2 = EIP2930UnsignedTransaction {
+        let t2 = EIP1559UnsignedTransaction {
             nonce: U256::from(1),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: TransactionAction::Call(H160::from_slice(&contract_address)),
             value: U256::zero(),
@@ -366,20 +451,23 @@ fn event_extra_data_should_be_handle_properly() {
 
         // calling foo
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2,));
-        System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
-            from: alice.address,
-            to: H160::from_slice(&contract_address),
-            transaction_hash: H256::from_str(
-                "0xd953990ba4a99074c5b8c7a9f97546ffbf781815acc2dcc2719ac3d0c8955a00",
-            )
-            .unwrap(),
-            exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
-            extra_data: vec![],
-        }));
+        System::assert_last_event(RuntimeEvent::Ethereum(
+            circuit_mock_runtime::pallet_3vm_ethereum::Event::Executed {
+                from: alice.address,
+                to: H160::from_slice(&contract_address),
+                transaction_hash: H256::from_str(
+                    "0x66036e60bafa1fabb847679d86d1f0a027ae52afde7690aaadf6f81c7e8ecda2",
+                )
+                .unwrap(),
+                exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
+                extra_data: vec![],
+            },
+        ));
 
-        let t3 = EIP2930UnsignedTransaction {
+        let t3 = EIP1559UnsignedTransaction {
             nonce: U256::from(2),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::from(1),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: TransactionAction::Call(H160::from_slice(&contract_address)),
             value: U256::zero(),
@@ -389,16 +477,18 @@ fn event_extra_data_should_be_handle_properly() {
 
         // calling bar revert
         assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3,));
-        System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
-            from: alice.address,
-            to: H160::from_slice(&contract_address),
-            transaction_hash: H256::from_str(
-                "0xbcb3fd14507b3aba8a124b007d959bf18d59f87c6d6c036e8feac224ec5fabeb",
-            )
-            .unwrap(),
-            exit_reason: ExitReason::Revert(ExitRevert::Reverted),
-            extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
-        }));
+        System::assert_last_event(RuntimeEvent::Ethereum(
+            circuit_mock_runtime::pallet_3vm_ethereum::Event::Executed {
+                from: alice.address,
+                to: H160::from_slice(&contract_address),
+                transaction_hash: H256::from_str(
+                    "0xf14cd5e6d0535a8407339dabce26616a3f19c2048937450859ea65d5201fb7e4",
+                )
+                .unwrap(),
+                exit_reason: ExitReason::Revert(ExitRevert::Reverted),
+                extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
+            },
+        ));
     });
 }
 
@@ -415,20 +505,20 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
     .base_extrinsic;
 
     ext.execute_with(|| {
-        let mut transaction = eip2930_erc20_creation_unsigned_transaction();
+        let mut transaction = eip1559_erc20_creation_unsigned_transaction();
         transaction.gas_limit = 9_000_000.into();
         let signed = transaction.sign(&alice.private_key, None);
-        let call = crate::Call::<Test>::transact {
+        let call = circuit_mock_runtime::pallet_3vm_ethereum::Call::<Runtime>::transact {
             transaction: signed,
         };
         let source = call.check_self_contained().unwrap().unwrap();
-        let extrinsic = CheckedExtrinsic::<_, _, frame_system::CheckWeight<Test>, _> {
+        let extrinsic = CheckedExtrinsic::<_, _, frame_system::CheckWeight<Runtime>, _> {
             signed: fp_self_contained::CheckedSignature::SelfContained(source),
             function: RuntimeCall::Ethereum(call),
         };
         let dispatch_info = extrinsic.get_dispatch_info();
         let post_dispatch_weight = extrinsic
-            .apply::<Test>(&dispatch_info, 0)
+            .apply::<Runtime>(&dispatch_info, 0)
             .unwrap()
             .unwrap()
             .actual_weight
@@ -436,7 +526,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 
         let expected_weight = base_extrinsic_weight.saturating_add(post_dispatch_weight);
         let actual_weight =
-            *frame_system::Pallet::<Test>::block_weight().get(DispatchClass::Normal);
+            *frame_system::Pallet::<Runtime>::block_weight().get(DispatchClass::Normal);
         assert_eq!(
             expected_weight,
             actual_weight,
@@ -452,14 +542,15 @@ fn validated_transaction_apply_zero_gas_price_works() {
     let alice = &pairs[0];
     let bob = &pairs[1];
     let substrate_alice =
-        <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
     let substrate_bob =
-        <Test as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
 
     ext.execute_with(|| {
-        let transaction = EIP2930UnsignedTransaction {
+        let transaction = EIP1559UnsignedTransaction {
             nonce: U256::zero(),
-            gas_price: U256::zero(),
+            max_priority_fee_per_gas: U256::zero(),
+            max_fee_per_gas: U256::zero(),
             gas_limit: U256::from(21_000),
             action: ethereum::TransactionAction::Call(bob.address),
             value: U256::from(100),
@@ -467,10 +558,12 @@ fn validated_transaction_apply_zero_gas_price_works() {
         }
         .sign(&alice.private_key, None);
 
-        assert_ok!(crate::ValidatedTransaction::<Test>::apply(
-            alice.address,
-            transaction
-        ));
+        assert_ok!(
+            circuit_mock_runtime::pallet_3vm_ethereum::ValidatedTransaction::<Runtime>::apply(
+                alice.address,
+                transaction
+            )
+        );
         // Alice didn't pay fees, transfer 100 to Bob.
         assert_eq!(Balances::free_balance(&substrate_alice), 900);
         // Bob received 100 from Alice.
@@ -480,15 +573,14 @@ fn validated_transaction_apply_zero_gas_price_works() {
 
 #[test]
 fn proof_size_weight_limit_validation_works() {
-    use pallet_3vm_evm::GasWeightMapping;
-
     let (pairs, mut ext) = new_test_ext(1);
     let alice = &pairs[0];
 
     ext.execute_with(|| {
-        let mut tx = EIP2930UnsignedTransaction {
+        let mut tx = EIP1559UnsignedTransaction {
             nonce: U256::from(2),
-            gas_price: U256::from(1),
+            max_priority_fee_per_gas: U256::zero(),
+            max_fee_per_gas: U256::from(1),
             gas_limit: U256::from(0x100000),
             action: ethereum::TransactionAction::Call(alice.address),
             value: U256::from(1),
@@ -499,7 +591,7 @@ fn proof_size_weight_limit_validation_works() {
         tx.gas_limit = U256::from(gas_limit);
 
         let weight_limit =
-            <Test as pallet_3vm_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+            <Runtime as pallet_3vm_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
 
         // Gas limit cannot afford the extra byte and thus is expected to exhaust.
         tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
