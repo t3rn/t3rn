@@ -129,8 +129,15 @@ fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatc
 fn transaction_should_increment_nonce() {
     let (pairs, mut ext) = new_test_ext(1);
     let alice = &pairs[0];
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         let t = eip1559_erc20_creation_transaction(alice);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_eq!(Evm::account_basic(&alice.address).0.nonce, U256::from(1));
@@ -278,8 +285,15 @@ fn contract_constructor_should_get_executed() {
     let alice = &pairs[0];
     let erc20_address = contract_address(alice.address, 0);
     let alice_storage_address = storage_address(alice.address, H256::zero());
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         let t = eip1559_erc20_creation_transaction(alice);
 
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
@@ -298,8 +312,15 @@ fn source_should_be_derived_from_signature() {
 
     let erc20_address = contract_address(alice.address, 0);
     let alice_storage_address = storage_address(alice.address, H256::zero());
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         Ethereum::transact(
             circuit_mock_runtime::pallet_3vm_ethereum::RawOrigin::EthereumTransaction(
                 alice.address,
@@ -324,8 +345,15 @@ fn contract_should_be_created_at_given_address() {
     let alice = &pairs[0];
 
     let erc20_address = contract_address(alice.address, 0);
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         let t = eip1559_erc20_creation_transaction(alice);
         assert_ok!(Ethereum::execute(alice.address, &t, None,));
         assert_ne!(
@@ -341,8 +369,15 @@ fn transaction_should_generate_correct_gas_used() {
     let alice = &pairs[0];
 
     let expected_gas = U256::from(894198);
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         let t = eip1559_erc20_creation_transaction(alice);
         let (_, _, info) = Ethereum::execute(alice.address, &t, None).unwrap();
 
@@ -359,8 +394,15 @@ fn transaction_should_generate_correct_gas_used() {
 fn call_should_handle_errors() {
     let (pairs, mut ext) = new_test_ext(1);
     let alice = &pairs[0];
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         let t = EIP1559UnsignedTransaction {
             nonce: U256::zero(),
             max_priority_fee_per_gas: U256::from(1),
@@ -421,8 +463,15 @@ fn call_should_handle_errors() {
 fn event_extra_data_should_be_handle_properly() {
     let (pairs, mut ext) = new_test_ext(1);
     let alice = &pairs[0];
+    let substrate_alice =
+        <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(alice.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice),
+            10_000_000_000_000_000,
+        ));
         System::set_block_number(1);
 
         let t = EIP1559UnsignedTransaction {
@@ -550,6 +599,16 @@ fn validated_transaction_apply_zero_gas_price_works() {
         <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(bob.address);
 
     ext.execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_alice.clone()),
+            1_000
+        ));
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(substrate_bob.clone()),
+            1_000
+        ));
         let transaction = EIP1559UnsignedTransaction {
             nonce: U256::zero(),
             max_priority_fee_per_gas: U256::zero(),
