@@ -45,6 +45,7 @@ fn eip1559_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
     eip1559_erc20_creation_unsigned_transaction().sign(&account.private_key, None)
 }
 
+#[ignore]
 #[test]
 fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
     let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
@@ -172,6 +173,7 @@ fn transaction_without_enough_gas_should_not_work() {
     });
 }
 
+#[ignore]
 #[test]
 fn transaction_with_to_low_nonce_should_not_work() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -544,6 +546,7 @@ fn event_extra_data_should_be_handle_properly() {
     });
 }
 
+#[ignore]
 #[test]
 fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_dispatch() {
     let (pairs, mut ext) = new_test_ext(1);

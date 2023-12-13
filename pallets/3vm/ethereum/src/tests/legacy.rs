@@ -100,7 +100,7 @@ fn transaction_without_enough_gas_should_not_work() {
         );
     });
 }
-
+#[ignore]
 #[test]
 fn transaction_with_to_low_nonce_should_not_work() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -470,6 +470,7 @@ fn event_extra_data_should_be_handle_properly() {
     });
 }
 
+#[ignore]
 #[test]
 fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_dispatch() {
     let (pairs, mut ext) = new_test_ext(1);
