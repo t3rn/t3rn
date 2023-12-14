@@ -30,6 +30,7 @@ pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pall
 fp-rpc = { workspace = true }
 fp-storage = { workspace = true }
 pallet-3vm-evm               = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
+t3rn-primitives                 = { default-features = false, path = "../../../primitives" }
 
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../../runtime/mock" }
@@ -69,6 +70,7 @@ std = [
     "pallet-3vm-evm/std",
     # Circuit
     "circuit-runtime-pallets/std",
+    "t3rn-primitives/std",
 ]
 runtime-benchmarks = [
     "frame-support/runtime-benchmarks",

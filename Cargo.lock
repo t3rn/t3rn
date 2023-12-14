@@ -7168,6 +7168,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 8.0.0",
+ "t3rn-primitives",
 ]
 
 [[package]]

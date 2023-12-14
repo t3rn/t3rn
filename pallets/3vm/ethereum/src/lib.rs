@@ -25,6 +25,8 @@
 
 #[cfg(all(feature = "std", test))]
 mod tests;
+#[cfg(all(feature = "std", test))]
+mod mock;
 
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
