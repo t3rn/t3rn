@@ -56,6 +56,8 @@ pallet-3vm-evm-primitives            = { default-features = false, path = "../..
 pallet-3vm-ethereum                  = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
 #pallet-ethereum                      = { workspace = true }
 #pallet-evm-rpc-runtime-api           = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
+# Frontier
+fp-rpc                               = { workspace = true }
 
 # Substrate Dependencies
 frame-executive                            = { workspace = true }
@@ -176,6 +178,7 @@ std = [
   "pallet-clock/std",
   "circuit-runtime-types/std",
   "pallet-maintenance-mode/std",
+  "fp-rpc/std",
   "substrate-wasm-builder",
 ]
 

@@ -13512,6 +13512,7 @@ dependencies = [
  "cumulus-primitives-utility",
  "finality-grandpa",
  "fp-evm 1.79.0-rc.0",
+ "fp-rpc",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13845,6 +13846,7 @@ version = "1.79.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm 1.79.0-rc.0",
+ "fp-rpc",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
