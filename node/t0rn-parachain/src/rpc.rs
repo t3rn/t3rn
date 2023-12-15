@@ -21,19 +21,54 @@ use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 
 pub use sc_rpc_api::DenyUnsafe;
 
+use fc_rpc::{
+    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, Web3, Web3ApiServer,
+};
+
 /// Full client dependencies.
-pub struct FullDeps<C, P> {
+pub struct FullDeps<C, P, A: ChainApi, BE> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
+    /// Graph pool instance.
+    pub graph: Arc<Pool<A>>,
+    /// Network service
+    pub network: Arc<NetworkService<Block, Hash>>,
+    /// Chain syncing service
+    pub sync: Arc<SyncingService<Block>>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
+    /// The Node authority flag
+    pub is_authority: bool,
+    /// Frontier Backend.
+    pub frontier_backend: Arc<dyn fc_db::BackendReader<Block> + Send + Sync>,
+    /// EthFilterApi pool.
+    pub filter_pool: FilterPool,
+    /// Maximum fee history cache size.
+    pub fee_history_limit: u64,
+    /// Fee history cache.
+    pub fee_history_cache: FeeHistoryCache,
+    /// Ethereum data access overrides.
+    pub overrides: Arc<OverrideHandle<Block>>,
+    /// Cache for Ethereum block data.
+    pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
+    /// Enable EVM RPC servers
+    pub enable_evm_rpc: bool,
 }
 
 /// Instantiate all full RPC extensions.
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
+    /*
+    subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
+     */
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>,
@@ -43,6 +78,8 @@ where
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
     C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId, Balance, Hash>,
+    C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
+    C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {
@@ -53,14 +90,84 @@ where
     let FullDeps {
         client,
         pool,
+        graph,
+        network,
+        sync,
         deny_unsafe,
+        is_authority,
+        frontier_backend,
+        filter_pool,
+        fee_history_limit,
+        fee_history_cache,
+        overrides,
+        block_data_cache,
+        enable_evm_rpc,
     } = deps;
 
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
     module.merge(Xdns::new(client.clone()).into_rpc())?;
-    module.merge(Portal::new(client).into_rpc())?;
+    module.merge(Portal::new(client.clone()).into_rpc())?;
+
+    // Ethereum  modules
+    let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
+
+    module.merge(
+        Eth::new(
+            client.clone(),
+            pool.clone(),
+            graph.clone(),
+            no_tx_converter,
+            sync.clone(),
+            Default::default(),
+            overrides.clone(),
+            frontier_backend.clone(),
+            is_authority,
+            block_data_cache.clone(),
+            fee_history_cache,
+            fee_history_limit,
+            // Allow 10x max allowed weight for non-transactional calls
+            10,
+            None,
+        )
+        .into_rpc(),
+    )?;
+
+    let max_past_logs: u32 = 10_000;
+    let max_stored_filters: usize = 500;
+    let tx_pool = TxPool::new(client.clone(), graph);
+
+    module.merge(
+        EthFilter::new(
+            client.clone(),
+            frontier_backend,
+            tx_pool.clone(),
+            filter_pool,
+            max_stored_filters,
+            max_past_logs,
+            block_data_cache,
+        )
+        .into_rpc(),
+    )?;
+
+    module.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
+
+    module.merge(Web3::new(client.clone()).into_rpc())?;
+    /*
+       module.merge(
+           EthPubSub::new(
+               pool,
+               client.clone(),
+               sync,
+               subscription_task_executor,
+               overrides,
+               pubsub_notification_sinks,
+           )
+               .into_rpc(),
+       )?;
+
+    */
 
     Ok(module)
 }
