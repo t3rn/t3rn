@@ -126,12 +126,11 @@ pallet-3vm                      = { default-features = false, path = "../../pall
 pallet-3vm-account-mapping      = { default-features = false, path = "../../pallets/3vm/account-mapping" }
 pallet-3vm-contracts            = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
+fp-rpc                          = { default-features = false, path = "../../pallets/evm/rpc" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
 pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
 #pallet-ethereum                 = { workspace = true }
-# Frontier
-fp-rpc                          = { workspace = true }
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }

@@ -104,7 +104,7 @@ cumulus-relay-chain-interface           = { git = 'https://github.com/paritytech
 cumulus-relay-chain-rpc-interface       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
 xcm                                     = { workspace = true }
 
-# EVM dependencies
+# E EVM dependencies
 fp-rpc = { workspace = true, default-features = true, optional = true }
 fp-consensus = { workspace = true, default-features = true, optional = true }
 fp-storage = { workspace = true, default-features = true, optional = true }
