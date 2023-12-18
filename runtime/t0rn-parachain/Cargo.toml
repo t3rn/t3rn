@@ -339,4 +339,5 @@ try-runtime = [
   "pallet-3vm-ethereum/try-runtime",
   "pallet-3vm-contracts/try-runtime",
   "pallet-3vm-account-mapping/try-runtime",
+  "fp-self-contained/try-runtime",
 ]
