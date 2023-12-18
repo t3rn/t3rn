@@ -27,8 +27,8 @@ sp-std = { workspace = true }
 fp-consensus = { workspace = true }
 fp-ethereum = { default-features = false, path = "./primitives" }
 pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
-fp-rpc = { workspace = true }
-fp-storage = { workspace = true }
+fp-rpc                       = { workspace = true }
+fp-storage                   = { workspace = true }
 pallet-3vm-evm               = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
 
 [dev-dependencies]
@@ -62,11 +62,11 @@ std = [
     # EVM
     "fp-consensus/std",
     "fp-ethereum/std",
-    "pallet-3vm-evm-primitives/std",
     "fp-rpc/std",
     "fp-self-contained/std",
     "fp-storage/std",
     "pallet-3vm-evm/std",
+    "pallet-3vm-evm-primitives/std",
     # Circuit
     "circuit-runtime-pallets/std",
 ]

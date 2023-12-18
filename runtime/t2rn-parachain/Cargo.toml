@@ -54,8 +54,8 @@ pallet-3vm-contracts-primitives      = { default-features = false, path = "../..
 pallet-3vm-evm                       = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives            = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
 fp-rpc                               = { default-features = false, path = "../../pallets/evm/rpc" }
+fp-self-contained                    = { workspace = true }
 pallet-3vm-ethereum                  = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
-#pallet-ethereum                      = { workspace = true }
 #pallet-evm-rpc-runtime-api           = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
 # Frontier
 
@@ -180,6 +180,7 @@ std = [
   "circuit-runtime-types/std",
   "pallet-maintenance-mode/std",
   "fp-rpc/std",
+  "fp-self-contained/std",
   "substrate-wasm-builder",
 ]
 
