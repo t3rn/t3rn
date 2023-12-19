@@ -397,4 +397,3 @@ impl pallet_celestia_light_client::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_celestia_light_client::weights::SubstrateWeight<Runtime>;
 }
-
