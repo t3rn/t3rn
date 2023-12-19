@@ -99,8 +99,8 @@ t3rn-abi        = { default-features = false, path = "../../types/abi", features
 pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.4", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.10", default-features = false }
+pallet-eth2-finality-verifier    = { workspace = true, default-features = false }
+pallet-sepolia-finality-verifier = { workspace = true, default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
@@ -123,6 +123,7 @@ pallet-withdraw-teleport         = { workspace = true }
 # Smart contracts VMs
 #evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
 pallet-3vm                      = { default-features = false, path = "../../pallets/3vm" }
+pallet-3vm-account-mapping      = { default-features = false, path = "../../pallets/3vm/account-mapping" }
 pallet-3vm-contracts            = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
@@ -167,6 +168,7 @@ std = [
   "pallet-balances/std",
   "pallet-collator-selection/std",
   "pallet-3vm/std",
+  "pallet-3vm-account-mapping/std",
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-evm/std",
@@ -249,6 +251,7 @@ runtime-benchmarks = [
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
   "pallet-treasury/runtime-benchmarks",
   "pallet-3vm/runtime-benchmarks",
+  "pallet-3vm-account-mapping/runtime-benchmarks",
   "pallet-asset-registry/runtime-benchmarks",
   "pallet-withdraw-teleport/runtime-benchmarks",
   "pallet-assets/runtime-benchmarks",
@@ -325,4 +328,5 @@ try-runtime = [
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
   "pallet-3vm-evm/try-runtime",
+  "pallet-3vm-account-mapping/try-runtime",
 ]

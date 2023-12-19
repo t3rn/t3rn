@@ -66,7 +66,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
                     .unwrap()
                     .allowed_side_effects
                     .len(),
-                4
+                5
             );
         });
 }
@@ -98,7 +98,7 @@ fn reboot_self_gateway_populates_entry_all_gateway_ids_entry_only_once() {
                     .unwrap()
                     .allowed_side_effects
                     .len(),
-                4
+                5
             );
         });
 }
@@ -143,7 +143,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_std_sfx() {
                 .unwrap()
                 .allowed_side_effects
                 .len(),
-            4
+            5
         );
     });
 }
@@ -437,7 +437,7 @@ fn should_add_standard_sfx_abi() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_eq!(pallet_xdns::StandardSFXABIs::<Runtime>::iter().count(), 9);
+            assert_eq!(pallet_xdns::StandardSFXABIs::<Runtime>::iter().count(), 10);
         });
 }
 
@@ -449,7 +449,7 @@ fn should_enroll_and_unroll_new_abi_to_selected_gateway() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_eq!(pallet_xdns::StandardSFXABIs::<Runtime>::iter().count(), 9);
+            assert_eq!(pallet_xdns::StandardSFXABIs::<Runtime>::iter().count(), 10);
 
             let mut tran_sfx_abi = pallet_xdns::StandardSFXABIs::<Runtime>::get(b"tran").unwrap();
             tran_sfx_abi.maybe_prefix_memo = Some(2);

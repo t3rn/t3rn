@@ -11,11 +11,11 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("t2rn"),
     impl_name: create_runtime_str!("t2rn"),
-    authoring_version: 16,
-    spec_version: 16,
-    impl_version: 16,
+    authoring_version: 18,
+    spec_version: 18,
+    impl_version: 18,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 16,
+    transaction_version: 18,
     state_version: 1,
 };
 
@@ -121,6 +121,7 @@ construct_runtime!(
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
+        AccountMapping: pallet_3vm_account_mapping = 126,
 
          // Portal
         Portal: pallet_portal = 128,

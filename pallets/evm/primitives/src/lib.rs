@@ -21,6 +21,11 @@
 mod precompile;
 mod validation;
 
+use circuit_runtime_types::{AssetId, EvmAddress};
+pub use evm::{
+    backend::{Basic as Account, Log},
+    Config, ExitReason, Opcode,
+};
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -29,11 +34,6 @@ use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-
-pub use evm::{
-    backend::{Basic as Account, Log},
-    Config, ExitReason, Opcode,
-};
 
 pub use self::{
     precompile::{

@@ -75,8 +75,15 @@ impl<T: Config> Bids<T> {
                 },
             None => {},
         }
-        // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
-        if sfx_security_lvl == SecurityLvl::Optimistic {
+
+        let xtx_requester = Machine::<T>::load_xtx(xtx_id.clone())?.xtx.requester;
+
+        // If the bid is for Remote Order Origin or Escrow, assume insurance to be FixedAmount of FinalityFees deducted in NativeCurrency
+        if OrderOrigin::new(&xtx_requester).is_remote() || sfx_security_lvl == SecurityLvl::Escrow {
+            bid.insurance = T::Attesters::estimate_finality_fee(&fsx.input.target);
+            bid.reward_asset_id = None;
+        } else if sfx_security_lvl == SecurityLvl::Optimistic {
+            // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
             let total_xtx_step_optimistic_rewards_of_others = step_fsx
                 .iter()
                 .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)
@@ -109,7 +116,7 @@ impl<T: Config> Bids<T> {
         )?;
 
         // Replace the best bid for the FSX
-        if let Some(mut fsx) = step_fsx
+        if let Some(fsx) = step_fsx
             .iter_mut()
             .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
         {
