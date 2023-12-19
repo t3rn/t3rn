@@ -34,6 +34,8 @@ pallet-contracts-registry                 = { path = "../../pallets/contracts-re
 #pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-eth2-finality-verifier             = { workspace = true, default-features = false }
 pallet-sepolia-finality-verifier          = { workspace = true, default-features = false }
+pallet-celestia-light-client              = { workspace = true, default-features = false, features = ["runtime"] }
+
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                             = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
@@ -134,6 +136,7 @@ std = [
   "pallet-3vm-contracts/std",
   # "circuit-runtime-pallets/std",
   "pallet-eth2-finality-verifier/std",
+  "pallet-celestia-light-client/std",
   "pallet-sepolia-finality-verifier/std",
   "pallet-3vm-contracts-primitives/std",
 #  "pallet-3vm-contracts-rpc-runtime-api/std",
@@ -205,6 +208,7 @@ runtime-benchmarks = [
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
+  "pallet-celestia-light-client/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
