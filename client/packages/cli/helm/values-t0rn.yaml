@@ -32,6 +32,7 @@ jobs:
         value: 0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e # TEST account on t0rn
 
     # Run every 1 minute
+    # 0.2815 ROC
     schedule: "*/1 * * * *"
     args:
       - xcmTransfer
@@ -42,13 +43,13 @@ jobs:
       - --endpoint
       - "wss://rococo-rpc.polkadot.io"
       - --dest
-      - 3333
+      - "3333"
       - --recipient
       - "0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e"
       - --target-asset
       - "ROC"
       - --target-amount
-      - 281500000000 # 0.2815 ROC
+      - "281500000000"
     activeDeadlineSeconds: 300
 
   - name: send-xcm-transfer-rusd
@@ -61,6 +62,7 @@ jobs:
         value: 0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e # TEST account on t0rn
 
     # Run every 2 minutes
+    # 0.05 RUSD
     schedule: "*/2 * * * *"
     args:
       - xcmTransfer
@@ -71,11 +73,11 @@ jobs:
       - --endpoint
       - "wss://rococo-asset-hub-rpc.dwellir.com"
       - --dest
-      - 3333
+      - "3333"
       - --recipient
       - "0x16ea9c426c9eeb3565cb80ba5c344b23fabb34dbdd86962a113dd17c6924571e"
       - --target-asset
       - "RUSD"
       - --target-amount
-      - 50000000000 # 0.05 RUSD
+      - "50000000000"
     activeDeadlineSeconds: 300
