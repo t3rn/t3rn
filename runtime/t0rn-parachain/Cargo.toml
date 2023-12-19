@@ -101,7 +101,7 @@ pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", pack
 pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 pallet-eth2-finality-verifier    = { workspace = true, default-features = false }
 pallet-sepolia-finality-verifier = { workspace = true, default-features = false }
-pallet-celestia-light-client     = { workspace = true, default-features = false, features = ["runtime"]}
+pallet-celestia-light-client     = { workspace = true, default-features = false, features = ["runtime"] }
 
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }

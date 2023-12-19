@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -253,6 +253,7 @@ construct_runtime!(
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
         EthereumBridge: pallet_eth2_finality_verifier = 132,
         SepoliaBridge: pallet_sepolia_finality_verifier = 133,
+        CelestiaLightClient: pallet_celestia_light_client = 134,
 
         // Handy utilities
         Maintenance: pallet_maintenance_mode = 140,
