@@ -101,6 +101,8 @@ pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", pack
 pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 pallet-eth2-finality-verifier    = { workspace = true, default-features = false }
 pallet-sepolia-finality-verifier = { workspace = true, default-features = false }
+pallet-celestia-light-client     = { workspace = true, default-features = false, features = ["runtime"]}
+
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
@@ -226,6 +228,7 @@ std = [
   "circuit-runtime-types/std",
   "pallet-eth2-finality-verifier/std",
   "pallet-sepolia-finality-verifier/std",
+  "pallet-celestia-light-client/std",
   # Trappist pallets
   "xcm-primitives/std",
   "pallet-asset-registry/std",
@@ -273,6 +276,7 @@ runtime-benchmarks = [
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
+  "pallet-celestia-light-client/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
@@ -318,6 +322,7 @@ try-runtime = [
   "polkadot-runtime-common/try-runtime",
   "t3rn-abi/try-runtime",
   "pallet-eth2-finality-verifier/try-runtime",
+  "pallet-celestia-light-client/try-runtime",
   "pallet-sepolia-finality-verifier/try-runtime",
   "cumulus-pallet-aura-ext/try-runtime",
   "cumulus-pallet-dmp-queue/try-runtime",
