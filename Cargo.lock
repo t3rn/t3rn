@@ -6703,6 +6703,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-celestia-light-client"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/celestia-light-client?tag=celestia-v1.0.1#a28e012a84c8aa16341f8c9b556723dddffe0755"
+dependencies = [
+ "base64 0.21.4",
+ "chrono",
+ "ed25519-dalek 2.0.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hash-db 0.15.2",
+ "hex",
+ "k256",
+ "libsecp256k1",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "prost",
+ "prost-types",
+ "scale-info",
+ "serde",
+ "sha2 0.10.8",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 8.0.0",
+ "sp-trie",
+ "t3rn-primitives",
+ "xcm-builder",
+]
+
+[[package]]
 name = "pallet-circuit"
 version = "1.79.0-rc.0"
 dependencies = [
@@ -13141,6 +13174,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-celestia-light-client",
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
@@ -13460,6 +13494,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-celestia-light-client",
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
