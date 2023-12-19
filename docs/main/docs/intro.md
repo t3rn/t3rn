@@ -44,10 +44,10 @@ To facilitate its multichain transactions, t3rn relies on essential network part
 
 ## Popular 🔥
 
-- [**Brain explanation**](about_t3rn/what-is-t3rn) coming soon.
-- [**Run an Attester**](about_t3rn/what-is-t3rn) coming soon.
-- [**Run a Collator**](about_t3rn/what-is-t3rn) coming soon.
-- [**Run an Executor**](about_t3rn/what-is-t3rn) coming soon.
-- [**Run a Write**](about_t3rn/what-is-t3rn) coming soon.
-- [**Strategies**](about_t3rn/what-is-t3rn) coming soon.
-- [**Smart Contract Hub**](about_t3rn/what-is-t3rn) coming soon.
+- **Brain explanation** coming soon.
+- **Run an Attester** coming soon.
+- **Run a Collator** coming soon.
+- **Run an Executor** coming soon.
+- **Run a Write** coming soon.
+- **Strategies** coming soon.
+- **Smart Contract Hub** coming soon.
