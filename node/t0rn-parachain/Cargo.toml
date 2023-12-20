@@ -105,15 +105,15 @@ cumulus-relay-chain-rpc-interface       = { git = 'https://github.com/paritytech
 xcm                                     = { workspace = true }
 
 # E EVM dependencies
-fp-rpc = { workspace = true, default-features = true, optional = true }
-fp-consensus = { workspace = true, default-features = true, optional = true }
-fp-storage = { workspace = true, default-features = true, optional = true }
+fp-rpc = { workspace = true }
+fp-consensus = { workspace = true,  optional = true }
+fp-storage = { workspace = true,  optional = true }
 fc-cli = { workspace = true, optional = true }
-fc-rpc = { workspace = true, optional = true }
-fc-rpc-core = { workspace = true, optional = true }
+fc-rpc = { workspace = true }
+fc-rpc-core = { workspace = true }
 fc-consensus = { workspace = true, optional = true }
 fc-mapping-sync = { workspace = true, optional = true }
-fc-db = { workspace = true, optional = true }
+fc-db = { workspace = true }
 pallet-dynamic-fee = { workspace = true, optional = true }
 pallet-3vm-ethereum = { path = "../../pallets/3vm/ethereum", package = "pallet-ethereum", optional = true }
 
