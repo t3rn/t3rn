@@ -11,11 +11,11 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("t2rn"),
     impl_name: create_runtime_str!("t2rn"),
-    authoring_version: 18,
-    spec_version: 18,
-    impl_version: 18,
+    authoring_version: 20,
+    spec_version: 20,
+    impl_version: 20,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 18,
+    transaction_version: 20,
     state_version: 1,
 };
 
@@ -130,6 +130,7 @@ construct_runtime!(
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
         EthereumBridge: pallet_eth2_finality_verifier = 132,
         SepoliaBridge: pallet_sepolia_finality_verifier = 133,
+        CelestiaLightClient: pallet_celestia_light_client = 134,
 
         Identity: pallet_identity = 122,
         RandomnessCollectiveFlip: pallet_randomness_collective_flip = 200,
