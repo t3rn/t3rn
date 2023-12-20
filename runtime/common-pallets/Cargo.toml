@@ -92,22 +92,22 @@ t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
 
 # t3rn pallets
-pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-asset-registry            = { workspace = true }
+pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
+pallet-eth2-finality-verifier    = { workspace = true, default-features = false }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
+pallet-sepolia-finality-verifier = { workspace = true, default-features = false }
+pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-xbi-portal                = { workspace = true }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
-pallet-eth2-finality-verifier    = { workspace = true, default-features = false }
-pallet-sepolia-finality-verifier = { workspace = true, default-features = false }
-pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 
 # Smart contracts VMs
 evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
