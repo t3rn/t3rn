@@ -216,21 +216,21 @@ jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 t3rn-sdk-primitives   = { path = "sdk/crates/primitives", default-features = false }
 
 # EVM
-fp-evm                            = { path = "./pallets/evm/primitives" }
-fp-account                        = { path = "./pallets/evm/account" }
-fp-rpc                            = { path = "./pallets/evm/rpc" }
-pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support" }
+fp-evm                            = { path = "./pallets/evm/primitives", default-features = false }
+fp-account                        = { path = "./pallets/evm/account", default-features = false }
+fp-rpc                            = { path = "./pallets/evm/rpc", default-features = false }
+pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support", default-features = false }
 fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 # EVM node
-fc-cli                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0" }
-fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0" }
-fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0" }
-fc-mapping-sync                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0" }
-fc-db                             = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0" }
-pallet-dynamic-fee                = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0" }
+fc-cli                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fc-mapping-sync                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fc-db                             = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+pallet-dynamic-fee                = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 
 #pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 

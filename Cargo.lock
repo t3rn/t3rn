@@ -3267,13 +3267,11 @@ source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d
 dependencies = [
  "async-trait",
  "fp-storage",
- "kvdb-rocksdb",
  "log",
  "parity-db",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-client-db",
- "smallvec",
  "sp-blockchain",
  "sp-core",
  "sp-database",
@@ -3584,7 +3582,6 @@ name = "fp-dynamic-fee"
 version = "1.0.0"
 source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
 dependencies = [
- "async-trait",
  "sp-core",
  "sp-inherents",
 ]
