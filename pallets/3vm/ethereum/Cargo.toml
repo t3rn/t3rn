@@ -12,24 +12,24 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 environmental = { version = "1.1.4", default-features = false, optional = true }
-ethereum = { workspace = true, features = ["with-codec"] }
-ethereum-types = { workspace = true }
-evm = { workspace = true, features = ["with-codec"] }
-scale-codec = { package = "parity-scale-codec", workspace = true }
-scale-info = { workspace = true }
+ethereum = { workspace = true, features = ["with-codec"], default-features = false  }
+ethereum-types = { workspace = true, default-features = false  }
+evm = { workspace = true, features = ["with-codec"], default-features = false  }
+scale-codec = { package = "parity-scale-codec", workspace = true, default-features = false  }
+scale-info = { workspace = true, default-features = false  }
 # Substrate
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
+frame-support = { workspace = true, default-features = false  }
+frame-system = { workspace = true, default-features = false  }
+sp-io = { workspace = true, default-features = false  }
+sp-runtime = { workspace = true, default-features = false  }
+sp-std = { workspace = true, default-features = false  }
 # Frontier
-fp-consensus = { workspace = true }
+fp-consensus = { workspace = true, default-features = false }
 fp-ethereum = { default-features = false, path = "./primitives" }
-pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
-fp-rpc                       = { workspace = true }
-fp-storage                   = { workspace = true }
+fp-rpc                        = { workspace = true, default-features = false  }
 pallet-3vm-evm               = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
+pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
+fp-storage                   = { workspace = true, default-features = false  }
 
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../../runtime/mock" }
@@ -63,21 +63,20 @@ std = [
     "fp-consensus/std",
     "fp-ethereum/std",
     "fp-rpc/std",
-    "fp-self-contained/std",
-    "fp-storage/std",
     "pallet-3vm-evm/std",
     "pallet-3vm-evm-primitives/std",
+    "fp-storage/std",
     # Circuit
     "circuit-runtime-pallets/std",
 ]
 runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-    "pallet-3vm-evm/runtime-benchmarks",
+#    "pallet-3vm-evm/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-support/try-runtime",
     "frame-system/try-runtime",
-    "pallet-3vm-evm/try-runtime",
+#    "pallet-3vm-evm/try-runtime",
 ]
 forbid-evm-reentrancy = ["dep:environmental"]
