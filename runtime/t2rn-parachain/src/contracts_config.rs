@@ -273,9 +273,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
     ) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>>
     {
         match self {
-            call @ RuntimeCall::Ethereum(crate::pallet_3vm_ethereum::Call::transact { .. }) =>
+            call @ RuntimeCall::Ethereum(pallet_3vm_ethereum::Call::transact { .. }) =>
                 Some(call.dispatch(RuntimeOrigin::from(
-                    crate::pallet_3vm_ethereum::RawOrigin::EthereumTransaction(info),
+                    pallet_3vm_ethereum::RawOrigin::EthereumTransaction(info),
                 ))),
             _ => None,
         }

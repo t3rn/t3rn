@@ -530,7 +530,7 @@ impl_runtime_apis! {
                 weight_limit,
                 proof_size_base_cost,
                 config.as_ref().unwrap_or(<Runtime as pallet_3vm_evm::Config>::config()),
-            ).map_err(|err| err.into())
+            ).map_err(|err| err.error.into())
         }
 
         fn create(
@@ -602,7 +602,7 @@ impl_runtime_apis! {
                 weight_limit,
                 proof_size_base_cost,
                 config.as_ref().unwrap_or(<Runtime as pallet_3vm_evm::Config>::config()),
-            ).map_err(|err| err.into())
+            ).map_err(|err| err.error.into())
         }
 
         fn current_transaction_statuses() -> Option<Vec<fp_rpc::TransactionStatus>> {
