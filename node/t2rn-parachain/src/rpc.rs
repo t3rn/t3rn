@@ -7,6 +7,7 @@
 
 use jsonrpsee::RpcModule;
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
+pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_network::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_transaction_pool::{ChainApi, Pool};
@@ -24,7 +25,6 @@ use t2rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 use pallet_portal_rpc::{Portal, PortalApiServer};
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 
-pub use sc_rpc_api::DenyUnsafe;
 use sp_api::CallApiAt;
 
 use fc_rpc::{
@@ -70,14 +70,12 @@ pub struct FullDeps<C, P, A: ChainApi> {
 
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
-    /*
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-     */
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
@@ -171,20 +169,19 @@ where
     module.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
 
     module.merge(Web3::new(client.clone()).into_rpc())?;
-    /*
-       module.merge(
-           EthPubSub::new(
-               pool,
-               client.clone(),
-               sync,
-               subscription_task_executor,
-               overrides,
-               pubsub_notification_sinks,
-           )
-               .into_rpc(),
-       )?;
 
-    */
+    module.merge(
+       EthPubSub::new(
+           pool,
+           client.clone(),
+           sync,
+           subscription_task_executor,
+           overrides,
+           pubsub_notification_sinks,
+       )
+           .into_rpc(),
+   )?;
+
 
     Ok(module)
 }

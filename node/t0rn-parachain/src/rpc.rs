@@ -27,13 +27,12 @@ use pallet_portal_rpc::{Portal, PortalApiServer};
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 use sp_api::CallApiAt;
 
-pub use sc_rpc_api::DenyUnsafe;
-
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
     EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 
 pub fn open_frontier_backend<C>(
     client: Arc<C>,
@@ -93,14 +92,12 @@ pub struct FullDeps<C, P, A: ChainApi> {
 /// Instantiate all full RPC extensions.
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
-    /*
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-     */
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
@@ -195,20 +192,17 @@ where
     module.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
 
     module.merge(Web3::new(client.clone()).into_rpc())?;
-    /*
-       module.merge(
-           EthPubSub::new(
-               pool,
-               client.clone(),
-               sync,
-               subscription_task_executor,
-               overrides,
-               pubsub_notification_sinks,
-           )
-               .into_rpc(),
-       )?;
-
-    */
+    module.merge(
+       EthPubSub::new(
+           pool,
+           client.clone(),
+           sync,
+           subscription_task_executor,
+           overrides,
+           pubsub_notification_sinks,
+       )
+           .into_rpc(),
+    )?;
 
     Ok(module)
 }
