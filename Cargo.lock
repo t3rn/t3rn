@@ -1050,7 +1050,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1080,7 +1080,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
  "pallet-ethereum",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -1204,7 +1204,7 @@ name = "circuit-standalone-runtime"
 version = "1.81.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1230,7 +1230,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -3592,7 +3592,7 @@ version = "1.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-support",
  "num_enum",
  "parity-scale-codec",
@@ -3649,7 +3649,7 @@ version = "3.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7417,7 +7417,7 @@ dependencies = [
  "evm",
  "fp-consensus",
  "fp-ethereum 1.0.0-dev",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "fp-rpc 3.0.0-dev",
  "fp-self-contained",
  "fp-storage",
@@ -7426,7 +7426,7 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "pallet-balances",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-timestamp",
  "parity-scale-codec",
  "rlp",
@@ -7444,7 +7444,7 @@ dependencies = [
  "environmental",
  "evm",
  "fp-account 1.0.0-dev",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7494,9 +7494,9 @@ dependencies = [
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "1.81.0-rc.0"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-support",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "t3rn-primitives",
 ]
 
@@ -7504,7 +7504,7 @@ dependencies = [
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "pallet-evm-test-vector-support",
 ]
 
@@ -7512,7 +7512,7 @@ dependencies = [
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "pallet-evm-test-vector-support",
  "sp-core",
  "substrate-bn",
@@ -7523,18 +7523,18 @@ name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek 4.1.0",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-timestamp",
  "pallet-utility",
  "parity-scale-codec",
@@ -7551,14 +7551,14 @@ name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
 dependencies = [
  "ed25519-dalek 1.0.1",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "hex",
  "num",
  "pallet-evm-test-vector-support",
@@ -7568,7 +7568,7 @@ dependencies = [
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "tiny-keccak",
 ]
 
@@ -7576,7 +7576,7 @@ dependencies = [
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "pallet-evm-test-vector-support",
  "ripemd",
  "sp-io",
@@ -7587,7 +7587,7 @@ name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
 dependencies = [
  "evm",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "hex",
  "serde",
  "serde_json",
@@ -9710,10 +9710,10 @@ checksum = "31114a898e107c51bb1609ffaf55a0e011cf6a4d7f1170d0015a165082c0338b"
 name = "portal-precompile"
 version = "1.5.0-rc.0"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-support",
  "frame-system",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-portal",
  "parity-scale-codec",
  "rlp",
@@ -9732,8 +9732,8 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 name = "precompile-util"
 version = "1.81.0-rc.0"
 dependencies = [
- "fp-evm 1.79.0-rc.0",
- "pallet-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -13557,7 +13557,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "finality-grandpa",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "fp-rpc 3.0.0-dev",
  "fp-self-contained",
  "frame-benchmarking",
@@ -13591,7 +13591,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
  "pallet-ethereum",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
@@ -13740,7 +13740,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "finality-grandpa",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13769,7 +13769,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
@@ -13893,7 +13893,7 @@ name = "t2rn-parachain-runtime"
 version = "1.81.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 1.79.0-rc.0",
+ "fp-evm 1.81.0-rc.0",
  "fp-rpc 3.0.0-dev",
  "fp-self-contained",
  "frame-benchmarking",
@@ -13924,7 +13924,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
  "pallet-ethereum",
- "pallet-evm 1.79.0-rc.0",
+ "pallet-evm 1.81.0-rc.0",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
