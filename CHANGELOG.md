@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.81.0-rc.0] - 2023-12-20
+### :sparkles: New Features
+- [`ad81580`](https://github.com/t3rn/t3rn/commit/ad815805b48e95c624ce07308905ca823ed35510) - bump celestia light client to version updating weights *(PR [#1502](https://github.com/t3rn/t3rn/pull/1502) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.80.0-rc.0] - 2023-12-19
 ### :sparkles: New Features
 - [`795a5fa`](https://github.com/t3rn/t3rn/commit/795a5fab403e74ae62000b017a349e1b3d547dc7) - hook Celestia light client to t0rn & t2rn runtime  *(PR [#1501](https://github.com/t3rn/t3rn/pull/1501) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1980,3 +1985,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.78.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.77.0-rc.0...v1.78.0-rc.0
 [v1.79.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.78.0-rc.0...v1.79.0-rc.0
 [v1.80.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.79.0-rc.0...v1.80.0-rc.0
+[v1.81.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.80.0-rc.0...v1.81.0-rc.0
