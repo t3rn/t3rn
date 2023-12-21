@@ -74,7 +74,8 @@ pub fn new_partial(
         sc_transaction_pool::FullPool<Block, ParachainClient>,
         (
             /*
-            ParachainBlockImport<
+            TParachainBlockImport<
+                Block,
                 FrontierBlockImport<
                     Block,
                     Arc<ParachainClient>,

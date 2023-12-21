@@ -178,7 +178,7 @@ where
         EthFilter::new(
             client.clone(),
             frontier_backend,
-            fc_rpc::TxPool::new(client.clone(), graph.clone()),
+            graph.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,

@@ -227,7 +227,7 @@ fp-storage                        = { git = "https://github.com/paritytech/front
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 # EVM node
 fc-cli                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", features = ["rpc-binary-search-estimate"] }
+fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", features = ["txpool"] }
 fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-mapping-sync                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-db                             = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
