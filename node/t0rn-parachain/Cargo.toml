@@ -108,6 +108,7 @@ xcm                                     = { workspace = true }
 fp-rpc = { workspace = true, features = ["std"] }
 fp-consensus = { workspace = true }
 fp-storage = { workspace = true }
+fc-storage = { workspace = true }
 fc-cli = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }

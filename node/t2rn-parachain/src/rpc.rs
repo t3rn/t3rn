@@ -34,6 +34,27 @@ use fc_rpc::{
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 
+pub fn open_frontier_backend<C>(
+    client: Arc<C>,
+    config: &sc_service::Configuration,
+) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
+    where
+        C: sp_blockchain::HeaderBackend<Block>,
+{
+    let config_dir = config.base_path.config_dir(config.chain_spec.id());
+    let path = config_dir.join("frontier").join("db");
+
+    Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
+        client,
+        &fc_db::kv::DatabaseSettings {
+            source: fc_db::DatabaseSource::RocksDb {
+                path,
+                cache_size: 0,
+            },
+        },
+    )?))
+}
+
 /// Full client dependencies.
 pub struct FullDeps<C, P, A: ChainApi> {
     /// The client instance to use.

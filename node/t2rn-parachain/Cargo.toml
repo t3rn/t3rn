@@ -77,6 +77,7 @@ t3rn-types                 = { path = "../../types" }
 # EVM dependencies
 fp-rpc = { workspace = true, features = ["std"] }
 fp-consensus = { workspace = true }
+fc-storage = { workspace = true }
 fp-storage = { workspace = true }
 fc-cli = { workspace = true }
 fc-rpc = { workspace = true }

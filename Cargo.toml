@@ -222,6 +222,7 @@ fp-rpc                            = { path = "./pallets/evm/rpc", default-featur
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support", default-features = false }
 fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fc-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 # EVM node
