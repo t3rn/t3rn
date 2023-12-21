@@ -193,15 +193,15 @@ where
 
     module.merge(Web3::new(client.clone()).into_rpc())?;
     module.merge(
-       EthPubSub::new(
-           pool,
-           client.clone(),
-           sync,
-           subscription_task_executor,
-           overrides,
-           pubsub_notification_sinks,
-       )
-           .into_rpc(),
+        EthPubSub::new(
+            pool,
+            client.clone(),
+            sync,
+            subscription_task_executor,
+            overrides,
+            pubsub_notification_sinks,
+        )
+        .into_rpc(),
     )?;
 
     Ok(module)

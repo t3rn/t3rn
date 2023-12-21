@@ -2,8 +2,7 @@
 
 // std
 use cumulus_client_cli::CollatorOptions;
-use std::{sync::Arc, time::Duration};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 // Local Runtime Types
 use parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
@@ -164,7 +163,12 @@ pub fn new_partial(
         task_manager,
         transaction_pool,
         select_chain: (),
-        other: (block_import, telemetry, telemetry_worker_handle, frontier_backend),
+        other: (
+            block_import,
+            telemetry,
+            telemetry_worker_handle,
+            frontier_backend,
+        ),
     })
 }
 
@@ -199,8 +203,6 @@ async fn start_node_impl(
     )
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
-
-
 
     let force_authoring = parachain_config.force_authoring;
     let validator = parachain_config.role.is_authority();
@@ -251,7 +253,7 @@ async fn start_node_impl(
             sync_service.clone(),
             pubsub_notification_sinks.clone(),
         )
-            .for_each(|()| futures::future::ready(())),
+        .for_each(|()| futures::future::ready(())),
     );
 
     // Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
@@ -332,15 +334,11 @@ async fn start_node_impl(
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
                 forced_parent_hashes: None,
-                enable_evm_rpc: true,//additional_config.enable_evm_rpc,
+                enable_evm_rpc: true, //additional_config.enable_evm_rpc,
             };
 
-            crate::rpc::create_full(
-                deps,
-                subscription,
-                pubsub_notification_sinks.clone(),
-            )
-            .map_err(Into::into)
+            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                .map_err(Into::into)
         })
     };
 

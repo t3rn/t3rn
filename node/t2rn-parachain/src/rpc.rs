@@ -7,9 +7,9 @@
 
 use jsonrpsee::RpcModule;
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_network::NetworkService;
 use sc_network_sync::SyncingService;
+pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -38,8 +38,8 @@ pub fn open_frontier_backend<C>(
     client: Arc<C>,
     config: &sc_service::Configuration,
 ) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
-    where
-        C: sp_blockchain::HeaderBackend<Block>,
+where
+    C: sp_blockchain::HeaderBackend<Block>,
 {
     let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
@@ -192,17 +192,16 @@ where
     module.merge(Web3::new(client.clone()).into_rpc())?;
 
     module.merge(
-       EthPubSub::new(
-           pool,
-           client.clone(),
-           sync,
-           subscription_task_executor,
-           overrides,
-           pubsub_notification_sinks,
-       )
-           .into_rpc(),
-   )?;
-
+        EthPubSub::new(
+            pool,
+            client.clone(),
+            sync,
+            subscription_task_executor,
+            overrides,
+            pubsub_notification_sinks,
+        )
+        .into_rpc(),
+    )?;
 
     Ok(module)
 }
