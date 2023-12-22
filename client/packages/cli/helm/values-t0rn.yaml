@@ -37,7 +37,7 @@ jobs:
     args:
       - xcmTransfer
       - --signer
-      - "//Test"
+      - "//Circuit"
       - --type
       - "relay"
       - --endpoint
@@ -67,7 +67,7 @@ jobs:
     args:
       - xcmTransfer
       - --signer
-      - "//Test"
+      - "//Circuit"
       - --type
       - "system"
       - --endpoint
