@@ -5,19 +5,49 @@ id: intro
 
 # Getting Started
 
-t3rn is a smart contract hosting platform that allows smart contracts to perform fail-safe multichain executions.
+Welcome to t3rn, a smart contract hosting platform designed for seamless and fail-safe multichain executions. t3rn is uniquely positioned to bridge the gaps in blockchain interoperability, offering developers and users alike a flexible and efficient environment for blockchain interactions.
 
-Developers can write their smart contracts in Solidity, !ink or any language that compiles to WASM, as t3rn supports WASM and EVM.
+## Core Features of t3rn
 
-Smart contracts are stored in the open-source registry meaning they are available to everyone, so other developers can instantiate these contracts and develop on top of them.
+1. **Enhanced Security with Trustless Validation:**
+   - t3rn maintains high security and trustless validations through Rangers. These specialized participants continuously monitor connected blockchains, submitting the latest block headers to the t3rn Circuit.
+1. **Multichain Smart Contract Executions:**
+   - t3rn enables smart contracts to perform transactions across multiple blockchain networks, ensuring fail-safe operations and expanded functionality.
+1. **Support for Multiple Languages:**
+   - Developers can write smart contracts in Solidity, !ink, or any language that compiles to WASM. t3rn supports both WASM and EVM, offering versatility in development.
+1. **Open-Source Registry:**
+   - Smart contracts on t3rn are stored in an open-source registry, making them accessible for reuse and development by the broader community.
+1. **Remuneration for Creators:**
+   - Contract creators are [rewarded](about_t3rn/token-economics/tokenomics-inflation#gas-fees) each time their code is executed, receiving a share of the gas fee. This incentivizes open-source development and fosters a new paradigm of collaborative creation.
 
-Creators of contracts will be [remunerated](about_t3rn/token-economics/tokenomics-inflation#gas-fees) each time someone executes their code with a share of the gas fee, which opens up the possibilities of a new paradigm of open-source development.
+## Key Network Participants
 
-To perform multichain transactions, t3rn relies on essential network participants called [Executors](components/executor-overview), [Attesters](components/attester) and [Rangers](components/ranger).
+To facilitate its multichain transactions, t3rn relies on essential network participants:
 
+1. **Executors:**
+   - Executors play a crucial role in processing cross-chain transactions. They assess, bid on, and execute orders created by users, ensuring efficient transaction completion.
+1. **Attesters:**
+   - Attesters are responsible for verifying the correctness and completion of cross-chain transactions. They submit attestations that are crucial for the validation and finalization of transactions.
+1. **Collator:**
+   - Callators in the t3rn ecosystem are vital for facilitating cross-chain communication and transactions. They relay transaction information between chains, ensuring accurate and efficient execution of cross-chain calls.
 
-## Overview of Docs
+## Getting Started with t3rn:
 
-- [**What is t3rn**](about_t3rn/what-is-t3rn) gives you a small overview of t3rn.
-- [**Collators**](collator/intro-collator) will explain everything you need to know to run your own collator.
-- [**XBI**](xcm/xbi-overview) provide relevant information about XBI and how to use it to interact with other XBI enabled Parachains.
+1. **Collator Node Operation:**
+   - To participate in the t3rn network, you can set up and run a collator node. This involves installing the software, configuring settings, and syncing with the desired network (e.g., t2rn, t0rn, t1rn, or t3rn).
+1. **Smart Contract Development:**
+   - Develop smart contracts using Solidity or any WASM-compatible language. Deploy your contracts to t3rn’s open-source registry to make them available for multichain execution and collaboration. Learn more about the [t3rn Smart Contract Hub](https://www.notion.so/Docs-Smart-Contract-Hub-b0095284acf14a7faa6a283929b2797d?pvs=21).
+1. **Participate as an Executor or Attester:**
+   - Join the network as an Executor to process transactions or as an Attester to validate them. Engage in the ecosystem by bidding on orders, executing transactions, and submitting attestations.
+1. **Explore t3rn's Capabilities:**
+   - Dive into the world of cross-chain swaps, understand the functionalities of the Remote Order, EscrowGMP, and Attestations Verifier contracts, and explore how t3rn solves blockchain connections.
+
+## Popular 🔥
+
+- [**Brain explanation**](/brain-explanation)
+- **Run an Attester** coming soon.
+- **Run a Collator** coming soon.
+- **Run an Executor** coming soon.
+- **Run a Write** coming soon.
+- **Strategies** coming soon.
+- [**Smart Contract Hub**](t3rn_protocol_wiki/smart-contract-hub)
