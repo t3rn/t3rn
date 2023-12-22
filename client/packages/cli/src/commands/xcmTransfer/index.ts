@@ -149,7 +149,7 @@ export const handleXcmTransferCommand = async (
               signer,
         )
     }
-    await new Promise(f => setTimeout(f, 10000));
+    await new Promise(f => setTimeout(f, 10000))
     spinner.succeed(colorLogMsg('SUCCESS', `Sent XCM transfer`))
     spinner.stopAndPersist({
         symbol: '🎉',
