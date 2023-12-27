@@ -22,5 +22,5 @@ The XBI interface offers contingencies against runtime upgrades while allowing P
 XBI Metadata provides coherent controls over cross-chain execution, leaving dispatching origin in complete control over the execution costs and results format.
 
 :::info
-Since XBI's goal is to agree on a standart to be adopted from as many parachains as possible, we are more then welcome to see contrinutions on our public [repository](https://github.com/t3rn/xbi).
+Since XBI's goal is to agree on a standart to be adopted from as many parachains as possible, we are more then welcome to see contributions on our public [repository](https://github.com/t3rn/xbi).
 :::
