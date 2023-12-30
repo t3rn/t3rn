@@ -12,6 +12,7 @@ on:
       - "collator.*.Dockerfile"
       - "specs/*.raw.json"
       - ".dockerignore"
+      - "scripts/upgrade-runtime-cargo-release.sh"
 
 jobs:
   release:
