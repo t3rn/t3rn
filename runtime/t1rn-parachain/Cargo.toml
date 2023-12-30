@@ -20,8 +20,8 @@ finality-grandpa      = { version = "0.16", default-features = false, features =
 hex-literal           = { version = "0.3.4", optional = true }
 impl-trait-for-tuples = "0.2.2"
 log                   = { workspace = true }
-scale-info            = { workspace = true }
 num-traits            = { workspace = true }
+scale-info            = { workspace = true }
 serde                 = { workspace = true, optional = true, features = [ "derive" ] }
 smallvec              = { version = "1.6.1", default-features = false }
 
@@ -67,15 +67,16 @@ sp-version          = { workspace = true }
 
 # Polkadot
 pallet-xcm                 = { workspace = true }
+polkadot-core-primitives   = { workspace = true }
 polkadot-parachain         = { workspace = true }
 polkadot-runtime-common    = { workspace = true }
 polkadot-runtime-constants = { workspace = true }
-polkadot-core-primitives   = { workspace = true }
 xcm                        = { workspace = true }
 xcm-builder                = { workspace = true }
 xcm-executor               = { workspace = true }
 
 # Cumulus
+assets-common                       = { workspace = true }
 cumulus-pallet-aura-ext             = { workspace = true }
 cumulus-pallet-dmp-queue            = { workspace = true }
 cumulus-pallet-parachain-system     = { workspace = true }
@@ -88,35 +89,34 @@ cumulus-primitives-utility          = { workspace = true }
 pallet-collator-selection           = { workspace = true }
 parachain-info                      = { workspace = true }
 parachains-common                   = { workspace = true }
-assets-common                       = { workspace = true }
 
 # t3rn Deps
+t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
-t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 # t3rn pallets
-pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
-pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
-pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.4", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.10", default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
+pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
+pallet-eth2-finality-verifier    = { workspace = true, default-features = false }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
+pallet-sepolia-finality-verifier = { workspace = true, default-features = false }
+pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-pallet-maintenance-mode          = { path = "../../pallets/maintenance-mode", default-features = false }
+pallet-maintenance-mode = { path = "../../pallets/maintenance-mode", default-features = false }
 
 # Trappist
-xcm-primitives                   = { workspace = true }
-pallet-asset-registry            = { workspace = true }
-pallet-withdraw-teleport         = { workspace = true }
+pallet-asset-registry    = { workspace = true }
+pallet-withdraw-teleport = { workspace = true }
+xcm-primitives           = { workspace = true }
 
 #pallet-xbi-portal     = { workspace = true }
 
@@ -172,7 +172,7 @@ std = [
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-vacuum/std",
-#  "evm-precompile-util/std",
+  #  "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-preimage/std",
   'pallet-scheduler/std',
@@ -181,7 +181,7 @@ std = [
   "pallet-sudo/std",
   "pallet-clock/std",
   "pallet-identity/std",
-#  "pallet-xbi-portal/std",
+  #  "pallet-xbi-portal/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
@@ -227,7 +227,7 @@ std = [
   # Trappist pallets
   "xcm-primitives/std",
   "pallet-asset-registry/std",
-  "pallet-withdraw-teleport/std"
+  "pallet-withdraw-teleport/std",
 ]
 
 runtime-benchmarks = [
@@ -261,7 +261,7 @@ runtime-benchmarks = [
   "pallet-membership/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
   "pallet-scheduler/runtime-benchmarks",
-#  "pallet-xbi-portal/runtime-benchmarks",
+  #  "pallet-xbi-portal/runtime-benchmarks",
   "pallet-xdns/runtime-benchmarks",
   "polkadot-parachain/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",

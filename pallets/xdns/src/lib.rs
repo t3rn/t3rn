@@ -1066,6 +1066,9 @@ pub mod pallet {
             if <StandardSFXABIs<T>>::contains_key(*b"tran") {
                 allowed_side_effects.push((*b"tran", Some(BALANCES_INDEX)));
             }
+            if <StandardSFXABIs<T>>::contains_key(*b"tddd") {
+                allowed_side_effects.push((*b"tran", Some(ASSETS_INDEX)));
+            }
             if <StandardSFXABIs<T>>::contains_key(*b"tass") {
                 allowed_side_effects.push((*b"tran", Some(ASSETS_INDEX)));
             }
@@ -1081,8 +1084,8 @@ pub mod pallet {
                 vendor,
                 ExecutionVendor::Substrate,
                 Codec::Scale,
+                Some(admin.clone()),
                 Some(admin),
-                None,
                 allowed_side_effects,
             )?;
 
@@ -1464,8 +1467,10 @@ pub mod pallet {
                 return SecurityLvl::Escrow
             }
 
-            Self::get_escrow_account(chain_id)
-                .map_or(SecurityLvl::Escrow, |_| SecurityLvl::Optimistic)
+            match Self::get_escrow_account(chain_id) {
+                Ok(_) => SecurityLvl::Escrow,
+                Err(_) => SecurityLvl::Optimistic,
+            }
         }
 
         /// returns the gateway vendor of a gateway if its available

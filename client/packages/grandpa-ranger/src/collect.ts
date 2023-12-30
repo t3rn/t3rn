@@ -139,11 +139,11 @@ const currentGatewayHeight = async (
         },
       }
     )
-    .then((response) => {
+    .then(response => {
       if (response.data.error) throw new Error(response.data.error.message)
       return response.data.result
     })
-    .catch((error) => {
+    .catch(error => {
       throw new Error(
         `Gateway height couldnt be fetched! Err: ${error.toString()}`
       )

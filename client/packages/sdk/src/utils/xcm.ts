@@ -7,7 +7,7 @@ import type {
 } from "@polkadot/types/interfaces"
 import { u8, u32, u128 } from "@polkadot/types"
 type ORIGIN = "relay" | "para" | "system" | "t0rn"
-type ASSET = "ROC" | "USDT" | "TRN"
+type ASSET = "ROC" | "USDT" | "TRN" | "RUSD"
 
 /*
 type WeightLimit = {
@@ -92,6 +92,7 @@ export const XcmTransferParameters: ICreateXcmParameters = {
     if (
       (originType == "relay" && assetType == "ROC") ||
       (originType == "system" && assetType == "USDT") ||
+      (originType == "system" && assetType == "RUSD") ||
       (originType == "t0rn" && assetType == "TRN")
     ) {
       parentValue = api.registry.createType("u8", 0)
@@ -109,6 +110,21 @@ export const XcmTransferParameters: ICreateXcmParameters = {
               { Parachain: 1000 },
               { PalletInstance: 50 },
               { GeneralIndex: 1984 },
+            ],
+          })
+        }
+        break
+      case "RUSD":
+        if (originType == "system") {
+          assetInterior = api.registry.createType("InteriorMultiLocation", {
+            X2: [{ PalletInstance: 50 }, { GeneralIndex: 2984 }],
+          })
+        } else {
+          assetInterior = api.registry.createType("InteriorMultiLocation", {
+            X3: [
+              { Parachain: 1000 },
+              { PalletInstance: 50 },
+              { GeneralIndex: 2984 },
             ],
           })
         }

@@ -66,7 +66,7 @@ export class GrandpaRanger {
       .then(() => {
         return resolve()
       })
-      .catch((e) => {
+      .catch(e => {
         logger.error(e)
         return resolve()
       })
@@ -80,7 +80,7 @@ export class GrandpaRanger {
       this.circuit,
       this.target,
       this.config.targetGatewayId
-    ).catch((e) => {
+    ).catch(e => {
       logger.error(e)
       // potentially we want to introduce a retry logic here
       return resolve()
@@ -107,7 +107,7 @@ export class GrandpaRanger {
     )
 
     await this.submitToCircuit(batches)
-      .then((res) => {
+      .then(res => {
         logger.info(
           {
             size: totalElements,
@@ -126,7 +126,7 @@ export class GrandpaRanger {
         this.prometheus.height.set(latestHeight)
         return resolve()
       })
-      .catch((e) => {
+      .catch(e => {
         logger.error(e)
         this.prometheus.submissions.inc(
           { target: this.config.targetGatewayId, status: 'error' },
@@ -172,7 +172,7 @@ export class GrandpaRanger {
   private createTxBatch(range: any[]) {
     let tx
     tx = this.circuit.sdk?.circuit.tx.createBatch(
-      range.map((args) => {
+      range.map(args => {
         let submit
         // select the correct submit function based on the targetGatewayId
         if (this.config.targetGatewayId === 'roco') {
@@ -239,7 +239,7 @@ export class GrandpaRanger {
     while (this.schedulersEnabled) {
       await new Promise((resolve, _reject) => {
         setTimeout(() => {
-          this.submitMetrics(resolve).catch((e) => resolve)
+          this.submitMetrics(resolve).catch(e => resolve)
         }, this.config.rangeInterval * 1000)
       })
     }
