@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.81.3-rc.0] - 2023-12-30
+### :wrench: Chores
+- [`504cc38`](https://github.com/t3rn/t3rn/commit/504cc38c678147903be5e38a7075d4348c441d5b) - add t7rn release *(PR [#1509](https://github.com/t3rn/t3rn/pull/1509) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.81.2-rc.0] - 2023-12-30
 ### :wrench: Chores
 - [`6f66fa3`](https://github.com/t3rn/t3rn/commit/6f66fa3aa745b14029867a7c7d27faefbf0dcf04) - uncomment version checking *(PR [#1484](https://github.com/t3rn/t3rn/pull/1484) by [@3h4x](https://github.com/3h4x))*
@@ -1999,3 +2004,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.81.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.80.0-rc.0...v1.81.0-rc.0
 [v1.81.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.0-rc.0...v1.81.1-rc.0
 [v1.81.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.1-rc.0...v1.81.2-rc.0
+[v1.81.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.2-rc.0...v1.81.3-rc.0
