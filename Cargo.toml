@@ -272,8 +272,6 @@ members = [
   "types/abi",
 ]
 
-#[patch."https://github.com/paritytech/cumulus"]
-
 #[patch."https://github.com/t3rn/xbi"]
 #pallet-asset-registry = { path = "../xbi/pallets/asset-registry" }
 #pallet-xbi-portal     = { path = "../xbi/pallets/portal" }
