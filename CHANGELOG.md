@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.81.2-rc.0] - 2023-12-30
+### :wrench: Chores
+- [`6f66fa3`](https://github.com/t3rn/t3rn/commit/6f66fa3aa745b14029867a7c7d27faefbf0dcf04) - uncomment version checking *(PR [#1484](https://github.com/t3rn/t3rn/pull/1484) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.81.1-rc.0] - 2023-12-30
 ### :bug: Bug Fixes
 - [`aff2e85`](https://github.com/t3rn/t3rn/commit/aff2e858258dd470462aeb78a54b6e41a1301fba) - removed automated USDT XCM transfers and updated yaml formatting *(PR [#1485](https://github.com/t3rn/t3rn/pull/1485) by [@chexware](https://github.com/chexware))*
@@ -1993,3 +1998,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.80.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.79.0-rc.0...v1.80.0-rc.0
 [v1.81.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.80.0-rc.0...v1.81.0-rc.0
 [v1.81.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.0-rc.0...v1.81.1-rc.0
+[v1.81.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.1-rc.0...v1.81.2-rc.0
