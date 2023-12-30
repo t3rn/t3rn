@@ -162,10 +162,10 @@ pallet-collator-selection           = { git = 'https://github.com/paritytech/cum
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
-## TODO: t3rn dependencies
-pallet-celestia-light-client     = { git = "https://github.com/t3rn/celestia-light-client", tag = "celestia-v1.0.2", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.6", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.12", default-features = false }
+### TODO: t3rn dependencies
+#pallet-celestia-light-client     = { git = "https://github.com/t3rn/celestia-light-client", tag = "celestia-v1.0.2", default-features = false }
+#pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.6", default-features = false }
+#pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.12", default-features = false }
 
 #pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
@@ -230,44 +230,11 @@ exclude = [ "vendor" ]
 # Example: https://github.com/t3rn/t3rn/network/updates/651720180
 # updater | 2023/04/25 09:27:23 ERROR <job_651720180> error: failed to load manifest for workspace member `/home/dependabot/dependabot-updater/dependabot_tmp_dir/pallets/contracts-registry/rpc`
 members = [
-  "finality-verifiers/grandpa",
-  "node/standalone",
-  "node/t0rn-parachain",
-  "node/t1rn-parachain",
-  "node/t2rn-parachain",
-  "node/t3rn-parachain",
   "node/t7rn-parachain",
-  "pallets/3vm",
-  "pallets/account-manager",
-  "pallets/circuit",
-  "pallets/clock",
-  "pallets/contracts",
-  "pallets/contracts-registry",
-  "pallets/contracts-registry/rpc",
-  "pallets/contracts-registry/rpc/runtime-api",
-  "pallets/evm",
-  "pallets/3vm/account-mapping",
-  "pallets/evm/precompile/3vm-dispatch",
-  "pallets/evm/precompile/util",
-  "pallets/portal",
-  "pallets/portal/rpc",
-  "pallets/portal/rpc/runtime-api",
-  "pallets/xdns",
-  "pallets/maintenance-mode",
-  "pallets/xdns/rpc",
-  "pallets/xdns/rpc/runtime-api",
-  "primitives",
-  "runtime/common-pallets",
-  "runtime/common-types",
-  "runtime/mock",
-  "runtime/standalone",
-  "runtime/t0rn-parachain",
-  "runtime/t1rn-parachain",
-  "runtime/t2rn-parachain",
-  "runtime/t3rn-parachain",
   "runtime/t7rn-parachain",
   "sdk/crates/primitives",
   "sdk/crates/sdk",
+  "primitives",
   "types",
   "types/abi",
 ]
@@ -282,8 +249,3 @@ members = [
 #xp-format             = { path = "../xbi/crates/format" }
 #xp-xcm                = { path = "../xbi/crates/xcm-primitives" }
 #xs-channel            = { path = "../xbi/crates/channel" }
-
-[patch."https://github.com/t3rn/t3rn"]
-fp-evm                      = { path = "./pallets/evm/primitives" }
-pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
-t3rn-primitives             = { path = "./primitives" }
