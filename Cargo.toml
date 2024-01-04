@@ -215,9 +215,9 @@ jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 
 t3rn-sdk-primitives = { path = "sdk/crates/primitives", default-features = false }
 
-fp-account                     = { path = "./pallets/evm/account" }
-fp-evm                         = { path = "./pallets/evm/primitives" }
-pallet-evm-test-vector-support = { path = "./pallets/evm/test-vector-support" }
+#fp-account                     = { path = "./pallets/evm/account" }
+#fp-evm                         = { path = "./pallets/evm/primitives" }
+#pallet-evm-test-vector-support = { path = "./pallets/evm/test-vector-support" }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0.2.8", features = [ "js" ] }
@@ -230,41 +230,9 @@ exclude = [ "vendor" ]
 # Example: https://github.com/t3rn/t3rn/network/updates/651720180
 # updater | 2023/04/25 09:27:23 ERROR <job_651720180> error: failed to load manifest for workspace member `/home/dependabot/dependabot-updater/dependabot_tmp_dir/pallets/contracts-registry/rpc`
 members = [
-  "finality-verifiers/grandpa",
-  "node/standalone",
-  "node/t0rn-parachain",
-  "node/t1rn-parachain",
-  "node/t2rn-parachain",
-  "node/t3rn-parachain",
   "node/t7rn-parachain",
-  "pallets/3vm",
-  "pallets/account-manager",
-  "pallets/circuit",
-  "pallets/clock",
-  "pallets/contracts",
-  "pallets/contracts-registry",
-  "pallets/contracts-registry/rpc",
-  "pallets/contracts-registry/rpc/runtime-api",
-  "pallets/evm",
-  "pallets/3vm/account-mapping",
-  "pallets/evm/precompile/3vm-dispatch",
-  "pallets/evm/precompile/util",
-  "pallets/portal",
-  "pallets/portal/rpc",
-  "pallets/portal/rpc/runtime-api",
-  "pallets/xdns",
-  "pallets/maintenance-mode",
-  "pallets/xdns/rpc",
-  "pallets/xdns/rpc/runtime-api",
   "primitives",
-  "runtime/common-pallets",
   "runtime/common-types",
-  "runtime/mock",
-  "runtime/standalone",
-  "runtime/t0rn-parachain",
-  "runtime/t1rn-parachain",
-  "runtime/t2rn-parachain",
-  "runtime/t3rn-parachain",
   "runtime/t7rn-parachain",
   "sdk/crates/primitives",
   "sdk/crates/sdk",
@@ -281,7 +249,7 @@ members = [
 #xp-xcm                = { path = "../xbi/crates/xcm-primitives" }
 #xs-channel            = { path = "../xbi/crates/channel" }
 
-[patch."https://github.com/t3rn/t3rn"]
-fp-evm                      = { path = "./pallets/evm/primitives" }
-pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
-t3rn-primitives             = { path = "./primitives" }
+#[patch."https://github.com/t3rn/t3rn"]
+#fp-evm                      = { path = "./pallets/evm/primitives" }
+#pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
+#t3rn-primitives             = { path = "./primitives" }
