@@ -48,8 +48,8 @@ use sp_std::{convert::TryInto, prelude::*};
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
-    spec_name: create_runtime_str!("t3rn"),
-    impl_name: create_runtime_str!("t3rn Circuit Collator"),
+    spec_name: create_runtime_str!("t1rn"),
+    impl_name: create_runtime_str!("t1rn Circuit Collator"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 1,
