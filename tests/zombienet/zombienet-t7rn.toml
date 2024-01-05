@@ -11,14 +11,14 @@ count = 1
 name  = "bob"
 
 [[parachains]]
-chain         = "local"
+chain         = "kusama"
 cumulus_based = true
-id            = 3334
+id            = 3343
 
 [parachains.collator]
-command  = "t1rn-collator"
-name     = "collator"
-ws_port  = 9944
+command  = "t7rn-collator"
+name     = "t7rn-collator-a"
+ws_port  = 9955
 
 [types.Header]
 number = "u64"

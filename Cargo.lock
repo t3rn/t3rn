@@ -13930,7 +13930,7 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-runtime"
-version = "1.81.3-rc.0"
+version = "1.81.4-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
