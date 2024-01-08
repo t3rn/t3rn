@@ -37,7 +37,7 @@ pub mod pallet {
     };
 
     use sp_runtime::{
-        traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
+        traits::{CheckedAdd, CheckedDiv, CheckedMul, Hash, Saturating, Zero},
         Percent,
     };
     use sp_std::{convert::TryInto, prelude::*};
@@ -218,6 +218,8 @@ pub mod pallet {
         pub hash: H256,
         // Executor on target
         pub executor_on_target: H160,
+        // Attesting commitee
+        pub attesting_committee: H256,
     }
 
     #[pallet::config]
@@ -806,9 +808,6 @@ pub mod pallet {
             let vendor = <T as Config>::Xdns::get_verification_vendor(&target)
                 .map_err(|_| Error::<T>::XdnsTargetNotActive)?;
 
-            // TODO: Generalize attesters to work with multiple ExecutionVendor architecture.
-            //  For now, assume Ethereum.
-            //  let _target_verification_vendor = T::Xdns::get_verification_vendor(&target)?;
             let is_verified = attester
                 .verify_attestation_signature(
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -905,6 +904,7 @@ pub mod pallet {
             let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
                 BeneficiaryOnTarget:Account20,\
+                AttestingCommittee:H256,\
             )"
             .to_vec();
 
@@ -944,6 +944,17 @@ pub mod pallet {
 
             let batches = Self::get_batches_to_commit(target);
 
+            let committee_to_penalize = match on_target_batch_event.attesting_committee.0.as_slice()
+                == <T as frame_system::Config>::Hashing::hash(
+                    &mut &PreviousCommittee::<T>::get().encode()[..],
+                )
+                .encode()
+                .as_slice()
+            {
+                true => PreviousCommittee::<T>::get(),
+                false => CurrentCommittee::<T>::get(),
+            };
+
             let batch = match batches
                 .iter()
                 .find(|batch| batch.message_hash() == recovered_enacted_batch_hash)
@@ -955,8 +966,7 @@ pub mod pallet {
                     log::error!(
                         "CollusionWithPermanentSlashDetected detected on target: {target:?} for message hash {recovered_enacted_batch_hash:?}"
                     );
-                    // fixme: must synchronize remote block height and local block height and fetch committee responsible for attesting false batch.
-                    Self::apply_permanent_attesters_slash(CurrentCommittee::<T>::get());
+                    Self::apply_permanent_attesters_slash(committee_to_penalize);
 
                     Self::deposit_event(Event::CollusionWithPermanentSlashDetected(
                         target,
@@ -4070,7 +4080,7 @@ pub mod attesters_test {
             let _committee_1_on_target =
                 NextCommitteeOnTarget::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             let batch_1_hash = batch_1.message_hash();
-            // todo: fix the randomness source on mini-mock (yields 0)
+            // Achtung: mind that randomness source on mini-mock (yields 0)
             // assert!(committee_0_on_target != committee_1_on_target);
             add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 2);
             let batch_0 =
@@ -4124,7 +4134,7 @@ pub mod attesters_test {
             assert_eq!(previous_committee, committee);
 
             let new_committee = CurrentCommittee::<MiniRuntime>::get();
-            // todo: RandomnessCollectiveFlip always returns 0000...0000 as random value
+            // Achtung: RandomnessCollectiveFlip always returns 0000...0000 as random value for tests
             // assert_ne!(new_committee, committee);
 
             // Check if the new committee is set up and has the correct size
@@ -4294,9 +4304,17 @@ pub mod attesters_test {
                 AttestersAgreements::<MiniRuntime>::get(&submitter, &target)
                     .expect("attester eth address should exist");
 
+            // Hash of the current committee
+            let mut current_committee_hash = CurrentCommittee::<MiniRuntime>::get().encode();
+            let mut hasher = Keccak::v256();
+            hasher.update(current_committee_hash.as_ref());
+            let mut res: [u8; 32] = [0; 32];
+            hasher.finalize(&mut res);
+
             let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
                 hash: first_batch_hash,
                 executor_on_target: H160::from_slice(&submitter_eth_address),
+                attesting_committee: H256::from_slice(&res),
             };
 
             let delay = System::block_number() - first_batch.available_to_commit_at;
@@ -4385,9 +4403,17 @@ pub mod attesters_test {
 
             let latest_batch_hash = first_batch.message_hash();
 
+            // Hash of the current committee
+            let mut current_committee_hash = CurrentCommittee::<MiniRuntime>::get().encode();
+            let mut hasher = Keccak::v256();
+            hasher.update(current_committee_hash.as_ref());
+            let mut res: [u8; 32] = [0; 32];
+            hasher.finalize(&mut res);
+
             let colluded_batch_confirmation = TargetBatchDispatchEvent {
                 hash: colluded_message.into(),
                 executor_on_target: H160::from([1; 20]),
+                attesting_committee: H256::from(res),
             };
 
             assert_ok!(
