@@ -62,13 +62,12 @@ pub mod pallet {
         xdns::{
             EpochEstimate, FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns,
         },
-        Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayType,
-        GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
-        XDNSTopology,
+        Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayVendor,
+        SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider, XDNSTopology,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
-    use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
+    use t3rn_types::sfx::SecurityLvl;
 
     pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
 

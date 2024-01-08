@@ -208,7 +208,7 @@ impl pallet_3vm_account_mapping::Config for Runtime {
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
         let mut address = [0u8; 20];
-        let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
+        let asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
             address[byte_index + H160_POSITION_ASSET_ID_TYPE] =

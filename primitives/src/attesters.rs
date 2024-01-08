@@ -3,8 +3,8 @@ use crate::GatewayVendor;
 use frame_support::pallet_prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_core::{ecdsa::Public, H160, H256, H512};
+use sp_application_crypto::{ed25519, sr25519, KeyTypeId, RuntimePublic};
+use sp_core::{H160, H256, H512};
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
@@ -302,7 +302,7 @@ pub fn verify_secp256k1_ecdsa_signature(
         None => return Err(libsecp256k1::Error::InvalidSignature),
     };
     let signature = Signature::from_slice(&signature[..64])
-        .map_err(|e| libsecp256k1::Error::InvalidSignature)?;
+        .map_err(|_e| libsecp256k1::Error::InvalidSignature)?;
     let recovered_pk: PublicKey =
         match VerifyingKey::recover_from_prehash(&message[..], &signature, recovery_id) {
             Ok(verification_key) => verification_key.into(),

@@ -4309,7 +4309,7 @@ pub mod attesters_test {
                     .expect("attester eth address should exist");
 
             // Hash of the current committee
-            let mut current_committee_hash = CurrentCommittee::<MiniRuntime>::get().encode();
+            let current_committee_hash = CurrentCommittee::<MiniRuntime>::get().encode();
             let mut hasher = Keccak::v256();
             hasher.update(current_committee_hash.as_ref());
             let mut res: [u8; 32] = [0; 32];
@@ -4408,7 +4408,7 @@ pub mod attesters_test {
             let latest_batch_hash = first_batch.message_hash();
 
             // Hash of the current committee
-            let mut current_committee_hash = CurrentCommittee::<MiniRuntime>::get().encode();
+            let current_committee_hash = CurrentCommittee::<MiniRuntime>::get().encode();
             let mut hasher = Keccak::v256();
             hasher.update(current_committee_hash.as_ref());
             let mut res: [u8; 32] = [0; 32];
