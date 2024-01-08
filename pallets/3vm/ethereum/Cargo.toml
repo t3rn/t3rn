@@ -26,7 +26,7 @@ sp-std = { workspace = true, default-features = false  }
 # Frontier
 fp-consensus = { workspace = true, default-features = false }
 fp-ethereum = { default-features = false, path = "./primitives" }
-fp-rpc                        = { workspace = true, default-features = false  }
+fp-rpc                       = { workspace = true }
 pallet-3vm-evm               = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
 fp-storage                   = { workspace = true, default-features = false  }

@@ -206,6 +206,7 @@ substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrat
 substrate-wasm-builder         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
+
 # Trappist dependencies
 pallet-asset-registry    = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
 pallet-withdraw-teleport = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
@@ -219,21 +220,34 @@ t3rn-sdk-primitives = { path = "sdk/crates/primitives", default-features = false
 fp-evm                            = { path = "./pallets/evm/primitives", default-features = false }
 fp-account                        = { path = "./pallets/evm/account", default-features = false }
 fp-rpc                            = { path = "./pallets/evm/rpc", default-features = false }
+fc-rpc                            = { path = "./pallets/evm/rpc-client", features = ["default"] }
+fc-storage                        = { path = "./pallets/evm/client/storage", default-features = false }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support", default-features = false }
 fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-fc-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+# fc-storage                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 # EVM node
 fc-cli                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", features = ["txpool"] }
+#fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-mapping-sync                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-db                             = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 pallet-dynamic-fee                = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-
 #pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+
+# fc-rpc dependencies
+futures                         = { version = "0.3.28" }
+thiserror                       = { version = "1.0" }
+tokio                           = { version = "1.29.1" }
+substrate-test-runtime-client   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+prometheus-endpoint             = { package = "substrate-prometheus-endpoint", version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-utils                        = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-block-builder                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+sc-client-db                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
+sp-storage                      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0.2.10", features = [ "js" ] }
@@ -265,7 +279,8 @@ members = [
   "pallets/contracts-registry/rpc",
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
-  "pallets/3vm/ethereum",
+  "pallets/evm/rpc",
+  "pallets/evm/rpc-client",
   "pallets/3vm/account-mapping",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
@@ -304,6 +319,8 @@ members = [
 #xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
+fc-rpc                      = { path = "./pallets/evm/rpc-client" }
+fp-rpc                      = { path = "./pallets/evm/rpc" }
 fp-evm                      = { path = "./pallets/evm/primitives" }
 fp-ethereum                 = { path = "./pallets/3vm/ethereum/primitives" }
 pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }

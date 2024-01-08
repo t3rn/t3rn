@@ -1080,7 +1080,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
  "pallet-ethereum",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -1230,7 +1230,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -3286,7 +3286,7 @@ version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
 dependencies = [
  "fc-db",
- "fc-storage",
+ "fc-storage 1.0.0-dev",
  "fp-consensus",
  "fp-rpc 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
  "futures",
@@ -3303,8 +3303,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc"
-version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+version = "1.81.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3312,22 +3311,24 @@ dependencies = [
  "fc-db",
  "fc-mapping-sync",
  "fc-rpc-core",
- "fc-storage",
- "fp-ethereum 1.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
- "fp-evm 3.0.0-dev",
- "fp-rpc 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
+ "fc-storage 1.81.0-rc.0",
+ "fp-ethereum",
+ "fp-evm 1.81.0-rc.0",
+ "fp-rpc 3.0.0-dev",
  "fp-storage",
  "futures",
  "hex",
  "jsonrpsee",
  "libsecp256k1",
  "log",
- "pallet-evm 6.0.0-dev",
+ "pallet-evm",
  "parity-scale-codec",
  "prometheus",
  "rand 0.8.5",
  "rlp",
+ "sc-block-builder",
  "sc-client-api",
+ "sc-client-db",
  "sc-consensus-aura",
  "sc-network",
  "sc-network-common",
@@ -3338,7 +3339,6 @@ dependencies = [
  "sc-transaction-pool-api",
  "sc-utils",
  "schnellru",
- "serde",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -3352,6 +3352,8 @@ dependencies = [
  "sp-storage",
  "sp-timestamp",
  "substrate-prometheus-endpoint",
+ "substrate-test-runtime-client",
+ "tempfile",
  "thiserror",
  "tokio",
 ]
@@ -3377,6 +3379,23 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "fp-rpc 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
+ "fp-storage",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-io",
+ "sp-runtime",
+ "sp-storage",
+]
+
+[[package]]
+name = "fc-storage"
+version = "1.81.0-rc.0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-rpc 3.0.0-dev",
  "fp-storage",
  "parity-scale-codec",
  "sc-client-api",
@@ -3549,25 +3568,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fp-account"
-version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
-dependencies = [
- "hex",
- "impl-serde 0.4.0",
- "libsecp256k1",
- "log",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-runtime-interface",
- "sp-std 8.0.0",
-]
-
-[[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
@@ -3595,20 +3595,6 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "fp-evm 1.81.0-rc.0",
- "frame-support",
- "num_enum",
- "parity-scale-codec",
- "sp-std 8.0.0",
-]
-
-[[package]]
-name = "fp-ethereum"
-version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "fp-evm 3.0.0-dev",
  "frame-support",
  "num_enum",
  "parity-scale-codec",
@@ -7418,7 +7404,7 @@ dependencies = [
  "ethereum-types",
  "evm",
  "fp-consensus",
- "fp-ethereum 1.0.0-dev",
+ "fp-ethereum",
  "fp-evm 1.81.0-rc.0",
  "fp-rpc 3.0.0-dev",
  "fp-self-contained",
@@ -7428,7 +7414,7 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "pallet-balances",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
  "rlp",
@@ -7445,7 +7431,7 @@ version = "1.81.0-rc.0"
 dependencies = [
  "environmental",
  "evm",
- "fp-account 1.0.0-dev",
+ "fp-account",
  "fp-evm 1.81.0-rc.0",
  "frame-benchmarking",
  "frame-support",
@@ -7468,37 +7454,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-evm"
-version = "6.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
-dependencies = [
- "environmental",
- "evm",
- "fp-account 1.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
- "fp-evm 3.0.0-dev",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "hex-literal 0.4.1",
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec",
- "rlp",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 8.0.0",
-]
-
-[[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "1.81.0-rc.0"
 dependencies = [
  "fp-evm 1.81.0-rc.0",
  "frame-support",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "t3rn-primitives",
 ]
 
@@ -7536,7 +7497,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-timestamp",
  "pallet-utility",
  "parity-scale-codec",
@@ -9715,7 +9676,7 @@ dependencies = [
  "fp-evm 1.81.0-rc.0",
  "frame-support",
  "frame-system",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-portal",
  "parity-scale-codec",
  "rlp",
@@ -9735,7 +9696,7 @@ name = "precompile-util"
 version = "1.81.0-rc.0"
 dependencies = [
  "fp-evm 1.81.0-rc.0",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -13367,6 +13328,90 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-test-client"
+version = "2.0.1"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "array-bytes",
+ "async-trait",
+ "futures",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-client-db",
+ "sc-consensus",
+ "sc-executor",
+ "sc-offchain",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-keyring",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-state-machine",
+]
+
+[[package]]
+name = "substrate-test-runtime"
+version = "2.0.0"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "array-bytes",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "log",
+ "pallet-babe",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "sc-service",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-consensus-babe",
+ "sp-consensus-grandpa",
+ "sp-core",
+ "sp-externalities",
+ "sp-inherents",
+ "sp-io",
+ "sp-keyring",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-state-machine",
+ "sp-std 8.0.0",
+ "sp-transaction-pool",
+ "sp-trie",
+ "sp-version",
+ "substrate-wasm-builder",
+ "trie-db",
+]
+
+[[package]]
+name = "substrate-test-runtime-client"
+version = "2.0.0"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
+dependencies = [
+ "futures",
+ "sc-block-builder",
+ "sc-client-api",
+ "sc-consensus",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-runtime",
+ "substrate-test-client",
+ "substrate-test-runtime",
+]
+
+[[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#948fbd2fd1233dc26dbb9f9bbc1d2cca2c03945d"
@@ -13477,7 +13522,7 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
- "fc-storage",
+ "fc-storage 1.81.0-rc.0",
  "fp-consensus",
  "fp-rpc 3.0.0-dev",
  "fp-storage",
@@ -13594,7 +13639,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
  "pallet-ethereum",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
@@ -13772,7 +13817,7 @@ dependencies = [
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
@@ -13838,7 +13883,7 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
- "fc-storage",
+ "fc-storage 1.81.0-rc.0",
  "fp-consensus",
  "fp-rpc 3.0.0-dev",
  "fp-storage",
@@ -13929,7 +13974,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
  "pallet-ethereum",
- "pallet-evm 1.81.0-rc.0",
+ "pallet-evm",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",

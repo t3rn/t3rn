@@ -105,7 +105,7 @@ cumulus-relay-chain-rpc-interface       = { git = 'https://github.com/paritytech
 xcm                                     = { workspace = true }
 
 # EVM dependencies
-fp-rpc = { workspace = true, features = ["std"] }
+fp-rpc = { workspace = true }
 fp-consensus = { workspace = true }
 fp-storage = { workspace = true }
 fc-storage = { workspace = true }
