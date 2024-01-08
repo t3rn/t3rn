@@ -348,6 +348,4 @@ pub trait Xdns<T: frame_system::Config, Balance> {
         max_acceptable_heartbeat_offset: BlockNumberFor<T>,
         security_lvl: &SecurityLvl,
     ) -> Result<LightClientHeartbeat<T>, DispatchError>;
-
-    fn estimate_costs(fsx: &Vec<FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>>);
 }
