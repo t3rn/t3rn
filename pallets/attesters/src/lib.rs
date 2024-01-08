@@ -20,6 +20,7 @@ pub mod pallet {
 
     use super::*;
     t3rn_primitives::reexport_currency_types!();
+    use t3rn_primitives::ExecutionSource;
     use tiny_keccak::{Hasher, Keccak};
 
     use codec::{Decode, Encode};
@@ -898,8 +899,11 @@ pub mod pallet {
             #[cfg(not(feature = "test-skip-verification"))]
             let target_codec = T::Xdns::get_target_codec(&target)?;
 
-            // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
-            let _target_escrow_address = T::Xdns::get_escrow_account(&target)?;
+            let target_escrow_address = T::Xdns::get_escrow_account(&target)?;
+
+            let escrow_address_generalized: ExecutionSource =
+                ExecutionSource::decode(&mut &target_escrow_address[..])
+                    .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered)?;
 
             let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
@@ -912,9 +916,9 @@ pub mod pallet {
             let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
                 target,
                 SpeedMode::Finalized,
-                None,
+                Some(escrow_address_generalized),
                 target_inclusion_proof_encoded,
-            )?; // Todo: add escrow address
+            )?;
             #[cfg(feature = "test-skip-verification")]
             let escrow_inclusion_receipt = InclusionReceipt::<BlockNumberFor<T>> {
                 height: Zero::zero(),
