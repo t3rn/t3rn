@@ -791,10 +791,18 @@ pub mod pallet {
                         Ok(new_fsx) => Ok(PrecompileResult::TryUpdateFSX(new_fsx)),
                     }
                 },
-                |_status_change, _local_ctx| {
+                |_status_change, local_ctx| {
                     // Emit: From Circuit events
-                    // ToDo: impl FSX convert to SFX
-                    // Self::emit_sfx(local_ctx.xtx_id, &requester, &local_ctx.full_side_effects.into());
+                    let sfx_vec: Vec<SideEffect<T::AccountId, BalanceOf<T>>> = local_ctx
+                        .full_side_effects
+                        .iter()
+                        .flatten()
+                        .map(|fsx| Ok(fsx.input.clone()))
+                        .collect::<Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, Error<T>>>(
+                        )?;
+
+                    Self::emit_sfx(local_ctx.xtx_id, &requester, &sfx_vec);
+
                     Ok(())
                 },
             )?;
@@ -830,13 +838,12 @@ pub mod pallet {
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_xcm_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // ToDo: Check TriggerAuthRights for local triggers
-            unimplemented!();
+            Err(Error::<T>::NotImplemented.into())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_remote_gateway_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            unimplemented!();
+            Err(Error::<T>::NotImplemented.into())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
@@ -1099,8 +1106,6 @@ pub mod pallet {
                         || status_change.1 == CircuitStatus::Committed
                     {
                         Self::request_sfx_attestation(local_ctx);
-                        // ToDo: uncomment when price + costs estimates are implemented
-                        // T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
                     }
                     // Emit: From Circuit events
                     Self::emit_status_update(
@@ -1188,7 +1193,6 @@ pub mod pallet {
             Vec<SideEffectId<T>>,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
-        // ToDo: Implement Xtx timeout!
         CancelledSideEffects(
             <T as frame_system::Config>::AccountId,
             XtxId<T>,
@@ -1208,7 +1212,6 @@ pub mod pallet {
             >,
         ),
         EscrowTransfer(
-            // ToDo: Inspect if Xtx needs to be here and how to process from protocol
             T::AccountId, // from
             T::AccountId, // to
             BalanceOf<T>, // value
@@ -1306,6 +1309,7 @@ pub mod pallet {
         SideEffectsValidationFailedAgainstABI,
         XtxChargeFailedOnEscrowFee,
         FailedToPerformDynamicDestinationDealHotSwap,
+        NotImplemented,
     }
 }
 
@@ -1333,7 +1337,6 @@ impl<T: Config> Pallet<T> {
             Self::deposit_event(Event::NewSideEffectsAvailable(
                 subjected_account.clone(),
                 xtx_id,
-                // ToDo: Emit circuit outbound messages -> side effects
                 side_effects.to_vec(),
                 side_effects
                     .iter()
@@ -1343,7 +1346,6 @@ impl<T: Config> Pallet<T> {
                     })
                     .collect::<Vec<SideEffectId<T>>>(),
             ));
-            // ToDo remove this
             Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id));
         }
     }
@@ -1443,11 +1445,8 @@ impl<T: Config> Pallet<T> {
     ) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
         match role {
             CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
-            // ToDo: Handle active Relayer authorisation
             CircuitRole::Relayer => ensure_signed(origin),
-            // ToDo: Handle bonded Executor authorisation
             CircuitRole::Executor => ensure_signed(origin),
-            // ToDo: Handle other CircuitRoles
             _ => return Err(sp_runtime::traits::BadOrigin.into()),
         }
     }
@@ -1465,7 +1464,7 @@ impl<T: Config> Pallet<T> {
             >,
         > = vec![];
 
-        // ToDo: Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
+        // Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
         if side_effects.is_empty() {
             local_ctx.full_side_effects = vec![vec![]];
             return Ok(())
@@ -1486,29 +1485,15 @@ impl<T: Config> Pallet<T> {
             let gateway_max_security_lvl =
                 <T as Config>::Xdns::get_gateway_max_security_lvl(&sfx.target);
 
-            let security_lvl =
-                // if side_effects.len() < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
-                //     SecurityLvl::Optimistic
-                // } else {
-                    gateway_max_security_lvl;
-            // };
-
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
                 None => return Err(Error::<T>::ABIOnSelectedTargetNotFoundForSubmittedSFX),
             };
-            // todo: store the codec info in gateway's records and use it here
+
             sfx.validate(sfx_abi, &Codec::Scale).map_err(|e| {
                 log::error!("sfx.validate against ABI failed: {:?}", e);
                 Error::<T>::SideEffectsValidationFailedAgainstABI
             })?;
-
-            // if let Some(next) = side_effects.get(index + 1) {
-            //     if sfx.reward_asset_id != next.reward_asset_id {
-            //         // ToDo: Allow for remote orders
-            //         return Err(Error::<T>::ForNowOnlySingleRewardAssetSupportedForMultiSFX)
-            //     }
-            // }
 
             let submission_target_height = match T::Portal::get_finalized_height(sfx.target)
                 .map_err(|_| Error::<T>::TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight)?
@@ -1521,7 +1506,7 @@ impl<T: Config> Pallet<T> {
             full_side_effects.push(FullSideEffect {
                 input: sfx.clone(),
                 confirmed: None,
-                security_lvl,
+                security_lvl: gateway_max_security_lvl,
                 submission_target_height,
                 best_bid: None,
                 index: index as u32,
@@ -1596,7 +1581,7 @@ impl<T: Config> Pallet<T> {
         let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             xtx.speed_mode,
-            None, //ToDo - load pallet index or contract address here
+            None, // Skips source checks since target account and destination are relevant from the protocol perspective
             confirmation.inclusion_data.clone(),
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
@@ -1639,8 +1624,7 @@ impl<T: Config> Pallet<T> {
         fsx.input.confirm(
             sfx_abi,
             inclusion_receipt.message,
-            // todo: store the codec info in gateway's records and use it here
-            &Codec::Scale,
+            &Codec::Scale, // Assume SCALE codec for egress args for now
             &payload_codec,
         )?;
 
@@ -1689,7 +1673,7 @@ impl<T: Config> Pallet<T> {
         true
     }
 
-    // ToDo: This should be called as a 3vm trait injection @Don
+    // ToDo: This should be called as a 3vm trait injection.
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
@@ -1748,7 +1732,7 @@ impl<T: Config> Pallet<T> {
     ) -> Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, &'static str> {
         let side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>> = side_effects
             .into_iter()
-            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .filter_map(|se| se.try_into().ok())
             .collect();
         if side_effects.is_empty() {
             Err("No side effects provided")
@@ -1799,13 +1783,11 @@ impl<T: Config> Pallet<T> {
         // Go over all unfinished Xtx to find those that timed out
         let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
             .filter(|(_xtx_id, adaptive_timeout)| {
-                // ToDo: consider filtering out by adaptive_timeout.verifier == verifier
+                // Tip: consider filtering out by adaptive_timeout.verifier == verifier
                 adaptive_timeout.estimated_height_here < n
             })
             .map(|(xtx_id, _timeout_at)| {
-                // if current_weight <= max_allowed_weight {
                 current_weight = current_weight.saturating_add(Self::process_revert_one(xtx_id).0);
-                // }
             })
             .count();
         current_weight
@@ -2091,10 +2073,9 @@ impl<T: Config> Pallet<T> {
         T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
     }
 
-    // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
     pub fn process_signal_queue(
-        _n: frame_system::pallet_prelude::BlockNumberFor<T>,
-        _interval: frame_system::pallet_prelude::BlockNumberFor<T>,
+        _n: BlockNumberFor<T>,
+        _interval: BlockNumberFor<T>,
         max_allowed_weight: Weight,
     ) -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);

@@ -12,12 +12,6 @@ use sp_runtime::{
     MultiSignature, Perbill,
 };
 
-use xcm::v3::{
-    Junction::{GeneralIndex, PalletInstance, Parachain},
-    Junctions::{X1, X3},
-    MultiLocation,
-};
-
 /// An index to a block.
 pub type BlockNumber = u32;
 

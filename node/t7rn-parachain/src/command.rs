@@ -1,10 +1,10 @@
 use std::net::SocketAddr;
 
 use cumulus_primitives_core::ParaId;
-use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+use frame_benchmarking_cli::BenchmarkCmd;
 use log::{info, warn};
 
-use parachain_runtime::{Block, MILLISECS_PER_BLOCK};
+use parachain_runtime::Block;
 
 const COLLATOR_NAME: &str = "t1rn collator";
 

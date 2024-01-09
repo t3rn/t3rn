@@ -1,5 +1,5 @@
 use crate::{recode::Recode, to_abi::Abi, to_filled_abi::FilledAbi, types::Name};
-use codec::{Decode, Encode};
+use codec::Decode;
 
 use sp_core::{H160, H256};
 use sp_runtime::DispatchError;
@@ -78,8 +78,8 @@ fn decodes_eth2_ingress_event_log_out_of_usdt_erc20_transfer() {
     );
 }
 
-use bytes::{Buf, Bytes};
-use frame_support::{ensure, log, log::error};
+use bytes::Bytes;
+use frame_support::{ensure, log};
 use rlp::{Decodable, Encodable};
 
 pub struct RecodeRlp;

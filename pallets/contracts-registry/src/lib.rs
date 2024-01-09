@@ -203,10 +203,6 @@ pub mod pallet {
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
-        // pub known_contracts: Vec<(
-        //     T::AccountId,
-        //     <T::Balances as Inspect<T::AccountId>>::Balance,
-        // )>, TODO: this genesis isnt used atm
         #[serde(skip)]
         pub _marker: PhantomData<T>,
     }
@@ -236,7 +232,6 @@ impl<T: Config> ContractsRegistryT<T, T::Currency> for Pallet<T> {
         contract_id: RegistryContractId<T>,
     ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, BlockNumberFor<T>>, Error<T>>
     {
-        //TODO[Optimisation, Cleanliness]: isn't this just contracts_registry(contract_id)?
         if !pallet::ContractsRegistry::<T>::contains_key(contract_id) {
             return Err(pallet::Error::<T>::UnknownContract)
         }
