@@ -33,51 +33,51 @@ use crate::internal_err;
 
 /// Net API implementation.
 pub struct Net<B: BlockT, C, H: ExHashT> {
-	client: Arc<C>,
-	network: Arc<NetworkService<B, H>>,
-	peer_count_as_hex: bool,
+    client: Arc<C>,
+    network: Arc<NetworkService<B, H>>,
+    peer_count_as_hex: bool,
 }
 
 impl<B: BlockT, C, H: ExHashT> Net<B, C, H> {
-	pub fn new(
-		client: Arc<C>,
-		network: Arc<NetworkService<B, H>>,
-		peer_count_as_hex: bool,
-	) -> Self {
-		Self {
-			client,
-			network,
-			peer_count_as_hex,
-		}
-	}
+    pub fn new(
+        client: Arc<C>,
+        network: Arc<NetworkService<B, H>>,
+        peer_count_as_hex: bool,
+    ) -> Self {
+        Self {
+            client,
+            network,
+            peer_count_as_hex,
+        }
+    }
 }
 
 impl<B, C, H: ExHashT> NetApiServer for Net<B, C, H>
 where
-	B: BlockT,
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + 'static,
+    B: BlockT,
+    C: ProvideRuntimeApi<B>,
+    C::Api: EthereumRuntimeRPCApi<B>,
+    C: HeaderBackend<B> + 'static,
 {
-	fn version(&self) -> RpcResult<String> {
-		let hash = self.client.info().best_hash;
-		Ok(self
-			.client
-			.runtime_api()
-			.chain_id(hash)
-			.map_err(|_| internal_err("fetch runtime chain id failed"))?
-			.to_string())
-	}
+    fn version(&self) -> RpcResult<String> {
+        let hash = self.client.info().best_hash;
+        Ok(self
+            .client
+            .runtime_api()
+            .chain_id(hash)
+            .map_err(|_| internal_err("fetch runtime chain id failed"))?
+            .to_string())
+    }
 
-	fn peer_count(&self) -> RpcResult<PeerCount> {
-		let peer_count = self.network.sync_num_connected();
-		Ok(match self.peer_count_as_hex {
-			true => PeerCount::String(format!("0x{:x}", peer_count)),
-			false => PeerCount::U32(peer_count as u32),
-		})
-	}
+    fn peer_count(&self) -> RpcResult<PeerCount> {
+        let peer_count = self.network.sync_num_connected();
+        Ok(match self.peer_count_as_hex {
+            true => PeerCount::String(format!("0x{:x}", peer_count)),
+            false => PeerCount::U32(peer_count as u32),
+        })
+    }
 
-	fn is_listening(&self) -> RpcResult<bool> {
-		Ok(true)
-	}
+    fn is_listening(&self) -> RpcResult<bool> {
+        Ok(true)
+    }
 }

@@ -13801,6 +13801,7 @@ dependencies = [
  "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-rpc-interface",
+ "cumulus-test-relay-sproof-builder",
  "fc-cli",
  "fc-consensus",
  "fc-db",
@@ -14162,6 +14163,9 @@ name = "t2rn"
 version = "1.81.0-rc.0"
 dependencies = [
  "clap",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
  "fc-cli",
  "fc-consensus",
  "fc-db",

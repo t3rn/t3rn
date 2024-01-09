@@ -26,30 +26,29 @@ use fp_ethereum::TransactionValidationError as VError;
 pub struct Geth;
 
 impl Geth {
-	pub fn pool_error(err: impl IntoPoolError) -> String {
-		// Error strings from :
-		// https://github.com/ethereum/go-ethereum/blob/794c6133efa2c7e8376d9d141c900ea541790bce/core/error.go
-		match err.into_pool_error() {
-			Ok(PError::AlreadyImported(_)) => "already known".to_string(),
-			Ok(PError::TemporarilyBanned) => "already known".into(),
-			Ok(PError::TooLowPriority { .. }) => "replacement transaction underpriced".into(),
-			Ok(PError::InvalidTransaction(inner)) => match inner {
-				InvalidTransaction::Stale => "nonce too low".into(),
-				InvalidTransaction::Payment => "insufficient funds for gas * price + value".into(),
-				InvalidTransaction::ExhaustsResources => "exceeds block gas limit".into(),
-				InvalidTransaction::Custom(inner) => match inner.into() {
-					VError::UnknownError => "unknown error".into(),
-					VError::InvalidChainId => "invalid chain id".into(),
-					VError::InvalidSignature => "invalid sender".into(),
-					VError::GasLimitTooLow => "intrinsic gas too low".into(),
-					VError::GasLimitTooHigh => "exceeds block gas limit".into(),
-					VError::MaxFeePerGasTooLow => {
-						"max priority fee per gas higher than max fee per gas".into()
-					}
-				},
-				_ => "unknown error".into(),
-			},
-			err => format!("submit transaction to pool failed: {:?}", err),
-		}
-	}
+    pub fn pool_error(err: impl IntoPoolError) -> String {
+        // Error strings from :
+        // https://github.com/ethereum/go-ethereum/blob/794c6133efa2c7e8376d9d141c900ea541790bce/core/error.go
+        match err.into_pool_error() {
+            Ok(PError::AlreadyImported(_)) => "already known".to_string(),
+            Ok(PError::TemporarilyBanned) => "already known".into(),
+            Ok(PError::TooLowPriority { .. }) => "replacement transaction underpriced".into(),
+            Ok(PError::InvalidTransaction(inner)) => match inner {
+                InvalidTransaction::Stale => "nonce too low".into(),
+                InvalidTransaction::Payment => "insufficient funds for gas * price + value".into(),
+                InvalidTransaction::ExhaustsResources => "exceeds block gas limit".into(),
+                InvalidTransaction::Custom(inner) => match inner.into() {
+                    VError::UnknownError => "unknown error".into(),
+                    VError::InvalidChainId => "invalid chain id".into(),
+                    VError::InvalidSignature => "invalid sender".into(),
+                    VError::GasLimitTooLow => "intrinsic gas too low".into(),
+                    VError::GasLimitTooHigh => "exceeds block gas limit".into(),
+                    VError::MaxFeePerGasTooLow =>
+                        "max priority fee per gas higher than max fee per gas".into(),
+                },
+                _ => "unknown error".into(),
+            },
+            err => format!("submit transaction to pool failed: {:?}", err),
+        }
+    }
 }

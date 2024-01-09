@@ -2,7 +2,7 @@
 
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
-use futures::FutureExt;
+use futures::{FutureExt, StreamExt};
 use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
@@ -13,8 +13,6 @@ use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use t2rn_parachain_runtime::{self, opaque::Block, RuntimeApi};
-use futures::StreamExt;
-
 
 // Our native executor instance.
 pub struct ExecutorDispatch;

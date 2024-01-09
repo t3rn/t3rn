@@ -34,6 +34,10 @@ use fc_rpc::{
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 
+use cumulus_primitives_core::PersistedValidationData;
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+
 pub fn open_frontier_backend<C>(
     client: Arc<C>,
     config: &sc_service::Configuration,
@@ -139,13 +143,36 @@ where
         forced_parent_hashes,
     } = deps;
 
-    module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+    module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     module.merge(Xdns::new(client.clone()).into_rpc())?;
-    module.merge(Portal::new(client).into_rpc())?;
+    module.merge(Portal::new(client.clone()).into_rpc())?;
 
     // Ethereum  modules
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
+
+    let pending_create_inherent_data_providers = move |_, _| async move {
+        let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        // Create a dummy parachain inherent data provider which is required to pass
+        // the checks by the para chain system. We use dummy values because in the 'pending context'
+        // neither do we have access to the real values nor do we need them.
+        let (relay_parent_storage_root, relay_chain_state) =
+            RelayStateSproofBuilder::default().into_state_root_and_proof();
+        let vfp = PersistedValidationData {
+            // This is a hack to make `cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases`
+            // happy. Relay parent number can't be bigger than u32::MAX.
+            relay_parent_number: u32::MAX,
+            relay_parent_storage_root,
+            ..Default::default()
+        };
+        let parachain_inherent_data = ParachainInherentData {
+            validation_data: vfp,
+            relay_chain_state,
+            downward_messages: Default::default(),
+            horizontal_messages: Default::default(),
+        };
+        Ok((timestamp, parachain_inherent_data))
+    };
 
     module.merge(
         Eth::new(
@@ -164,7 +191,7 @@ where
             // Allow 10x max allowed weight for non-transactional calls
             10,
             forced_parent_hashes,
-            Default::default(),
+            pending_create_inherent_data_providers,
             None,
         )
         .into_rpc(),

@@ -28,27 +28,27 @@ use crate::eth::{Eth, EthConfig};
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
-	B: BlockT,
-	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
+    B: BlockT,
+    A: ChainApi<Block = B>,
+    EC: EthConfig<B, C>,
 {
-	pub fn is_mining(&self) -> RpcResult<bool> {
-		Ok(self.is_authority)
-	}
+    pub fn is_mining(&self) -> RpcResult<bool> {
+        Ok(self.is_authority)
+    }
 
-	pub fn hashrate(&self) -> RpcResult<U256> {
-		Ok(U256::zero())
-	}
+    pub fn hashrate(&self) -> RpcResult<U256> {
+        Ok(U256::zero())
+    }
 
-	pub fn work(&self) -> RpcResult<Work> {
-		Ok(Work::default())
-	}
+    pub fn work(&self) -> RpcResult<Work> {
+        Ok(Work::default())
+    }
 
-	pub fn submit_hashrate(&self, _: U256, _: H256) -> RpcResult<bool> {
-		Ok(false)
-	}
+    pub fn submit_hashrate(&self, _: U256, _: H256) -> RpcResult<bool> {
+        Ok(false)
+    }
 
-	pub fn submit_work(&self, _: H64, _: H256, _: H256) -> RpcResult<bool> {
-		Ok(false)
-	}
+    pub fn submit_work(&self, _: H64, _: H256, _: H256) -> RpcResult<bool> {
+        Ok(false)
+    }
 }

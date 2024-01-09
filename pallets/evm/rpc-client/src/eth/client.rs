@@ -30,81 +30,81 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{Eth, EthConfig},
-	internal_err,
+    eth::{Eth, EthConfig},
+    internal_err,
 };
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
-	B: BlockT,
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
-	BE: Backend<B>,
-	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
+    B: BlockT,
+    C: ProvideRuntimeApi<B>,
+    C::Api: EthereumRuntimeRPCApi<B>,
+    C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+    BE: Backend<B>,
+    A: ChainApi<Block = B>,
+    EC: EthConfig<B, C>,
 {
-	pub fn protocol_version(&self) -> RpcResult<u64> {
-		Ok(1)
-	}
+    pub fn protocol_version(&self) -> RpcResult<u64> {
+        Ok(1)
+    }
 
-	pub fn syncing(&self) -> RpcResult<SyncStatus> {
-		if self.sync.is_major_syncing() {
-			let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
-				self.client.info().best_number,
-			));
-			Ok(SyncStatus::Info(SyncInfo {
-				starting_block: U256::zero(),
-				current_block: block_number,
-				// TODO `highest_block` is not correct, should load `best_seen_block` from NetworkWorker,
-				// but afaik that is not currently possible in Substrate:
-				// https://github.com/paritytech/substrate/issues/7311
-				highest_block: block_number,
-				warp_chunks_amount: None,
-				warp_chunks_processed: None,
-			}))
-		} else {
-			Ok(SyncStatus::None)
-		}
-	}
+    pub fn syncing(&self) -> RpcResult<SyncStatus> {
+        if self.sync.is_major_syncing() {
+            let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+                self.client.info().best_number,
+            ));
+            Ok(SyncStatus::Info(SyncInfo {
+                starting_block: U256::zero(),
+                current_block: block_number,
+                // TODO `highest_block` is not correct, should load `best_seen_block` from NetworkWorker,
+                // but afaik that is not currently possible in Substrate:
+                // https://github.com/paritytech/substrate/issues/7311
+                highest_block: block_number,
+                warp_chunks_amount: None,
+                warp_chunks_processed: None,
+            }))
+        } else {
+            Ok(SyncStatus::None)
+        }
+    }
 
-	pub fn author(&self) -> RpcResult<H160> {
-		let hash = self.client.info().best_hash;
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
+    pub fn author(&self) -> RpcResult<H160> {
+        let hash = self.client.info().best_hash;
+        let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
 
-		Ok(self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback)
-			.current_block(hash)
-			.ok_or_else(|| internal_err("fetching author through override failed"))?
-			.header
-			.beneficiary)
-	}
+        Ok(self
+            .overrides
+            .schemas
+            .get(&schema)
+            .unwrap_or(&self.overrides.fallback)
+            .current_block(hash)
+            .ok_or_else(|| internal_err("fetching author through override failed"))?
+            .header
+            .beneficiary)
+    }
 
-	pub fn accounts(&self) -> RpcResult<Vec<H160>> {
-		let mut accounts = Vec::new();
-		for signer in &*self.signers {
-			accounts.append(&mut signer.accounts());
-		}
-		Ok(accounts)
-	}
+    pub fn accounts(&self) -> RpcResult<Vec<H160>> {
+        let mut accounts = Vec::new();
+        for signer in &*self.signers {
+            accounts.append(&mut signer.accounts());
+        }
+        Ok(accounts)
+    }
 
-	pub fn block_number(&self) -> RpcResult<U256> {
-		Ok(U256::from(
-			UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number),
-		))
-	}
+    pub fn block_number(&self) -> RpcResult<U256> {
+        Ok(U256::from(
+            UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number),
+        ))
+    }
 
-	pub fn chain_id(&self) -> RpcResult<Option<U64>> {
-		let hash = self.client.info().best_hash;
-		Ok(Some(
-			self.client
-				.runtime_api()
-				.chain_id(hash)
-				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-				.into(),
-		))
-	}
+    pub fn chain_id(&self) -> RpcResult<Option<U64>> {
+        let hash = self.client.info().best_hash;
+        Ok(Some(
+            self.client
+                .runtime_api()
+                .chain_id(hash)
+                .map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+                .into(),
+        ))
+    }
 }

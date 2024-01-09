@@ -4,8 +4,8 @@
 use cumulus_client_cli::CollatorOptions;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 // Local Runtime Types
-use parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 use futures::StreamExt;
+use parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -60,12 +60,9 @@ type ParachainBackend = TFullBackend<Block>;
 
 type ParachainBlockImport = TParachainBlockImport<
     Block,
-    FrontierBlockImport<
-        Block,
-        Arc<ParachainClient>,
-        ParachainClient,
-    >,
-    ParachainBackend>;
+    FrontierBlockImport<Block, Arc<ParachainClient>, ParachainClient>,
+    ParachainBackend,
+>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -132,8 +129,6 @@ pub fn new_partial(
             .spawn("telemetry", None, worker.run());
         telemetry
     });
-
-
 
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
         config.transaction_pool.clone(),

@@ -88,6 +88,11 @@ fc-db = { workspace = true }
 pallet-dynamic-fee = { workspace = true, optional = true }
 pallet-3vm-ethereum = { path = "../../pallets/3vm/ethereum", package = "pallet-ethereum", features = ["std"] }
 
+# Cumulus EVM dependencies
+cumulus-primitives-core                 = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
+cumulus-primitives-parachain-inherent   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
+cumulus-test-relay-sproof-builder       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
