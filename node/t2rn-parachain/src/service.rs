@@ -102,7 +102,6 @@ pub fn new_partial(
         client.clone(),
     );
 
-
     let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
         &(client.clone() as Arc<_>),
@@ -135,6 +134,9 @@ pub fn new_partial(
             compatibility_mode: Default::default(),
         },
     )?;
+
+    let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
+    let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
     Ok(sc_service::PartialComponents {
         client,
