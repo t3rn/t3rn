@@ -72,6 +72,11 @@ wasmi                 = { version = "0.20", default-features = false }
 wasmi-validation      = { version = "0.4", default-features = false }
 wasmparser            = { package = "wasmparser-nostd", version = "0.91", default-features = false }
 
+# frontier
+async-trait           = "0.1"
+parking_lot           = "0.12.1"
+sqlx                  = { version = "0.7.1", default-features = false, features = ["macros"] }
+
 # parity
 codec              = { version = "3.6.1", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
 frame-metadata     = { version = "15", features = [ "v13", "v14" ], default-features = false }
@@ -222,17 +227,17 @@ fp-account                        = { path = "./pallets/evm/account", default-fe
 fp-rpc                            = { path = "./pallets/evm/rpc", default-features = false }
 fc-rpc                            = { path = "./pallets/evm/rpc-client", features = ["default"] }
 fc-storage                        = { path = "./pallets/evm/client/storage", default-features = false }
+fc-mapping-sync                   = { path = "./pallets/evm/client/mapping-sync", default-features = false }
+fc-consensus                      = { path = "./pallets/evm/client/consensus", default-features = false }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support", default-features = false }
-fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+#fc-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 # fc-storage                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 # EVM node
 fc-cli                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-#fc-rpc                            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-fc-mapping-sync                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 fc-db                             = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 pallet-dynamic-fee                = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
 #pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
@@ -247,6 +252,8 @@ sc-utils                        = { git = "https://github.com/paritytech/substra
 sc-block-builder                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
 sc-client-db                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
 sp-storage                      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+
+
 
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171

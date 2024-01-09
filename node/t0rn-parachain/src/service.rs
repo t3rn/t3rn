@@ -5,6 +5,7 @@ use cumulus_client_cli::CollatorOptions;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 // Local Runtime Types
 use parachain_runtime::{api, native_version, opaque::Block, RuntimeApi};
+use futures::StreamExt;
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -57,7 +58,14 @@ type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
 type ParachainBackend = TFullBackend<Block>;
 
-type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, ParachainBackend>;
+type ParachainBlockImport = TParachainBlockImport<
+    Block,
+    FrontierBlockImport<
+        Block,
+        Arc<ParachainClient>,
+        ParachainClient,
+    >,
+    ParachainBackend>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
