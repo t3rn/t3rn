@@ -243,15 +243,16 @@ fc-storage                        = { path = "./pallets/evm/client/storage", def
 fc-mapping-sync                   = { path = "./pallets/evm/client/mapping-sync", default-features = false }
 fc-consensus                      = { path = "./pallets/evm/client/consensus", default-features = false }
 fc-db                             = { path = "./pallets/evm/client/db", default-features = false }
-fc-cli                            = { path = "./pallets/evm/client/cli", default-features = false}
+fc-cli                            = { path = "./pallets/evm/client/cli", default-features = false }
+pallet-dynamic-fee                = { path = "./pallets/evm/dynamic-fee", default-features = false }
 pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support", default-features = false }
 # Direct Frontier Imports
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
-pallet-dynamic-fee                = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
-#pallet-ethereum                   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false }
+fp-dynamic-fee                    = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
+
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0.2.10", features = [ "js" ] }

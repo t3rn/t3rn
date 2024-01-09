@@ -1076,7 +1076,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1230,7 +1230,7 @@ name = "circuit-standalone-runtime"
 version = "1.81.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -3379,7 +3379,7 @@ dependencies = [
  "fc-rpc-core",
  "fc-storage",
  "fp-ethereum",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "fp-rpc",
  "fp-storage",
  "futures",
@@ -3658,6 +3658,7 @@ name = "fp-dynamic-fee"
 version = "1.0.0"
 source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
 dependencies = [
+ "async-trait",
  "sp-core",
  "sp-inherents",
 ]
@@ -3668,7 +3669,7 @@ version = "1.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-support",
  "num_enum",
  "parity-scale-codec",
@@ -3691,26 +3692,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "fp-evm"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
-dependencies = [
- "evm",
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std 8.0.0",
-]
-
-[[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7473,17 +7460,18 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+version = "1.81.0-rc.0"
 dependencies = [
  "fp-dynamic-fee",
- "fp-evm 3.0.0-dev",
+ "fp-evm",
  "frame-support",
  "frame-system",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-runtime",
  "sp-std 8.0.0",
 ]
@@ -7575,7 +7563,7 @@ dependencies = [
  "evm",
  "fp-consensus",
  "fp-ethereum",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "fp-rpc",
  "fp-self-contained",
  "fp-storage",
@@ -7602,7 +7590,7 @@ dependencies = [
  "environmental",
  "evm",
  "fp-account",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7627,7 +7615,7 @@ dependencies = [
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "1.81.0-rc.0"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-support",
  "pallet-evm",
  "t3rn-primitives",
@@ -7637,7 +7625,7 @@ dependencies = [
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "pallet-evm-test-vector-support",
 ]
 
@@ -7645,7 +7633,7 @@ dependencies = [
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "pallet-evm-test-vector-support",
  "sp-core",
  "substrate-bn",
@@ -7656,14 +7644,14 @@ name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek 4.1.0",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "pallet-balances",
@@ -7684,14 +7672,14 @@ name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
 dependencies = [
  "ed25519-dalek 1.0.1",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "hex",
  "num",
  "pallet-evm-test-vector-support",
@@ -7701,7 +7689,7 @@ dependencies = [
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "tiny-keccak",
 ]
 
@@ -7709,7 +7697,7 @@ dependencies = [
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "pallet-evm-test-vector-support",
  "ripemd",
  "sp-io",
@@ -7720,7 +7708,7 @@ name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
 dependencies = [
  "evm",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "hex",
  "serde",
  "serde_json",
@@ -9844,7 +9832,7 @@ checksum = "31114a898e107c51bb1609ffaf55a0e011cf6a4d7f1170d0015a165082c0338b"
 name = "portal-precompile"
 version = "1.5.0-rc.0"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "pallet-evm",
@@ -9866,7 +9854,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 name = "precompile-util"
 version = "1.81.0-rc.0"
 dependencies = [
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
@@ -13902,7 +13890,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "finality-grandpa",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -14085,7 +14073,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "finality-grandpa",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -14240,7 +14228,7 @@ name = "t2rn-parachain-runtime"
 version = "1.81.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 1.81.0-rc.0",
+ "fp-evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",

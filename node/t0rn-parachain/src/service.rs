@@ -133,6 +133,8 @@ pub fn new_partial(
         telemetry
     });
 
+
+
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
@@ -140,9 +142,9 @@ pub fn new_partial(
         task_manager.spawn_essential_handle(),
         client.clone(),
     );
-
     let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
     let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
+
     let block_import = ParachainBlockImport::new(frontier_block_import, backend.clone());
 
     let import_queue = build_import_queue(
