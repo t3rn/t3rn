@@ -249,9 +249,7 @@ where
                         .convert_transaction_before_version_2(block_hash, legacy_transaction)
                     {
                         Ok(extrinsic) => extrinsic,
-                        Err(_) => {
-                            return Err(internal_err("cannot access runtime api"))
-                        },
+                        Err(_) => return Err(internal_err("cannot access runtime api")),
                     }
                 } else {
                     return Err(internal_err("This runtime not support eth transactions v2"))
