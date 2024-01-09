@@ -3263,20 +3263,27 @@ dependencies = [
 
 [[package]]
 name = "fc-cli"
-version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+version = "1.81.0-rc.0"
 dependencies = [
  "clap",
  "ethereum-types",
  "fc-db",
- "fp-rpc 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
+ "fp-rpc",
  "fp-storage",
+ "futures",
+ "parity-scale-codec",
+ "sc-block-builder",
  "sc-cli",
+ "sc-client-db",
  "serde",
  "serde_json",
  "sp-api",
  "sp-blockchain",
+ "sp-consensus",
+ "sp-io",
  "sp-runtime",
+ "substrate-test-runtime-client",
+ "tempfile",
 ]
 
 [[package]]
@@ -3285,7 +3292,7 @@ version = "1.81.0-rc.0"
 dependencies = [
  "async-trait",
  "fp-consensus",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "sc-consensus",
  "sp-api",
  "sp-block-builder",
@@ -3296,31 +3303,35 @@ dependencies = [
 
 [[package]]
 name = "fc-db"
-version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
+version = "1.81.0-rc.0"
 dependencies = [
  "async-trait",
  "ethereum",
- "fc-storage 1.0.0-dev",
+ "fc-storage",
  "fp-consensus",
- "fp-rpc 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
+ "fp-rpc",
  "fp-storage",
  "futures",
  "kvdb-rocksdb",
  "log",
+ "maplit",
  "parity-db",
  "parity-scale-codec",
  "parking_lot 0.12.1",
+ "sc-block-builder",
  "sc-client-api",
  "sc-client-db",
  "smallvec",
  "sp-api",
  "sp-blockchain",
+ "sp-consensus",
  "sp-core",
  "sp-database",
  "sp-runtime",
  "sp-storage",
  "sqlx",
+ "substrate-test-runtime-client",
+ "tempfile",
  "tokio",
 ]
 
@@ -3331,9 +3342,9 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "fc-db",
- "fc-storage 1.81.0-rc.0",
+ "fc-storage",
  "fp-consensus",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-storage",
  "futures",
  "futures-timer",
@@ -3366,10 +3377,10 @@ dependencies = [
  "fc-db",
  "fc-mapping-sync",
  "fc-rpc-core",
- "fc-storage 1.81.0-rc.0",
+ "fc-storage",
  "fp-ethereum",
  "fp-evm 1.81.0-rc.0",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-storage",
  "futures",
  "hex",
@@ -3428,29 +3439,11 @@ dependencies = [
 
 [[package]]
 name = "fc-storage"
-version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "fp-rpc 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0)",
- "fp-storage",
- "parity-scale-codec",
- "sc-client-api",
- "sp-api",
- "sp-blockchain",
- "sp-io",
- "sp-runtime",
- "sp-storage",
-]
-
-[[package]]
-name = "fc-storage"
 version = "1.81.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-storage",
  "parity-scale-codec",
  "sc-client-api",
@@ -3706,7 +3699,6 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-runtime",
  "sp-std 8.0.0",
@@ -3719,23 +3711,6 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "fp-evm 1.81.0-rc.0",
- "parity-scale-codec",
- "scale-info",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-state-machine",
- "sp-std 8.0.0",
-]
-
-[[package]]
-name = "fp-rpc"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v1.0.0#301d7c0fb95e59cb927f7c121999c6929a32222a"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "fp-evm 3.0.0-dev",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7601,7 +7576,7 @@ dependencies = [
  "fp-consensus",
  "fp-ethereum",
  "fp-evm 1.81.0-rc.0",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-self-contained",
  "fp-storage",
  "frame-support",
@@ -8443,9 +8418,9 @@ dependencies = [
 
 [[package]]
 name = "parity-db"
-version = "0.4.11"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab512a34b3c2c5e465731cc7668edf79208bbe520be03484eeb05e63ed221735"
+checksum = "592a28a24b09c9dc20ac8afaa6839abc417c720afe42c12e1e4a9d6aa2508d2e"
 dependencies = [
  "blake2",
  "crc32fast",
@@ -8459,6 +8434,7 @@ dependencies = [
  "rand 0.8.5",
  "siphasher",
  "snap",
+ "winapi",
 ]
 
 [[package]]
@@ -13843,9 +13819,9 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
- "fc-storage 1.81.0-rc.0",
+ "fc-storage",
  "fp-consensus",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-storage",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -13927,7 +13903,7 @@ dependencies = [
  "cumulus-primitives-utility",
  "finality-grandpa",
  "fp-evm 1.81.0-rc.0",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
  "frame-executive",
@@ -14204,9 +14180,9 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
- "fc-storage 1.81.0-rc.0",
+ "fc-storage",
  "fp-consensus",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-storage",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -14265,7 +14241,7 @@ version = "1.81.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm 1.81.0-rc.0",
- "fp-rpc 3.0.0-dev",
+ "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
  "frame-executive",
