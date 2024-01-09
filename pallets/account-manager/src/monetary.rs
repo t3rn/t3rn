@@ -9,10 +9,7 @@ use frame_support::{
 };
 
 use frame_support::traits::tokens::{
-    Fortitude::{Force, Polite},
-    Precision::{BestEffort, Exact},
-    Preservation::{Expendable, Preserve, Protect},
-    Restriction::Free,
+    Fortitude::Polite, Precision::Exact, Preservation::Expendable,
 };
 use sp_runtime::traits::Convert;
 

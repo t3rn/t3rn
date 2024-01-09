@@ -64,11 +64,7 @@ impl<T: Config> Machine<T> {
         maybe_adaptive_timeout: Option<AdaptiveTimeout<BlockNumberFor<T>, TargetId>>,
         preferred_security_lvl: &SecurityLvl,
     ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
-        // ToDo: Introduce default delay
-        let (timeouts_at, delay_steps_at): (
-            frame_system::pallet_prelude::BlockNumberFor<T>,
-            Option<Vec<BlockNumberFor<T>>>,
-        ) = (
+        let (timeouts_at, delay_steps_at): (BlockNumberFor<T>, Option<Vec<BlockNumberFor<T>>>) = (
             T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
             None,
         );

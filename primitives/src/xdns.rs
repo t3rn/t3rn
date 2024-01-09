@@ -10,10 +10,7 @@ use sp_core::{H160, H256};
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
-use t3rn_types::{
-    fsx::FullSideEffect,
-    sfx::{SecurityLvl, Sfx4bId},
-};
+use t3rn_types::sfx::{SecurityLvl, Sfx4bId};
 
 use crate::circuit::AdaptiveTimeout;
 use circuit_runtime_types::AssetId;
@@ -348,6 +345,4 @@ pub trait Xdns<T: frame_system::Config, Balance> {
         max_acceptable_heartbeat_offset: BlockNumberFor<T>,
         security_lvl: &SecurityLvl,
     ) -> Result<LightClientHeartbeat<T>, DispatchError>;
-
-    fn estimate_costs(fsx: &Vec<FullSideEffect<T::AccountId, BlockNumberFor<T>, Balance>>);
 }

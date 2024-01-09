@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod clock_test {
-    use t3rn_mini_mock_runtime::{BlockNumber, Clock, ExtBuilder, MiniRuntime, System};
+    use t3rn_mini_mock_runtime::{BlockNumber, Clock, ExtBuilder, System};
     use t3rn_primitives::common::RoundInfo;
 
     #[test]

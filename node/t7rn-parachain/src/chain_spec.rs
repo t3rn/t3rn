@@ -1,14 +1,14 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TRN, WASM_BINARY,
+    PolkadotXcmConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
+    SystemConfig, TRN, WASM_BINARY,
 };
 
-use codec::Encode;
+pub use codec::Encode;
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
@@ -17,20 +17,15 @@ use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
-const PARACHAIN_ID: u32 = 3337;
-const PARACHAIN_ID_T1RN: u32 = 3337;
+const PARACHAIN_ID: u32 = 3343;
 
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 
-const RUNTIME_KSM_NAME: &str = "t7rn";
-
-const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
+const RUNTIME_KSM_NAME: &str = "t1rn";
 const SUDO_T0RN: &str = "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A";
 const SUDO_T1RN: &str = "t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ"; // @t1rn; 32b = 0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061
-pub(crate) const SS58_FORMAT: u16 = 9935;
-pub(crate) const SS58_FORMAT_T0RN: u16 = 42;
 pub(crate) const SS58_FORMAT_T1RN: u16 = 4815;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -122,7 +117,7 @@ pub fn local_testnet_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), SS58_FORMAT.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -249,11 +244,11 @@ pub fn kusama_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
-                    // Genesis Account: SUDO (t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ = hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into()
+                    // Genesis Account: SUDO_T1RN (t1WfJYwMzegLxyeJNR35XbUWFY6kdSWSBUHpC4inyi8dk2yoQ = hex!("0x5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into()
                     // (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
                     (hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(), SUPPLY),
                 ],
-                PARACHAIN_ID_T1RN.into(),
+                PARACHAIN_ID.into(),
                 // Sudo
                 // get_account_id_from_adrs(SUDO_T1RN),1
                 hex!("5ecd4d9f0255ed3d3c5ac1160a965f0ea743b74533036f1e4d3f4bfc43f9f061").into(),
@@ -287,7 +282,7 @@ pub fn kusama_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "kusama".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID_T1RN,          // You MUST set this correctly!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
             bad_blocks: None,
         },
     )
@@ -297,7 +292,7 @@ pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), SS58_FORMAT.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -325,12 +320,12 @@ pub fn polkadot_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
-                    // Genesis Account: SUDO (t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX = hex!("0x00a6769855d6df941f09e0743f8879f66bad2dde6534a268dfe478449a16312b").into()
-                    (get_account_id_from_adrs(SUDO), SUPPLY),
+                    // Genesis Account: SUDO_T1RN (t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX = hex!("0x00a6769855d6df941f09e0743f8879f66bad2dde6534a268dfe478449a16312b").into()
+                    (get_account_id_from_adrs(SUDO_T1RN), SUPPLY),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                get_account_id_from_adrs(SUDO),
+                get_account_id_from_adrs(SUDO_T1RN),
             )
         },
         // Bootnodes
@@ -431,7 +426,7 @@ pub fn rococo_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "T0RN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), SS58_FORMAT_T0RN.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
         // Name

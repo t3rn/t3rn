@@ -189,7 +189,6 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: frame_system::pallet_prelude::BlockNumberFor<T>) -> Weight {
-            // TODO: we may want to retry failed transactions here, ensuring a max weight and max retry list
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             Weight::zero()

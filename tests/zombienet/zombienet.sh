@@ -102,12 +102,12 @@ build_asset_hub() {
 
 
 build_collator() {
-    if [ ! -f "$bin_dir/$NETWORK-collator" ]; then
+#    if [ ! -f "$bin_dir/$NETWORK-collator" ]; then
         echo "::group::Building $NETWORK..."
-        time cargo build --manifest-path "$root_dir/node/$NETWORK-parachain/Cargo.toml" --release --locked
+        time cargo build --manifest-path "$root_dir/node/$NETWORK-parachain/Cargo.toml" --release
         echo "::endgroup::"
         cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/${NETWORK}-collator"
-    fi
+#    fi
     echo "✅ $NETWORK built"
     cp "$root_dir/target/release/$NETWORK-collator" "$bin_dir/collator"
     

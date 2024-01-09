@@ -62,13 +62,12 @@ pub mod pallet {
         xdns::{
             EpochEstimate, FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns,
         },
-        Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayType,
-        GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
-        XDNSTopology,
+        Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayVendor,
+        SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider, XDNSTopology,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
-    use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
+    use t3rn_types::sfx::SecurityLvl;
 
     pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
 
@@ -976,24 +975,13 @@ pub mod pallet {
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         pub known_gateway_records: Vec<u8>,
-        // Fixme: GatewayRecord is not serializable with DefaultNoBound with current serde settings. Debug what changed after v1.0.0 update.
+        // GatewayRecord is not serializable with DefaultNoBound with current serde settings. Debug what changed after v1.0.0 update.
         // pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
         // pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
         pub standard_sfx_abi: Vec<u8>,
         #[serde(skip)]
         pub _marker: PhantomData<T>,
     }
-    //
-    // /// The default value for the genesis config type.
-    // #[cfg(feature = "std")]
-    // impl<T: Config> Default for GenesisConfig<T> {
-    //     fn default() -> Self {
-    //         Self {
-    //             known_gateway_records: Default::default(),
-    //             standard_sfx_abi: Default::default(),
-    //         }
-    //     }
-    // }
 
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
@@ -1461,7 +1449,6 @@ pub mod pallet {
             }
         }
 
-        // todo: this must be removed and functionality replaced
         fn get_gateway_max_security_lvl(chain_id: &ChainId) -> SecurityLvl {
             if chain_id == &[3u8; 4] {
                 return SecurityLvl::Escrow
@@ -1678,18 +1665,6 @@ pub mod pallet {
                 emergency_timeout_here: emergency_offset.saturating_add(current_block),
                 dlq: None,
             }
-        }
-
-        fn estimate_costs(
-            _fsx: &Vec<
-                FullSideEffect<
-                    T::AccountId,
-                    frame_system::pallet_prelude::BlockNumberFor<T>,
-                    BalanceOf<T>,
-                >,
-            >,
-        ) {
-            todo!("estimate costs")
         }
     }
 }
