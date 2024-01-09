@@ -81,17 +81,6 @@ pub fn new_partial(
         sc_consensus::DefaultImportQueue<Block, ParachainClient>,
         sc_transaction_pool::FullPool<Block, ParachainClient>,
         (
-            /*
-            TParachainBlockImport<
-                Block,
-                FrontierBlockImport<
-                    Block,
-                    Arc<ParachainClient>,
-                    ParachainClient,
-                >,
-                ParachainBackend,
-            >,
-            */
             ParachainBlockImport,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,

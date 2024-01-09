@@ -102,12 +102,10 @@ pub fn new_partial(
         client.clone(),
     );
 
-    let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), &config)?;
-    let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
     let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
-        &frontier_block_import,
+        &(client.clone() as Arc<_>),
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
     )?;
