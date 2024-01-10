@@ -235,239 +235,239 @@ mod tests {
         }
     }
 
-/*
-    #[tokio::test]
-    async fn block_import_notification_works() {
-        let tmp = tempdir().expect("create a temporary directory");
-        let builder = TestClientBuilder::new().add_extra_storage(
-            PALLET_ETHEREUM_SCHEMA.to_vec(),
-            Encode::encode(&EthereumStorageSchema::V3),
-        );
-        let test_sync_oracle = TestSyncOracleNotSyncing {};
-        // Backend
-        let backend = builder.backend();
-        // Client
-        let (client, _) =
-            builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-        let mut client = Arc::new(client);
-        // Overrides
-        let mut overrides_map = BTreeMap::new();
-        overrides_map.insert(
-            EthereumStorageSchema::V3,
-            Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-        );
-        let overrides = Arc::new(OverrideHandle {
-            schemas: overrides_map,
-            fallback: Box::new(SchemaV3Override::new(client.clone())),
-        });
+    /*
+       #[tokio::test]
+       async fn block_import_notification_works() {
+           let tmp = tempdir().expect("create a temporary directory");
+           let builder = TestClientBuilder::new().add_extra_storage(
+               PALLET_ETHEREUM_SCHEMA.to_vec(),
+               Encode::encode(&EthereumStorageSchema::V3),
+           );
+           let test_sync_oracle = TestSyncOracleNotSyncing {};
+           // Backend
+           let backend = builder.backend();
+           // Client
+           let (client, _) =
+               builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+           let mut client = Arc::new(client);
+           // Overrides
+           let mut overrides_map = BTreeMap::new();
+           overrides_map.insert(
+               EthereumStorageSchema::V3,
+               Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+           );
+           let overrides = Arc::new(OverrideHandle {
+               schemas: overrides_map,
+               fallback: Box::new(SchemaV3Override::new(client.clone())),
+           });
 
-        let frontier_backend = Arc::new(
-            fc_db::kv::Backend::<OpaqueBlock>::new(
-                client.clone(),
-                &fc_db::kv::DatabaseSettings {
-                    source: sc_client_db::DatabaseSource::RocksDb {
-                        path: tmp.path().to_path_buf(),
-                        cache_size: 0,
-                    },
-                },
-            )
-            .expect("frontier backend"),
-        );
+           let frontier_backend = Arc::new(
+               fc_db::kv::Backend::<OpaqueBlock>::new(
+                   client.clone(),
+                   &fc_db::kv::DatabaseSettings {
+                       source: sc_client_db::DatabaseSource::RocksDb {
+                           path: tmp.path().to_path_buf(),
+                           cache_size: 0,
+                       },
+                   },
+               )
+               .expect("frontier backend"),
+           );
 
-        let notification_stream = client.clone().import_notification_stream();
-        let client_inner = client.clone();
+           let notification_stream = client.clone().import_notification_stream();
+           let client_inner = client.clone();
 
-        let pubsub_notification_sinks: EthereumBlockNotificationSinks<
-            EthereumBlockNotification<OpaqueBlock>,
-        > = Default::default();
-        let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+           let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+               EthereumBlockNotification<OpaqueBlock>,
+           > = Default::default();
+           let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
-        let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+           let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
 
-        tokio::task::spawn(async move {
-            MappingSyncWorker::new(
-                notification_stream,
-                Duration::new(6, 0),
-                client_inner,
-                backend,
-                overrides.clone(),
-                frontier_backend,
-                3,
-                0,
-                SyncStrategy::Normal,
-                Arc::new(test_sync_oracle),
-                pubsub_notification_sinks_inner,
-            )
-            .for_each(|()| future::ready(()))
-            .await
-        });
+           tokio::task::spawn(async move {
+               MappingSyncWorker::new(
+                   notification_stream,
+                   Duration::new(6, 0),
+                   client_inner,
+                   backend,
+                   overrides.clone(),
+                   frontier_backend,
+                   3,
+                   0,
+                   SyncStrategy::Normal,
+                   Arc::new(test_sync_oracle),
+                   pubsub_notification_sinks_inner,
+               )
+               .for_each(|()| future::ready(()))
+               .await
+           });
 
-        {
-            // A new mpsc channel
-            let (inner_sink, mut block_notification_stream) =
-                sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+           {
+               // A new mpsc channel
+               let (inner_sink, mut block_notification_stream) =
+                   sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
 
-            {
-                // This scope represents a call to eth_subscribe, where it briefly locks the pool
-                // to push the new sink.
-                let sinks = &mut pubsub_notification_sinks.lock();
-                // Push to sink pool
-                sinks.push(inner_sink);
-            }
+               {
+                   // This scope represents a call to eth_subscribe, where it briefly locks the pool
+                   // to push the new sink.
+                   let sinks = &mut pubsub_notification_sinks.lock();
+                   // Push to sink pool
+                   sinks.push(inner_sink);
+               }
 
-            // Let's produce a block, which we expect to trigger a channel message
-            let builder = client.new_block(ethereum_digest()).unwrap();
-            let block = builder.build().unwrap().block;
-            let block_hash = block.header.hash();
-            let _res = client.import(BlockOrigin::Own, block).await;
+               // Let's produce a block, which we expect to trigger a channel message
+               let builder = client.new_block(ethereum_digest()).unwrap();
+               let block = builder.build().unwrap().block;
+               let block_hash = block.header.hash();
+               let _res = client.import(BlockOrigin::Own, block).await;
 
-            // Receive
-            assert_eq!(
-                block_notification_stream
-                    .next()
-                    .await
-                    .expect("a message")
-                    .hash,
-                block_hash
-            );
-        }
+               // Receive
+               assert_eq!(
+                   block_notification_stream
+                       .next()
+                       .await
+                       .expect("a message")
+                       .hash,
+                   block_hash
+               );
+           }
 
-        {
-            // Assert we still hold a sink in the pool after switching scopes
-            let sinks = pubsub_notification_sinks.lock();
-            assert_eq!(sinks.len(), 1);
-        }
+           {
+               // Assert we still hold a sink in the pool after switching scopes
+               let sinks = pubsub_notification_sinks.lock();
+               assert_eq!(sinks.len(), 1);
+           }
 
-        {
-            // Create yet another mpsc channel
-            let (inner_sink, mut block_notification_stream) =
-                sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+           {
+               // Create yet another mpsc channel
+               let (inner_sink, mut block_notification_stream) =
+                   sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
 
-            {
-                let sinks = &mut pubsub_notification_sinks.lock();
-                // Push it
-                sinks.push(inner_sink);
-                // Now we expect two sinks in the pool
-                assert_eq!(sinks.len(), 2);
-            }
+               {
+                   let sinks = &mut pubsub_notification_sinks.lock();
+                   // Push it
+                   sinks.push(inner_sink);
+                   // Now we expect two sinks in the pool
+                   assert_eq!(sinks.len(), 2);
+               }
 
-            // Let's produce another block, this not only triggers a message in the new channel
-            // but also removes the closed channels from the pool.
-            let builder = client.new_block(ethereum_digest()).unwrap();
-            let block = builder.build().unwrap().block;
-            let block_hash = block.header.hash();
-            let _res = client.import(BlockOrigin::Own, block).await;
+               // Let's produce another block, this not only triggers a message in the new channel
+               // but also removes the closed channels from the pool.
+               let builder = client.new_block(ethereum_digest()).unwrap();
+               let block = builder.build().unwrap().block;
+               let block_hash = block.header.hash();
+               let _res = client.import(BlockOrigin::Own, block).await;
 
-            // Receive
-            assert_eq!(
-                block_notification_stream
-                    .next()
-                    .await
-                    .expect("a message")
-                    .hash,
-                block_hash
-            );
+               // Receive
+               assert_eq!(
+                   block_notification_stream
+                       .next()
+                       .await
+                       .expect("a message")
+                       .hash,
+                   block_hash
+               );
 
-            // So we expect the pool to hold one sink only after cleanup
-            let sinks = &mut pubsub_notification_sinks.lock();
-            assert_eq!(sinks.len(), 1);
-        }
-    }
+               // So we expect the pool to hold one sink only after cleanup
+               let sinks = &mut pubsub_notification_sinks.lock();
+               assert_eq!(sinks.len(), 1);
+           }
+       }
 
 
-    #[tokio::test]
-    async fn sink_removal_when_syncing_works() {
-        let tmp = tempdir().expect("create a temporary directory");
-        let builder = TestClientBuilder::new().add_extra_storage(
-            PALLET_ETHEREUM_SCHEMA.to_vec(),
-            Encode::encode(&EthereumStorageSchema::V3),
-        );
-        let test_sync_oracle = TestSyncOracleSyncing {};
-        // Backend
-        let backend = builder.backend();
-        // Client
-        let (client, _) =
-            builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-        let mut client: std::sync::Arc<RuntimeApi> = Arc::new(client);
-        // Overrides
-        let mut overrides_map = BTreeMap::new();
-        overrides_map.insert(
-            EthereumStorageSchema::V3,
-            Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-        );
-        let overrides = Arc::new(OverrideHandle {
-            schemas: overrides_map,
-            fallback: Box::new(SchemaV3Override::new(client.clone())),
-        });
+       #[tokio::test]
+       async fn sink_removal_when_syncing_works() {
+           let tmp = tempdir().expect("create a temporary directory");
+           let builder = TestClientBuilder::new().add_extra_storage(
+               PALLET_ETHEREUM_SCHEMA.to_vec(),
+               Encode::encode(&EthereumStorageSchema::V3),
+           );
+           let test_sync_oracle = TestSyncOracleSyncing {};
+           // Backend
+           let backend = builder.backend();
+           // Client
+           let (client, _) =
+               builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+           let mut client: std::sync::Arc<RuntimeApi> = Arc::new(client);
+           // Overrides
+           let mut overrides_map = BTreeMap::new();
+           overrides_map.insert(
+               EthereumStorageSchema::V3,
+               Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+           );
+           let overrides = Arc::new(OverrideHandle {
+               schemas: overrides_map,
+               fallback: Box::new(SchemaV3Override::new(client.clone())),
+           });
 
-        let frontier_backend = Arc::new(
-            fc_db::kv::Backend::<OpaqueBlock>::new(
-                client.clone(),
-                &fc_db::kv::DatabaseSettings {
-                    source: sc_client_db::DatabaseSource::RocksDb {
-                        path: tmp.path().to_path_buf(),
-                        cache_size: 0,
-                    },
-                },
-            )
-            .expect("frontier backend"),
-        );
+           let frontier_backend = Arc::new(
+               fc_db::kv::Backend::<OpaqueBlock>::new(
+                   client.clone(),
+                   &fc_db::kv::DatabaseSettings {
+                       source: sc_client_db::DatabaseSource::RocksDb {
+                           path: tmp.path().to_path_buf(),
+                           cache_size: 0,
+                       },
+                   },
+               )
+               .expect("frontier backend"),
+           );
 
-        let notification_stream = client.clone().import_notification_stream();
-        let client_inner = client.clone();
+           let notification_stream = client.clone().import_notification_stream();
+           let client_inner = client.clone();
 
-        let pubsub_notification_sinks: EthereumBlockNotificationSinks<
-            EthereumBlockNotification<OpaqueBlock>,
-        > = Default::default();
-        let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+           let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+               EthereumBlockNotification<OpaqueBlock>,
+           > = Default::default();
+           let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
-        let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+           let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
 
-        tokio::task::spawn(async move {
-            MappingSyncWorker::new(
-                notification_stream,
-                Duration::new(6, 0),
-                client_inner,
-                backend,
-                overrides.clone(),
-                frontier_backend,
-                3,
-                0,
-                SyncStrategy::Normal,
-                Arc::new(test_sync_oracle),
-                pubsub_notification_sinks_inner,
-            )
-            .for_each(|()| future::ready(()))
-            .await
-        });
+           tokio::task::spawn(async move {
+               MappingSyncWorker::new(
+                   notification_stream,
+                   Duration::new(6, 0),
+                   client_inner,
+                   backend,
+                   overrides.clone(),
+                   frontier_backend,
+                   3,
+                   0,
+                   SyncStrategy::Normal,
+                   Arc::new(test_sync_oracle),
+                   pubsub_notification_sinks_inner,
+               )
+               .for_each(|()| future::ready(()))
+               .await
+           });
 
-        {
-            // A new mpsc channel
-            let (inner_sink, mut block_notification_stream) =
-                sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+           {
+               // A new mpsc channel
+               let (inner_sink, mut block_notification_stream) =
+                   sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
 
-            {
-                // This scope represents a call to eth_subscribe, where it briefly locks the pool
-                // to push the new sink.
-                let sinks = &mut pubsub_notification_sinks.lock();
-                // Push to sink pool
-                sinks.push(inner_sink);
-            }
+               {
+                   // This scope represents a call to eth_subscribe, where it briefly locks the pool
+                   // to push the new sink.
+                   let sinks = &mut pubsub_notification_sinks.lock();
+                   // Push to sink pool
+                   sinks.push(inner_sink);
+               }
 
-            // Let's produce a block, which we expect to trigger a channel message
-            let builder = client.new_block(ethereum_digest()).unwrap();
-            let block = builder.build().unwrap().block;
-            let _res = client.import(BlockOrigin::Own, block).await;
+               // Let's produce a block, which we expect to trigger a channel message
+               let builder = client.new_block(ethereum_digest()).unwrap();
+               let block = builder.build().unwrap().block;
+               let _res = client.import(BlockOrigin::Own, block).await;
 
-            // Not received, channel closed because major syncing
-            assert!(block_notification_stream.next().await.is_none());
-        }
+               // Not received, channel closed because major syncing
+               assert!(block_notification_stream.next().await.is_none());
+           }
 
-        {
-            // Assert sink was removed from pool on major syncing
-            let sinks = pubsub_notification_sinks.lock();
-            assert_eq!(sinks.len(), 0);
-        }
-    }
- */
+           {
+               // Assert sink was removed from pool on major syncing
+               let sinks = pubsub_notification_sinks.lock();
+               assert_eq!(sinks.len(), 0);
+           }
+       }
+    */
 }

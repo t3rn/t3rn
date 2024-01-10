@@ -20,12 +20,11 @@
 #![allow(clippy::too_many_arguments)]
 
 #[cfg(test)]
+use frontier_template_runtime;
+#[cfg(test)]
 use sc_client_db;
 #[cfg(test)]
 use tokio;
-#[cfg(test)]
-use frontier_template_runtime;
-
 
 pub mod kv;
 #[cfg(feature = "sql")]
