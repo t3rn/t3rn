@@ -18,6 +18,29 @@
 
 #![deny(unused_crate_dependencies)]
 
+
+#[cfg(test)]
+use tempfile;
+#[cfg(test)]
+use substrate_test_runtime_client;
+#[cfg(test)]
+use sp_io;
+#[cfg(test)]
+use sp_consensus;
+#[cfg(test)]
+use scale_codec;
+#[cfg(test)]
+use sc_client_db;
+#[cfg(test)]
+use sc_block_builder;
+#[cfg(test)]
+use futures;
+#[cfg(test)]
+use frontier_template_runtime;
+
+
+
+
 mod frontier_db_cmd;
 
 pub use self::frontier_db_cmd::FrontierDbCmd;

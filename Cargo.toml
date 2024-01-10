@@ -238,7 +238,7 @@ t3rn-sdk-primitives = { path = "sdk/crates/primitives", default-features = false
 fp-evm                            = { path = "./pallets/evm/primitives", default-features = false }
 fp-account                        = { path = "./pallets/evm/account", default-features = false }
 fp-rpc                            = { path = "./pallets/evm/rpc", default-features = false }
-fc-rpc                            = { path = "pallets/evm/client/rpc", features = ["default"] }
+fc-rpc                            = { path = "./pallets/evm/client/rpc", features = ["default"] }
 fc-storage                        = { path = "./pallets/evm/client/storage", default-features = false }
 fc-mapping-sync                   = { path = "./pallets/evm/client/mapping-sync", default-features = false }
 fc-consensus                      = { path = "./pallets/evm/client/consensus", default-features = false }
@@ -252,7 +252,6 @@ fp-storage                        = { git = "https://github.com/paritytech/front
 fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fp-dynamic-fee                    = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
-
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0.2.10", features = [ "js" ] }
@@ -322,7 +321,7 @@ members = [
 #xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
-fc-rpc                      = { path = "pallets/evm/client/rpc" }
+fc-rpc                      = { path = "./pallets/evm/client/rpc" }
 fp-rpc                      = { path = "./pallets/evm/rpc" }
 fp-evm                      = { path = "./pallets/evm/primitives" }
 fp-ethereum                 = { path = "./pallets/3vm/ethereum/primitives" }

@@ -33,8 +33,8 @@ fp-rpc = { workspace = true, features = ["default"] }
 [dev-dependencies]
 ethereum = { workspace = true }
 ethereum-types = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
-sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
+#scale-codec = { package = "parity-scale-codec", workspace = true }
+#sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
 tempfile = "3.3.0"
 tokio = { workspace = true, features = ["sync"] }
 # Substrate
@@ -42,12 +42,12 @@ sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 sp-core = { workspace = true, features = ["default"] }
-sp-io = { workspace = true }
+#sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 # Frontier
 fp-consensus = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
-#frontier-template-runtime = { workspace = true, features = ["default"] }
+frontier-template-runtime = { path = "../../../../runtime/mock", package = "circuit-mock-runtime" }
 
 [features]
 default = ["rocksdb"]

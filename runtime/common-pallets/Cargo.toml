@@ -119,6 +119,17 @@ pallet-3vm-evm                  = { default-features = false, path = "../../pall
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
 pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
 
+fp-account                        = { path = "../../pallets/evm/account", default-features = false }
+fp-rpc                            = { path = "../../pallets/evm/rpc", default-features = false }
+fc-rpc                            = { path = "../../pallets/evm/client/rpc", features = ["default"] }
+fc-storage                        = { path = "../../pallets/evm/client/storage", default-features = false }
+fc-mapping-sync                   = { path = "../../pallets/evm/client/mapping-sync", default-features = false }
+fc-consensus                      = { path = "../../pallets/evm/client/consensus", default-features = false }
+fc-db                             = { path = "../../pallets/evm/client/db", default-features = false }
+fc-cli                            = { path = "../../pallets/evm/client/cli", default-features = false }
+pallet-dynamic-fee                = { path = "../../pallets/evm/dynamic-fee", default-features = false }
+pallet-evm-test-vector-support    = { path = "../../pallets/evm/test-vector-support", default-features = false }
+
 [features]
 default = [ "std" ]
 std = [
@@ -159,6 +170,9 @@ std = [
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-3vm-ethereum/std",
+  "fp-account/std",
+  "fp-rpc/std",
+  "pallet-dynamic-fee/std",
   "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-preimage/std",

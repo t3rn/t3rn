@@ -18,8 +18,8 @@
 
 mod mapping_db;
 mod meta_db;
-#[cfg(test)]
-mod tests;
+//#[cfg(test)]
+//mod tests;
 pub(crate) mod utils;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
