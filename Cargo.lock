@@ -3263,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "fc-cli"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "clap",
  "ethereum-types",
@@ -3288,7 +3288,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "async-trait",
  "fp-consensus",
@@ -3303,7 +3303,7 @@ dependencies = [
 
 [[package]]
 name = "fc-db"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "async-trait",
  "ethereum",
@@ -3337,7 +3337,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3369,7 +3369,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3439,7 +3439,7 @@ dependencies = [
 
 [[package]]
 name = "fc-storage"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -7460,7 +7460,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "1.81.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "fp-dynamic-fee",
  "fp-evm",
