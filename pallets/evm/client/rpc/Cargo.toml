@@ -56,11 +56,11 @@ fc-db = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
-fp-ethereum = { features = ["default"], path = "../../../pallets/3vm/ethereum/primitives" }
+fp-ethereum = { features = ["default"], path = "../../../3vm/ethereum/primitives" }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-storage = { workspace = true, features = ["default"] }
-pallet-evm = { features = ["default"], path = "../../evm" }
+pallet-evm = { features = ["default"], path = "../.." }
 
 [dev-dependencies]
 tempfile = "3.3.0"

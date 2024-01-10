@@ -238,7 +238,7 @@ t3rn-sdk-primitives = { path = "sdk/crates/primitives", default-features = false
 fp-evm                            = { path = "./pallets/evm/primitives", default-features = false }
 fp-account                        = { path = "./pallets/evm/account", default-features = false }
 fp-rpc                            = { path = "./pallets/evm/rpc", default-features = false }
-fc-rpc                            = { path = "./pallets/evm/rpc-client", features = ["default"] }
+fc-rpc                            = { path = "pallets/evm/client/rpc", features = ["default"] }
 fc-storage                        = { path = "./pallets/evm/client/storage", default-features = false }
 fc-mapping-sync                   = { path = "./pallets/evm/client/mapping-sync", default-features = false }
 fc-consensus                      = { path = "./pallets/evm/client/consensus", default-features = false }
@@ -285,7 +285,7 @@ members = [
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
   "pallets/evm/rpc",
-  "pallets/evm/rpc-client",
+  "pallets/evm/client/rpc",
   "pallets/3vm/account-mapping",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
@@ -322,7 +322,7 @@ members = [
 #xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
-fc-rpc                      = { path = "./pallets/evm/rpc-client" }
+fc-rpc                      = { path = "pallets/evm/client/rpc" }
 fp-rpc                      = { path = "./pallets/evm/rpc" }
 fp-evm                      = { path = "./pallets/evm/primitives" }
 fp-ethereum                 = { path = "./pallets/3vm/ethereum/primitives" }
