@@ -214,19 +214,40 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
     let name = config.network.node_name.clone();
     let enable_grandpa = !config.disable_grandpa;
     let prometheus_registry = config.prometheus_registry().cloned();
+    use sc_consensus_grandpa::FinalityProofProvider;
+
+    let finality_proof_provider = FinalityProofProvider::new_for_service(
+        backend.clone(),
+        Some(grandpa_link.shared_authority_set().clone()),
+    );
+    let rpc_backend = backend.clone();
+    let justification_stream = grandpa_link.justification_stream();
+    let shared_authority_set = grandpa_link.shared_authority_set().clone();
+    let shared_voter_state = SharedVoterState::empty();
+    let shared_voter_state2 = shared_voter_state.clone();
 
     let rpc_extensions_builder = {
         let client = client.clone();
         let pool = transaction_pool.clone();
 
-        Box::new(move |deny_unsafe, _| {
-            let deps = crate::rpc::FullDeps {
-                client: client.clone(),
-                pool: pool.clone(),
-                deny_unsafe,
-            };
-            crate::rpc::create_full(deps).map_err(Into::into)
-        })
+        Box::new(
+            move |deny_unsafe, subscription_executor: sc_rpc::SubscriptionTaskExecutor| {
+                let deps = crate::rpc::FullDeps {
+                    client: client.clone(),
+                    pool: pool.clone(),
+                    deny_unsafe,
+                    grandpa: crate::rpc::GrandpaDeps {
+                        shared_voter_state: shared_voter_state.clone(),
+                        shared_authority_set: shared_authority_set.clone(),
+                        justification_stream: justification_stream.clone(),
+                        subscription_executor: subscription_executor.clone(),
+                        finality_provider: finality_proof_provider.clone(),
+                    },
+                    backend: rpc_backend.clone(),
+                };
+                crate::rpc::create_full(deps).map_err(Into::into)
+            },
+        )
     };
 
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -236,7 +257,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
         rpc_builder: rpc_extensions_builder,
-        backend,
+        backend: backend.clone(),
         system_rpc_tx,
         tx_handler_controller,
         sync_service: sync_service.clone(),
@@ -312,6 +333,14 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
             telemetry: telemetry.as_ref().map(|x| x.handle()),
             protocol_name: grandpa_protocol_name,
         };
+
+        //            grandpa: crate::rpc::GrandpaDeps {
+        //                     shared_voter_state: SharedVoterState::empty(),
+        //                     shared_authority_set: grandpa_link.shared_authority_set().clone(),
+        //                     justification_stream: grandpa_link.justification_stream(),
+        //                     subscription_executor: task_manager.spawn_handle(),
+        //                     finality_provider: Arc::new(sync_service.clone()),
+        //                 },
 
         // start the full GRANDPA voter
         // NOTE: non-authorities could run the GRANDPA observer protocol, but at
