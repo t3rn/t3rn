@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.82.1-rc.0] - 2024-01-10
+### :bug: Bug Fixes
+- [`21ebf2f`](https://github.com/t3rn/t3rn/commit/21ebf2f4a5f7f1c224eb0e2d2b23f2293b44f1aa) - update link and title *(PR [#1516](https://github.com/t3rn/t3rn/pull/1516) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+
+### :wrench: Chores
+- [`fd60dfc`](https://github.com/t3rn/t3rn/commit/fd60dfc6621d93c2f299345f091ec6a65d28785f) - plug GRANDPA proveFinality RPC to standalone node *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.82.0-rc.0] - 2024-01-09
 ### :recycle: Refactors
 - [`20c0ca1`](https://github.com/t3rn/t3rn/commit/20c0ca190e1395a8facf4a1570c3e8ed3d6b7351) - resolve, address, fix todos left across the workspace *(PR [#1515](https://github.com/t3rn/t3rn/pull/1515) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -2011,3 +2019,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.81.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.1-rc.0...v1.81.2-rc.0
 [v1.81.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.2-rc.0...v1.81.3-rc.0
 [v1.82.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.4-rc.0...v1.82.0-rc.0
+[v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0
