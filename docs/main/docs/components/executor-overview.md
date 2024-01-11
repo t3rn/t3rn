@@ -21,7 +21,9 @@ To further incentivise execution with t3rn, we have a series of three token ince
 ### [How to become an Executor](https://docs.t3rn.io/components/become-an-executor)
 
 ## t3rn protocol
-![Screenshot 2024-01-11 at 15.10.10.png](..%2F..%2F..%2F..%2F..%2F..%2FDesktop%2FScreenshot%202024-01-11%20at%2015.10.10.png)
+
+<img height="50%" src="../../static/img/t3rn-protocol-anatomy.png">
+
 The concept can be compared with intents, or auctions.
 
 ### Evaluation formula
@@ -114,8 +116,8 @@ uint32 nonce
 
 ### Run orderer - fast writer
 To test out orders submission, we've created an app called FastWriter. It's a simple web app that allows users to submit orders to the t3rn Circuit. Contact the team if you'd like to test it out or customize to your own needs.
-![Screenshot 2024-01-11 at 15.45.36.png](..%2F..%2F..%2F..%2F..%2F..%2FDesktop%2FScreenshot%202024-01-11%20at%2015.45.36.png)
 
+<img src="../../static/img/fast-writer-order-sent.png">
 
 #### (Coming soon) 3D Orders - Submitting orders via 3rd party, non-EVM compatible, chains
 
@@ -467,3 +469,14 @@ export default {
   },
 ```
 Revisit [arbitrage strategy section](#arbitrage-strategy) for more details on the arbitrage strategy configuration.
+
+<img height="32%" src="../../static/img/executor-running.png">
+
+### Explorer
+Visit [stats.t0rn.io/explorer](https://stats.t0rn.io/explorer) to see the orders submitted to t3rn's testnet.
+
+<img height="64%" src="../../static/img/explorer-10wei.png">
+
+### Troubleshooting
+Feel free to reach out to us on [Discord](https://discord.gg/3t3rn) if you have any questions or issues.
+With obvious errors, please open an issue on [t3rn's Github](https://github.com/t3rn/t3rn/issues/new/choose)
