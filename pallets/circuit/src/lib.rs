@@ -28,9 +28,9 @@ pub use crate::pallet::*;
 use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
+    dispatch::DispatchResultWithPostInfo,
     ensure,
-    traits::{Currency, ExistenceRequirement::AllowDeath, Get},
+    traits::{Currency, Get},
     weights::Weight,
     RuntimeDebug,
 };
@@ -53,7 +53,7 @@ pub use t3rn_types::{
 };
 
 pub use t3rn_primitives::{
-    account_manager::{AccountManager, Outcome},
+    account_manager::{AccountManager, Outcome, RequestCharge},
     attesters::AttestersReadApi,
     circuit::{XExecSignalId, XExecStepSideEffectId},
     claimable::{BenefitSource, CircuitRole},
@@ -66,7 +66,10 @@ pub use t3rn_primitives::{
     GatewayType, *,
 };
 
-use crate::machine::{Machine, *};
+use crate::{
+    machine::{Machine, *},
+    square_up::SquareUp,
+};
 pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
@@ -77,7 +80,7 @@ use t3rn_primitives::{
     circuit::{CircuitSubmitAPI, ReadSFX},
 };
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
-use t3rn_types::fsx::TargetId;
+use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
 #[cfg(test)]
 pub mod tests;
@@ -86,7 +89,6 @@ pub mod tests;
 mod benchmarking;
 
 pub mod bids;
-pub mod escrow;
 pub mod machine;
 pub mod migration;
 pub mod square_up;
@@ -177,7 +179,7 @@ pub mod pallet {
         xdns::Xdns,
         SpeedMode,
     };
-    use t3rn_types::migrations::v13::FullSideEffectV13;
+    use t3rn_types::{migrations::v13::FullSideEffectV13, sfx::Sfx4bId};
 
     pub use crate::weights::WeightInfo;
 
@@ -441,6 +443,13 @@ pub mod pallet {
             Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
+        fn recover_latest_submitted_xtx_id() -> Result<T::Hash, DispatchError> {
+            let xtx_id = Self::get_pending_xtx_ids()
+                .pop()
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+            Ok(xtx_id)
+        }
+
         fn get_fsx_executor(fsx_id: T::Hash) -> Result<Option<T::AccountId>, DispatchError> {
             let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
@@ -594,6 +603,14 @@ pub mod pallet {
             true
         }
 
+        fn bid(
+            origin: OriginFor<T>,
+            sfx_id: SideEffectId<T>,
+            amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            Self::bid_sfx(origin, sfx_id, amount)
+        }
+
         fn get_gmp_payload(id: H256) -> Option<H256> {
             <GMP<T>>::get(id)
         }
@@ -731,10 +748,18 @@ pub mod pallet {
                         Ok(new_fsx) => Ok(PrecompileResult::TryUpdateFSX(new_fsx)),
                     }
                 },
-                |_status_change, _local_ctx| {
+                |_status_change, local_ctx| {
                     // Emit: From Circuit events
-                    // ToDo: impl FSX convert to SFX
-                    // Self::emit_sfx(local_ctx.xtx_id, &requester, &local_ctx.full_side_effects.into());
+                    let sfx_vec: Vec<SideEffect<T::AccountId, BalanceOf<T>>> = local_ctx
+                        .full_side_effects
+                        .iter()
+                        .flatten()
+                        .map(|fsx| Ok(fsx.input.clone()))
+                        .collect::<Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, Error<T>>>(
+                        )?;
+
+                    Self::emit_sfx(local_ctx.xtx_id, &requester, &sfx_vec);
+
                     Ok(())
                 },
             )?;
@@ -770,13 +795,12 @@ pub mod pallet {
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_xcm_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // ToDo: Check TriggerAuthRights for local triggers
-            unimplemented!();
+            Err(Error::<T>::NotImplemented.into())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_remote_gateway_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            unimplemented!();
+            Err(Error::<T>::NotImplemented.into())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
@@ -824,7 +848,7 @@ pub mod pallet {
             speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let _ = Self::authorize(origin, CircuitRole::Executor)?;
+            let call_origin = Self::authorize(origin, CircuitRole::Executor)?;
 
             // Skip remote origin withdrawals - they are already handled by the remote origin
             let requester = match OrderOrigin::<T::AccountId>::new(&order_origin) {
@@ -832,12 +856,15 @@ pub mod pallet {
                 OrderOrigin::Remote(_) => order_origin.clone(),
             };
 
-            Self::do_on_extrinsic_trigger(
+            let _local_ctx = Self::do_on_extrinsic_trigger(
                 requester,
                 side_effects,
                 speed_mode,
-                &SecurityLvl::Optimistic,
-            )
+                &SecurityLvl::Escrow,
+                Some(call_origin),
+            )?;
+
+            Ok(().into())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
@@ -850,17 +877,129 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
-            Self::do_on_extrinsic_trigger(
-                requester,
+            let _local_ctx = Self::do_on_extrinsic_trigger(
+                requester.clone(),
                 side_effects,
                 speed_mode,
                 &preferred_security_level,
-            )
+                None,
+            )?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::confirm_side_effect())]
+        pub fn escrow(origin: OriginFor<T>, sfx_id: SideEffectId<T>) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let executor = Self::authorize(origin, CircuitRole::Executor)?;
+            // Retrieve xtx_id
+            let xtx_id =
+                <Self as Store>::SFX2XTXLinksMap::get(sfx_id).ok_or(Error::<T>::XtxNotFound)?;
+            // Load xtx context
+            let mut local_ctx = Machine::<T>::load_xtx(xtx_id)?;
+            // Ensure that SFX to escrow is under SecurityLvl::Escrow
+            let fsx = local_ctx
+                .full_side_effects
+                .iter()
+                .flat_map(|fsx_vec| fsx_vec.iter())
+                .find(|fsx| {
+                    fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id) == sfx_id
+                        && fsx.security_lvl == SecurityLvl::Escrow
+                })
+                .ok_or(Error::<T>::EscrowExecutionNotApplicableForThisSFX)?;
+
+            // Ensure caller is the executor of the SFX
+            if fsx.input.enforce_executor != Some(executor.clone()) {
+                return Err(Error::<T>::EscrowExecutionNotApplicableForThisSFX.into())
+            }
+
+            // Decode the action and its arguments from the SFX encoded args
+            let (escrow_asset, target_account, escrow_amount) = Self::recover_escrow_arguments(fsx)
+                .map_err(|e| {
+                    log::error!("Self::recover_escrow_arguments hit an error -- {:?}", e);
+                    Error::<T>::EscrowExecutionNotApplicableForThisSFX
+                })?;
+
+            // Proceed with Escrow of the funds for this SFX - transfer funds to the escrow account
+            let _escrow_account =
+                T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow);
+
+            // Standardize escrow_account IDs as re-hash of sfx_id with 3333
+            let escrow_id = fsx
+                .input
+                .generate_id::<SystemHashing<T>>(sfx_id.as_ref(), 3333);
+
+            T::AccountManager::deposit(
+                escrow_id,
+                RequestCharge {
+                    payee: executor.clone(),
+                    offered_reward: escrow_amount,
+                    charge_fee: Zero::zero(),
+                    source: BenefitSource::EscrowUnlock,
+                    role: CircuitRole::Requester,
+                    recipient: Some(target_account),
+                    maybe_asset_id: escrow_asset,
+                },
+            )?;
+
+            // Transition the Machine state to PendingExecution / FinishedAllSteps marking the current SFX as completed and confirmed
+            Machine::<T>::compile(
+                &mut local_ctx,
+                |_current_fsx, _local_state, _steps_cnt, _status, _requester| {
+                    // Check if Xtx is in the bidding state
+                    Ok(PrecompileResult::TryConfirm(
+                        sfx_id,
+                        ConfirmedSideEffect {
+                            err: None,
+                            output: None,
+                            inclusion_data: vec![],
+                            executioner: executor.clone(),
+                            received_at: frame_system::Pallet::<T>::block_number(),
+                            cost: None,
+                        },
+                    ))
+                },
+                |status_change, local_ctx| {
+                    Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+                    if status_change.1 == CircuitStatus::FinishedAllSteps
+                        || status_change.1 == CircuitStatus::Committed
+                    {
+                        Self::request_sfx_attestation(local_ctx);
+                    }
+                    // Emit: From Circuit events
+                    Self::emit_status_update(
+                        local_ctx.xtx_id,
+                        Some(local_ctx.xtx.clone()),
+                        Some(local_ctx.full_side_effects.clone()),
+                    );
+                    Ok(())
+                },
+            )?;
+
+            // Swap all Dynamic Destination Deal ("tddd") SFX to either transfer assets ("tass) or transfer ("tran") replacing the target account with the sender's account
+            let ddd_hotswap_result = Self::perform_ddd_hot_swap(&mut local_ctx, &executor)
+                .map_err(|e| {
+                    log::error!("Self::perform_ddd_hot_swap hit an error -- {:?}", e);
+                    Error::<T>::FailedToPerformDynamicDestinationDealHotSwap
+                })?;
+
+            Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+
+            for (xtx_id, sfx_id, executor, new_action_id) in ddd_hotswap_result {
+                Self::deposit_event(Event::DynamicDestinationDealReplaced(
+                    xtx_id,
+                    sfx_id,
+                    executor,
+                    new_action_id,
+                ));
+            }
+
+            Ok(().into())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
         pub fn bid_sfx(
-            origin: OriginFor<T>, // Active relayer
+            origin: OriginFor<T>,
             sfx_id: SideEffectId<T>,
             bid_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
@@ -924,8 +1063,6 @@ pub mod pallet {
                         || status_change.1 == CircuitStatus::Committed
                     {
                         Self::request_sfx_attestation(local_ctx);
-                        // ToDo: uncomment when price + costs estimates are implemented
-                        // T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
                     }
                     // Emit: From Circuit events
                     Self::emit_status_update(
@@ -988,6 +1125,8 @@ pub mod pallet {
         ),
         // An executions SideEffect was confirmed.
         SideEffectConfirmed(XExecSignalId<T>),
+        // An executions SideEffect was confirmed.
+        DynamicDestinationDealReplaced(XExecSignalId<T>, SideEffectId<T>, T::AccountId, Sfx4bId),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and ready
         XTransactionReadyForExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
@@ -1011,7 +1150,6 @@ pub mod pallet {
             Vec<SideEffectId<T>>,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
-        // ToDo: Implement Xtx timeout!
         CancelledSideEffects(
             <T as frame_system::Config>::AccountId,
             XtxId<T>,
@@ -1031,7 +1169,6 @@ pub mod pallet {
             >,
         ),
         EscrowTransfer(
-            // ToDo: Inspect if Xtx needs to be here and how to process from protocol
             T::AccountId, // from
             T::AccountId, // to
             BalanceOf<T>, // value
@@ -1105,6 +1242,7 @@ pub mod pallet {
         FSXNotFoundById,
         XtxNotFound,
         LocalSideEffectExecutionNotApplicable,
+        EscrowExecutionNotApplicableForThisSFX,
         LocalExecutionUnauthorized,
         OnLocalTriggerFailedToSetupXtx,
         UnauthorizedCancellation,
@@ -1126,6 +1264,9 @@ pub mod pallet {
         ForNowOnlySingleRewardAssetSupportedForMultiSFX,
         TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight,
         SideEffectsValidationFailedAgainstABI,
+        XtxChargeFailedOnEscrowFee,
+        FailedToPerformDynamicDestinationDealHotSwap,
+        NotImplemented,
     }
 }
 
@@ -1153,7 +1294,6 @@ impl<T: Config> Pallet<T> {
             Self::deposit_event(Event::NewSideEffectsAvailable(
                 subjected_account.clone(),
                 xtx_id,
-                // ToDo: Emit circuit outbound messages -> side effects
                 side_effects.to_vec(),
                 side_effects
                     .iter()
@@ -1163,7 +1303,6 @@ impl<T: Config> Pallet<T> {
                     })
                     .collect::<Vec<SideEffectId<T>>>(),
             ));
-            // ToDo remove this
             Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id));
         }
     }
@@ -1214,7 +1353,8 @@ impl<T: Config> Pallet<T> {
         side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
         speed_mode: SpeedMode,
         preferred_security_level: &SecurityLvl,
-    ) -> DispatchResultWithPostInfo {
+        maybe_call_origin: Option<T::AccountId>,
+    ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // Setup: new xtx context with SFX validation
         let mut fresh_xtx = Machine::<T>::setup(
             &side_effects,
@@ -1231,12 +1371,20 @@ impl<T: Config> Pallet<T> {
         )?;
 
         fresh_xtx.xtx.set_speed_mode(speed_mode);
+
+        // Charge finality fees for each Escrow SFX
+        let call_origin = maybe_call_origin.clone().unwrap_or(requester.clone());
+        SquareUp::<T>::charge_finality_fee(&fresh_xtx, &call_origin)
+            .map_err(|_e| Error::<T>::XtxChargeFailedOnEscrowFee)?;
+
         // Compile: apply the new state post squaring up and emit
         Machine::<T>::compile(
             &mut fresh_xtx,
             |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
             |_status_change, local_ctx| {
                 // Emit: circuit events
+                let _call_origin = maybe_call_origin.unwrap_or(requester.clone());
+
                 Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
                 Ok(())
             },
@@ -1245,7 +1393,7 @@ impl<T: Config> Pallet<T> {
         #[cfg(feature = "test-skip-verification")]
         frame_system::Pallet::<T>::inc_account_nonce(requester);
 
-        Ok(().into())
+        Ok(fresh_xtx)
     }
 
     fn authorize(
@@ -1254,19 +1402,16 @@ impl<T: Config> Pallet<T> {
     ) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
         match role {
             CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
-            // ToDo: Handle active Relayer authorisation
             CircuitRole::Relayer => ensure_signed(origin),
-            // ToDo: Handle bonded Executor authorisation
             CircuitRole::Executor => ensure_signed(origin),
-            // ToDo: Handle other CircuitRoles
-            _ => unimplemented!(),
+            _ => return Err(sp_runtime::traits::BadOrigin.into()),
         }
     }
 
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
-        preferred_security_lvl: &SecurityLvl,
+        _preferred_security_lvl: &SecurityLvl,
     ) -> Result<(), Error<T>> {
         let mut full_side_effects: Vec<
             FullSideEffect<
@@ -1276,7 +1421,7 @@ impl<T: Config> Pallet<T> {
             >,
         > = vec![];
 
-        // ToDo: Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
+        // Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
         if side_effects.is_empty() {
             local_ctx.full_side_effects = vec![vec![]];
             return Ok(())
@@ -1297,28 +1442,15 @@ impl<T: Config> Pallet<T> {
             let gateway_max_security_lvl =
                 <T as Config>::Xdns::get_gateway_max_security_lvl(&sfx.target);
 
-            let security_lvl =
-                if side_effects.len() < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
-                    SecurityLvl::Optimistic
-                } else {
-                    gateway_max_security_lvl
-                };
-
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
                 None => return Err(Error::<T>::ABIOnSelectedTargetNotFoundForSubmittedSFX),
             };
-            // todo: store the codec info in gateway's records and use it here
+
             sfx.validate(sfx_abi, &Codec::Scale).map_err(|e| {
                 log::error!("sfx.validate against ABI failed: {:?}", e);
                 Error::<T>::SideEffectsValidationFailedAgainstABI
             })?;
-
-            if let Some(next) = side_effects.get(index + 1) {
-                if sfx.reward_asset_id != next.reward_asset_id {
-                    return Err(Error::<T>::ForNowOnlySingleRewardAssetSupportedForMultiSFX)
-                }
-            }
 
             let submission_target_height = match T::Portal::get_finalized_height(sfx.target)
                 .map_err(|_| Error::<T>::TargetAppearsNotToBeActiveAndDoesntHaveFinalizedHeight)?
@@ -1331,48 +1463,17 @@ impl<T: Config> Pallet<T> {
             full_side_effects.push(FullSideEffect {
                 input: sfx.clone(),
                 confirmed: None,
-                security_lvl,
+                security_lvl: gateway_max_security_lvl,
                 submission_target_height,
                 best_bid: None,
                 index: index as u32,
             });
         }
-        // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
-        full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
+        // Skip automatic ordering of SFX for now, allow user to decide - consult PR#https://github.com/t3rn/t3rn/pull/1489
+        full_side_effects.sort_by(|a, b| a.index.partial_cmp(&b.index).unwrap());
 
-        let mut escrow_sfx_step: Vec<
-            FullSideEffect<
-                T::AccountId,
-                frame_system::pallet_prelude::BlockNumberFor<T>,
-                BalanceOf<T>,
-            >,
-        > = vec![];
-        let mut optimistic_sfx_step: Vec<
-            FullSideEffect<
-                T::AccountId,
-                frame_system::pallet_prelude::BlockNumberFor<T>,
-                BalanceOf<T>,
-            >,
-        > = vec![];
-
-        // Split for 2 following steps of Escrow and Optimistic and
-        for sorted_fsx in full_side_effects.iter() {
-            if sorted_fsx.security_lvl == SecurityLvl::Escrow {
-                escrow_sfx_step.push(sorted_fsx.clone());
-            } else if sorted_fsx.security_lvl == SecurityLvl::Optimistic {
-                optimistic_sfx_step.push(sorted_fsx.clone());
-            }
-        }
-
-        // full_side_effects_steps should be non-empty at this point
-        if escrow_sfx_step.is_empty() {
-            local_ctx.full_side_effects = vec![optimistic_sfx_step.clone()];
-        } else if optimistic_sfx_step.is_empty() {
-            local_ctx.full_side_effects = vec![escrow_sfx_step.clone()];
-        } else {
-            local_ctx.full_side_effects =
-                vec![escrow_sfx_step.clone(), optimistic_sfx_step.clone()];
-        }
+        // Assign the full_side_effects to the local_ctx as they are
+        local_ctx.full_side_effects = vec![full_side_effects];
 
         Ok(())
     }
@@ -1437,7 +1538,7 @@ impl<T: Config> Pallet<T> {
         let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             xtx.speed_mode,
-            None, //ToDo - load pallet index or contract address here
+            None, // Skips source checks since target account and destination are relevant from the protocol perspective
             confirmation.inclusion_data.clone(),
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
@@ -1480,8 +1581,7 @@ impl<T: Config> Pallet<T> {
         fsx.input.confirm(
             sfx_abi,
             inclusion_receipt.message,
-            // todo: store the codec info in gateway's records and use it here
-            &Codec::Scale,
+            &Codec::Scale, // Assume SCALE codec for egress args for now
             &payload_codec,
         )?;
 
@@ -1530,7 +1630,7 @@ impl<T: Config> Pallet<T> {
         true
     }
 
-    // ToDo: This should be called as a 3vm trait injection @Don
+    // ToDo: This should be called as a 3vm trait injection.
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
@@ -1589,7 +1689,7 @@ impl<T: Config> Pallet<T> {
     ) -> Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, &'static str> {
         let side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>> = side_effects
             .into_iter()
-            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .filter_map(|se| se.try_into().ok())
             .collect();
         if side_effects.is_empty() {
             Err("No side effects provided")
@@ -1640,13 +1740,11 @@ impl<T: Config> Pallet<T> {
         // Go over all unfinished Xtx to find those that timed out
         let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
             .filter(|(_xtx_id, adaptive_timeout)| {
-                // ToDo: consider filtering out by adaptive_timeout.verifier == verifier
+                // Tip: consider filtering out by adaptive_timeout.verifier == verifier
                 adaptive_timeout.estimated_height_here < n
             })
             .map(|(xtx_id, _timeout_at)| {
-                // if current_weight <= max_allowed_weight {
                 current_weight = current_weight.saturating_add(Self::process_revert_one(xtx_id).0);
-                // }
             })
             .count();
         current_weight
@@ -1918,7 +2016,7 @@ impl<T: Config> Pallet<T> {
 
         Machine::<T>::compile_infallible(
             &mut xtx_context,
-            |current_fsx, _local_state, _steps_cnt, status, _requester| match status {
+            |_current_fsx, _local_state, _steps_cnt, status, _requester| match status {
                 CircuitStatus::FinishedAllSteps =>
                     PrecompileResult::ForceUpdateStatus(CircuitStatus::Committed),
                 _ => PrecompileResult::TryKill(Cause::Timeout),
@@ -1932,10 +2030,9 @@ impl<T: Config> Pallet<T> {
         T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
     }
 
-    // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
     pub fn process_signal_queue(
-        _n: frame_system::pallet_prelude::BlockNumberFor<T>,
-        _interval: frame_system::pallet_prelude::BlockNumberFor<T>,
+        _n: BlockNumberFor<T>,
+        _interval: BlockNumberFor<T>,
         max_allowed_weight: Weight,
     ) -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);
@@ -2001,5 +2098,117 @@ impl<T: Config> Pallet<T> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
             .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
         Machine::<T>::load_xtx(xtx_id)
+    }
+
+    fn recover_escrow_arguments(
+        fsx: &FullSideEffect<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>,
+    ) -> Result<(Option<AssetId>, T::AccountId, BalanceOf<T>), DispatchError> {
+        match &fsx.input.action {
+            b"tran" => {
+                let target_account_bytes = fsx.input.encoded_args.get(0).ok_or::<DispatchError>(
+                    "RecoverEscrowArgumentsFailedToAccessTargetAccountFromField0".into(),
+                )?;
+                let target_account = T::AccountId::decode(&mut &target_account_bytes[..])
+                    .map_err(|_e| "RecoverEscrowArgumentsFailedOnDecodingArguments")?;
+
+                let escrow_amount_bytes = fsx.input.encoded_args.get(1).ok_or::<DispatchError>(
+                    "RecoverEscrowArgumentsFailedToAccessAmountFromField1".into(),
+                )?;
+
+                let escrow_amount = BalanceOf::<T>::decode(&mut &escrow_amount_bytes[..])
+                    .map_err(|_e| "RecoverEscrowArgumentsFailedOnDecodingArguments")?;
+
+                Ok((None, target_account, escrow_amount))
+            },
+            b"tass" => {
+                let asset_bytes = fsx.input.encoded_args.get(0).ok_or::<DispatchError>(
+                    "RecoverEscrowArgumentsFailedToAccessAssetIdFromField0".into(),
+                )?;
+
+                let asset = AssetId::decode(&mut &asset_bytes[..])
+                    .map_err(|_e| "RecoverEscrowArgumentsFailedOnDecodingArguments")?;
+
+                let target_account_bytes = fsx.input.encoded_args.get(1).ok_or::<DispatchError>(
+                    "RecoverEscrowArgumentsFailedToAccessTargetAccountFromField1".into(),
+                )?;
+
+                let target_account = T::AccountId::decode(&mut &target_account_bytes[..])
+                    .map_err(|_e| "RecoverEscrowArgumentsFailedOnDecodingArguments")?;
+
+                let escrow_amount_bytes = fsx.input.encoded_args.get(2).ok_or::<DispatchError>(
+                    "RecoverEscrowArgumentsFailedToAccessAmountFromField2".into(),
+                )?;
+
+                let escrow_amount = BalanceOf::<T>::decode(&mut &escrow_amount_bytes[..])
+                    .map_err(|_e| "RecoverEscrowArgumentsFailedOnDecodingArguments")?;
+
+                Ok((Some(asset), target_account, escrow_amount))
+            },
+            _ => return Err("EscrowExecutionNotApplicableForThisSFXAction".into()),
+        }
+    }
+
+    fn perform_ddd_hot_swap(
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
+        executor: &T::AccountId,
+    ) -> Result<Vec<(XExecSignalId<T>, SideEffectId<T>, T::AccountId, Sfx4bId)>, DispatchError>
+    {
+        let mut result: Vec<(XExecSignalId<T>, SideEffectId<T>, T::AccountId, Sfx4bId)> = vec![];
+
+        for fsx in local_ctx
+            .full_side_effects
+            .iter_mut()
+            .flat_map(|fsx_vec| fsx_vec.iter_mut())
+        {
+            if &fsx.input.action == b"tddd" {
+                let ddd_asset = fsx
+                    .input
+                    .encoded_args
+                    .get(0)
+                    .ok_or::<DispatchError>("CannotAccessDDDAssetAsField0".into())?;
+                let ddd_target_amount = fsx
+                    .input
+                    .encoded_args
+                    .get(1)
+                    .ok_or::<DispatchError>("CannotAccessDDDAmountAsField1".into())?;
+                if ddd_asset == &0u32.encode() {
+                    fsx.input.action = *b"tran";
+                    fsx.input.encoded_args = vec![executor.encode(), ddd_target_amount.clone()];
+                } else {
+                    fsx.input.action = *b"tass";
+                    fsx.input.encoded_args = vec![
+                        ddd_asset.clone(),
+                        executor.encode(),
+                        ddd_target_amount.clone(),
+                    ];
+                }
+                let override_sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+                let override_ddd_fsx = fsx.clone();
+
+                // Hotswap Full Side Effect in the storage
+                FullSideEffects::<T>::mutate(local_ctx.xtx_id, |full_side_effects| {
+                    if let Some(fsx_vec_of_vec) = full_side_effects {
+                        for fsx_vec in fsx_vec_of_vec.iter_mut() {
+                            for (_index, fsx) in fsx_vec.iter_mut().enumerate() {
+                                if fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
+                                    == override_sfx_id
+                                {
+                                    *fsx = override_ddd_fsx.clone();
+
+                                    result.push((
+                                        local_ctx.xtx_id,
+                                        override_sfx_id,
+                                        executor.clone(),
+                                        fsx.input.action.clone(),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        Ok(result)
     }
 }

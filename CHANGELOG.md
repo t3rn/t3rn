@@ -4,6 +4,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.82.1-rc.0] - 2024-01-10
+### :bug: Bug Fixes
+- [`21ebf2f`](https://github.com/t3rn/t3rn/commit/21ebf2f4a5f7f1c224eb0e2d2b23f2293b44f1aa) - update link and title *(PR [#1516](https://github.com/t3rn/t3rn/pull/1516) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+
+### :wrench: Chores
+- [`fd60dfc`](https://github.com/t3rn/t3rn/commit/fd60dfc6621d93c2f299345f091ec6a65d28785f) - plug GRANDPA proveFinality RPC to standalone node *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.82.0-rc.0] - 2024-01-09
+### :recycle: Refactors
+- [`20c0ca1`](https://github.com/t3rn/t3rn/commit/20c0ca190e1395a8facf4a1570c3e8ed3d6b7351) - resolve, address, fix todos left across the workspace *(PR [#1515](https://github.com/t3rn/t3rn/pull/1515) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.81.3-rc.0] - 2023-12-30
+### :wrench: Chores
+- [`504cc38`](https://github.com/t3rn/t3rn/commit/504cc38c678147903be5e38a7075d4348c441d5b) - add t7rn release *(PR [#1509](https://github.com/t3rn/t3rn/pull/1509) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.81.2-rc.0] - 2023-12-30
+### :wrench: Chores
+- [`6f66fa3`](https://github.com/t3rn/t3rn/commit/6f66fa3aa745b14029867a7c7d27faefbf0dcf04) - uncomment version checking *(PR [#1484](https://github.com/t3rn/t3rn/pull/1484) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.81.1-rc.0] - 2023-12-30
+### :bug: Bug Fixes
+- [`aff2e85`](https://github.com/t3rn/t3rn/commit/aff2e858258dd470462aeb78a54b6e41a1301fba) - removed automated USDT XCM transfers and updated yaml formatting *(PR [#1485](https://github.com/t3rn/t3rn/pull/1485) by [@chexware](https://github.com/chexware))*
+- [`607ad23`](https://github.com/t3rn/t3rn/commit/607ad232d496e6c86cbfe326dceeed8c5359dec5) - update automated XCM transactions signer to use CIRCUIT_SIGNER_KEY *(PR [#1503](https://github.com/t3rn/t3rn/pull/1503) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.81.0-rc.0] - 2023-12-20
+### :sparkles: New Features
+- [`ad81580`](https://github.com/t3rn/t3rn/commit/ad815805b48e95c624ce07308905ca823ed35510) - bump celestia light client to version updating weights *(PR [#1502](https://github.com/t3rn/t3rn/pull/1502) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.80.0-rc.0] - 2023-12-19
+### :sparkles: New Features
+- [`795a5fa`](https://github.com/t3rn/t3rn/commit/795a5fab403e74ae62000b017a349e1b3d547dc7) - hook Celestia light client to t0rn & t2rn runtime  *(PR [#1501](https://github.com/t3rn/t3rn/pull/1501) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.79.0-rc.0] - 2023-12-11
+### :sparkles: New Features
+- [`f8b0bde`](https://github.com/t3rn/t3rn/commit/f8b0bde6a5e9f648afe4b082a46432134d32a522) - added support bi-directional AccountId-H160 and AssetId-H160 mapping *(PR [#1492](https://github.com/t3rn/t3rn/pull/1492) by [@chexware](https://github.com/chexware))*
+
+### :wrench: Chores
+- [`c0b1683`](https://github.com/t3rn/t3rn/commit/c0b16834fb5a22ece4f439c6196f793134ff5492) - deploy rangers *(PR [#1493](https://github.com/t3rn/t3rn/pull/1493) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.78.0-rc.0] - 2023-12-06
+### :sparkles: New Features
+- [`9ae04f4`](https://github.com/t3rn/t3rn/commit/9ae04f48239ed940c9ea743e14ce0552097e7732) - enable multi optimistic & escrow orders with Dynamic Destination Deal  *(PR [#1489](https://github.com/t3rn/t3rn/pull/1489) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.77.0-rc.0] - 2023-11-30
 ### :sparkles: New Features
 - [`d59af68`](https://github.com/t3rn/t3rn/commit/d59af68a81ffc266a59b4cfb0e1842a356b050bb) - added XCM SDK support for automated sending of RUSD  and USDT from AssetHub to t0rn *(PR [#1444](https://github.com/t3rn/t3rn/pull/1444) by [@chexware](https://github.com/chexware))*
@@ -1959,3 +2011,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.75.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.74.10-rc.0...v1.75.0-rc.0
 [v1.76.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.75.3-rc.0...v1.76.0-rc.0
 [v1.77.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.76.0-rc.0...v1.77.0-rc.0
+[v1.78.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.77.0-rc.0...v1.78.0-rc.0
+[v1.79.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.78.0-rc.0...v1.79.0-rc.0
+[v1.80.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.79.0-rc.0...v1.80.0-rc.0
+[v1.81.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.80.0-rc.0...v1.81.0-rc.0
+[v1.81.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.0-rc.0...v1.81.1-rc.0
+[v1.81.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.1-rc.0...v1.81.2-rc.0
+[v1.81.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.2-rc.0...v1.81.3-rc.0
+[v1.82.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.4-rc.0...v1.82.0-rc.0
+[v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0

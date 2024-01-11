@@ -12,12 +12,6 @@ use sp_runtime::{
     MultiSignature, Perbill,
 };
 
-use xcm::v3::{
-    Junction::{GeneralIndex, PalletInstance, Parachain},
-    Junctions::{X1, X3},
-    MultiLocation,
-};
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -45,6 +39,12 @@ pub type Nonce = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
+
+/// EVM Address
+pub type EvmAddress = sp_core::H160;
+
+/// The type for looking up accounts. We don't expect more than 4 billion of them.
+pub type AccountIndex = u32;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.

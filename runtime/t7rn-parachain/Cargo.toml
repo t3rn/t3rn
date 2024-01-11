@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t7rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.0.0"
+version     = "1.82.0-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -73,9 +73,9 @@ xcm-executor               = { git = "https://github.com/paritytech/polkadot", d
 cumulus-pallet-aura-ext             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-pallet-dmp-queue            = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-pallet-parachain-system     = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
+cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-pallet-xcm                  = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-pallet-xcmp-queue           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
-cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-primitives-core             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-primitives-timestamp        = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }

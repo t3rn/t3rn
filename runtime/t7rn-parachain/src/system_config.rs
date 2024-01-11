@@ -49,8 +49,8 @@ impl frame_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
     type RuntimeOrigin = RuntimeOrigin;
-    /// This is used as an identifier of the chain. use t3 prefix
-    type SS58Prefix = circuit_runtime_types::SS58Prefix;
+    /// This is used as an identifier of the chain. use t1 prefix
+    type SS58Prefix = circuit_runtime_types::SS58PrefixT1rn;
     /// Weight information for the extrinsics of this pallet.
     type SystemWeightInfo = ();
     /// Version of the runtime.

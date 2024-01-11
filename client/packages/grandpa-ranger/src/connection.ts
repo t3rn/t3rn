@@ -78,7 +78,7 @@ export class Connection {
         } else {
           this.client = await ApiPromise.create({ provider: this.provider })
           // We can only subscribe to new blocks on the target
-          this.client.derive.chain.subscribeNewHeads((header) => {
+          this.client.derive.chain.subscribeNewHeads(header => {
             this.prometheus.height.set(
               { target: this.target },
               header.number.toNumber()
@@ -91,7 +91,7 @@ export class Connection {
         logger.warn(`Error from ${this.currentProvider().ws}: ${error}`)
 
         // Add a delay before attempting to reconnect (adjust as needed)
-        await new Promise((resolve) => setTimeout(resolve, 5000))
+        await new Promise(resolve => setTimeout(resolve, 5000))
 
         // Attempt reconnection
         connect()

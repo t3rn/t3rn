@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-mock-runtime"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
@@ -1004,6 +1004,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "hex-literal 0.3.4",
+ "libsecp256k1",
  "log",
  "node-primitives",
  "num-traits",
@@ -1035,7 +1036,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-pallets"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1057,6 +1058,7 @@ dependencies = [
  "hex-literal 0.4.1",
  "log",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
@@ -1070,7 +1072,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.77.0-rc.0",
+ "pallet-contracts 1.82.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -1128,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-types"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -1136,12 +1138,13 @@ dependencies = [
  "parachains-common",
  "sp-core",
  "sp-runtime",
+ "sp-std 8.0.0",
  "xcm",
 ]
 
 [[package]]
 name = "circuit-standalone-node"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-standalone-runtime",
  "clap",
@@ -1194,7 +1197,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-runtime"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -1219,7 +1222,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.77.0-rc.0",
+ "pallet-contracts 1.82.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -2812,7 +2815,7 @@ dependencies = [
  "ed25519 2.2.2",
  "rand_core 0.6.4",
  "serde",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "zeroize",
 ]
 
@@ -3382,8 +3385,9 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "evm",
  "frame-support",
  "parity-scale-codec",
@@ -4466,7 +4470,7 @@ dependencies = [
  "parity-scale-codec",
  "rand 0.8.5",
  "secp256k1 0.24.3",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "sha3",
 ]
 
@@ -4492,7 +4496,7 @@ dependencies = [
  "rlibc",
  "scale-info",
  "secp256k1 0.22.2",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "sha3",
  "static_assertions",
 ]
@@ -4960,7 +4964,7 @@ dependencies = [
  "ecdsa 0.16.8",
  "elliptic-curve 0.13.5",
  "once_cell",
- "sha2 0.10.7",
+ "sha2 0.10.8",
 ]
 
 [[package]]
@@ -5214,7 +5218,7 @@ dependencies = [
  "multihash",
  "quick-protobuf",
  "rand 0.8.5",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "thiserror",
  "zeroize",
 ]
@@ -5239,7 +5243,7 @@ dependencies = [
  "log",
  "quick-protobuf",
  "rand 0.8.5",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "smallvec",
  "thiserror",
  "uint",
@@ -5297,7 +5301,7 @@ dependencies = [
  "once_cell",
  "quick-protobuf",
  "rand 0.8.5",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "snow",
  "static_assertions",
  "thiserror",
@@ -6022,7 +6026,7 @@ dependencies = [
  "core2",
  "digest 0.10.7",
  "multihash-derive",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "sha3",
  "unsigned-varint",
 ]
@@ -6426,7 +6430,7 @@ checksum = "51f44edd08f51e2ade572f141051021c5af22677e42b7dd28a88155151c33594"
 dependencies = [
  "ecdsa 0.14.8",
  "elliptic-curve 0.12.3",
- "sha2 0.10.7",
+ "sha2 0.10.8",
 ]
 
 [[package]]
@@ -6437,12 +6441,12 @@ checksum = "dfc8c5bf642dde52bb9e87c0ecd8ca5a76faac2eeed98dedb7c717997e1080aa"
 dependencies = [
  "ecdsa 0.14.8",
  "elliptic-curve 0.12.3",
- "sha2 0.10.7",
+ "sha2 0.10.8",
 ]
 
 [[package]]
 name = "pallet-3vm"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "frame-benchmarking",
@@ -6474,8 +6478,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-3vm-account-mapping"
+version = "1.0.0-dev"
+dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "libsecp256k1",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-account-manager"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6677,8 +6703,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-celestia-light-client"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/celestia-light-client?tag=celestia-v1.0.2#c3fa198baff21fc6debc1708951b05bbb88cedf5"
+dependencies = [
+ "base64 0.21.4",
+ "chrono",
+ "ed25519-dalek 2.0.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hash-db 0.15.2",
+ "hex",
+ "k256",
+ "libsecp256k1",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "prost",
+ "prost-types",
+ "scale-info",
+ "serde",
+ "sha2 0.10.8",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 8.0.0",
+ "sp-trie",
+ "t3rn-primitives",
+ "xcm-builder",
+]
+
+[[package]]
 name = "pallet-circuit"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6736,7 +6795,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-clock"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata 15.1.0",
@@ -6775,7 +6834,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "array-bytes",
  "assert_matches",
@@ -6888,7 +6947,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "frame-benchmarking",
@@ -6925,7 +6984,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry-rpc-runtime-api"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "pallet-contracts-registry",
  "parity-scale-codec",
@@ -6973,10 +7032,11 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.4#a4b4023a39ad66fd76295561f65cd219ddbdcf8e"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.6#ee1258cbeed61bf469dfe0e5e1d56cd792c0a820"
 dependencies = [
  "eth_trie",
  "ethereum-types",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hash-db 0.15.2",
@@ -6994,6 +7054,7 @@ dependencies = [
  "rustc-hex",
  "scale-info",
  "serde",
+ "sha2 0.10.8",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7004,11 +7065,12 @@ dependencies = [
  "ssz-rs-derive",
  "t3rn-primitives",
  "typenum",
+ "xcm-builder",
 ]
 
 [[package]]
 name = "pallet-evm"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "environmental",
  "evm",
@@ -7036,7 +7098,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7313,7 +7375,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7345,7 +7407,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-portal-rpc-runtime-api",
@@ -7361,7 +7423,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc-runtime-api"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "pallet-portal",
  "parity-scale-codec",
@@ -7445,10 +7507,11 @@ dependencies = [
 [[package]]
 name = "pallet-sepolia-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.10#e3740f928531fe06aafd2083de8cd5618cabc08e"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.12#f91fba300cb43dce1c7ce2a6f4e5992f12c2e616"
 dependencies = [
  "eth_trie",
  "ethereum-types",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hash-db 0.15.2",
@@ -7466,6 +7529,7 @@ dependencies = [
  "rustc-hex",
  "scale-info",
  "serde",
+ "sha2 0.10.8",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7476,6 +7540,7 @@ dependencies = [
  "ssz-rs-derive",
  "t3rn-primitives",
  "typenum",
+ "xcm-builder",
 ]
 
 [[package]]
@@ -7727,7 +7792,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7757,7 +7822,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-xdns-rpc-runtime-api",
@@ -7772,7 +7837,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc-runtime-api"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
@@ -8039,7 +8104,7 @@ checksum = "b42f0394d3123e33353ca5e1e89092e533d2cc490389f2bd6131c43c634ebc5f"
 dependencies = [
  "once_cell",
  "pest",
- "sha2 0.10.7",
+ "sha2 0.10.8",
 ]
 
 [[package]]
@@ -9271,7 +9336,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-util"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "fp-evm",
  "pallet-evm",
@@ -11718,9 +11783,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.10.7"
+version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "479fb9d862239e610720565ca91403019f2f00410f1864c5aa7479b950a76ed8"
+checksum = "793db75ad2bcafc3ffa7c68b215fee268f537982cd901d132f89c6343f3a3dc8"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -11861,7 +11926,7 @@ dependencies = [
  "rand_core 0.6.4",
  "ring",
  "rustc_version 0.4.0",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "subtle",
 ]
 
@@ -12159,7 +12224,7 @@ dependencies = [
  "blake2b_simd",
  "byteorder",
  "digest 0.10.7",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "sha3",
  "twox-hash",
 ]
@@ -12995,7 +13060,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -13075,7 +13140,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -13102,6 +13167,7 @@ dependencies = [
  "log",
  "num-traits",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
@@ -13110,11 +13176,12 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-celestia-light-client",
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.77.0-rc.0",
+ "pallet-contracts 1.82.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -13176,7 +13243,7 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-collator"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -13256,7 +13323,7 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-runtime"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -13295,7 +13362,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.77.0-rc.0",
+ "pallet-contracts 1.82.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -13357,7 +13424,7 @@ dependencies = [
 
 [[package]]
 name = "t2rn"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "clap",
  "frame-benchmarking",
@@ -13410,7 +13477,7 @@ dependencies = [
 
 [[package]]
 name = "t2rn-parachain-runtime"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -13425,6 +13492,7 @@ dependencies = [
  "node-primitives",
  "num-traits",
  "pallet-3vm",
+ "pallet-3vm-account-mapping",
  "pallet-account-manager",
  "pallet-asset-tx-payment",
  "pallet-assets",
@@ -13432,10 +13500,11 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-celestia-light-client",
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.77.0-rc.0",
+ "pallet-contracts 1.82.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -13483,7 +13552,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-abi"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13557,7 +13626,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-collator"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -13702,7 +13771,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-primitives"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13767,7 +13836,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -13792,7 +13861,7 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-collator"
-version = "1.77.0-rc.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -13870,7 +13939,7 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-runtime"
-version = "1.0.0"
+version = "1.82.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -14091,7 +14160,7 @@ dependencies = [
  "pbkdf2 0.11.0",
  "rand 0.8.5",
  "rustc-hash",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "thiserror",
  "unicode-normalization",
  "wasm-bindgen",
@@ -15002,7 +15071,7 @@ dependencies = [
  "log",
  "rustix 0.36.15",
  "serde",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "toml 0.5.11",
  "windows-sys 0.45.0",
  "zstd 0.11.2+zstd.1.5.2",
@@ -15244,7 +15313,7 @@ dependencies = [
  "sdp",
  "serde",
  "serde_json",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "stun",
  "thiserror",
  "time",
@@ -15306,7 +15375,7 @@ dependencies = [
  "sec1 0.3.0",
  "serde",
  "sha1",
- "sha2 0.10.7",
+ "sha2 0.10.8",
  "signature 1.6.4",
  "subtle",
  "thiserror",

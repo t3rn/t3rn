@@ -12,6 +12,7 @@ on:
       - "collator.*.Dockerfile"
       - "specs/*.raw.json"
       - ".dockerignore"
+      - "scripts/upgrade-runtime-cargo-release.sh"
 
 jobs:
   release:
@@ -51,7 +52,7 @@ jobs:
         run: |
           git config --global user.email "89840377+t3rn-ci@users.noreply.github.com"
           git config --global user.name "t3rn-ci"
-          cargo release -c release.toml --execute --no-confirm -p t0rn-parachain-runtime -p t0rn-parachain-collator -p t1rn-parachain-runtime -p t1rn-parachain-collator ${{ steps.version.outputs.version }}
+          cargo release -c release.toml --execute --no-confirm -p t0rn-parachain-runtime -p t0rn-parachain-collator -p t7rn-parachain-runtime -p t7rn-parachain-collator ${{ steps.version.outputs.version }}
 
       - name: Push tag
         run: |

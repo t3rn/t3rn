@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -78,11 +78,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 3,
-    spec_version: 3,
-    impl_version: 3,
+    authoring_version: 12,
+    spec_version: 12,
+    impl_version: 12,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 4,
+    transaction_version: 13,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -244,6 +244,7 @@ construct_runtime!(
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
+        AccountMapping: pallet_3vm_account_mapping = 126,
 
          // Portal
         Portal: pallet_portal = 128,
@@ -252,6 +253,7 @@ construct_runtime!(
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
         EthereumBridge: pallet_eth2_finality_verifier = 132,
         SepoliaBridge: pallet_sepolia_finality_verifier = 133,
+        CelestiaLightClient: pallet_celestia_light_client = 134,
 
         // Handy utilities
         Maintenance: pallet_maintenance_mode = 140,
@@ -278,6 +280,7 @@ mod benches {
         // [pallet_timestamp, Timestamp]
         // [pallet_collator_selection, CollatorSelection]
         // [pallet_account_manager, AccountManager]
+        [pallet_eth2_finality_verifier, EthereumBridge]
         [pallet_vacuum, Vacuum]
     );
 }

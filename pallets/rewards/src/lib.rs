@@ -631,7 +631,7 @@ pub mod pallet {
                 };
 
                 // Add the executor and asset id to the list of accumulated settlements for this round
-                let mut accumulated_settlement =
+                let accumulated_settlement =
                     AccumulatedSettlements::<T>::get(&executor, &asset_type);
                 match accumulated_settlement {
                     Some(accumulated_settlement) => {

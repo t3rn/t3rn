@@ -15,6 +15,7 @@ pub use pallet_utility;
 
 pub use evm_precompile_util;
 pub use pallet_3vm;
+pub use pallet_3vm_account_mapping;
 pub use pallet_3vm_contracts;
 pub use pallet_3vm_evm;
 pub use pallet_3vm_evm_primitives;

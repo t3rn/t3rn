@@ -17,7 +17,7 @@ use crate::{circuit::AdaptiveTimeout, light_client::InclusionReceipt};
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::{
     fsx::FullSideEffect,
-    sfx::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
+    sfx::{HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
 };
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
@@ -101,6 +101,12 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
         speed_mode: SpeedMode,
     ) -> DispatchResultWithPostInfo;
 
+    fn bid(
+        origin: OriginFor<T>,
+        sfx_id: SideEffectId<T>,
+        amount: Balance,
+    ) -> DispatchResultWithPostInfo;
+
     fn store_gmp_payload(id: H256, payload: H256) -> bool;
 
     fn get_gmp_payload(id: H256) -> Option<H256>;
@@ -154,6 +160,8 @@ pub trait ReadSFX<Hash, Account, Balance, BlockNumber> {
     fn get_fsx_status(fsx_id: Hash) -> Result<CircuitStatus, DispatchError>;
 
     fn get_fsx_executor(fsx_id: Hash) -> Result<Option<Account>, DispatchError>;
+
+    fn recover_latest_submitted_xtx_id() -> Result<Hash, DispatchError>;
 
     fn get_fsx(
         fsx_id: Hash,

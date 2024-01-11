@@ -372,7 +372,7 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_eth2_finality_verifier::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sepolia_finality_verifier::Config for Runtime {
@@ -384,5 +384,16 @@ impl pallet_sepolia_finality_verifier::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_sepolia_finality_verifier::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const CelestiaHeadersToStore: u32 = 1000; // we want a multiple of slots_per_epoch + 1
+}
+
+impl pallet_celestia_light_client::Config for Runtime {
+    type HeadersToStore = CelestiaHeadersToStore;
+    type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_celestia_light_client::weights::SubstrateWeight<Runtime>;
 }
