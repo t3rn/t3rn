@@ -232,7 +232,7 @@ std = [
   "pallet-asset-registry/std",
   "pallet-withdraw-teleport/std",
   # try-runtime pallets
-  "frame-try-runtime/std".
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [
