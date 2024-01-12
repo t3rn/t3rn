@@ -115,7 +115,6 @@ jobs:
           command: llvm-cov
           args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex "(node|3vm|evm)" --lcov --output-path lcov.info
 
-
       - name: Upload coverage data
         uses: codecov/codecov-action@v3
         with:
