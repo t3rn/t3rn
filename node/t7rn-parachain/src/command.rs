@@ -4,7 +4,7 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::BenchmarkCmd;
 use log::{info, warn};
 
-use parachain_runtime::Block;
+use parachain_runtime::{Block, MILLISECS_PER_BLOCK};
 
 const COLLATOR_NAME: &str = "t1rn collator";
 
@@ -225,8 +225,6 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
-            use try_runtime_cli::block_building_info::timestamp_with_aura_info;
-
             let runner = cli.create_runner(cmd)?;
 
             type HostFunctions = (
@@ -244,7 +242,7 @@ pub fn run() -> Result<()> {
                 sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
                     .map_err(|e| format!("Error: {:?}", e))?;
 
-            let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
+            let info_provider = try_runtime_cli::block_building_info::timestamp_with_aura_info(MILLISECS_PER_BLOCK);
 
             runner.async_run(|_| {
                 Ok((
