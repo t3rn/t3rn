@@ -72,6 +72,24 @@ wasmi                 = { version = "0.20", default-features = false }
 wasmi-validation      = { version = "0.4", default-features = false }
 wasmparser            = { package = "wasmparser-nostd", version = "0.91", default-features = false }
 
+# frontier dependencies
+async-trait                     = "0.1"
+kvdb-rocksdb                    = "0.19.0"
+parity-db                       = "0.4.9"
+parking_lot                     = "0.12.1"
+clap                            = { version = "4.3", features = ["derive", "deprecated"] }
+sqlx                            = { version = "0.7.1", default-features = false, features = ["macros"] }
+futures                         = { version = "0.3.28" }
+thiserror                       = { version = "1.0" }
+tokio                           = { version = "1.29.1" }
+substrate-test-runtime-client   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+prometheus-endpoint             = { package = "substrate-prometheus-endpoint", version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-utils                        = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-block-builder                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+sc-client-db                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0', default-features = false }
+sp-storage                      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false }
+sp-database                     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v1.0.0' }
+
 # parity
 codec              = { version = "3.6.1", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
 frame-metadata     = { version = "15", features = [ "v13", "v14" ], default-features = false }
@@ -206,6 +224,7 @@ substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrat
 substrate-wasm-builder         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
+
 # Trappist dependencies
 pallet-asset-registry    = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
 pallet-withdraw-teleport = { git = "https://github.com/paritytech/trappist", rev = "8aa876d5f9720f54bf33c578c0ed3dcac0bc91f2", default-features = false }
@@ -215,12 +234,27 @@ jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 
 t3rn-sdk-primitives = { path = "sdk/crates/primitives", default-features = false }
 
-fp-account                     = { path = "./pallets/evm/account" }
-fp-evm                         = { path = "./pallets/evm/primitives" }
-pallet-evm-test-vector-support = { path = "./pallets/evm/test-vector-support" }
+# EVM
+fp-evm                            = { path = "./pallets/evm/primitives", default-features = false }
+fp-account                        = { path = "./pallets/evm/account", default-features = false }
+fp-rpc                            = { path = "./pallets/evm/rpc", default-features = false }
+fc-rpc                            = { path = "./pallets/evm/client/rpc", features = ["default"] }
+fc-storage                        = { path = "./pallets/evm/client/storage", default-features = false }
+fc-mapping-sync                   = { path = "./pallets/evm/client/mapping-sync", default-features = false }
+fc-consensus                      = { path = "./pallets/evm/client/consensus", default-features = false }
+fc-db                             = { path = "./pallets/evm/client/db", default-features = false }
+fc-cli                            = { path = "./pallets/evm/client/cli", default-features = false }
+pallet-dynamic-fee                = { path = "./pallets/evm/dynamic-fee", default-features = false }
+pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support", default-features = false }
+# Direct Frontier Imports
+fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
+fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
+fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
+fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
+fp-dynamic-fee                    = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
-getrandom = { version = "0.2.8", features = [ "js" ] }
+getrandom = { version = "0.2.10", features = [ "js" ] }
 
 [workspace]
 exclude = [ "vendor" ]
@@ -238,6 +272,9 @@ members = [
   "node/t3rn-parachain",
   "node/t7rn-parachain",
   "pallets/3vm",
+  "pallets/3vm/account-mapping",
+  "pallets/3vm/ethereum",
+  "pallets/3vm/ethereum/primitives",
   "pallets/account-manager",
   "pallets/circuit",
   "pallets/clock",
@@ -246,6 +283,8 @@ members = [
   "pallets/contracts-registry/rpc",
   "pallets/contracts-registry/rpc/runtime-api",
   "pallets/evm",
+  "pallets/evm/rpc",
+  "pallets/evm/client/rpc",
   "pallets/3vm/account-mapping",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
@@ -282,6 +321,9 @@ members = [
 #xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
+fc-rpc                      = { path = "./pallets/evm/client/rpc" }
+fp-rpc                      = { path = "./pallets/evm/rpc" }
 fp-evm                      = { path = "./pallets/evm/primitives" }
+fp-ethereum                 = { path = "./pallets/3vm/ethereum/primitives" }
 pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
 t3rn-primitives             = { path = "./primitives" }

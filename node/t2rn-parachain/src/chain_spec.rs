@@ -208,6 +208,7 @@ fn testnet_genesis(
         //     ..Default::default()
         // },
         treasury: Default::default(),
+        ethereum: Default::default(),
         escrow_treasury: Default::default(),
         fee_treasury: Default::default(),
         parachain_treasury: Default::default(),
