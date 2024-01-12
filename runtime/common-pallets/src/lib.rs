@@ -17,6 +17,7 @@ pub use evm_precompile_util;
 pub use pallet_3vm;
 pub use pallet_3vm_account_mapping;
 pub use pallet_3vm_contracts;
+pub use pallet_3vm_ethereum;
 pub use pallet_3vm_evm;
 pub use pallet_3vm_evm_primitives;
 pub use pallet_account_manager;
@@ -51,3 +52,14 @@ pub use xcm_executor;
 
 pub use t3rn_primitives;
 pub use t3rn_types;
+
+pub use fc_cli;
+pub use fc_consensus;
+pub use fc_db;
+pub use fc_mapping_sync;
+pub use fc_rpc;
+pub use fc_storage;
+pub use fp_account;
+pub use fp_rpc;
+pub use pallet_dynamic_fee;
+pub use pallet_evm_test_vector_support;

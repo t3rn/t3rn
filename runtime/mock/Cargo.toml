@@ -18,9 +18,12 @@ libsecp256k1   = { workspace = true }
 log            = { version = "0.4" }
 num-traits     = { workspace = true }
 parachain-info = { workspace = true }
+smallvec = { workspace = true }
+serde       = { version = "1.0", optional = true, features = [ "derive" ] }
+rlp = { workspace = true }
+ethereum = { workspace = true, features = ["with-codec"] }
 scale-info     = { workspace = true }
-serde          = { version = "1.0", optional = true, features = [ "derive" ] }
-smallvec       = { workspace = true }
+
 
 t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }
@@ -52,5 +55,11 @@ sp-version           = { git = "https://github.com/paritytech/substrate", branch
 
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
+# Direct Frontier Imports
+fp-consensus                      = { workspace = true,  features = ["default"]  }
+fp-self-contained                 = { workspace = true,  features = ["default"]  }
+fp-dynamic-fee                    = { workspace = true,  features = ["default"]  }
+
 # Mock only
 sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v1.0.0' }
+#signature = { version = "1.6.4" }
