@@ -32,7 +32,10 @@ frame-support                = { workspace = true }
 frame-system                 = { workspace = true }
 frame-system-benchmarking    = { workspace = true, optional = true }
 frame-system-rpc-runtime-api = { workspace = true }
+
+# try-runtime CLI
 frame-try-runtime            = { workspace = true, optional = true }
+try-runtime-cli              = { workspace = true, optional = true }
 
 pallet-asset-tx-payment                    = { workspace = true }
 pallet-assets                              = { workspace = true }
@@ -233,6 +236,8 @@ std = [
   "xcm-primitives/std",
   "pallet-asset-registry/std",
   "pallet-withdraw-teleport/std",
+  # try-runtime pallets
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [
@@ -289,9 +294,12 @@ try-runtime = [
   "frame-try-runtime",
   "frame-support/try-runtime",
   "frame-system/try-runtime",
+  "pallet-3vm/try-runtime",
+  "pallet-3vm-evm/try-runtime",
+  "pallet-3vm-contracts/try-runtime",
+  "pallet-3vm-account-mapping/try-runtime",
   "pallet-attesters/try-runtime",
   "pallet-rewards/try-runtime",
-  "pallet-3vm/try-runtime",
   "pallet-account-manager/try-runtime",
   "pallet-asset-registry/try-runtime",
   "pallet-withdraw-teleport/try-runtime",
@@ -303,7 +311,6 @@ try-runtime = [
   "pallet-circuit/try-runtime",
   "pallet-clock/try-runtime",
   "pallet-collator-selection/try-runtime",
-  "pallet-3vm-contracts/try-runtime",
   "pallet-contracts-registry/try-runtime",
   "pallet-identity/try-runtime",
   "pallet-membership/try-runtime",
@@ -332,6 +339,4 @@ try-runtime = [
   "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
-  "pallet-3vm-evm/try-runtime",
-  "pallet-3vm-account-mapping/try-runtime",
 ]
