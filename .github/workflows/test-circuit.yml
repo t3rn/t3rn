@@ -113,7 +113,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex node --lcov --output-path lcov.info
+          args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex "node|pallet/3vm" --lcov --output-path lcov.info
 
       - name: Upload coverage data
         uses: codecov/codecov-action@v3

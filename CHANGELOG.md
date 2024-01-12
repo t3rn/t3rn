@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.83.0-rc.0] - 2024-01-12
+### :sparkles: New Features
+- [`6cf11e9`](https://github.com/t3rn/t3rn/commit/6cf11e9046cb5685c1e37633997d265b4c96cedc) - added pallet-ethereum to t0rn, and t2rn *(PR [#1496](https://github.com/t3rn/t3rn/pull/1496) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.82.1-rc.0] - 2024-01-10
 ### :bug: Bug Fixes
 - [`21ebf2f`](https://github.com/t3rn/t3rn/commit/21ebf2f4a5f7f1c224eb0e2d2b23f2293b44f1aa) - update link and title *(PR [#1516](https://github.com/t3rn/t3rn/pull/1516) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
@@ -2020,3 +2025,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.81.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.2-rc.0...v1.81.3-rc.0
 [v1.82.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.4-rc.0...v1.82.0-rc.0
 [v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0
+[v1.83.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.1-rc.0...v1.83.0-rc.0

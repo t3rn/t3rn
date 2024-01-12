@@ -14,13 +14,15 @@ use frame_support::{
 use circuit_runtime_types::{AssetId, EvmAddress};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
+use pallet_3vm_ethereum::PostLogContent;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
 use sp_runtime::{
-    traits::{AccountIdConversion, Keccak256},
+    traits::{AccountIdConversion, DispatchInfoOf, Dispatchable, Keccak256},
+    transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
@@ -169,6 +171,17 @@ impl pallet_3vm_evm::Config for Runtime {
 }
 
 parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
+impl pallet_3vm_ethereum::Config for Runtime {
+    type ExtraDataLength = ConstU32<30>;
+    type PostLogContent = PostBlockAndTxnHashes;
+    type RuntimeEvent = RuntimeEvent;
+    type StateRoot = pallet_3vm_ethereum::IntermediateStateRoot<Self>;
+}
+
+parameter_types! {
     pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
     pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
     pub const StorageDepositFee: Balance = MILLIUNIT / 100;
@@ -205,5 +218,66 @@ impl Erc20Mapping for Runtime {
         }
         let asset_id = u32::from_be_bytes(asset_id_bytes);
         Some(asset_id)
+    }
+}
+
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic =
+    fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+
+impl fp_self_contained::SelfContainedCall for RuntimeCall {
+    type SignedInfo = H160;
+
+    fn is_self_contained(&self) -> bool {
+        match self {
+            RuntimeCall::Ethereum(call) => call.is_self_contained(),
+            _ => false,
+        }
+    }
+
+    fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        match self {
+            RuntimeCall::Ethereum(call) => call.check_self_contained(),
+            _ => None,
+        }
+    }
+
+    fn validate_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<TransactionValidity> {
+        match self {
+            RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn pre_dispatch_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<Result<(), TransactionValidityError>> {
+        match self {
+            RuntimeCall::Ethereum(call) =>
+                call.pre_dispatch_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn apply_self_contained(
+        self,
+        info: Self::SignedInfo,
+    ) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>>
+    {
+        match self {
+            call @ RuntimeCall::Ethereum(pallet_3vm_ethereum::Call::transact { .. }) =>
+                Some(call.dispatch(RuntimeOrigin::from(
+                    pallet_3vm_ethereum::RawOrigin::EthereumTransaction(info),
+                ))),
+            _ => None,
+        }
     }
 }

@@ -56,8 +56,7 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
 - Linea - coming soon
 - NeonVM (Solana Devnet) - coming soon
 - t0rn (Rococo (Testnet) Parachain) - coming soon
-- t2rn (t3rn's Devnet Parachain) - coming soon
-- t1rn (Kusama Parachain) - coming soon
+- b3rn (Kusama Parachain) - coming soon
 - t3rn (Polkadot Parachain) - coming soon
 
 

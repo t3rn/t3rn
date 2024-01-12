@@ -390,6 +390,7 @@ fn polkadot_genesis_full(
         clock: Default::default(),
         account_manager: Default::default(),
         treasury: Default::default(),
+        ethereum: Default::default(),
         escrow_treasury: Default::default(),
         fee_treasury: Default::default(),
         parachain_treasury: Default::default(),
