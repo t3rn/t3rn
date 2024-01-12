@@ -23,7 +23,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: "--prod --force"
           vercel-org-id: ${{ secrets.VERCEL_TEAM_ID }}
-          vercel-project-id: "prj_QiG1knwmqW2M4iHUZNLy0ezObEKv"
+          vercel-project-id: ${{ secrets.VERCEL_MAIN_DOCS_PROJECT_ID }}
           scope: "t3rn"
           github-comment: false
           alias-domains: |
