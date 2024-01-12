@@ -22,7 +22,7 @@ To further incentivise execution with t3rn, we have a series of three token ince
 
 ## t3rn protocol
 
-<img height="50%" src="/img/t3rn-protocol-anatomy.png" />
+<img height="50%" src="/img/t3rn-protocol-anatomy.jpg" />
 
 The concept can be compared with intents, or auctions.
 
