@@ -290,14 +290,16 @@ runtime-benchmarks = [
 
 ]
 try-runtime = [
-  "try-runtime-cli",
-  "frame-try-runtime",
   "frame-executive/try-runtime",
+  "frame-try-runtime",
   "frame-support/try-runtime",
   "frame-system/try-runtime",
+  "pallet-3vm/try-runtime",
+  "pallet-3vm-evm/try-runtime",
+  "pallet-3vm-contracts/try-runtime",
+  "pallet-3vm-account-mapping/try-runtime",
   "pallet-attesters/try-runtime",
   "pallet-rewards/try-runtime",
-  "pallet-3vm/try-runtime",
   "pallet-account-manager/try-runtime",
   "pallet-asset-registry/try-runtime",
   "pallet-withdraw-teleport/try-runtime",
@@ -309,7 +311,6 @@ try-runtime = [
   "pallet-circuit/try-runtime",
   "pallet-clock/try-runtime",
   "pallet-collator-selection/try-runtime",
-  "pallet-3vm-contracts/try-runtime",
   "pallet-contracts-registry/try-runtime",
   "pallet-identity/try-runtime",
   "pallet-membership/try-runtime",
@@ -338,6 +339,4 @@ try-runtime = [
   "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
-  "pallet-3vm-evm/try-runtime",
-  "pallet-3vm-account-mapping/try-runtime",
 ]
