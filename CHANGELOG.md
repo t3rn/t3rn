@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.83.0-rc.0] - 2024-01-12
+### :sparkles: New Features
+- [`43fbf67`](https://github.com/t3rn/t3rn/commit/43fbf67d9871b7a16731f5ee753a9742ca3f5d5b) - add pallet-ethereum to t0rn and t2rn with EVM RPC *(PR [#1531](https://github.com/t3rn/t3rn/pull/1531) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`699e00a`](https://github.com/t3rn/t3rn/commit/699e00a80d394102a02743a614603de5eccf2125) - all issues that hinders build success *(PR [#1530](https://github.com/t3rn/t3rn/pull/1530) by [@ahkohd](https://github.com/ahkohd))*
+
+### :wrench: Chores
+- [`caa4b66`](https://github.com/t3rn/t3rn/commit/caa4b6623dcece08db7a4b22338454876f2ab22c) - update environment variable *(PR [#1533](https://github.com/t3rn/t3rn/pull/1533) by [@ahkohd](https://github.com/ahkohd))*
+
+
 ## [v1.82.1-rc.0] - 2024-01-10
 ### :bug: Bug Fixes
 - [`21ebf2f`](https://github.com/t3rn/t3rn/commit/21ebf2f4a5f7f1c224eb0e2d2b23f2293b44f1aa) - update link and title *(PR [#1516](https://github.com/t3rn/t3rn/pull/1516) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
@@ -2020,3 +2031,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.81.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.2-rc.0...v1.81.3-rc.0
 [v1.82.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.4-rc.0...v1.82.0-rc.0
 [v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0
+[v1.83.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.1-rc.0...v1.83.0-rc.0
