@@ -63,7 +63,7 @@ fp-storage = { workspace = true, features = ["default"] }
 pallet-evm = { features = ["default"], path = "../.." }
 
 [dev-dependencies]
-tempfile = "3.3.0"
+tempfile = "3.9.0"
 # Substrate
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
