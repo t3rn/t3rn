@@ -54,6 +54,12 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
     steps:
+      - name: Clean up workspace first
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./ || true
       - name: ☁ Checkout git repo
         uses: actions/checkout@v4
         with:

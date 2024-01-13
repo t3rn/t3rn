@@ -4,9 +4,10 @@ on:
     branches:
       - main
       - development
-    pull_request:
-      - main
-      - development
+#  pull_request:
+#    branches:
+#      - main
+#      - development
 jobs:
   deploy:
     runs-on: ["self-hosted"]
@@ -14,8 +15,6 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'skip cd')"
     steps:
       - uses: actions/checkout@v4
-        with:
-          sparse-checkout: docs/main
       - name: Deploy Main docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
