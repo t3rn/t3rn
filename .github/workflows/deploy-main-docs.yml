@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-cehckout: docs/main
+          sparse-checkout: docs/main
       - name: Deploy Main docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
