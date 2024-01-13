@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.83.1-rc.0] - 2024-01-13
+### :bug: Bug Fixes
+- [`6bacb0f`](https://github.com/t3rn/t3rn/commit/6bacb0ff5fd5a5cd9fa4b8bf3b74c6386877fc55) - correct typo in docs release main docs CI pipeline [skip ci] *(PR [#1535](https://github.com/t3rn/t3rn/pull/1535) by [@ahkohd](https://github.com/ahkohd))*
+
+### :wrench: Chores
+- [`2200ea2`](https://github.com/t3rn/t3rn/commit/2200ea2611032e7b920d4d4626ffccf544d579f3) - plug GRANDPA proveFinality RPC to standalone node *(PR [#1534](https://github.com/t3rn/t3rn/pull/1534) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.83.0-rc.0] - 2024-01-12
 ### :sparkles: New Features
 - [`43fbf67`](https://github.com/t3rn/t3rn/commit/43fbf67d9871b7a16731f5ee753a9742ca3f5d5b) - add pallet-ethereum to t0rn and t2rn with EVM RPC *(PR [#1531](https://github.com/t3rn/t3rn/pull/1531) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -2032,3 +2040,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.82.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.4-rc.0...v1.82.0-rc.0
 [v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0
 [v1.83.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.1-rc.0...v1.83.0-rc.0
+[v1.83.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.0-rc.0...v1.83.1-rc.0
