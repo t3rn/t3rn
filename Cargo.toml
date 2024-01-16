@@ -182,8 +182,8 @@ parachains-common                   = { git = 'https://github.com/paritytech/cum
 
 ## TODO: t3rn dependencies
 pallet-celestia-light-client     = { git = "https://github.com/t3rn/celestia-light-client", tag = "celestia-v1.0.2", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.8", default-features = false }
-pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.14", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.9", default-features = false }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.15", default-features = false }
 
 #pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
 pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "build/update-v1" }
