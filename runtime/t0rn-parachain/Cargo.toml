@@ -280,7 +280,7 @@ runtime-benchmarks = [
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
-  "pallet-celestia-light-client/runtime-benchmarks",
+#  "pallet-celestia-light-client/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
