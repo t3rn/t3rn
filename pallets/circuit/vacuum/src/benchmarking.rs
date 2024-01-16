@@ -29,7 +29,7 @@ use frame_support::assert_ok;
 use frame_system::{EventRecord, Pallet as System, RawOrigin};
 use pallet_xdns::Pallet as XDNS;
 use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT;
-
+use t3rn_primitives::xdns::Xdns;
 fn assume_last_xtx_event<T: Config>() -> T::Hash {
     let events = System::<T>::events();
     // let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
