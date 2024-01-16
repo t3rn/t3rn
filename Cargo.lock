@@ -7526,7 +7526,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.6#ee1258cbeed61bf469dfe0e5e1d56cd792c0a820"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.7#8cb8471d0b18b1a6819a9a52d94863828bd9d263"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -7534,6 +7534,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hash-db 0.15.2",
+ "hex",
  "hex-literal 0.3.4",
  "keccak-hash 0.10.0",
  "log",
@@ -8033,7 +8034,7 @@ dependencies = [
 [[package]]
 name = "pallet-sepolia-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.12#f91fba300cb43dce1c7ce2a6f4e5992f12c2e616"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.13#c6f9c3466a47e19e5b0237e81eb6e4d256d31996"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -8041,6 +8042,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hash-db 0.15.2",
+ "hex",
  "hex-literal 0.3.4",
  "keccak-hash 0.10.0",
  "log",
