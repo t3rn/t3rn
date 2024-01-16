@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.84.0-rc.0] - 2024-01-16
+### :sparkles: New Features
+- [`72925c8`](https://github.com/t3rn/t3rn/commit/72925c8839699f6ebcce8f10e7f6023e1ad6aa1f) - bump sepolia & ethereum light client versions; fix benchmarks  *(PR [#1540](https://github.com/t3rn/t3rn/pull/1540) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.83.1-rc.0] - 2024-01-13
 ### :bug: Bug Fixes
 - [`6bacb0f`](https://github.com/t3rn/t3rn/commit/6bacb0ff5fd5a5cd9fa4b8bf3b74c6386877fc55) - correct typo in docs release main docs CI pipeline [skip ci] *(PR [#1535](https://github.com/t3rn/t3rn/pull/1535) by [@ahkohd](https://github.com/ahkohd))*
@@ -2041,3 +2046,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0
 [v1.83.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.1-rc.0...v1.83.0-rc.0
 [v1.83.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.0-rc.0...v1.83.1-rc.0
+[v1.84.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.1-rc.0...v1.84.0-rc.0
