@@ -7181,7 +7181,7 @@ dependencies = [
 [[package]]
 name = "pallet-celestia-light-client"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/celestia-light-client?tag=celestia-v1.0.3#216ac37ba18377a2852a13d9f75b2e833296b9b8"
+source = "git+https://github.com/t3rn/celestia-light-client?tag=celestia-v1.0.4#3650c50a72cafd56981fb53d02b46d96c2fca55b"
 dependencies = [
  "base64 0.21.4",
  "chrono",
