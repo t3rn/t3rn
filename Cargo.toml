@@ -181,7 +181,7 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
 ## TODO: t3rn dependencies
-pallet-celestia-light-client     = { git = "https://github.com/t3rn/celestia-light-client", tag = "celestia-v1.0.2", default-features = false }
+pallet-celestia-light-client     = { git = "https://github.com/t3rn/celestia-light-client", tag = "celestia-v1.0.3", default-features = false }
 pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "eth-v1.1.9", default-features = false }
 pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", tag = "sepolia-v1.1.15", default-features = false }
 
