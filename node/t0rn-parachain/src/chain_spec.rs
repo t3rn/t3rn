@@ -435,39 +435,42 @@ fn polkadot_genesis_full(
         transaction_payment: Default::default(),
         contracts_registry: Default::default(),
         attesters: Default::default(),
-        evm: Default::default(), /*EvmConfig {
-             accounts: {
-                 // Prefund the "ALICE" account
-                 let mut accounts = std::collections::BTreeMap::new();
-                 accounts.insert(
-                     /*SS58: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-                      * hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
-                      * Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)
-                      *H160::from_str("d43593c715fdd31c61141abd04a99fd6822c8558").expect("internal H160 is valid;
-                      * qed"), */
-                     H160::from_slice(&hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558")),
-                     GenesisAccount {
-                         nonce: U256::zero(),
-                         // Using a larger number, so I can tell the accounts apart by balance.
-                         balance: U256::from(2u64 << 61),
-                         code: vec![],
-                         storage: std::collections::BTreeMap::new(),
-                     },
-                 );
-                 accounts.insert(
-                     // H160 address of CI test runner account
-                     H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C").expect("internal H160 is valid; qed"),
-                     GenesisAccount {
-                         balance: U256::from(1u64 << 61),
-                         code: Default::default(),
-                         nonce: Default::default(),
-                         storage: Default::default(),
-                     },
-                 );
-                 accounts
-             },
-             _marker: Default::default(),
-         },*/
+        evm: EvmConfig {
+            accounts: {
+                // Prefund the "ALICE" account
+                let mut accounts = std::collections::BTreeMap::new();
+                accounts.insert(
+                    /*SS58: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+                     * hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
+                     * Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)
+                     *H160::from_str("d43593c715fdd31c61141abd04a99fd6822c8558").expect("internal H160 is valid;
+                     * qed"), */
+                    H160::from_slice(&hex_literal::hex!(
+                        "d43593c715fdd31c61141abd04a99fd6822c8558"
+                    )),
+                    GenesisAccount {
+                        nonce: U256::zero(),
+                        // Using a larger number, so I can tell the accounts apart by balance.
+                        balance: U256::from(2u64 << 61),
+                        code: vec![],
+                        storage: std::collections::BTreeMap::new(),
+                    },
+                );
+                accounts.insert(
+                    // H160 address of CI test runner account
+                    H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        balance: U256::from(10u64 << 62),
+                        code: Default::default(),
+                        nonce: Default::default(),
+                        storage: Default::default(),
+                    },
+                );
+                accounts.encode()
+            },
+            _marker: Default::default(),
+        },
         three_vm: Default::default(),
         rewards: Default::default(),
         maintenance: Default::default(),
