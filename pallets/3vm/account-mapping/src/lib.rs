@@ -30,6 +30,7 @@ use frame_support::{
     transactional,
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
+use pallet_3vm_evm::AddressMapping as BaseAddressMapping;
 use scale_codec::Encode;
 use sp_core::crypto::AccountId32;
 use sp_io::{
@@ -205,7 +206,7 @@ pub mod pallet {
             ensure!(eth_address == address, Error::<T>::InvalidSignature);
 
             // check if the evm padded address already exists
-            let account_id = T::AddressMapping::get_account_id(&eth_address);
+            let account_id = T::AddressMapping::into_account_id(&eth_address);
             if frame_system::Pallet::<T>::account_exists(&account_id) {
                 // merge balance from `evm padded address` to `origin`
                 <T as Config>::Currency::transfer(
@@ -342,7 +343,7 @@ where
     T::AccountId: IsType<AccountId32>,
 {
     // Returns the AccountId used go generate the given EvmAddress.
-    fn get_account_id(address: &EvmAddress) -> T::AccountId {
+    fn into_account_id(address: &EvmAddress) -> T::AccountId {
         if let Some(acc) = Accounts::<T>::get(address) {
             acc
         } else {
@@ -397,6 +398,22 @@ where
     }
 }
 
+impl<T: Config> BaseAddressMapping<T::AccountId> for EvmAddressMapping<T>
+where
+    T::AccountId: IsType<AccountId32>,
+{
+    // Returns the AccountId used go generate the given EvmAddress.
+    fn into_account_id(address: EvmAddress) -> T::AccountId {
+        if let Some(acc) = Accounts::<T>::get(&address) {
+            acc
+        } else {
+            let mut data: [u8; 32] = [0u8; 32];
+            data[0..4].copy_from_slice(b"evm:");
+            data[4..24].copy_from_slice(&address[..]);
+            AccountId32::from(data).into()
+        }
+    }
+}
 pub struct CallKillAccount<T>(PhantomData<T>);
 
 impl<T: Config> OnKilledAccount<T::AccountId> for CallKillAccount<T> {
@@ -419,7 +436,7 @@ impl<T: Config> StaticLookup for Pallet<T> {
 
     fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
         match a {
-            MultiAddress::Address20(i) => Ok(T::AddressMapping::get_account_id(
+            MultiAddress::Address20(i) => Ok(T::AddressMapping::into_account_id(
                 &EvmAddress::from_slice(&i),
             )),
             _ => Err(LookupError),
