@@ -1,6 +1,6 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, EvmConfig,
-    GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig,
+    GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeGenesisConfig,
     SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, TRN, U256,
     WASM_BINARY,
 };
