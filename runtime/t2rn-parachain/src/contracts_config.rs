@@ -144,7 +144,7 @@ parameter_types! {
 // }
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
-    type AddressMapping = HashedAddressMapping<Keccak256>;
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
