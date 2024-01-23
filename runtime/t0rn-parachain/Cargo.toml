@@ -292,6 +292,8 @@ runtime-benchmarks = [
   "pallet-3vm-ethereum/runtime-benchmarks",
   "pallet-3vm-contracts/runtime-benchmarks",
   "pallet-3vm-account-mapping/runtime-benchmarks",
+  # Other
+  # "pallet-celestia-light-client/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",

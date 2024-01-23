@@ -6965,6 +6965,7 @@ dependencies = [
  "frame-system",
  "libsecp256k1",
  "pallet-balances",
+ "pallet-evm",
  "parity-scale-codec",
  "scale-info",
  "serde",
