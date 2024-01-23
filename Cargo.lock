@@ -195,7 +195,7 @@ checksum = "4436e0292ab1bb631b42973c61205e704475fe8126af845c8d923c0996328127"
 [[package]]
 name = "amcl"
 version = "0.3.0"
-source = "git+https://github.com/Snowfork/milagro_bls#7d1776edb42870b006430ece9741c15811e4c9e3"
+source = "git+https://github.com/Snowfork/milagro_bls?rev=7d1776edb42870b006430ece9741c15811e4c9e3#7d1776edb42870b006430ece9741c15811e4c9e3"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -6273,7 +6273,7 @@ dependencies = [
 [[package]]
 name = "milagro_bls"
 version = "1.5.0"
-source = "git+https://github.com/Snowfork/milagro_bls#7d1776edb42870b006430ece9741c15811e4c9e3"
+source = "git+https://github.com/Snowfork/milagro_bls?rev=7d1776edb42870b006430ece9741c15811e4c9e3#7d1776edb42870b006430ece9741c15811e4c9e3"
 dependencies = [
  "amcl",
  "hex",
@@ -7527,7 +7527,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.9#2d6d7464587912a319fec6968ff594b8ae32ad3b"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=eth-v1.1.11#1fe0c90b980853a95a0d5a4a0b8c1ad1db4320a1"
 dependencies = [
  "eth_trie",
  "ethereum-types",
@@ -8035,7 +8035,7 @@ dependencies = [
 [[package]]
 name = "pallet-sepolia-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.15#391d49b572be27804601767121e781f3d02884f5"
+source = "git+https://github.com/t3rn/eth2-light-client?tag=sepolia-v1.1.17#1da666d79a73ebf4da9a64f52bf324d8d438411f"
 dependencies = [
  "eth_trie",
  "ethereum-types",
