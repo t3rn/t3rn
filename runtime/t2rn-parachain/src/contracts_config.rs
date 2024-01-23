@@ -6,7 +6,7 @@ use crate::{
 use frame_support::{
     pallet_prelude::ConstU32,
     parameter_types,
-    traits::{ConstBool, FindAuthor},
+    traits::{ConstBool, Currency, FindAuthor, OnUnbalanced},
     PalletId,
 };
 
@@ -119,10 +119,21 @@ impl FeeCalculator for FixedGasPrice {
 const BLOCK_GAS_LIMIT: u64 = 150_000_000;
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+
+pub struct ToStakingPot;
+impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let staking_pot = PotId::get().into_account_truncating();
+        Balances::resolve_creating(&staking_pot, amount);
+    }
+}
+
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-    pub const ChainId: u64 = 42;
+    pub const ChainId: u64 = 3333;
+    pub const PotId: PalletId = PalletId(*b"PotStake");
     // pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
     //     (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
     //     (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
@@ -144,7 +155,7 @@ parameter_types! {
 // }
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
-    type AddressMapping = HashedAddressMapping<Keccak256>;
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
@@ -155,7 +166,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
-    type OnChargeTransaction = ();
+    type OnChargeTransaction = pallet_3vm_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type OnCreate = ();
     type PrecompilesType = ();
     // type PrecompilesValue = PrecompilesValue;
