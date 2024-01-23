@@ -7072,7 +7072,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-attesters"
-version = "1.9.0-rc.0"
+version = "1.85.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7246,7 +7246,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit-vacuum"
-version = "1.9.0-rc.0"
+version = "1.85.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7996,7 +7996,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-rewards"
-version = "1.9.0-rc.0"
+version = "1.85.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
