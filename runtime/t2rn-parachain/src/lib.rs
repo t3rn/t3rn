@@ -35,7 +35,7 @@ use sp_std::{
 use codec::Encode;
 use frame_support::{dispatch, traits::OnFinalize};
 use pallet_3vm_evm::GasWeightMapping;
-use pallet_3vm_evm_primitives::FeeCalculator;
+pub use pallet_3vm_evm_primitives::{FeeCalculator, GenesisAccount};
 pub use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 pub use sp_runtime::{Perbill, Permill};
