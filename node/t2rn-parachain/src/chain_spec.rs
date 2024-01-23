@@ -1,5 +1,8 @@
 use sp_core::crypto::UncheckedInto;
-use t2rn_parachain_runtime::{AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY, H160, U256};
+use t2rn_parachain_runtime::{
+    AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, H160, U256, WASM_BINARY,
+};
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
