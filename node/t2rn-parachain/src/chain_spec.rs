@@ -1,7 +1,7 @@
 use sp_core::crypto::UncheckedInto;
 use t2rn_parachain_runtime::{
-    AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, H160, U256, WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, GenesisAccount, GrandpaConfig, RuntimeGenesisConfig,
+    Signature, SudoConfig, SystemConfig, XDNSConfig, H160, U256, WASM_BINARY,
 };
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
@@ -17,6 +17,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::str::FromStr;
 use t3rn_abi::sfx_abi::SFXAbi;
 use t3rn_primitives::xdns::GatewayRecord;
 use t3rn_types::sfx::Sfx4bId;
