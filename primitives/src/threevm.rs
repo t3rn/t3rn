@@ -392,7 +392,7 @@ pub trait Erc20Mapping {
 /// A mapping between `AccountId` and `EvmAddress`.
 pub trait AddressMapping<AccountId> {
     /// Returns the AccountId used go generate the given EvmAddress.
-    fn into_account_id(evm: &EvmAddress) -> AccountId;
+    fn get_account_id(evm: &EvmAddress) -> AccountId;
     /// Returns the EvmAddress associated with a given AccountId or the
     /// underlying EvmAddress of the AccountId.
     /// Returns None if there is no EvmAddress associated with the AccountId

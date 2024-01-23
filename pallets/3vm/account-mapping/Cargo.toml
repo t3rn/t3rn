@@ -22,7 +22,6 @@ frame-system = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 # t3rn packages
-pallet-3vm-evm                  = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
 t3rn-primitives                 = { default-features = false, path = "../../../primitives" }
 circuit-runtime-types           = { default-features = false, path = "../../../runtime/common-types" }
 
@@ -49,7 +48,6 @@ std = [
     "circuit-runtime-types/std",
     "circuit-runtime-pallets/std",
     "t3rn-primitives/std",
-    "pallet-3vm-evm/std",
 ]
 runtime-benchmarks = [
     "libsecp256k1",

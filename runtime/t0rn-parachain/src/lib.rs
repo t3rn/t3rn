@@ -39,7 +39,7 @@ use t3rn_primitives::{
 use codec::Encode;
 use frame_support::{dispatch, traits::OnFinalize};
 use pallet_3vm_evm::{GasWeightMapping, Runner};
-pub use pallet_3vm_evm_primitives::{FeeCalculator, GenesisAccount};
+use pallet_3vm_evm_primitives::FeeCalculator;
 pub use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 
