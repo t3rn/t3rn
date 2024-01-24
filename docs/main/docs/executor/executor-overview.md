@@ -18,7 +18,7 @@ To further incentivise execution with t3rn, we have a series of three token ince
 
 **Airdrop of 1M TRN tokens to the top 10 Executors.**
 
-### [How to become an Executor](/become-an-executor)
+### [How to become an Executor](become-an-executor)
 
 ## t3rn protocol
 

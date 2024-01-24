@@ -45,9 +45,9 @@ To facilitate its multichain transactions, t3rn relies on essential network part
 ## Popular 🔥
 
 - [**Brain explanation**](/brain-explanation)
-- **Run an Attester** coming soon.
-- **Run a Collator** coming soon.
-- [**Run an Executor**](executor/executor-overview) coming soon.
-- **Run a Write** coming soon.
+- [**Run an Attester**](attester/attester-overview)
+- [**Run a Collator**](collator/collator-overview)
+- [**Run an Executor**](executor/executor-overview)
+- **Run a Writer** coming soon.
 - **Strategies** coming soon.
 - [**Smart Contract Hub**](t3rn_protocol_wiki/smart-contract-hub)
