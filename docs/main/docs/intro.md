@@ -18,7 +18,7 @@ Welcome to t3rn, a smart contract hosting platform designed for seamless and fai
 1. **Open-Source Registry:**
    - Smart contracts on t3rn are stored in an open-source registry, making them accessible for reuse and development by the broader community.
 1. **Remuneration for Creators:**
-   - Contract creators are [rewarded](about_t3rn/token-economics/tokenomics-inflation#gas-fees) each time their code is executed, receiving a share of the gas fee. This incentivizes open-source development and fosters a new paradigm of collaborative creation.
+   - Contract creators are [rewarded](/tokenomics#gas-fees) each time their code is executed, receiving a share of the gas fee. This incentivizes open-source development and fosters a new paradigm of collaborative creation.
 
 ## Key Network Participants
 
