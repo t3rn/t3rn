@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # What is a Side Effect
 
-A Side Effect is the description of a transaction that needs to be executed on an external consensus system. When initialised, the creator of the Side Effect (can be a user or smart contract) sets all the neccessary attribtues and commits it to the Circuit, where Executors are able to lacate them.
+A Side Effect is the description of a transaction that needs to be executed on an external consensus system. When initialised, the creator of the Side Effect (can be a user or smart contract) sets all the necessary attributes and commits it to the Circuit, where Executors are able to locate them.
 
 
 ## Side Effect structure

@@ -24,7 +24,7 @@ The `t0rn` boot node with static DNS address:
 /dns/bootnode.t0rn.io/tcp/33333/p2p/12D3KooWEepV69XCJB4Zi193cZcm5W22ZR62DEP84iLFTUKVPtwp
 ```
 
-## Prerequistes
+## Prerequisites
 
 ### Setup Directories
 

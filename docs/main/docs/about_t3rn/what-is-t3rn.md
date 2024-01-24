@@ -9,7 +9,7 @@ Developers can write their smart contracts in Solidity, !ink or languages compil
 
 They also have the ability to store smart contracts in the contracts registry and make them available for everyone, so other developers can instantiate these contracts in their contracts and collaborate with them.
 
-Creators of contracts will get a share of the gas fee for the use of the contract,so they will be remunerated with a [reward](token-economics/tokenomics-inflation#gas-fees) each time someone executes it.
+Creators of contracts will get a share of the gas fee for the use of the contract, so they will be remunerated with a [reward](token-economics/tokenomics-inflation#gas-fees) each time someone executes it.
 
 t3rn uses a special model to perform multichain transactions. Essential components for this are Circuit, Executor and Ranger.
 
