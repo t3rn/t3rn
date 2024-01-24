@@ -6,7 +6,7 @@ sidebar_position: 4
 
 ### Step 1: Compose your Side Effects
 
-Users are able to create [Side Effects](../components/sfx-overview) via the t3rn UI.
+Users are able to create [Side Effects](sfx-overview) via the t3rn UI.
 To add a step to the Side Effect list, click `+` and choose the `type` of transaction on which chain they wish to be added.
 
 <p align="center">
