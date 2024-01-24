@@ -10,7 +10,7 @@ Developers can write their smart contracts in Solidity, !ink or languages compil
 
 They also have the ability to store smart contracts in the contracts registry and make them available for everyone, so other developers can instantiate these contracts in their contracts and collaborate with them.
 
-Creators of contracts will get a share of the gas fee for the use of the contract,so they will be remunerated with a [reward](token-economics/tokenomics-inflation#gas-fees) each time someone executes it.
+Creators of contracts will get a share of the gas fee for the use of the contract,so they will be remunerated with a [reward](/tokenomics#gas-fees) each time someone executes it.
 
 t3rn uses a special model to perform multichain transactions. Essential components for this are Circuit, Executor and Ranger.
 
@@ -24,7 +24,7 @@ When a multichain smart contract is executed, it creates transactions on other b
 
 Side Effects are operations that contain parameters for a transaction on a target blockchain. The requester of a Side Effect specifies the fee he wants to pay for the execution and submits it to the Circuit.
 
-They are stored on Circuit and can then be picked up and executed by an [Executor](/components/executor-overview).
+They are stored on Circuit and can then be picked up and executed by an [Executor](/executor/executor-overview).
 These Side Effects can be combined with others to execute a sequence of multichain transactions. This enables composition of multichain transactions.
 
 In most cases, each individual transaction must be successful in order to retain the logic of the composite transaction.
