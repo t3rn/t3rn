@@ -1,6 +1,6 @@
 ---
 sidebar_position: 15
-id: What is t3rn?
+label: "What is t3rn?"
 ---
 
 # What is t3rn
