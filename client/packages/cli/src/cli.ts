@@ -14,6 +14,8 @@ import { handleXcmTransferCommand } from './commands/xcmTransfer/index.ts'
 import { handleAssetRegistrationCommand } from './commands/registerAsset/index.ts'
 import { handleResetGatewayCommand } from './commands/resetGateway/index.ts'
 import { handleAddSfxAbiCommand } from '@/commands/sfxABI/index.js'
+import { handleEvmGetBalanceCommand } from '@/commands/evm/getBalance.ts'
+import { handleEvmTransferCommand } from '@/commands/evm/transfer.ts'
 import {
   handleFastWriterCommand,
   handleMockWriterCommand,
@@ -264,6 +266,32 @@ withExportMode(
       'Repeat the transaction x times as utility::batch calls',
     )
     .action(handleMockWriterCommand),
+)
+
+withExportMode(
+    program
+        .command('evmGetBalance')
+        .description('Check EVM balance for an acocunt.')
+        .requiredOption(
+            '--endpoint <string>',
+            'The RPC endpoint to check the balance on',
+        )
+        .requiredOption('--account <string>', 'The account - EVM address')
+        .action(handleEvmGetBalanceCommand),
+)
+
+withExportMode(
+    program
+        .command('evmTransfer')
+        .description('Check EVM balance for an acocunt.')
+        .requiredOption(
+            '--endpoint <string>',
+            'The RPC endpoint to transfer balance on',
+        )
+        .requiredOption('--sender <string>', 'The sender account - EVM address')
+        .requiredOption('--receiver <string>', 'The receiver account - EVM address')
+        .requiredOption('--amount <number>', 'The balance that will be transfered')
+        .action(handleEvmTransferCommand),
 )
 
 program.parse(process.argv)
