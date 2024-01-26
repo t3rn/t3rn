@@ -1,6 +1,7 @@
 import ora from 'ora'
 import { Args } from '@/types.js'
 import { validate } from '@/utils/fns.js'
+import { colorLogMsg } from '@/utils/log.js'
 import Web3 from 'web3'
 import { EvmGetBalanceSchema } from '@/schemas/evm.ts'
 
@@ -31,7 +32,7 @@ export const handleEvmGetBalanceCommand = async (
 
     try {
         const evmApi = new Web3(args.endpoint)
-        let balance = await evmApi.eth.getBalance(args.account)
+        const balance = await evmApi.eth.getBalance(args.account)
         await new Promise(f => setTimeout(f, 10000))
         spinner.stopAndPersist({
             symbol: '🎉',

@@ -3,6 +3,7 @@ import { Args } from '@/types.js'
 import { validate } from '@/utils/fns.js'
 import { colorLogMsg } from '@/utils/log.js'
 import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
+import Web3 from 'web3'
 import { EvmTransferSchema } from '@/schemas/evm.ts'
 
 export const spinner = ora()
@@ -19,7 +20,7 @@ export const handleEvmTransferCommand = async (
         EvmTransferSchema,
         {
             ..._args,
-            amount: parseFloat(_args?.amount),
+            amount: parseInt(_args?.amount),
         },
         {
             configFileName: 'EVM balance transfer arguments',
@@ -34,9 +35,21 @@ export const handleEvmTransferCommand = async (
     spinner.start()
 
     try {
-        const targetApi = await ApiPromise.create({
-            provider: new WsProvider(args.endpoint),
-        })
+        const evmApi = new Web3(args.endpoint)
+        const transaction = {
+            from: args.sender,
+            to: args.receiver,
+            value: args.amount.toString()
+        }
+        await evmApi.eth.sendTransaction(transaction, undefined, { ignoreGasPricing: true })
+            .on('error', err => {spinner.fail(colorLogMsg('ERROR', err))})
+            .on('sending', transactionToBeSent => console.log(`Sending transaction... \n ${transactionToBeSent}`))
+            .on('receipt', transactionReceipt => spinner.stopAndPersist(
+                {
+                    symbol: '🎉',
+                    text: colorLogMsg('SUCCESS', `EVM transaction completed!\n ${transactionReceipt}`),
+                }
+            ))
     } catch (e) {
         spinner.fail(`EVM transfer failed: ${e}`)
     }
