@@ -44,7 +44,7 @@ export const handleEvmTransferCommand = async (
             gas: 21000
         }
         const signPromise = evmApi.eth.accounts.signTransaction(transaction, args.signature)
-        console.log("Transaction is is signed")
+
         signPromise.then((signedTx) => {
             evmApi.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
                 .on('error', err => {spinner.fail(colorLogMsg('ERROR', err))})
