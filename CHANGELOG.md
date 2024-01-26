@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.86.0-rc.0] - 2024-01-23
+### :sparkles: New Features
+- [`4514ef9`](https://github.com/t3rn/t3rn/commit/4514ef9356579e0be4f27e9928154d9844711477) - enable pre-funded Metamask accounts for t0rn & t2rn  *(PR [#1550](https://github.com/t3rn/t3rn/pull/1550) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.85.0-rc.0] - 2024-01-17
 ### :sparkles: New Features
 - [`4d20bf2`](https://github.com/t3rn/t3rn/commit/4d20bf2f9e3ff76a89f506e591f4709f7ccfc48c) - update Celestia light client to v1.0.4 *(PR [#1543](https://github.com/t3rn/t3rn/pull/1543) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -2053,3 +2058,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.83.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.0-rc.0...v1.83.1-rc.0
 [v1.84.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.1-rc.0...v1.84.0-rc.0
 [v1.85.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.84.1-rc.0...v1.85.0-rc.0
+[v1.86.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.85.0-rc.0...v1.86.0-rc.0
