@@ -1,8 +1,7 @@
 import ora from 'ora'
 import { Args } from '@/types.js'
 import { validate } from '@/utils/fns.js'
-import { colorLogMsg } from '@/utils/log.js'
-import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
+import Web3 from 'web3'
 import { EvmGetBalanceSchema } from '@/schemas/evm.ts'
 
 export const spinner = ora()
@@ -31,8 +30,12 @@ export const handleEvmGetBalanceCommand = async (
     spinner.start()
 
     try {
-        const targetApi = await ApiPromise.create({
-            provider: new WsProvider(args.endpoint),
+        const evmApi = new Web3(args.endpoint)
+        let balance = await evmApi.eth.getBalance(args.account)
+        await new Promise(f => setTimeout(f, 10000))
+        spinner.stopAndPersist({
+            symbol: '🎉',
+            text: colorLogMsg('SUCCESS', `${args.account} balance: ${balance}`),
         })
     } catch (e) {
         spinner.fail(`Getting EVM balance for account failed: ${e}`)
