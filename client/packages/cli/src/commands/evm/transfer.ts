@@ -12,6 +12,7 @@ export const handleEvmTransferCommand = async (
     _args: Args<
         | 'endpoint'
         | 'sender'
+        | 'signature'
         | 'receiver'
         | 'amount'
     >,
@@ -39,17 +40,24 @@ export const handleEvmTransferCommand = async (
         const transaction = {
             from: args.sender,
             to: args.receiver,
-            value: args.amount.toString()
+            value: args.amount.toString(),
+            gas: 21000
         }
-        await evmApi.eth.sendTransaction(transaction, undefined, { ignoreGasPricing: true })
-            .on('error', err => {spinner.fail(colorLogMsg('ERROR', err))})
-            .on('sending', transactionToBeSent => console.log(`Sending transaction... \n ${transactionToBeSent}`))
-            .on('receipt', transactionReceipt => spinner.stopAndPersist(
-                {
-                    symbol: '🎉',
-                    text: colorLogMsg('SUCCESS', `EVM transaction completed!\n ${transactionReceipt}`),
-                }
-            ))
+        const signPromise = evmApi.eth.accounts.signTransaction(transaction, args.signature)
+        console.log("Transaction is is signed")
+        signPromise.then((signedTx) => {
+            evmApi.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
+                .on('error', err => {spinner.fail(colorLogMsg('ERROR', err))})
+                .on('sending', transactionToBeSent => console.log(`Sending transaction... \n ${transactionToBeSent}`))
+                .on('receipt', transactionReceipt => spinner.stopAndPersist(
+                    {
+                        symbol: '🎉',
+                        text: colorLogMsg('SUCCESS', `EVM transaction completed!\n ${transactionReceipt}`),
+                    }
+                ))
+        }).catch((err) => {
+            spinner.fail(`EVM transfer failed: ${err}`)
+        })
     } catch (e) {
         spinner.fail(`EVM transfer failed: ${e}`)
     }

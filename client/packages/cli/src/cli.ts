@@ -289,6 +289,7 @@ withExportMode(
             'The RPC endpoint to transfer balance on',
         )
         .requiredOption('--sender <string>', 'The sender account - EVM address')
+        .requiredOption('--signature <string>', 'The sender accountsignature')
         .requiredOption('--receiver <string>', 'The receiver account - EVM address')
         .requiredOption('--amount <number>', 'The balance that will be transfered')
         .action(handleEvmTransferCommand),
