@@ -64,6 +64,7 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
+pub mod bsc_finality_verifier;
 
 use crate::attesters::LatencyStatus;
 use t3rn_types::sfx::{SecurityLvl, TargetId};
