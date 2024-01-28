@@ -41,3 +41,21 @@ export const EvmTransferSchema = z.object({
     })
         .positive(),
 })
+
+export const EvmClaimAddressSchema = z.object({
+    endpoint: z.string({
+        invalid_type_error: 'Endpoint must be a string',
+        required_error: 'Endpoint is required',
+    })
+        .startsWith('ws://')
+        .or(z.string().startsWith('wss://')),
+    substrateSignature: z.string({
+        invalid_type_error: 'Substrate signature must be a string',
+        required_error: 'Substrate signature is required',
+    }),
+    evmAccountSignature: z.string({
+        invalid_type_error: 'EVM signature must be a string',
+        required_error: 'EVM signature m is required',
+    })
+})
+

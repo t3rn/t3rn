@@ -2,7 +2,6 @@ import ora from 'ora'
 import { Args } from '@/types.js'
 import { validate } from '@/utils/fns.js'
 import { colorLogMsg } from '@/utils/log.js'
-import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
 import Web3 from 'web3'
 import { EvmTransferSchema } from '@/schemas/evm.ts'
 

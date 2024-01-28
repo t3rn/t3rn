@@ -14,6 +14,7 @@ import { handleXcmTransferCommand } from './commands/xcmTransfer/index.ts'
 import { handleAssetRegistrationCommand } from './commands/registerAsset/index.ts'
 import { handleResetGatewayCommand } from './commands/resetGateway/index.ts'
 import { handleAddSfxAbiCommand } from '@/commands/sfxABI/index.js'
+import { handleEvmClaimAccountCommand } from '@/commands/evm/claimEvmAddress.ts'
 import { handleEvmGetBalanceCommand } from '@/commands/evm/getBalance.ts'
 import { handleEvmTransferCommand } from '@/commands/evm/transfer.ts'
 import {
@@ -266,6 +267,19 @@ withExportMode(
       'Repeat the transaction x times as utility::batch calls',
     )
     .action(handleMockWriterCommand),
+)
+
+withExportMode(
+    program
+        .command('claimEvmAccount')
+        .description('Claim EVM account with substrate address')
+        .requiredOption(
+            '--endpoint <string>',
+            'The RPC endpoint to transfer balance on',
+        )
+        .requiredOption('--substrate-signature <string>', 'The substrate account signature')
+        .requiredOption('--evm-signature <string>', 'The evm account signature')
+        .action(handleEvmClaimAccountCommand),
 )
 
 withExportMode(
