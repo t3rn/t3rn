@@ -286,7 +286,7 @@ withExportMode(
 withExportMode(
     program
         .command('evmGetBalance')
-        .description('Check EVM balance for an acocunt.')
+        .description('Check EVM balance for an account.')
         .requiredOption(
             '--endpoint <string>',
             'The RPC endpoint to check the balance on',
@@ -298,13 +298,13 @@ withExportMode(
 withExportMode(
     program
         .command('evmTransfer')
-        .description('Check EVM balance for an acocunt.')
+        .description('Check EVM balance for an account.')
         .requiredOption(
             '--endpoint <string>',
             'The RPC endpoint to transfer balance on',
         )
         .requiredOption('--sender <string>', 'The sender account - EVM address')
-        .requiredOption('--signature <string>', 'The sender accountsignature')
+        .requiredOption('--signature <string>', 'The signature of the sender account')
         .requiredOption('--receiver <string>', 'The receiver account - EVM address')
         .requiredOption('--amount <number>', 'The balance that will be transfered')
         .action(handleEvmTransferCommand),
