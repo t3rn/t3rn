@@ -39,7 +39,6 @@ export const handleEvmClaimAaddressCommand = async (
         const keyring = new Keyring({type: 'sr25519'})
         const signer =  keyring.addFromUri(args.substrateSignature)
         if ( args.evmAddress == "default" ) {
-            console.log("Claiming default account")
             signAndSend(
                 api.tx.accountMapping.claimDefaultAccount(),
                 api,
@@ -51,7 +50,6 @@ export const handleEvmClaimAaddressCommand = async (
             })
         }
         else {
-            console.log("Claiming specific account")
             signAndSend(
                 api.tx.accountMapping.claimEthAccount(args.evmAddress, args.evmSignature),
                 api,
@@ -59,11 +57,9 @@ export const handleEvmClaimAaddressCommand = async (
             )
             spinner.stopAndPersist({
                 symbol: '🎉',
-                text: colorLogMsg('SUCCESS', `${args,evmAddress} successfully claimed!`),
+                text: colorLogMsg('SUCCESS', `${args.evmAddress} successfully claimed!`),
             })
         }
-        //spinner.succeed(colorLogMsg('SUCCESS', `Successful EVM account claim!`))
-
     }
     catch (e) {
         spinner.fail(`Claiming EVM account failed: ${e}`)
