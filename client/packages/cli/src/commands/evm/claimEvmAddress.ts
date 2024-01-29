@@ -29,6 +29,7 @@ export const handleEvmClaimAaddressCommand = async (
     if (!args) {
         process.exit()
     }
+    console.log(args)
 
     spinner.text = 'Claiming EVM account... \n'
     spinner.start()
@@ -39,7 +40,7 @@ export const handleEvmClaimAaddressCommand = async (
         const keyring = new Keyring({type: 'sr25519'})
         const signer =  keyring.addFromUri(args.substrateSignature)
         if ( args.evmAddress == "default" ) {
-            signAndSend(
+             await signAndSend(
                 api.tx.accountMapping.claimDefaultAccount(),
                 api,
                 signer,
@@ -50,7 +51,7 @@ export const handleEvmClaimAaddressCommand = async (
             })
         }
         else {
-            signAndSend(
+            await signAndSend(
                 api.tx.accountMapping.claimEthAccount(args.evmAddress, args.evmSignature),
                 api,
                 signer,
