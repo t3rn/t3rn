@@ -29,7 +29,6 @@ export const handleEvmClaimAaddressCommand = async (
     if (!args) {
         process.exit()
     }
-    console.log(args)
 
     spinner.text = 'Claiming EVM account... \n'
     spinner.start()
