@@ -277,8 +277,8 @@ withExportMode(
             '--endpoint <string>',
             'The RPC endpoint to transfer balance on',
         )
-        .requiredOption('--substrate-signature <string>', 'The substrate account signature')
-        .requiredOption('--evm-signature <string>', 'The evm account signature')
+        .requiredOption('--substrate-signer <string>', 'The substrate account private key')
+        .requiredOption('--evm-signer <string>', 'The evm account private key')
         .action(handleEvmClaimAaddressCommand),
 )
 

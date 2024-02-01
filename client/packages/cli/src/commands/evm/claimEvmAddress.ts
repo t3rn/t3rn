@@ -12,8 +12,8 @@ export const spinner = ora()
 export const handleEvmClaimAaddressCommand = async (
     _args: Args<
         | 'endpoint'
-        | 'substrateSignature'
-        | 'evmSignature'
+        | 'substrateSigner'
+        | 'evmSigner'
     >,
 ) => {
     const args = validate(
@@ -37,8 +37,8 @@ export const handleEvmClaimAaddressCommand = async (
             provider: new WsProvider(args.endpoint),
         })
         const keyring = new Keyring({type: 'sr25519'})
-        const signer =  keyring.addFromUri(args.substrateSignature)
-        if ( args.evmSignature == "default" ) {
+        const signer =  keyring.addFromUri(args.substrateSigner)
+        if ( args.evmSigner == "default" ) {
              await signAndSend(
                 api.tx.accountMapping.claimDefaultAccount(),
                 api,
@@ -50,20 +50,20 @@ export const handleEvmClaimAaddressCommand = async (
             })
         }
         else {
-            const evmApi = new Web3(args.endpoint)
+            const evmApi = await new Web3(args.endpoint)
             spinner.stopAndPersist({
                 symbol: '\u2713',
-                text: colorLogMsg('INFO', `Connected to endpoint ${args.endpoint}`),
+                text: colorLogMsg('INFO', `Connected to EVM endpoint ${args.endpoint}`),
             })
-            const evmAccount = await evmApi.eth.accounts.privateKeyToAccount(args.evmSignature, false)
+            const evmAccount = await evmApi.eth.accounts.privateKeyToAccount(args.evmSigner, false)
             spinner.stopAndPersist({
                 symbol: '\u2713',
                 text: colorLogMsg('INFO', `The EVM address for the private key is ${evmAccount.address}`),
             })
-            const evmSign = await evmApi.eth.accounts.sign(evmAccount.address, args.evmSignature)
+            const evmSign = await evmApi.eth.accounts.sign(evmAccount.address, args.evmSigner)
             spinner.stopAndPersist({
                 symbol: '\u2713',
-                text: colorLogMsg('INFO', `The signature for private key is ${evmSign.signature}`),
+                text: colorLogMsg('INFO', `The EVM signature for private key is ${evmSign.signature}`),
             })
 
             await signAndSend(

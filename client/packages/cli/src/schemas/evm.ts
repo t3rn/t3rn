@@ -49,13 +49,13 @@ export const EvmClaimAddressSchema = z.object({
     })
         .startsWith('ws://')
         .or(z.string().startsWith('wss://')),
-    substrateSignature: z.string({
-        invalid_type_error: 'Substrate signature must be a string',
-        required_error: 'Substrate signature is required',
+    substrateSigner: z.string({
+        invalid_type_error: 'Substrate signer must be a string',
+        required_error: 'Substrate signer is required',
     }),
-    evmSignature: z.string({
-        invalid_type_error: 'EVM signature must be a string',
-        required_error: 'EVM signature is required',
+    evmSigner: z.string({
+        invalid_type_error: 'EVM signer must be a string',
+        required_error: 'EVM signer is required',
     })
 })
 
