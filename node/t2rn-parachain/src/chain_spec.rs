@@ -129,6 +129,13 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>(
                         "0xe0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c",
                     ),
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    get_account_id_from_seed::<sr25519::Public>("Executor//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Cli//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Ranger//default"),
                 ],
                 vec![],
                 standard_sfx_abi(),
