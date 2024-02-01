@@ -2,6 +2,7 @@ import ora from 'ora'
 import { Args } from '@/types.js'
 import { validate } from '@/utils/fns.js'
 import { colorLogMsg } from '@/utils/log.js'
+import Web3 from 'web3'
 import { ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
 import { signAndSend } from '@/utils/xcm.ts'
 import { EvmClaimAddressSchema } from '@/schemas/evm.ts'
@@ -12,7 +13,6 @@ export const handleEvmClaimAaddressCommand = async (
     _args: Args<
         | 'endpoint'
         | 'substrateSignature'
-        | 'evmAddress'
         | 'evmSignature'
     >,
 ) => {
@@ -38,7 +38,7 @@ export const handleEvmClaimAaddressCommand = async (
         })
         const keyring = new Keyring({type: 'sr25519'})
         const signer =  keyring.addFromUri(args.substrateSignature)
-        if ( args.evmAddress == "default" ) {
+        if ( args.evmSignature == "default" ) {
              await signAndSend(
                 api.tx.accountMapping.claimDefaultAccount(),
                 api,
@@ -50,8 +50,11 @@ export const handleEvmClaimAaddressCommand = async (
             })
         }
         else {
+            const evmApi = new Web3(args.endpoint)
+            const wallet = new evmApi.Walllet(args.evmSignature)
+            const signature = await wallet.signMessage(wallet.address)
             await signAndSend(
-                api.tx.accountMapping.claimEthAccount(args.evmAddress, args.evmSignature),
+                api.tx.accountMapping.claimEthAccount(wallet.address, signature),
                 api,
                 signer,
             )

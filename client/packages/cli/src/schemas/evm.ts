@@ -53,12 +53,6 @@ export const EvmClaimAddressSchema = z.object({
         invalid_type_error: 'Substrate signature must be a string',
         required_error: 'Substrate signature is required',
     }),
-    evmAddress: z.string({
-        invalid_type_error: 'EVM address must be a string',
-        required_error: 'EVM address is required',
-    })
-        .regex(/^0x[a-fA-F0-9]{40}$/, { message: 'Claimed address must be a valid EVM address or "default"!' })
-        .or(z.string().regex(/^default$/, { message: 'Claimed address must be a valid EVM address or "default"!' })),
     evmSignature: z.string({
         invalid_type_error: 'EVM signature must be a string',
         required_error: 'EVM signature is required',
