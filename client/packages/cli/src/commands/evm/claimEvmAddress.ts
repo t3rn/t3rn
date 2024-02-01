@@ -46,7 +46,7 @@ export const handleEvmClaimAaddressCommand = async (
             )
             spinner.stopAndPersist({
                 symbol: '🎉',
-                text: colorLogMsg('SUCCESS', `Successfully claimed default EVM account!`),
+                text: colorLogMsg('SUCCESS', `Successfully claimed default EVM account for ${signer.address}`),
             })
         }
         else {
@@ -73,7 +73,7 @@ export const handleEvmClaimAaddressCommand = async (
             )
             spinner.stopAndPersist({
                 symbol: '🎉',
-                text: colorLogMsg('SUCCESS', `${evmAccount.address} successfully claimed!`),
+                text: colorLogMsg('SUCCESS', `${evmAccount.address} successfully claimed for ${signer.address}`),
             })
         }
     }
