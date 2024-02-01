@@ -73,7 +73,7 @@ export const handleEvmClaimAaddressCommand = async (
             )
             spinner.stopAndPersist({
                 symbol: '🎉',
-                text: colorLogMsg('SUCCESS', `${wallet.address} successfully claimed!`),
+                text: colorLogMsg('SUCCESS', `${evmAccount.address} successfully claimed!`),
             })
         }
     }
