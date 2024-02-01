@@ -374,7 +374,12 @@ pub const EXECUTOR_SECOND: AccountId = AccountId::new([
 ]);
 
 pub fn alice() -> libsecp256k1::SecretKey {
-    libsecp256k1::SecretKey::parse_slice(hex!("e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a").to_vec().as_slice()).expect("32 bytes, within curve order")
+    libsecp256k1::SecretKey::parse_slice(
+        hex!("e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a")
+            .to_vec()
+            .as_slice(),
+    )
+    .expect("32 bytes, within curve order")
 }
 
 pub fn bob() -> libsecp256k1::SecretKey {

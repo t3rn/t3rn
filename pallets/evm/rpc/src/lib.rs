@@ -242,6 +242,9 @@ sp_api::decl_runtime_apis! {
         fn pending_block(
             xts: Vec<<Block as BlockT>::Extrinsic>,
         ) -> (Option<ethereum::BlockV2>, Option<Vec<TransactionStatus>>);
+        // fn send_transaction(
+        //     transaction: ethereum::TransactionV2,
+        // ) -> Result<H256, sp_runtime::DispatchError>;
     }
 
     #[api_version(2)]

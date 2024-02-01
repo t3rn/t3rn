@@ -9,16 +9,16 @@ repository = { workspace = true }
 
 [dependencies]
 serde = { workspace = true, optional = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
-libsecp256k1 = { workspace = true, optional = true }
-scale-info = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true, default-features = false }
+libsecp256k1 = { workspace = true, default-features = false }
+scale-info = { workspace = true, default-features = false }
 
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
+sp-core = { workspace = true, default-features = false }
+sp-io = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, optional = true }
 
 # t3rn packages
@@ -38,7 +38,6 @@ default = ["std"]
 std = [
     "serde",
     "scale-codec/std",
-    "libsecp256k1",
     "libsecp256k1/std",
     "scale-info/std",
     "sp-core/std",
@@ -54,7 +53,6 @@ std = [
     "pallet-3vm-evm/std",
 ]
 runtime-benchmarks = [
-    "libsecp256k1",
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
