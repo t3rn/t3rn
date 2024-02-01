@@ -51,12 +51,23 @@ export const handleEvmClaimAaddressCommand = async (
         }
         else {
             const evmApi = new Web3(args.endpoint)
-            const wallet = new evmApi.Walllet(args.evmSignature)
-            console.log("Created EVM wallet with address: " + wallet.address)
-            const signature = await wallet.signMessage(wallet.address)
-            console.log("Generated signature for " + wallet.address)
+            spinner.stopAndPersist({
+                symbol: '\u2713',
+                text: colorLogMsg('INFO', `Connected to endpoint ${args.endpoint}`),
+            })
+            const evmAccount = await evmApi.eth.accounts.privateKeyToAccount(args.evmSignature, false)
+            spinner.stopAndPersist({
+                symbol: '\u2713',
+                text: colorLogMsg('INFO', `The EVM address for the private key is ${evmAccount.address}`),
+            })
+            const signature = await evmApi.eth.accounts.sign(evmAccount.address, args.evmSignature)
+            spinner.stopAndPersist({
+                symbol: '\u2713',
+                text: colorLogMsg('INFO', `Generated signature for private key`),
+            })
+
             await signAndSend(
-                api.tx.accountMapping.claimEthAccount(wallet.address, signature),
+                api.tx.accountMapping.claimEthAccount(evmAccount.address, args.evmSignature),
                 api,
                 signer,
             )
