@@ -332,8 +332,7 @@ impl<T: Config> Pallet<T> {
 // Creates a an EvmAddress from an AccountId by appending the bytes "evm:" to
 // the account_id and hashing it.
 fn account_to_default_evm_address(account_id: &impl Encode) -> EvmAddress {
-    let payload = (b"evm:", account_id);
-    EvmAddress::from_slice(&payload.using_encoded(blake2_256)[0..20])
+    EvmAddress::from_slice(&keccak_256(&account_id.encode().as_slice()[12..]))
 }
 
 pub struct EvmAddressMapping<T>(sp_std::marker::PhantomData<T>);
