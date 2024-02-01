@@ -374,7 +374,7 @@ pub const EXECUTOR_SECOND: AccountId = AccountId::new([
 ]);
 
 pub fn alice() -> libsecp256k1::SecretKey {
-    libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+    libsecp256k1::SecretKey::parse_slice(hex!("e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a").to_vec().as_slice()).expect("32 bytes, within curve order")
 }
 
 pub fn bob() -> libsecp256k1::SecretKey {
@@ -398,6 +398,9 @@ pub fn sig(secret: &libsecp256k1::SecretKey, what: &[u8], extra: &[u8]) -> Ecdsa
     let mut r = [0u8; 65];
     r[0..64].copy_from_slice(&sig.serialize()[..]);
     r[64] = recovery_id.serialize();
+
+    println!("signed: {:?}", hex::encode(&msg));
+
     EcdsaSignature(r)
 }
 
