@@ -52,7 +52,9 @@ export const handleEvmClaimAaddressCommand = async (
         else {
             const evmApi = new Web3(args.endpoint)
             const wallet = new evmApi.Walllet(args.evmSignature)
+            console.log("Created EVM wallet with address: " + wallet.address)
             const signature = await wallet.signMessage(wallet.address)
+            console.log("Generated signature for " + wallet.address)
             await signAndSend(
                 api.tx.accountMapping.claimEthAccount(wallet.address, signature),
                 api,
@@ -60,7 +62,7 @@ export const handleEvmClaimAaddressCommand = async (
             )
             spinner.stopAndPersist({
                 symbol: '🎉',
-                text: colorLogMsg('SUCCESS', `${args.evmAddress} successfully claimed!`),
+                text: colorLogMsg('SUCCESS', `${wallet.address} successfully claimed!`),
             })
         }
     }
