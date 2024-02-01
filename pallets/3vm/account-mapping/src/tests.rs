@@ -25,6 +25,8 @@ use circuit_mock_runtime::{
     RuntimeOrigin, System, ALICE, BOB,
 };
 
+use hex_literal::hex;
+
 #[test]
 fn claim_account_work() {
     ExtBuilder::default().build().execute_with(|| {
@@ -33,11 +35,15 @@ fn claim_account_work() {
             sp_runtime::MultiAddress::Id(ALICE),
             100000
         ));
+
+        let signature_of_evm_address_as_message = sig(&alice(), &hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").encode(), &[][..]);
+
         assert_ok!(AccountMapping::claim_eth_account(
 			RuntimeOrigin::signed(ALICE),
-			eth(&alice()),
-			sig(&alice(), &eth(&alice()).encode(), &[][..])
+			hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").into(),
+            signature_of_evm_address_as_message
 		));
+
         let system_event = System::events();
         let last_system_event = system_event.last();
         assert_eq!(last_system_event.is_some(), true);
@@ -52,6 +58,32 @@ fn claim_account_work() {
         );
         assert_eq!(AccountMapping::accounts(eth(&alice())).is_some(), true);
         assert_eq!(AccountMapping::evm_addresses(ALICE).is_some(), true);
-
+        assert_eq!(AccountMapping::evm_addresses(ALICE), Some(hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").into()));
+    });
+}
+#[test]
+fn default_evm_account_dereviation_is_compatible_with_eth_standards() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            sp_runtime::MultiAddress::Id(ALICE),
+            100000
+        ));
+        assert_ok!(AccountMapping::claim_default_account(
+			RuntimeOrigin::signed(ALICE),
+		));
+        let system_event = System::events();
+        let last_system_event = system_event.last();
+        assert_eq!(last_system_event.is_some(), true);
+        assert_eq!(
+            last_system_event.unwrap().event,
+            RuntimeEvent::AccountMapping(
+                circuit_runtime_pallets::pallet_3vm_account_mapping::Event::<Runtime>::ClaimAccount {
+                    account_id: ALICE,
+                    evm_address: hex!("0101010101010101010101010101010101010101").into(),
+                }
+            )
+        );
+        assert_eq!(AccountMapping::evm_addresses(ALICE), Some(hex!("0101010101010101010101010101010101010101").into()));
     });
 }

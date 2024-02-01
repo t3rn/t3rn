@@ -79,16 +79,7 @@ pub fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
 
 /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
 pub fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-    let prefix: &'static [u8] = b"T3rn claim EVM account with:";
-    let mut l = prefix.len() + what.len() + extra.len();
-    let mut rev = Vec::new();
-    while l > 0 {
-        rev.push(b'0' + (l % 10) as u8);
-        l /= 10;
-    }
     let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-    v.extend(rev.into_iter().rev());
-    v.extend_from_slice(&prefix[..]);
     v.extend_from_slice(what);
     v.extend_from_slice(extra);
     v
@@ -303,16 +294,7 @@ impl<T: Config> Pallet<T> {
 
     // Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
     fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-        let prefix: &'static [u8] = b"T3rn claim EVM account with:";
-        let mut l = prefix.len() + what.len() + extra.len();
-        let mut rev = Vec::new();
-        while l > 0 {
-            rev.push(b'0' + (l % 10) as u8);
-            l /= 10;
-        }
         let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-        v.extend(rev.into_iter().rev());
-        v.extend_from_slice(&prefix[..]);
         v.extend_from_slice(what);
         v.extend_from_slice(extra);
         v
@@ -322,17 +304,31 @@ impl<T: Config> Pallet<T> {
     // the Ethereum RPC's `personal_sign` and `eth_sign`.
     fn eth_recover(s: &EcdsaSignature, what: &[u8], extra: &[u8]) -> Option<EvmAddress> {
         let msg = keccak_256(&Self::ethereum_signable_message(what, extra));
-        let mut res = EvmAddress::default();
-        res.0
-            .copy_from_slice(&keccak_256(&secp256k1_ecdsa_recover(&s.0, &msg).ok()?[..])[12..]);
-        Some(res)
+
+        let recovered_pubkey = match secp256k1_ecdsa_recover(&s.0, &msg) {
+            Ok(pubkey) => pubkey,
+            Err(err) => return None,
+        };
+
+        let public_key_libsecp = libsecp256k1::PublicKey::parse_slice(
+            &recovered_pubkey,
+            Some(libsecp256k1::PublicKeyFormat::Raw),
+        )
+        .ok()?;
+
+        let compressed_pubkey = public_key_libsecp.serialize_compressed();
+
+        let res =
+            t3rn_primitives::attesters::ecdsa_pubkey_to_eth_address(&compressed_pubkey).ok()?;
+
+        Some(sp_core::H160(res))
     }
 }
 
 // Creates a an EvmAddress from an AccountId by appending the bytes "evm:" to
 // the account_id and hashing it.
 fn account_to_default_evm_address(account_id: &impl Encode) -> EvmAddress {
-    EvmAddress::from_slice(&keccak_256(&account_id.encode().as_slice()[12..]))
+    EvmAddress::from_slice(&account_id.encode().as_slice()[12..])
 }
 
 pub struct EvmAddressMapping<T>(sp_std::marker::PhantomData<T>);

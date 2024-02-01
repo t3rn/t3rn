@@ -29,7 +29,9 @@ circuit-runtime-types           = { default-features = false, path = "../../../r
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../../runtime/mock" }
 circuit-runtime-pallets = { path = "../../../runtime/common-pallets" }
+hex-literal             = { workspace = true }
 pallet-balances         = { workspace = true }
+hex                     = { workspace = true }
 
 [features]
 default = ["std"]
