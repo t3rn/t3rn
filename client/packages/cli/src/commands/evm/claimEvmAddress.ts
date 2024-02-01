@@ -60,14 +60,14 @@ export const handleEvmClaimAaddressCommand = async (
                 symbol: '\u2713',
                 text: colorLogMsg('INFO', `The EVM address for the private key is ${evmAccount.address}`),
             })
-            const signature = await evmApi.eth.accounts.sign(evmAccount.address, args.evmSignature)
+            const evmSign = await evmApi.eth.accounts.sign(evmAccount.address, args.evmSignature)
             spinner.stopAndPersist({
                 symbol: '\u2713',
-                text: colorLogMsg('INFO', `Generated signature for private key`),
+                text: colorLogMsg('INFO', `The signature for private key is ${evmSign.signature}`),
             })
 
             await signAndSend(
-                api.tx.accountMapping.claimEthAccount(evmAccount.address, args.evmSignature),
+                api.tx.accountMapping.claimEthAccount(evmAccount.address, evmSign.signature),
                 api,
                 signer,
             )
