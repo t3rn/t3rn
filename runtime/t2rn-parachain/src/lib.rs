@@ -471,6 +471,19 @@ impl_runtime_apis! {
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
         ) -> Result<pallet_3vm_evm::CallInfo, sp_runtime::DispatchError>{
+
+            log::info!("fp_rpc::EthereumRuntimeRPCApi::call()");
+            log::info!("from: {:?}", from);
+            log::info!("to: {:?}", to);
+            log::info!("data: {:?}", data);
+            log::info!("value: {:?}", value);
+            log::info!("gas_limit: {:?}", gas_limit);
+            log::info!("max_fee_per_gas: {:?}", max_fee_per_gas);
+            log::info!("max_priority_fee_per_gas: {:?}", max_priority_fee_per_gas);
+            log::info!("nonce: {:?}", nonce);
+            log::info!("estimate: {:?}", estimate);
+            log::info!("access_list: {:?}", access_list);
+
             let config = if estimate {
                 let mut config = <Runtime as pallet_3vm_evm::Config>::config().clone();
                 config.estimate = true;
@@ -633,7 +646,7 @@ impl_runtime_apis! {
         fn extrinsic_filter(
             xts: Vec<<Block as BlockT>::Extrinsic>,
         ) -> Vec<pallet_3vm_ethereum::Transaction> {
-            xts.into_iter().filter_map(|xt| match xt.function {
+            xts.into_iter().filter_map(|xt| match xt.0.function {
                 RuntimeCall::Ethereum(pallet_3vm_ethereum::Call::transact { transaction }) => Some(transaction),
                 _ => None
             }).collect::<Vec<pallet_3vm_ethereum::Transaction>>()
@@ -663,6 +676,7 @@ impl_runtime_apis! {
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
         fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
+            log::info!("fp_rpc::ConvertTransactionRuntimeApi::convert_transaction(): {:?}", transaction);
             UncheckedExtrinsic::new_unsigned(
                 pallet_3vm_ethereum::Call::<Runtime>::transact { transaction }.into(),
             )

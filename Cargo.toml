@@ -250,7 +250,7 @@ pallet-evm-test-vector-support    = { path = "./pallets/evm/test-vector-support"
 # Direct Frontier Imports
 fp-consensus                      = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fp-storage                        = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
-fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
+fp-self-contained                 = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false, features = ['serde'] } #
 fc-rpc-core                       = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 fp-dynamic-fee                    = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.0.0", default-features = false } #
 
