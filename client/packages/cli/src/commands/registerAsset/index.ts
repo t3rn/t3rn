@@ -52,67 +52,61 @@ export const handleAssetRegistrationCommand = async (
     const assetMultiLocation =
       AssetRegistrationParameters.createAssetMultiLocation(api, args.symbol)
 
-      const keyring = new Keyring({type: 'sr25519'})
-      let signer = keyring.addFromUri('//Alice')
-      if (process.env.XCM_TEST_SIGNER_KEY != undefined && args.dest != 't0rn') {
-          signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
-      }
-      else if (process.env.CIRCUIT_SIGNER_KEY != undefined && args.dest == 't0rn') {
-          signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
-      }
-      else if (args.dest == 'local') {
-          signer = keyring.addFromUri('//Alice')
-      }
-      else if(args.dest != 'para'){
-          throw new Error('Signer not found!')
-      }
-
-      if (args.dest == 't0rn' || args.dest == 'local') {
-          await signAndSendSudo(
-              api.tx.utility.batch([
-                  api.tx.assets.forceCreate(
-                      assetId,
-                      assetAdmin,
-                      assetIsSufficient,
-                      assetMinimumBalance,
-                  ),
-                  api.tx.assets.forceSetMetadata(
-                      assetId,
-                      args.name,
-                      args.symbol,
-                      assetDecimals,
-                      false,
-                  ),
-                  api.tx.assetRegistry.registerReserveAsset(
-                      assetId,
-                      assetMultiLocation,
-                  ),
-              ]),
-              api,
-              keyring,
-          )
-    } 
-    else if (args.dest == 'para' ) {
-        await signAndSend(
-              api.tx.utility.batch([
-                  api.tx.assets.create(
-                      assetId,
-                      assetAdmin,
-                      assetMinimumBalance,
-                  ),
-                  api.tx.assets.setMetadata(
-                      assetId,
-                      args.name,
-                      args.symbol,
-                      assetDecimals,
-                  ),
-              ]),
-              api,
-              signer,
-        )
+    const keyring = new Keyring({ type: 'sr25519' })
+    let signer = keyring.addFromUri('//Alice')
+    if (process.env.XCM_TEST_SIGNER_KEY != undefined && args.dest != 't0rn') {
+      signer = keyring.addFromUri(process.env.XCM_TEST_SIGNER_KEY)
+    } else if (
+      process.env.CIRCUIT_SIGNER_KEY != undefined &&
+      args.dest == 't0rn'
+    ) {
+      signer = keyring.addFromUri(process.env.CIRCUIT_SIGNER_KEY)
+    } else if (args.dest == 'local') {
+      signer = keyring.addFromUri('//Alice')
+    } else if (args.dest != 'para') {
+      throw new Error('Signer not found!')
     }
-    else {
-          throw new Error('Unsupported asset registration destination type!')
+
+    if (args.dest == 't0rn' || args.dest == 'local') {
+      await signAndSendSudo(
+        api.tx.utility.batch([
+          api.tx.assets.forceCreate(
+            assetId,
+            assetAdmin,
+            assetIsSufficient,
+            assetMinimumBalance,
+          ),
+          api.tx.assets.forceSetMetadata(
+            assetId,
+            args.name,
+            args.symbol,
+            assetDecimals,
+            false,
+          ),
+          api.tx.assetRegistry.registerReserveAsset(
+            assetId,
+            assetMultiLocation,
+          ),
+        ]),
+        api,
+        keyring,
+      )
+    } else if (args.dest == 'para') {
+      await signAndSend(
+        api.tx.utility.batch([
+          api.tx.assets.create(assetId, assetAdmin, assetMinimumBalance),
+          api.tx.assets.setMetadata(
+            assetId,
+            args.name,
+            args.symbol,
+            assetDecimals,
+          ),
+        ]),
+        api,
+        signer,
+      )
+    } else {
+      throw new Error('Unsupported asset registration destination type!')
     }
     // TO DO: Add support for AssetHub registration of a native token of a parachain
     spinner.succeed(colorLogMsg('SUCCESS', `Asset created`))

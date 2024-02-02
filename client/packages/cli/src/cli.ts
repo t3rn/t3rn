@@ -270,43 +270,49 @@ withExportMode(
 )
 
 withExportMode(
-    program
-        .command('claimEvmAddress')
-        .description('Claim EVM address for a substrate address')
-        .requiredOption(
-            '--endpoint <string>',
-            'The RPC endpoint to transfer balance on',
-        )
-        .requiredOption('--substrate-signer <string>', 'The substrate account private key')
-        .requiredOption('--evm-signer <string>', 'The evm account private key')
-        .action(handleEvmClaimAaddressCommand),
+  program
+    .command('claimEvmAddress')
+    .description('Claim EVM address for a substrate address')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to transfer balance on',
+    )
+    .requiredOption(
+      '--substrate-signer <string>',
+      'The substrate account private key',
+    )
+    .requiredOption('--evm-signer <string>', 'The evm account private key')
+    .action(handleEvmClaimAaddressCommand),
 )
 
 withExportMode(
-    program
-        .command('evmGetBalance')
-        .description('Check EVM balance for an account.')
-        .requiredOption(
-            '--endpoint <string>',
-            'The RPC endpoint to check the balance on',
-        )
-        .requiredOption('--account <string>', 'The account - EVM address')
-        .action(handleEvmGetBalanceCommand),
+  program
+    .command('evmGetBalance')
+    .description('Check EVM balance for an account.')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to check the balance on',
+    )
+    .requiredOption('--account <string>', 'The account - EVM address')
+    .action(handleEvmGetBalanceCommand),
 )
 
 withExportMode(
-    program
-        .command('evmTransfer')
-        .description('Check EVM balance for an account.')
-        .requiredOption(
-            '--endpoint <string>',
-            'The RPC endpoint to transfer balance on',
-        )
-        .requiredOption('--sender <string>', 'The sender account - EVM address')
-        .requiredOption('--signature <string>', 'The signature of the sender account')
-        .requiredOption('--receiver <string>', 'The receiver account - EVM address')
-        .requiredOption('--amount <number>', 'The balance that will be transferred')
-        .action(handleEvmTransferCommand),
+  program
+    .command('evmTransfer')
+    .description('Check EVM balance for an account.')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to transfer balance on',
+    )
+    .requiredOption('--sender <string>', 'The sender account - EVM address')
+    .requiredOption(
+      '--signature <string>',
+      'The signature of the sender account',
+    )
+    .requiredOption('--receiver <string>', 'The receiver account - EVM address')
+    .requiredOption('--amount <number>', 'The balance that will be transferred')
+    .action(handleEvmTransferCommand),
 )
 
 program.parse(process.argv)
