@@ -20,6 +20,7 @@ sp-std = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, optional = true }
+hex                     = { workspace = true }
 
 # t3rn packages
 pallet-3vm-evm                  = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
@@ -31,7 +32,6 @@ circuit-mock-runtime    = { path = "../../../runtime/mock" }
 circuit-runtime-pallets = { path = "../../../runtime/common-pallets" }
 hex-literal             = { workspace = true }
 pallet-balances         = { workspace = true }
-hex                     = { workspace = true }
 
 [features]
 default = ["std"]

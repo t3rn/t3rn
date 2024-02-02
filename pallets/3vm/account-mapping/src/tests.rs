@@ -38,6 +38,11 @@ fn claim_account_work() {
 
         let signature_of_evm_address_as_message = sig(&alice(), &hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").encode(), &[][..]);
 
+        // Log signature as hex string
+        println!("Address Bytes: {:?}", &hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").encode());
+        println!("Message: {:?}", hex::encode( &hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").encode()));
+        println!("Signature: {:?}", hex::encode(signature_of_evm_address_as_message.encode()));
+
         assert_ok!(AccountMapping::claim_eth_account(
 			RuntimeOrigin::signed(ALICE),
 			hex!("8097c3C354652CB1EEed3E5B65fBa2576470678A").into(),

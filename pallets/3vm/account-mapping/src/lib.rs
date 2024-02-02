@@ -24,7 +24,7 @@
 
 use circuit_runtime_types::{AccountIndex, EvmAddress};
 use frame_support::{
-    ensure,
+    ensure, log,
     pallet_prelude::*,
     traits::{Currency, ExistenceRequirement, IsType, OnKilledAccount},
     transactional,
@@ -42,7 +42,7 @@ use sp_runtime::{
     MultiAddress,
 };
 use sp_std::{marker::PhantomData, vec::Vec};
-use t3rn_primitives::threevm::AddressMapping;
+use t3rn_primitives::{attesters::ETH_SIGNED_MESSAGE_PREFIX, threevm::AddressMapping};
 //pub use weights::WeightInfo;
 
 //#[cfg(feature = "runtime-benchmarks")]
@@ -79,10 +79,8 @@ pub fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
 
 /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
 pub fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-    let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-    v.extend_from_slice(what);
-    v.extend_from_slice(extra);
-    v
+    let message_digest = keccak_256([what, extra].concat().as_slice());
+    [&ETH_SIGNED_MESSAGE_PREFIX[..], &message_digest[..]].concat()
 }
 
 #[frame_support::pallet]
@@ -137,6 +135,8 @@ pub mod pallet {
         BadSignature,
         /// Invalid signature
         InvalidSignature,
+        // Pre-image address not matching recovered
+        PreImageAddressNotMatchingRecovered,
         /// Account ref count is not zero
         NonZeroRefCount,
     }
@@ -190,11 +190,15 @@ pub mod pallet {
                 Error::<T>::EthAddressHasMapped
             );
 
-            // recover evm address from signature
-            let data = eth_address.using_encoded(to_ascii_hex);
+            let data = eth_address.0.as_slice();
+
             let address = Self::eth_recover(&eth_signature, &data, &[][..])
                 .ok_or(Error::<T>::BadSignature)?;
-            ensure!(eth_address == address, Error::<T>::InvalidSignature);
+
+            ensure!(
+                eth_address == address,
+                Error::<T>::PreImageAddressNotMatchingRecovered
+            );
 
             // check if the evm padded address already exists
             let account_id = T::AddressMapping::into_account_id(&eth_address);
@@ -282,7 +286,8 @@ impl<T: Config> Pallet<T> {
     pub fn eth_sign(secret: &libsecp256k1::SecretKey, _who: &T::AccountId) -> EcdsaSignature {
         let address = Self::eth_address(secret);
 
-        let what = address.using_encoded(to_ascii_hex);
+        let what = address.0.as_slice();
+        // dbg!("{:?}", what);
         let msg = keccak_256(&Self::ethereum_signable_message(&what, &[][..]));
         let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
         let mut r = [0u8; 65];
@@ -294,34 +299,18 @@ impl<T: Config> Pallet<T> {
 
     // Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
     fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-        let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-        v.extend_from_slice(what);
-        v.extend_from_slice(extra);
-        v
+        let message_digest = keccak_256([what, extra].concat().as_slice());
+        [&ETH_SIGNED_MESSAGE_PREFIX[..], &message_digest[..]].concat()
     }
 
     // Attempts to recover the Ethereum address from a message signature signed by using
     // the Ethereum RPC's `personal_sign` and `eth_sign`.
     fn eth_recover(s: &EcdsaSignature, what: &[u8], extra: &[u8]) -> Option<EvmAddress> {
         let msg = keccak_256(&Self::ethereum_signable_message(what, extra));
-
-        let recovered_pubkey = match secp256k1_ecdsa_recover(&s.0, &msg) {
-            Ok(pubkey) => pubkey,
-            Err(err) => return None,
-        };
-
-        let public_key_libsecp = libsecp256k1::PublicKey::parse_slice(
-            &recovered_pubkey,
-            Some(libsecp256k1::PublicKeyFormat::Raw),
-        )
-        .ok()?;
-
-        let compressed_pubkey = public_key_libsecp.serialize_compressed();
-
-        let res =
-            t3rn_primitives::attesters::ecdsa_pubkey_to_eth_address(&compressed_pubkey).ok()?;
-
-        Some(sp_core::H160(res))
+        let mut res = EvmAddress::default();
+        res.0
+            .copy_from_slice(&keccak_256(&secp256k1_ecdsa_recover(&s.0, &msg).ok()?[..])[12..]);
+        Some(res)
     }
 }
 
