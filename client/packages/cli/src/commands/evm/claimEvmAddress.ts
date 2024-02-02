@@ -61,14 +61,12 @@ export const handleEvmClaimAaddressCommand = async (
                 text: colorLogMsg('INFO', `The EVM address for the private key is ${evmAccount.address}`),
             })
             const message = "\x19Ethereum Signed Message :\n" + evmAccount.address.toString().toLowerCase()
-            let utf8Encode = new TextEncoder()
-            const encodedMessage = utf8Encode.encode(message)
 
             spinner.stopAndPersist({
                 symbol: '\u2713',
                 text: colorLogMsg('INFO', `EVM  message to be signed is:${message}`),
             })
-            const evmSign = await evmApi.eth.accounts.sign(encodedMessage, args.evmSigner)
+            const evmSign = await evmApi.eth.accounts.sign(message, args.evmSigner)
             spinner.stopAndPersist({
                 symbol: '\u2713',
                 text: colorLogMsg('INFO', `The EVM signature for private key is ${evmSign.signature}`),
