@@ -24,22 +24,12 @@ export const EvmTransferSchema = z.object({
       invalid_type_error: 'Endpoint must be a string',
       required_error: 'Endpoint is required',
     })
-    .startsWith('ws://')
-    .or(z.string().startsWith('wss://')),
-  sender: z
-    .string({
-      invalid_type_error: 'Sender must be a string',
-      required_error: 'Sender is required',
-    })
-    .regex(/^0x[a-fA-F0-9]{40}$/, {
-      message: 'Sender must be a valid EVM address',
-    }),
-  signature: z.string({
-    invalid_type_error: 'Signature must be a string',
-    required_error: 'Signature is required',
+    .startsWith('http://'),
+  sender: z.string({
+    invalid_type_error: 'Sender must be a string',
+    required_error: 'Sender is required',
   }),
-  receiver: z
-    .string({
+  receiver: z.string({
       invalid_type_error: 'Receiver must be a string',
       required_error: 'Receiver is required',
     })

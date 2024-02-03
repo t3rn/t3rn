@@ -2,13 +2,12 @@ import ora from 'ora'
 import { Args } from '@/types.js'
 import { validate } from '@/utils/fns.js'
 import { colorLogMsg } from '@/utils/log.js'
-import Web3 from 'web3'
+import { ethers, Wallet, JsonRpcProvider } from 'ethers'
 import { EvmTransferSchema } from '@/schemas/evm.ts'
-
 export const spinner = ora()
 
 export const handleEvmTransferCommand = async (
-  _args: Args<'endpoint' | 'sender' | 'signature' | 'receiver' | 'amount'>,
+  _args: Args<'endpoint' | 'sender' | 'receiver' | 'amount'>,
 ) => {
   const args = validate(
     EvmTransferSchema,
@@ -27,47 +26,28 @@ export const handleEvmTransferCommand = async (
 
   spinner.text = 'EVM balance transfer... \n'
   spinner.start()
-
-  try {
-    const evmApi = new Web3(args.endpoint)
-    const transaction = {
-      from: args.sender,
-      to: args.receiver,
-      value: args.amount.toString(),
-      gas: 21000,
-    }
-    const signPromise = evmApi.eth.accounts.signTransaction(
-      transaction,
-      args.signature,
-    )
-
-    signPromise
-      .then((signedTx) => {
-        evmApi.eth
-          .sendSignedTransaction(signedTx.raw || signedTx.rawTransaction)
-          .on('error', (err) => {
-            spinner.fail(colorLogMsg('ERROR', err))
-          })
-          .on('sending', (transactionToBeSent) =>
-            console.log(`Sending transaction... \n ${transactionToBeSent}`),
-          )
-          .on('receipt', (transactionReceipt) =>
-            spinner.stopAndPersist({
-              symbol: '🎉',
-              text: colorLogMsg(
-                'SUCCESS',
-                `EVM transaction completed!\n ${transactionReceipt}`,
-              ),
-            }),
-          )
-      })
-      .catch((err) => {
-        spinner.fail(`EVM transfer failed: ${err}`)
-      })
-  } catch (e) {
-    spinner.fail(`EVM transfer failed: ${e}`)
-  }
-
+  const provider = new JsonRpcProvider(args.endpoint)
+  const walletWithProvider = new Wallet(args.sender, provider)
+  await walletWithProvider.sendTransaction({
+    to: args.receiver,
+    value: parseInt(args.amount).toString(),
+  }).then((tx) => {
+    spinner.stopAndPersist({
+      symbol: '\u2713',
+      text: colorLogMsg('INFO', `Transaction hash: ${tx.hash}`),
+    })
+  }).catch((e) => {
+      spinner.fail(`Failed to transfer ${args.amount} wei to ${args.receiver}: ${e}`)
+      process.exit(1)
+  })
+  await new Promise((resolve) => setTimeout(resolve, 5000))
+  spinner.stopAndPersist({
+    symbol: '🎉',
+    text: colorLogMsg(
+        'SUCCESS',
+        `${args.sender} successfully send ${args.amount} wei to ${args.receiver}`,
+    ),
+  })
   spinner.stop()
   process.exit(0)
 }
