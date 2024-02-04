@@ -45,7 +45,7 @@ export const handleEvmTransferCommand = async (
     symbol: '🎉',
     text: colorLogMsg(
         'SUCCESS',
-        `${args.sender} successfully send ${args.amount} wei to ${args.receiver}`,
+        `${walletWithProvider.address} successfully sent ${args.amount} wei to ${args.receiver}`,
     ),
   })
   spinner.stop()
