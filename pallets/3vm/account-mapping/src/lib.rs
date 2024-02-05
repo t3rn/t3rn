@@ -320,6 +320,13 @@ fn account_to_default_evm_address(account_id: &impl Encode) -> EvmAddress {
     EvmAddress::from_slice(&account_id.encode().as_slice()[12..])
 }
 
+fn create_default_substrate_address(address: &EvmAddress) -> AccountId32 {
+    let mut data: [u8; 32] = [0u8; 32];
+    data[0..4].copy_from_slice(b"evm:");
+    data[4..24].copy_from_slice(&address[..]);
+    AccountId32::from(data)
+}
+
 pub struct EvmAddressMapping<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> AddressMapping<T::AccountId> for EvmAddressMapping<T>
@@ -331,10 +338,7 @@ where
         if let Some(acc) = Accounts::<T>::get(address) {
             acc
         } else {
-            let mut data: [u8; 32] = [0u8; 32];
-            data[0..4].copy_from_slice(b"evm:");
-            data[4..24].copy_from_slice(&address[..]);
-            AccountId32::from(data).into()
+            create_default_substrate_address(address).into()
         }
     }
 
@@ -391,10 +395,7 @@ where
         if let Some(acc) = Accounts::<T>::get(&address) {
             acc
         } else {
-            let mut data: [u8; 32] = [0u8; 32];
-            data[0..4].copy_from_slice(b"evm:");
-            data[4..24].copy_from_slice(&address[..]);
-            AccountId32::from(data).into()
+            create_default_substrate_address(&address).into()
         }
     }
 }

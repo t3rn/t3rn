@@ -39,6 +39,7 @@ export const handleEvmClaimAaddressCommand = async (
         api.tx.accountMapping.claimDefaultAccount(),
         api,
         signer,
+        spinner,
       )
       spinner.stopAndPersist({
         symbol: '🎉',
