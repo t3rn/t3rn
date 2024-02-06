@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.86.1-rc.0] - 2024-02-06
+### :bug: Bug Fixes
+- [`244968c`](https://github.com/t3rn/t3rn/commit/244968c3976b75ab029a83da9cabaee3af042d8c) - update docs sidebar *(PR [#1552](https://github.com/t3rn/t3rn/pull/1552) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+
+
 ## [v1.86.0-rc.0] - 2024-01-23
 ### :sparkles: New Features
 - [`4514ef9`](https://github.com/t3rn/t3rn/commit/4514ef9356579e0be4f27e9928154d9844711477) - enable pre-funded Metamask accounts for t0rn & t2rn  *(PR [#1550](https://github.com/t3rn/t3rn/pull/1550) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -2059,3 +2064,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.84.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.1-rc.0...v1.84.0-rc.0
 [v1.85.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.84.1-rc.0...v1.85.0-rc.0
 [v1.86.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.85.0-rc.0...v1.86.0-rc.0
+[v1.86.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.0-rc.0...v1.86.1-rc.0
