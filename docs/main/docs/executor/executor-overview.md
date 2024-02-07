@@ -18,7 +18,7 @@ To further incentivise execution with t3rn, we have a series of three token ince
 
 **Airdrop of 1M TRN tokens to the top 10 Executors.**
 
-### [How to become an Executor](https://docs.t3rn.io/components/become-an-executor)
+### [How to become an Executor](become-an-executor)
 
 ## t3rn protocol
 
@@ -105,7 +105,7 @@ const txPromise: Promise<TxResponse> = contract.order(
     gasPrice: txExecParams.gasPrice,
     nonce: txExecParams.nonce,
     gasLimit: txExecParams.gasLimit,
-  },
+  }
 );
 ```
 
@@ -268,7 +268,7 @@ if (!bidTransmitterReceipt.success || assignedBidder !== walletAddressSource) {
       assignedBidder,
       myAccount: walletAddressSource,
     },
-    `🥀 Bid lost. Skip order`,
+    `🥀 Bid lost. Skip order`
   );
   return;
 }
@@ -326,7 +326,7 @@ const txPromise: Promise<TxResponse> = contract.confirmOrder(
     gasPrice: txExecParams.gasPrice,
     nonce: txExecParams.nonce,
     gasLimit: txExecParams.gasLimit,
-  },
+  }
 );
 ```
 
@@ -343,7 +343,7 @@ const erc20TokenAssetToClaim = "0x6b175474e89094c44da98b954eedeac495271d0f"; // 
 const isClaimable = await this.remoteOrderContract[network.id].checkIsClaimable(
   orderId,
   orderToClaim.isNative ? nativeAssetToClaim : erc20TokenAssetToClaim,
-  orderToClaim.maxReward,
+  orderToClaim.maxReward
 );
 
 if (isClaimable) {
@@ -357,7 +357,7 @@ if (isClaimable) {
       gasPrice: txExecParams.gasPrice,
       nonce: txExecParams.nonce,
       gasLimit: txExecParams.gasLimit,
-    },
+    }
   );
 }
 ```
@@ -424,7 +424,7 @@ const txPromise: Promise<TxResponse> = contract.claimRefund(
     gasPrice: txExecParams.gasPrice,
     nonce: txExecParams.nonce,
     gasLimit: txExecParams.gasLimit,
-  },
+  }
 );
 ```
 
@@ -506,5 +506,5 @@ Visit [stats.t0rn.io/explorer](https://stats.t0rn.io/explorer) to see the orders
 
 ### Troubleshooting
 
-Feel free to reach out to us on [Discord](https://discord.gg/3t3rn) if you have any questions or issues.
+Feel free to reach out to us on [Discord](https://discord.com/invite/T3sJYkEvPY) if you have any questions or issues.
 With obvious errors, please open an issue on [t3rn's Github](https://github.com/t3rn/t3rn/issues/new/choose)

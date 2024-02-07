@@ -40,4 +40,4 @@ XBI is a standard for fail-safe and trustless cross-chain executions. It sits in
 
 Where XBI shows to be useful is adding additional standards over the transactions, specifically on setting the standards between cross-chain smart contract execution.
 
-Read more about [XCM and XBI](/xcm/xbi-overview).
+Read more about [XCM and XBI](xcm/xbi-overview).
