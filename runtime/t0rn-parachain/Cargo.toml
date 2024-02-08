@@ -123,7 +123,7 @@ xcm-primitives           = { workspace = true }
 #pallet-xbi-portal     = { workspace = true }
 
 # Smart contracts VMs
-#evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
+evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
 pallet-3vm                      = { default-features = false, path = "../../pallets/3vm" }
 pallet-3vm-account-mapping      = { default-features = false, path = "../../pallets/3vm/account-mapping" }
 pallet-3vm-contracts            = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
@@ -133,6 +133,7 @@ pallet-3vm-evm-primitives       = { default-features = false, path = "../../pall
 fp-rpc                          = { default-features = false, path = "../../pallets/evm/rpc" }
 pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
 fp-self-contained               = { workspace = true, default-features = false }
+
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }
@@ -182,7 +183,7 @@ std = [
   "fp-rpc/std",
   "fp-self-contained/std",
   "pallet-vacuum/std",
-  #  "evm-precompile-util/std",
+  "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-preimage/std",
   'pallet-scheduler/std',
