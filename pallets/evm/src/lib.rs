@@ -100,7 +100,7 @@ pub use fp_evm::{
     PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
     Vicinity,
 };
-use t3rn_primitives::threevm::{convert_decimals_to_evm, ThreeVm};
+use t3rn_primitives::threevm::{convert_decimals_from_evm, convert_decimals_to_evm, ThreeVm};
 
 pub use self::{
     pallet::*,
@@ -494,6 +494,8 @@ pub mod pallet {
         Reentrancy,
         /// EIP-3607,
         TransactionMustComeFromEOA,
+        /// Invalid decimals
+        InvalidDecimals,
     }
 
     impl<T> From<InvalidEvmTransactionError> for Error<T> {
@@ -1048,15 +1050,21 @@ where
         if fee.is_zero() {
             return Ok(None)
         }
-        let account_id = T::AddressMapping::into_account_id(*who);
-        let imbalance = C::withdraw(
-            &account_id,
-            fee.unique_saturated_into(),
-            WithdrawReasons::FEE,
-            ExistenceRequirement::AllowDeath,
-        )
-        .map_err(|_| Error::<T>::BalanceLow)?;
-        Ok(Some(imbalance))
+        // Convert 18 decimal EVM fee to t3rn 12 decimal fee
+        match convert_decimals_from_evm::<C::Balance>(fee.unique_saturated_into()) {
+            Some(substrate_fee) => {
+                let account_id = T::AddressMapping::into_account_id(*who);
+                let imbalance = C::withdraw(
+                    &account_id,
+                    substrate_fee,
+                    WithdrawReasons::FEE,
+                    ExistenceRequirement::AllowDeath,
+                )
+                .map_err(|_| Error::<T>::BalanceLow)?;
+                Ok(Some(imbalance))
+            },
+            _ => Err(Error::<T>::InvalidDecimals.into()),
+        }
     }
 
     fn correct_and_deposit_fee(
@@ -1072,40 +1080,55 @@ where
             let refund_amount = paid
                 .peek()
                 .saturating_sub(corrected_fee.unique_saturated_into());
-            // refund to the account that paid the fees. If this fails, the
-            // account might have dropped below the existential balance. In
-            // that case we don't refund anything.
-            let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
-                .unwrap_or_else(|_| C::PositiveImbalance::zero());
 
-            // Make sure this works with 0 ExistentialDeposit
-            // https://github.com/paritytech/substrate/issues/10117
-            // If we tried to refund something, the account still empty and the ED is set to 0,
-            // we call `make_free_balance_be` with the refunded amount.
-            let refund_imbalance = if C::minimum_balance().is_zero()
-                && refund_amount > C::Balance::zero()
-                && C::total_balance(&account_id).is_zero()
+            // Convert 18 decimal EVM fee to t3rn 12 decimal fee
+            if let Some(substrate_refund_amount) =
+                convert_decimals_from_evm::<C::Balance>(refund_amount)
             {
-                // Known bug: Substrate tried to refund to a zeroed AccountData, but
-                // interpreted the account to not exist.
-                match C::make_free_balance_be(&account_id, refund_amount) {
-                    SignedImbalance::Positive(p) => p,
-                    _ => C::PositiveImbalance::zero(),
+                // refund to the account that paid the fees. If this fails, the
+                // account might have dropped below the existential balance. In
+                // that case we don't refund anything.
+                let refund_imbalance =
+                    C::deposit_into_existing(&account_id, substrate_refund_amount)
+                        .unwrap_or_else(|_| C::PositiveImbalance::zero());
+
+                // Make sure this works with 0 ExistentialDeposit
+                // https://github.com/paritytech/substrate/issues/10117
+                // If we tried to refund something, the account still empty and the ED is set to 0,
+                // we call `make_free_balance_be` with the refunded amount.
+                let refund_imbalance = if C::minimum_balance().is_zero()
+                    && substrate_refund_amount > C::Balance::zero()
+                    && C::total_balance(&account_id).is_zero()
+                {
+                    // Known bug: Substrate tried to refund to a zeroed AccountData, but
+                    // interpreted the account to not exist.
+                    match C::make_free_balance_be(&account_id, substrate_refund_amount) {
+                        SignedImbalance::Positive(p) => p,
+                        _ => C::PositiveImbalance::zero(),
+                    }
+                } else {
+                    refund_imbalance
+                };
+
+                // merge the imbalance caused by paying the fees and refunding parts of it again.
+                let adjusted_paid = paid
+                    .offset(refund_imbalance)
+                    .same()
+                    .unwrap_or_else(|_| C::NegativeImbalance::zero());
+
+                let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+                OU::on_unbalanced(base_fee);
+                return Some(tip)
+                /*
+                if let Some(substrate_base_fee) = convert_decimals_from_evm::<C::Balance>(base_fee){
+                    if let Some(substrate_tip) = convert_decimals_from_evm::<C::Balance>(tip) {
+                        // Handle base fee. Can be either burned, rationed, etc ...
+                        OU::on_unbalanced(substrate_base_fee);
+                        return Some(substrate_tip)
+                    }
                 }
-            } else {
-                refund_imbalance
-            };
-
-            // merge the imbalance caused by paying the fees and refunding parts of it again.
-            let adjusted_paid = paid
-                .offset(refund_imbalance)
-                .same()
-                .unwrap_or_else(|_| C::NegativeImbalance::zero());
-
-            let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
-            // Handle base fee. Can be either burned, rationed, etc ...
-            OU::on_unbalanced(base_fee);
-            return Some(tip)
+                */
+            }
         }
         None
     }
@@ -1114,7 +1137,13 @@ where
         // Default Ethereum behaviour: issue the tip to the block author.
         if let Some(tip) = tip {
             let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
-            let _ = C::deposit_into_existing(&account_id, tip.peek());
+            // Convert 18 decimal EVM fee to t3rn 12 decimal fee
+            match convert_decimals_from_evm::<C::Balance>(tip.peek()) {
+                Some(substrate_tip_peek) => {
+                    let _ = C::deposit_into_existing(&account_id, substrate_tip_peek);
+                },
+                _ => {},
+            }
         }
     }
 }

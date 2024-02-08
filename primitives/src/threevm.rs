@@ -411,8 +411,8 @@ pub trait AddressMapping<AccountId> {
     fn is_linked(account_id: &AccountId, evm: &EvmAddress) -> bool;
 }
 
-/// Convert decimal between native(12) and EVM(18) and therefore the 1_000_000 conversion.
-const DECIMALS_VALUE: u32 = 1_000_000u32;
+/// Convert decimal between TRN(12) and EVM(18) and therefore the 1_000_000 conversion.
+pub const DECIMALS_VALUE: u32 = 1_000_000u32;
 
 /// Convert decimal from native(TRN 12) to EVM(18).
 pub fn convert_decimals_to_evm<B: Zero + Saturating + From<u32>>(b: B) -> B {

@@ -112,7 +112,11 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        // Original fee was  1_000_000_000 but since need to convert Balance decimals
+        // from 18 (EVM) to 12 (t3rn) the number was divided by 10^6
+        // If using another fee calculator the min gas price needs to be converted using
+        // t3rn_primitives::threevm::convert_decimals_from_evm<T>
+        (1_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
