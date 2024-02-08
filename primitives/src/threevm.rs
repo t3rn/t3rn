@@ -7,11 +7,14 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::Weight;
+use frame_support::{dispatch::Weight, traits::WithdrawReasons};
 use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
-use sp_runtime::{DispatchError, DispatchResult};
+use sp_runtime::{
+    traits::{CheckedDiv, Zero},
+    DispatchError, DispatchResult, Saturating,
+};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
@@ -407,3 +410,90 @@ pub trait AddressMapping<AccountId> {
     /// and false if is not.
     fn is_linked(account_id: &AccountId, evm: &EvmAddress) -> bool;
 }
+
+/// Convert decimal between native(12) and EVM(18) and therefore the 1_000_000 conversion.
+const DECIMALS_VALUE: u32 = 1_000_000u32;
+
+/// Convert decimal from native(TRN 12) to EVM(18).
+pub fn convert_decimals_to_evm<B: Zero + Saturating + From<u32>>(b: B) -> B {
+    if b.is_zero() {
+        return b
+    }
+    b.saturating_mul(DECIMALS_VALUE.into())
+}
+
+/// Convert decimal from native EVM(18) to TRN(12).
+pub fn convert_decimals_from_evm<
+    B: Zero + Saturating + CheckedDiv + PartialEq + Copy + From<u32>,
+>(
+    b: B,
+) -> Option<B> {
+    if b.is_zero() {
+        return Some(b)
+    }
+    let res = b
+        .checked_div(&Into::<B>::into(DECIMALS_VALUE))
+        .expect("divisor is non-zero; qed");
+
+    if res.saturating_mul(DECIMALS_VALUE.into()) == b {
+        Some(res)
+    } else {
+        None
+    }
+}
+
+/*
+/// Operations for the remaining balance.
+pub trait RemainBalanceOp<T: ConfigSystem> {
+    /// Get the remaining balance
+    fn remaining_balance(account_id: &T::AccountId) -> u128;
+    /// Set the remaining balance
+    fn set_remaining_balance(account_id: &T::AccountId, value: u128);
+    /// Remove the remaining balance
+    fn remove_remaining_balance(account_id: &T::AccountId);
+    /// Inc remaining balance
+    fn inc_remaining_balance(account_id: &T::AccountId, value: u128);
+    /// Dec remaining balance
+    fn dec_remaining_balance(account_id: &T::AccountId, value: u128);
+    /// Deposit dvm related transfer events
+    fn deposit_dvm_transfer_event(source: &T::AccountId, target: &T::AccountId, value: U256);
+}
+
+/// A trait for handling currency decimal difference between native and evm tokens.
+pub trait CurrencyAdapt<T: ConfigSystem> {
+    /// Get account balance, the decimal of the returned result is consistent with Ethereum.
+    fn account_balance(account_id: &T::AccountId) -> U256;
+
+    /// Get the total supply of token in Ethereum decimal.
+    fn evm_total_supply() -> U256;
+
+    /// Mutate account balance, the new_balance's decimal should be the same as Ethereum.
+    fn mutate_account_balance(account_id: &T::AccountId, balance: U256);
+
+    /// Ensure that an account can withdraw from their fee balance.
+    fn ensure_can_withdraw(
+        who: &T::AccountId,
+        amount: U256,
+        reasons: WithdrawReasons,
+    ) -> Result<(), ExitError>;
+
+    /// Transfer value. the value's decimal should be the same as Ethereum.
+    fn evm_transfer(
+        source: &T::AccountId,
+        target: &T::AccountId,
+        value: U256,
+    ) -> Result<(), ExitError>;
+
+    /// Get the account balance by ethereum address, the decimal of the returned result is
+    /// consistent with Ethereum.
+    fn evm_balance(address: &H160) -> U256 {
+        let account_id = <T as ConfigSystem>::IntoAccountId::derive_substrate_address(address);
+        Self::account_balance(&account_id)
+    }
+
+    fn mutate_evm_balance(address: &H160, new_balance: U256) {
+        let account_id = <T as ConfigSytem>::IntoAccountId::derive_substrate_address(address);
+        Self::mutate_account_balance(&account_id, new_balance)
+    }
+}
+*/

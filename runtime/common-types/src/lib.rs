@@ -9,7 +9,7 @@ use frame_system::limits::{BlockLength, BlockWeights};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, CheckedDiv, IdentifyAccount, Verify, Zero},
-    MultiSignature, Perbill, Saturating
+    MultiSignature, Perbill, Saturating,
 };
 
 /// An index to a block.
@@ -136,33 +136,6 @@ pub fn default_fee_per_second() -> u128 {
     let base_weight = Balance::from(ExtrinsicBaseWeight::get().ref_time());
     let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
     base_tx_per_second * base_tx_fee()
-}
-
-/// Convert decimal between native(12) and EVM(18) and therefore the 1_000_000 conversion.
-const DECIMALS_VALUE: u32 = 1_000_000u32;
-
-/// Convert decimal from native(TRN 12) to EVM(18).
-pub fn convert_decimals_from_evm(b: Balance) -> Balance {
-    if b.is_zero() {
-        return b;
-    }
-    b.saturating_mul(DECIMALS_VALUE.into())
-}
-
-/// Convert decimal from native EVM(18) to TRN(12).
-pub fn convert_decimals_to_evm(b: Balance) -> Option<Balance> {
-    if b.is_zero() {
-        return Some(b);
-    }
-    let res = b
-        .checked_div(Into::<Balance>::into(DECIMALS_VALUE))
-        .expect("divisor is non-zero; qed");
-
-    if res.saturating_mul(DECIMALS_VALUE.into()) == b {
-        Some(res)
-    } else {
-        None
-    }
 }
 
 #[test]
