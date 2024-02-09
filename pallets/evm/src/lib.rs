@@ -974,14 +974,14 @@ impl<T: Config> Pallet<T> {
 
         let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
         // keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
-        let balance: BalanceOf<T> = T::Currency::free_balance(&account_id);
-        // T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
+        let balance =
+            T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 
         (
             Account {
                 nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
                 balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
-                    convert_decimals_to_evm::<BalanceOf<T>>(balance),
+                    convert_decimals_to_evm::<<<T as pallet::Config>::Currency as frame_support::traits::fungible::Inspect<<T as frame_system::Config>::AccountId>>::Balance>(balance),
                 )),
             },
             T::DbWeight::get().reads(2),
