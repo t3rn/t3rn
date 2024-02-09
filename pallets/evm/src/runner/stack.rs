@@ -23,6 +23,7 @@ use evm::{
     gasometer::{GasCost, StorageTarget},
     ExitError, ExitReason, Opcode, Transfer,
 };
+
 // Substrate
 use frame_support::{
     traits::{
@@ -46,6 +47,7 @@ use fp_evm::{
     Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
     ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
+use t3rn_primitives::threevm::convert_decimals_from_evm;
 
 use crate::{
     runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
@@ -905,16 +907,23 @@ where
     fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
         let source = T::AddressMapping::into_account_id(transfer.source);
         let target = T::AddressMapping::into_account_id(transfer.target);
-        T::Currency::transfer(
-            &source,
-            &target,
+        if let Some(substrate_value) = convert_decimals_from_evm::<BalanceOf<T>>(
             transfer
                 .value
                 .try_into()
                 .map_err(|_| ExitError::OutOfFund)?,
-            ExistenceRequirement::AllowDeath,
-        )
-        .map_err(|_| ExitError::OutOfFund)
+        ) {
+            return T::Currency::transfer(
+                &source,
+                &target,
+                substrate_value,
+                ExistenceRequirement::AllowDeath,
+            )
+            .map_err(|_| ExitError::OutOfFund)
+        }
+        Err(ExitError::Other(sp_std::borrow::Cow::Borrowed(
+            "Invalid Decimals",
+        )))
     }
 
     fn reset_balance(&mut self, _address: H160) {
