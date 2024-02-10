@@ -1059,23 +1059,6 @@ where
         )
         .map_err(|_| Error::<T>::BalanceLow)?;
         Ok(Some(imbalance))
-        /*
-        // Convert 18 decimal EVM fee to t3rn 12 decimal fee
-        match convert_decimals_from_evm::<C::Balance>(fee.unique_saturated_into()) {
-            Some(substrate_fee) => {
-                let account_id = T::AddressMapping::into_account_id(*who);
-                let imbalance = C::withdraw(
-                    &account_id,
-                    substrate_fee,
-                    WithdrawReasons::FEE,
-                    ExistenceRequirement::AllowDeath,
-                )
-                .map_err(|_| Error::<T>::BalanceLow)?;
-                Ok(Some(imbalance))
-            },
-            _ => Err(Error::<T>::InvalidDecimals.into()),
-        }
-        */
     }
 
     fn correct_and_deposit_fee(
