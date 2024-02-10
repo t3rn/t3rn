@@ -1050,6 +1050,16 @@ where
         if fee.is_zero() {
             return Ok(None)
         }
+        let account_id = T::AddressMapping::into_account_id(*who);
+        let imbalance = C::withdraw(
+            &account_id,
+            fee.unique_saturated_into(),
+            WithdrawReasons::FEE,
+            ExistenceRequirement::AllowDeath,
+        )
+        .map_err(|_| Error::<T>::BalanceLow)?;
+        Ok(Some(imbalance))
+        /*
         // Convert 18 decimal EVM fee to t3rn 12 decimal fee
         match convert_decimals_from_evm::<C::Balance>(fee.unique_saturated_into()) {
             Some(substrate_fee) => {
@@ -1065,6 +1075,7 @@ where
             },
             _ => Err(Error::<T>::InvalidDecimals.into()),
         }
+        */
     }
 
     fn correct_and_deposit_fee(
@@ -1083,9 +1094,8 @@ where
             // refund to the account that paid the fees. If this fails, the
             // account might have dropped below the existential balance. In
             // that case we don't refund anything.
-            let refund_imbalance =
-                C::deposit_into_existing(&account_id, refund_amount)
-                    .unwrap_or_else(|_| C::PositiveImbalance::zero());
+            let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
+                .unwrap_or_else(|_| C::PositiveImbalance::zero());
 
             // Make sure this works with 0 ExistentialDeposit
             // https://github.com/paritytech/substrate/issues/10117

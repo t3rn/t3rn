@@ -47,7 +47,7 @@ use fp_evm::{
     Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
     ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
-use t3rn_primitives::threevm::convert_decimals_from_evm;
+use t3rn_primitives::threevm::{convert_decimals_from_evm, convert_decimals_to_evm};
 
 use crate::{
     runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
@@ -102,6 +102,8 @@ where
                 weight,
             })
         }
+
+        //let value = U256::from(convert_decimals_to_evm::<u64>(value.unique_saturated_into()));
 
         let res = Self::execute_inner(
             source,
@@ -224,13 +226,21 @@ where
             };
 
         // After eip-1559 we make sure the account can pay both the evm execution and priority fees.
-        let total_fee =
-            total_fee_per_gas
-                .checked_mul(U256::from(gas_limit))
-                .ok_or(RunnerError {
-                    error: Error::<T>::FeeOverflow,
-                    weight,
-                })?;
+        let total_fee = U256::from(
+            convert_decimals_from_evm::<u128>(
+                total_fee_per_gas
+                    .checked_mul(U256::from(gas_limit))
+                    .ok_or(RunnerError {
+                        error: Error::<T>::FeeOverflow,
+                        weight,
+                    })?
+                    .unique_saturated_into(),
+            )
+            .ok_or(RunnerError {
+                error: Error::<T>::FeeOverflow,
+                weight,
+            })?,
+        );
 
         // Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
         let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
@@ -441,6 +451,7 @@ where
             )?;
         }
         let precompiles = T::PrecompilesValue::get();
+        //let value = U256::from(convert_decimals_to_evm::<u64>(value.unique_saturated_into()));
         Self::execute(
             source,
             value,
