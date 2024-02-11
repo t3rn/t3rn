@@ -103,8 +103,6 @@ where
             })
         }
 
-        //let value = U256::from(convert_decimals_to_evm::<u64>(value.unique_saturated_into()));
-
         let res = Self::execute_inner(
             source,
             value,
@@ -206,9 +204,14 @@ where
                 // With tip, we include as much of the tip on top of base_fee that we can, never
                 // exceeding max_fee_per_gas
                 (Some(max_fee_per_gas), Some(max_priority_fee_per_gas), _) => {
-                    let actual_priority_fee_per_gas = max_fee_per_gas
-                        .saturating_sub(base_fee)
-                        .min(max_priority_fee_per_gas);
+                    let actual_priority_fee_per_gas =  U256::from(
+                        convert_decimals_from_evm::<u128>(
+                            max_fee_per_gas.saturating_sub(base_fee).min(max_priority_fee_per_gas).unique_saturated_into()
+                        ).ok_or(RunnerError {
+                                error: Error::<T>::FeeOverflow,
+                                weight,
+                            }
+                        )?);
                     (
                         base_fee.saturating_add(actual_priority_fee_per_gas),
                         actual_priority_fee_per_gas,
@@ -225,22 +228,22 @@ where
                     }),
             };
 
+        /*
+        let total_fee_per_gas = U256::from(
+            convert_decimals_from_evm::<u128>(evm_total_fee_per_gas.unique_saturated_into()).ok_or(RunnerError {
+                error: Error::<T>::FeeOverflow,
+                weight,
+            })?);
+
+        */
         // After eip-1559 we make sure the account can pay both the evm execution and priority fees.
-        let total_fee = U256::from(
-            convert_decimals_from_evm::<u128>(
-                total_fee_per_gas
-                    .checked_mul(U256::from(gas_limit))
-                    .ok_or(RunnerError {
-                        error: Error::<T>::FeeOverflow,
-                        weight,
-                    })?
-                    .unique_saturated_into(),
-            )
+        let total_fee =
+            total_fee_per_gas
+            .checked_mul(U256::from(gas_limit))
             .ok_or(RunnerError {
                 error: Error::<T>::FeeOverflow,
                 weight,
-            })?,
-        );
+            })?;
 
         // Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
         let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
