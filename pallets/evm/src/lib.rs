@@ -100,7 +100,7 @@ pub use fp_evm::{
     PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
     Vicinity,
 };
-use t3rn_primitives::threevm::{convert_decimals_from_evm, convert_decimals_to_evm, ThreeVm};
+use t3rn_primitives::threevm::{convert_decimals_to_evm, ThreeVm};
 
 pub use self::{
     pallet::*,

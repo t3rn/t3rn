@@ -761,7 +761,7 @@ fn ed_0_refund_patch_works() {
             evm_addr,
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1_000_000_000),
+            U256::from(1_000_000),
             21776,
             U256::from(1_000_000_000),
             None,
@@ -851,7 +851,7 @@ fn author_should_get_tip() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1),
+            U256::from(convert_decimals_to_evm::<u64>(1u64)),
             1000000,
             U256::from(2_000_000_000),
             Some(U256::from(1)),
@@ -873,7 +873,7 @@ fn issuance_after_tip() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1),
+            U256::from(convert_decimals_to_evm::<u64>(1u64)),
             1000000,
             U256::from(2_000_000_000),
             Some(U256::from(1)),
@@ -925,9 +925,9 @@ fn refunds_should_work() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1),
+            U256::from(convert_decimals_to_evm::<u64>(1u64)),
             1000000,
-            U256::from(2_000_000_000),
+            U256::from(2_000_000),
             None,
             None,
             Vec::new(),
@@ -949,15 +949,15 @@ fn refunds_and_priority_should_work() {
         // The effective priority tip will be 1GWEI instead 1.5GWEI:
         // 		(max_fee_per_gas - base_fee).min(max_priority_fee)
         //		(2 - 1).min(1.5)
-        let tip = U256::from(1_500_000_000);
-        let max_fee_per_gas = U256::from(2_000_000_000);
+        let tip = U256::from(convert_decimals_to_evm::<u128>(1_500_000u128));
+        let max_fee_per_gas = U256::from(convert_decimals_to_evm::<u128>(2_000_000u128));
         let used_gas = U256::from(21_000);
         let _ = EVM::call(
             RuntimeOrigin::root(),
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1),
+            U256::from(1_000_000),
             1000000,
             max_fee_per_gas,
             Some(tip),
