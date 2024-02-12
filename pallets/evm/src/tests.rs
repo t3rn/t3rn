@@ -893,7 +893,6 @@ fn issuance_after_tip() {
     });
 }
 
-#[ignore]
 #[test]
 fn author_same_balance_without_tip() {
     new_test_ext().execute_with(|| {
@@ -938,10 +937,12 @@ fn refunds_should_work() {
             Vec::new(),
         );
         let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
-        let total_cost = (U256::from(21_000) * base_fee * U256::from(1 * DECIMALS_VALUE))
-            + U256::from(1 * DECIMALS_VALUE);
+        let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
         let after_call = EVM::account_basic(&H160::default()).0.balance;
-        assert_eq!(after_call, before_call - total_cost);
+        assert_eq!(
+            after_call,
+            before_call - total_cost * U256::from(DECIMALS_VALUE)
+        );
     });
 }
 
