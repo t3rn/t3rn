@@ -61,9 +61,16 @@ pub struct Precompiles<T: pallet_3vm_evm::Config> {
 }
 
 impl<T: pallet_3vm_evm::Config> Precompiles<T> {
-    pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
+    // pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
+    //     Self {
+    //         inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
+    //         phantom: Default::default(),
+    //     }
+    // }
+
+    pub fn new(inner: BTreeMap<H160, KnownPrecompile<T>>) -> Self {
         Self {
-            inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
+            inner: inner.into_iter().map(|(k, v)| (k, v)).collect(),
             phantom: Default::default(),
         }
     }

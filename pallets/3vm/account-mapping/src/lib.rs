@@ -177,7 +177,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             eth_address: EvmAddress,
             eth_signature: EcdsaSignature,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
             // check if user already mapped account
@@ -200,6 +200,9 @@ pub mod pallet {
                 Error::<T>::PreImageAddressNotMatchingRecovered
             );
 
+            Accounts::<T>::insert(eth_address, &who);
+            EvmAddresses::<T>::insert(&who, eth_address);
+
             // check if the evm padded address already exists
             let account_id = T::AddressMapping::into_account_id(&eth_address);
             if frame_system::Pallet::<T>::account_exists(&account_id) {
@@ -221,15 +224,12 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )?;
 
-            Accounts::<T>::insert(eth_address, &who);
-            EvmAddresses::<T>::insert(&who, eth_address);
-
             Self::deposit_event(Event::ClaimAccount {
                 account_id: who,
                 evm_address: eth_address,
             });
 
-            Ok(())
+            Ok(Pays::No.into())
         }
 
         /// Claim account mapping between Substrate accounts and a generated EVM
@@ -238,7 +238,7 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
         #[transactional]
-        pub fn claim_default_account(origin: OriginFor<T>) -> DispatchResult {
+        pub fn claim_default_account(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
             // ensure account_id has not been mapped
@@ -262,7 +262,7 @@ pub mod pallet {
                 evm_address: eth_address,
             });
 
-            Ok(())
+            Ok(Pays::No.into())
         }
     }
 }
@@ -336,6 +336,10 @@ where
     // Returns the AccountId used go generate the given EvmAddress.
     fn into_account_id(address: &EvmAddress) -> T::AccountId {
         if let Some(acc) = Accounts::<T>::get(address) {
+            log::info!(
+                "AddressMapping::into_account_id - found matching account: {:?}",
+                acc
+            );
             acc
         } else {
             create_default_substrate_address(address).into()
@@ -393,6 +397,7 @@ where
     // Returns the AccountId used go generate the given EvmAddress.
     fn into_account_id(address: EvmAddress) -> T::AccountId {
         if let Some(acc) = Accounts::<T>::get(&address) {
+            log::info!("into_account_id - found matching account: {:?}", acc);
             acc
         } else {
             create_default_substrate_address(&address).into()
