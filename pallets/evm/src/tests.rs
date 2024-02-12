@@ -753,23 +753,23 @@ fn ed_0_refund_patch_works() {
         let evm_addr = H160::from_str("1000000000000000000000000000000000000003").unwrap();
         let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
-        let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 21_777_000_000_000);
-        assert_eq!(Balances::free_balance(substrate_addr), 21_777_000_000_000);
+        let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 21_777_000_000);
+        assert_eq!(Balances::free_balance(substrate_addr), 21_777_000_000);
 
         let _ = EVM::call(
             RuntimeOrigin::root(),
             evm_addr,
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1_000_000),
+            U256::from(convert_decimals_to_evm::<u128>(1_000_000u128)),
             21776,
-            U256::from(1_000_000_000),
-            None,
+            U256::from(convert_decimals_to_evm::<u128>(1_000_000u128)),
+            Some(U256::from(convert_decimals_to_evm::<u128>(1_000_000u128))),
             Some(U256::from(0)),
             Vec::new(),
         );
         // All that was due, was refunded.
-        assert_eq!(Balances::free_balance(substrate_addr), 776_000_000_000);
+        assert_eq!(Balances::free_balance(substrate_addr), 776_000_000);
     });
 }
 
@@ -853,14 +853,17 @@ fn author_should_get_tip() {
             Vec::new(),
             U256::from(convert_decimals_to_evm::<u64>(1u64)),
             1000000,
-            U256::from(2_000_000_000),
-            Some(U256::from(1)),
+            U256::from(convert_decimals_to_evm::<u64>(2_000_000u64)),
+            Some(U256::from(convert_decimals_to_evm::<u64>(1))),
             None,
             Vec::new(),
         );
         result.expect("EVM can be called");
         let after_tip = EVM::account_basic(&author).0.balance;
-        assert_eq!(after_tip, (before_tip + 21000));
+        assert_eq!(
+            after_tip,
+            (before_tip + convert_decimals_to_evm::<u64>(21_000))
+        );
     });
 }
 
@@ -925,15 +928,16 @@ fn refunds_should_work() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(convert_decimals_to_evm::<u64>(1u64)),
+            U256::from(convert_decimals_to_evm::<u128>(1u128)),
             1000000,
-            U256::from(2_000_000),
-            None,
+            U256::from(convert_decimals_to_evm::<u128>(2_000_000)),
+            Some(U256::from(convert_decimals_to_evm::<u128>(2_000_000))),
             None,
             Vec::new(),
         );
         let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
-        let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
+        let total_cost = (U256::from(convert_decimals_to_evm::<u128>(21_000u128)) * base_fee)
+            + U256::from(convert_decimals_to_evm::<u128>(1u128));
         let after_call = EVM::account_basic(&H160::default()).0.balance;
         assert_eq!(after_call, before_call - total_cost);
     });
