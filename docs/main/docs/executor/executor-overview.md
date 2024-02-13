@@ -498,12 +498,6 @@ Revisit [arbitrage strategy section](#arbitrage-strategy) for more details on th
 
 <img height="32%" src="/img/executor-running.png"/>
 
-### Explorer
-
-Visit [stats.t0rn.io/explorer](https://stats.t0rn.io/explorer) to see the orders submitted to t3rn's testnet.
-
-<img height="64%" src="/img/explorer-10wei.png"/>
-
 ### Troubleshooting
 
 Feel free to reach out to us on [Discord](https://discord.com/invite/T3sJYkEvPY) if you have any questions or issues.
