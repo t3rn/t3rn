@@ -25,7 +25,9 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -144,7 +146,7 @@ parameter_types! {
         (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
         (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
         (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
-        (sp_core::H160([9u8; 20]), evm_precompile_util::KnownPrecompile::Tokens)
+        (get_tokens_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens)
     ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
@@ -211,7 +213,7 @@ impl pallet_3vm_account_mapping::Config for Runtime {
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
-        let mut address = [0u8; 20];
+        let mut address = [9u8; 20];
         let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {

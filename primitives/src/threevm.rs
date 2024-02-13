@@ -442,58 +442,10 @@ pub fn convert_decimals_from_evm<
     }
 }
 
-/*
-/// Operations for the remaining balance.
-pub trait RemainBalanceOp<T: ConfigSystem> {
-    /// Get the remaining balance
-    fn remaining_balance(account_id: &T::AccountId) -> u128;
-    /// Set the remaining balance
-    fn set_remaining_balance(account_id: &T::AccountId, value: u128);
-    /// Remove the remaining balance
-    fn remove_remaining_balance(account_id: &T::AccountId);
-    /// Inc remaining balance
-    fn inc_remaining_balance(account_id: &T::AccountId, value: u128);
-    /// Dec remaining balance
-    fn dec_remaining_balance(account_id: &T::AccountId, value: u128);
-    /// Deposit dvm related transfer events
-    fn deposit_dvm_transfer_event(source: &T::AccountId, target: &T::AccountId, value: U256);
-}
-
-/// A trait for handling currency decimal difference between native and evm tokens.
-pub trait CurrencyAdapt<T: ConfigSystem> {
-    /// Get account balance, the decimal of the returned result is consistent with Ethereum.
-    fn account_balance(account_id: &T::AccountId) -> U256;
-
-    /// Get the total supply of token in Ethereum decimal.
-    fn evm_total_supply() -> U256;
-
-    /// Mutate account balance, the new_balance's decimal should be the same as Ethereum.
-    fn mutate_account_balance(account_id: &T::AccountId, balance: U256);
-
-    /// Ensure that an account can withdraw from their fee balance.
-    fn ensure_can_withdraw(
-        who: &T::AccountId,
-        amount: U256,
-        reasons: WithdrawReasons,
-    ) -> Result<(), ExitError>;
-
-    /// Transfer value. the value's decimal should be the same as Ethereum.
-    fn evm_transfer(
-        source: &T::AccountId,
-        target: &T::AccountId,
-        value: U256,
-    ) -> Result<(), ExitError>;
-
-    /// Get the account balance by ethereum address, the decimal of the returned result is
-    /// consistent with Ethereum.
-    fn evm_balance(address: &H160) -> U256 {
-        let account_id = <T as ConfigSystem>::IntoAccountId::derive_substrate_address(address);
-        Self::account_balance(&account_id)
+pub fn get_tokens_precompile_address() -> H160 {
+    let mut address = [9u8; 20];
+    for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
+        address[byte_index - H160_POSITION_ASSET_ID_TYPE] = 0;
     }
-
-    fn mutate_evm_balance(address: &H160, new_balance: U256) {
-        let account_id = <T as ConfigSytem>::IntoAccountId::derive_substrate_address(address);
-        Self::mutate_account_balance(&account_id, new_balance)
-    }
+    H160(address)
 }
-*/
