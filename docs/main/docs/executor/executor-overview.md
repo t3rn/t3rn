@@ -412,6 +412,8 @@ const txPromise: Promise<TxResponse> = contract.claimRefund(
 );
 ```
 
+### [Gas Costs Breakdown](/resources/gas-cost-breakdown)
+
 ### How to run t3rn's default Executor with Arbitrage strategy?
 
 1. Clone the executors [t3rn repo](https://github.com/t3rn/guardian):
@@ -472,6 +474,8 @@ export default {
 Revisit [arbitrage strategy section](#arbitrage-strategy) for more details on the arbitrage strategy configuration.
 
 <img height="32%" src="/img/executor-running.png"/>
+
+### [Supported Chains](/resources/supported-chains)
 
 ### Troubleshooting
 
