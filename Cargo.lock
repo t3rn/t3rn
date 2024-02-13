@@ -14973,6 +14973,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
+name = "tokens-precompile"
+version = "1.86.1-rc.0"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-3vm-account-mapping",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-evm",
+ "parity-scale-codec",
+ "sp-std 8.0.0",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "tokio"
 version = "1.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
