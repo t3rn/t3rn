@@ -146,7 +146,8 @@ parameter_types! {
          (sp_core::H160([5u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS256),
          (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
          (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-         (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal)
+         (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
+         (sp_core::H160([9u8; 20]), evm_precompile_util::KnownPrecompile::Tokens)
     ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);

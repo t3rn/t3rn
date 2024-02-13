@@ -14,6 +14,7 @@ pub use pallet_evm_precompile_simple::{
 use portal_precompile::PortalPrecompile;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
+use tokens_precompile::TokensPrecompile;
 pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     // Ethereum precompiles:
     ECRecover,
@@ -27,6 +28,7 @@ pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     ECRecoverPublicKey,
     // T3rn precompiles:
     Portal,
+    Tokens,
     Noop(T),
 }
 
@@ -45,6 +47,7 @@ impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
             KnownPrecompile::ECRecoverPublicKey =>
                 <ECRecoverPublicKey as Precompile>::execute(handle),
             KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
+            KnownPrecompile::Tokens => TokensPrecompile::<T>::execute(handle),
             KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
                 ExitError::Other("Noop precompile".into()),
             )),

@@ -9885,6 +9885,7 @@ dependencies = [
  "portal-precompile",
  "sp-core",
  "sp-std 8.0.0",
+ "tokens-precompile",
 ]
 
 [[package]]

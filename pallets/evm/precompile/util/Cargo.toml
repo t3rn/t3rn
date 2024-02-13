@@ -9,7 +9,8 @@ version    = { workspace = true }
 [dependencies]
 pallet-3vm-evm            = { path = "../..", default-features = false, package = "pallet-evm" }
 pallet-3vm-evm-primitives = { path = "../../primitives", default-features = false, package = "fp-evm" }
-portal-precompile                  = { path = "../portal", default-features = false }
+portal-precompile         = { path = "../portal", default-features = false }
+tokens-precompile         = { path = "../tokens", default-features = false }
 
 sp-core                   = { workspace = true }
 sp-std                    = { workspace = true }
@@ -32,6 +33,7 @@ std = [
   "pallet-3vm-evm-primitives/std",
   "pallet-3vm-evm/std",
   "portal-precompile/std",
+  "tokens-precompile/std",
   "pallet-evm-precompile-3vm-dispatch/std",
   "pallet-evm-precompile-blake2/std",
   "pallet-evm-precompile-bn128/std",
