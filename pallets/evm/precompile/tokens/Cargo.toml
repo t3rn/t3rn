@@ -16,10 +16,10 @@ frame-system     = { workspace = true }
 pallet-assets    = { workspace = true }
 
 # EVM specific
-fp-evm                 = { path = "../../primitives", default-features = false }
-pallet-evm             = { path = "../..", default-features = false }
-#precompile-util        = { path = "../util", default-features = false }
-precompile-util-macro  = { path = "../util/macro", default-features = false }
+fp-evm                    = { path = "../../primitives", default-features = false }
+pallet-evm                = { path = "../..", default-features = false }
+precompile-util-solidity  = { path = "../util/solidity", default-features = false }
+precompile-util-macro     = { path = "../util/macro", default-features = false }
 
 
 # t3rn specific

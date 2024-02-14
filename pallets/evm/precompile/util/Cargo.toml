@@ -9,7 +9,7 @@ version    = { workspace = true }
 [dependencies]
 pallet-3vm-evm             = { path = "../..", default-features = false, package = "pallet-evm" }
 pallet-3vm-evm-primitives  = { path = "../../primitives", default-features = false, package = "fp-evm" }
-pallet-3vm-account-mapping = { path = "../../../3vm/account-mapping", default-features = false }
+#pallet-3vm-account-mapping = { path = "../../../3vm/account-mapping", default-features = false }
 portal-precompile          = { path = "../portal", default-features = false }
 tokens-precompile          = { path = "../tokens", default-features = false }
 
@@ -32,6 +32,7 @@ default = [ "std" ]
 std = [
   "sp-core/std",
   "sp-std/std",
+  "pallet-assets/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-3vm-evm/std",
   "portal-precompile/std",

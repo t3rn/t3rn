@@ -9,10 +9,10 @@ use frame_support::traits::{
     fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
     tokens::currency::Currency,
 };
+use precompile_util_solidity::modifier::FunctionModifier;
 use sp_core::{H160, U256};
 use sp_std::{marker::PhantomData, vec::Vec};
 use t3rn_primitives::threevm::{Erc20Mapping, Precompile, H160_POSITION_ASSET_ID_TYPE};
-//use precompile_util::FunctionModifier;
 
 #[precompile_util_macro::generate_function_selector]
 #[derive(Debug, PartialEq)]

@@ -9893,7 +9893,6 @@ name = "precompile-util"
 version = "1.86.1-rc.0"
 dependencies = [
  "fp-evm",
- "pallet-3vm-account-mapping",
  "pallet-assets",
  "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
@@ -9920,6 +9919,17 @@ dependencies = [
  "quote",
  "sha3",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "precompile-util-solidity"
+version = "1.86.1-rc.0"
+dependencies = [
+ "fp-evm",
+ "num_enum 0.5.11",
+ "pallet-evm",
+ "sp-core",
+ "sp-std 8.0.0",
 ]
 
 [[package]]
@@ -15020,6 +15030,7 @@ dependencies = [
  "pallet-evm",
  "parity-scale-codec",
  "precompile-util-macro",
+ "precompile-util-solidity",
  "sp-core",
  "sp-std 8.0.0",
  "t3rn-primitives",

@@ -1,0 +1,28 @@
+[package]
+edition    = { workspace = true }
+homepage   = { workspace = true }
+license    = { workspace = true }
+name       = "precompile-util-solidity"
+repository = { workspace = true }
+version    = { workspace = true }
+
+[dependencies]
+# General
+num_enum                   = { workspace = true }
+# Substrate
+sp-core                    = { workspace = true }
+sp-std                     = { workspace = true }
+#sp-io                      = { workspace = true }
+# EVM
+pallet-3vm-evm             = { path = "../../..", default-features = false, package = "pallet-evm" }
+pallet-3vm-evm-primitives  = { path = "../../../primitives", default-features = false, package = "fp-evm" }
+
+[features]
+default = [ "std" ]
+std = [
+  "sp-core/std",
+  "sp-std/std",
+  #"sp-io/std",
+  "pallet-3vm-evm-primitives/std",
+  "pallet-3vm-evm/std",
+]
