@@ -15,6 +15,7 @@ tokens-precompile          = { path = "../tokens", default-features = false }
 
 sp-core                   = { workspace = true }
 sp-std                    = { workspace = true }
+pallet-assets             = { workspace = true }
 
 pallet-evm-precompile-3vm-dispatch = { path = "../3vm-dispatch", default-features = false }
 pallet-evm-precompile-blake2       = { path = "../blake2", default-features = false }

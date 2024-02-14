@@ -20,7 +20,7 @@ use tokens_precompile::TokensPrecompile;
 pub type EvmResult<T = ()> = Result<T, PrecompileFailure>;
 
 pub mod modifier;
-pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
+pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config> {
     // Ethereum precompiles:
     ECRecover,
     Sha256,
@@ -37,7 +37,7 @@ pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     Noop(T),
 }
 
-impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T> {
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match self {
             // Ethereum:
@@ -63,12 +63,12 @@ impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
     }
 }
 
-pub struct Precompiles<T: pallet_3vm_evm::Config> {
+pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config> {
     pub inner: BTreeMap<H160, KnownPrecompile<T>>,
     phantom: PhantomData<T>,
 }
 
-impl<T: pallet_3vm_evm::Config> Precompiles<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T> {
     // pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
     //     Self {
     //         inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
@@ -88,7 +88,7 @@ impl<T: pallet_3vm_evm::Config> Precompiles<T> {
     }
 }
 
-impl<T: pallet_3vm_evm::Config> PrecompileSet for Precompiles<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config> PrecompileSet for Precompiles<T> {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         self.inner
             .get(&handle.code_address())

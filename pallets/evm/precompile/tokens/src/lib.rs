@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use circuit_runtime_types::{AssetId, EvmAddress};
+use circuit_runtime_types::{AssetId, EvmAddress, TokenId};
 use fp_evm::{
     ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
     PrecompileOutput, PrecompileResult,
@@ -28,11 +28,15 @@ pub struct TokensPrecompile<T>(PhantomData<T>);
 
 impl<T> Erc20Mapping for TokensPrecompile<T>
 where
-    T: pallet_evm::Config,
+    T: pallet_evm::Config + pallet_assets::Config,
 {
-    fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
+    fn encode_evm_address(v: TokenId) -> Option<EvmAddress> {
         let mut address = [9u8; 20];
-        let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
+        let mut asset_id_bytes: Vec<u8> = 0u32.to_be_bytes().to_vec();
+        match v {
+            TokenId::Asset(id) => asset_id_bytes = id.to_be_bytes().to_vec(),
+            _ => {},
+        }
 
         for byte_index in 0..asset_id_bytes.len() {
             address[byte_index + H160_POSITION_ASSET_ID_TYPE] =
@@ -42,20 +46,23 @@ where
         Some(EvmAddress::from_slice(&asset_id_bytes.as_slice()))
     }
 
-    fn decode_evm_address(v: EvmAddress) -> Option<AssetId> {
+    fn decode_evm_address(v: EvmAddress) -> Option<TokenId> {
         let address = v.as_bytes();
         let mut asset_id_bytes = [0u8; 4];
         for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
             asset_id_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE] = address[byte_index];
         }
         let asset_id = u32::from_be_bytes(asset_id_bytes);
-        Some(asset_id)
+        if asset_id == 0 {
+            return Some(TokenId::Native)
+        }
+        Some(TokenId::Asset(asset_id))
     }
 }
 
 impl<T> EvmPrecompile for TokensPrecompile<T>
 where
-    T: pallet_evm::Config,
+    T: pallet_evm::Config + pallet_assets::Config,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let address = handle.code_address();
@@ -107,7 +114,7 @@ where
 
 impl<T> TokensPrecompile<T>
 where
-    T: pallet_evm::Config,
+    T: pallet_evm::Config + pallet_assets::Config,
 {
     fn not_supported(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
@@ -115,32 +122,33 @@ where
         })
     }
 
-    fn total_supply(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn total_supply(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn name(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn name(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn symbol(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn symbol(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn decimals(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn decimals(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn balance_of(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn balance_of(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
+
         // Convert EVM address to Substrate address
         // T::AddressMapping::
         Err(PrecompileFailure::Error {
@@ -148,7 +156,7 @@ where
         })
     }
 
-    fn transfer(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn transfer(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
         // Convert EVM Address to Substrate
         Err(PrecompileFailure::Error {

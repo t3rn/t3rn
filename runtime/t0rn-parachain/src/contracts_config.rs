@@ -213,6 +213,7 @@ impl pallet_3vm_account_mapping::Config for Runtime {
     type StorageDepositFee = StorageDepositFee;
 }
 
+/*
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
@@ -237,7 +238,7 @@ impl Erc20Mapping for Runtime {
         Some(asset_id)
     }
 }
-
+*/
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
     fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;

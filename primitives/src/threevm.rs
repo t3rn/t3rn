@@ -21,7 +21,7 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
-use circuit_runtime_types::{AssetId, EvmAddress};
+use circuit_runtime_types::{EvmAddress, TokenId};
 
 // Precompile pointers baked into the binary.
 // Genesis exists only to map hashes to pointers.
@@ -387,9 +387,9 @@ pub const H160_POSITION_ASSET_ID_TYPE: usize = 15;
 
 pub trait Erc20Mapping {
     /// Encode the AssetId to EvmAddress.
-    fn encode_evm_address(v: AssetId) -> Option<EvmAddress>;
+    fn encode_evm_address(v: TokenId) -> Option<EvmAddress>;
     /// Decode the AssetId from EvmAddress.
-    fn decode_evm_address(v: EvmAddress) -> Option<AssetId>;
+    fn decode_evm_address(v: EvmAddress) -> Option<TokenId>;
 }
 
 /// A mapping between `AccountId` and `EvmAddress`.
