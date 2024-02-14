@@ -1,9 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use circuit_runtime_types::{AssetId, EvmAddress, TokenId};
+use circuit_runtime_types::{EvmAddress, TokenId};
 use fp_evm::{
     ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
     PrecompileOutput, PrecompileResult,
+};
+use frame_support::traits::{
+    fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
+    tokens::currency::Currency,
 };
 use sp_core::{H160, U256};
 use sp_std::{marker::PhantomData, vec::Vec};
@@ -67,7 +71,7 @@ where
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let address = handle.code_address();
 
-        if let Some(asset_id) = <TokensPrecompile<T> as Erc20Mapping>::decode_evm_address(address) {
+        if let Some(token_id) = <TokensPrecompile<T> as Erc20Mapping>::decode_evm_address(address) {
             let _target_gas = handle.gas_limit();
             let _context = handle.context();
             // TODO: Read function selector
@@ -87,16 +91,15 @@ where
                 }
 
                 match selector {
-                    // Local and Foreign common
-                    Action::TotalSupply => Self::total_supply(handle),
-                    Action::BalanceOf => Self::balance_of(handle),
-                    Action::Allowance => Self::not_supported(handle),
-                    Action::Transfer => Self::transfer(handle),
-                    Action::Approve => Self::not_supported(handle),
-                    Action::TransferFrom => Self::not_supported(handle),
-                    Action::Name => Self::name(handle),
-                    Action::Symbol => Self::symbol(handle),
-                    Action::Decimals => Self::decimals(handle),
+                    Action::TotalSupply => Self::total_supply(token_id, handle),
+                    Action::BalanceOf => Self::balance_of(token_id, handle),
+                    Action::Allowance => Self::not_supported(token_id, handle),
+                    Action::Transfer => Self::transfer(token_id, handle),
+                    Action::Approve => Self::not_supported(token_id, handle),
+                    Action::TransferFrom => Self::not_supported(token_id, handle),
+                    Action::Name => Self::name(token_id, handle),
+                    Action::Symbol => Self::symbol(token_id, handle),
+                    Action::Decimals => Self::decimals(token_id, handle),
                 }
             };
             return result;
@@ -122,31 +125,79 @@ where
         })
     }
 
-    fn total_supply(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn total_supply(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::AssetId: From<u32>,
+    {
+        match token_id {
+            TokenId::Native => {
+                let native_total_issuance = <T as pallet_evm::Config>::Currency::total_issuance();
+            },
+            TokenId::Asset(asset_id) => {
+                let asset_total_issuance =
+                    pallet_assets::Pallet::<T>::total_issuance(asset_id.into());
+            },
+        };
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn name(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn name(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::AssetId: From<u32>,
+    {
+        match token_id {
+            TokenId::Native => {
+                let native_name = "TRN";
+            },
+            TokenId::Asset(asset_id) => {
+                let asset_name = pallet_assets::Pallet::<T>::name(asset_id.into());
+            },
+        };
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn symbol(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn symbol(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::AssetId: From<u32>,
+    {
+        match token_id {
+            TokenId::Native => {
+                let native_symbol = "TRN";
+            },
+            TokenId::Asset(asset_id) => {
+                let asset_symbol = pallet_assets::Pallet::<T>::symbol(asset_id.into());
+            },
+        };
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn decimals(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn decimals(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::AssetId: From<u32>,
+    {
+        match token_id {
+            TokenId::Native => {
+                let native_decimals = 12;
+            },
+            TokenId::Asset(asset_id) => {
+                let asset_decimals = pallet_assets::Pallet::<T>::decimals(asset_id.into());
+            },
+        };
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
     }
 
-    fn balance_of(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::AssetId: From<u32>,
+    {
         let input = handle.input();
 
         // Convert EVM address to Substrate address
@@ -156,7 +207,10 @@ where
         })
     }
 
-    fn transfer(token_id: AssetId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::AssetId: From<u32>,
+    {
         let input = handle.input();
         // Convert EVM Address to Substrate
         Err(PrecompileFailure::Error {
