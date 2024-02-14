@@ -38,6 +38,10 @@ workspace.resolver = "2"
 [workspace.dependencies]
 
 # ====== nostd ======
+proc-macro2 = "1.0"
+quote       = "1.0"
+syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
+
 bitflags    = "1.3"
 bytes       = { version = "1.2.1", default-features = false }
 tiny-keccak = { version = "2.0.2" }
@@ -45,7 +49,6 @@ tiny-keccak = { version = "2.0.2" }
 ed25519-dalek = { version = "1.0.1", features = [ "u64_backend" ], default-features = false }
 k256          = { version = "0.13.1", features = [ "ecdsa" ], default_features = false }
 libsecp256k1  = { version = "0.7", default-features = false }
-
 bn             = { package = "substrate-bn", version = "0.6", default-features = false }
 ethereum       = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
@@ -58,6 +61,7 @@ impl-serde            = { version = "0.4.0", default-features = false }
 impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log                   = { version = "0.4", default-features = false }
 num                   = { version = "0.4.0", default-features = false }
+num_enum              = { version = "0.5.3", default-features = false }
 num-traits            = { version = "0.2", default-features = false }
 primitive-types       = { version = "0.12.1", features = [ "scale-info", "rlp", "byteorder" ], default-features = false }
 rand                  = { version = "0.8", default-features = false }
@@ -290,6 +294,7 @@ members = [
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/tokens",
   "pallets/evm/precompile/util",
+  "pallets/evm/precompile/util/macro",
   "pallets/portal",
   "pallets/portal/rpc",
   "pallets/portal/rpc/runtime-api",

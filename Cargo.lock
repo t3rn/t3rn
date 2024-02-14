@@ -3683,7 +3683,7 @@ dependencies = [
  "ethereum-types",
  "fp-evm",
  "frame-support",
- "num_enum",
+ "num_enum 0.6.1",
  "parity-scale-codec",
  "sp-std 8.0.0",
 ]
@@ -6732,11 +6732,31 @@ dependencies = [
 
 [[package]]
 name = "num_enum"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f646caf906c20226733ed5b1374287eb97e3c2a5c227ce668c1f2ce20ae57c9"
+dependencies = [
+ "num_enum_derive 0.5.11",
+]
+
+[[package]]
+name = "num_enum"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a015b430d3c108a207fd776d2e2196aaf8b1cf8cf93253e3a097ff3085076a1"
 dependencies = [
- "num_enum_derive",
+ "num_enum_derive 0.6.1",
+]
+
+[[package]]
+name = "num_enum_derive"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcbff9bc912032c62bf65ef1d5aea88983b420f4f839db1e9b0c281a25c9c799"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -9886,6 +9906,17 @@ dependencies = [
  "sp-core",
  "sp-std 8.0.0",
  "tokens-precompile",
+]
+
+[[package]]
+name = "precompile-util-macro"
+version = "0.1.0"
+dependencies = [
+ "num_enum 0.5.11",
+ "proc-macro2",
+ "quote",
+ "sha3",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -14980,11 +15011,14 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "num_enum 0.5.11",
  "pallet-3vm-account-mapping",
  "pallet-assets",
  "pallet-balances",
  "pallet-evm",
  "parity-scale-codec",
+ "precompile-util-macro",
+ "sp-core",
  "sp-std 8.0.0",
  "t3rn-primitives",
 ]
