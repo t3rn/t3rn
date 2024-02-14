@@ -9,7 +9,13 @@ use frame_support::traits::{
     fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
     tokens::currency::Currency,
 };
-use precompile_util_solidity::modifier::FunctionModifier;
+use precompile_util_solidity::{
+    data::{Address, EvmData, EvmDataWriter},
+    error,
+    handle::PrecompileHandleExt,
+    modifier::FunctionModifier,
+    revert, succeed, EvmResult,
+};
 use sp_core::{H160, U256};
 use sp_std::{marker::PhantomData, vec::Vec};
 use t3rn_primitives::threevm::{Erc20Mapping, Precompile, H160_POSITION_ASSET_ID_TYPE};
@@ -74,9 +80,9 @@ where
         if let Some(token_id) = <TokensPrecompile<T> as Erc20Mapping>::decode_evm_address(address) {
             let _target_gas = handle.gas_limit();
             let _context = handle.context();
-            // TODO: Read function selector
+            // TODO: Route EVM selector to functions correctly
             // TODO: Implement Actions
-            /*
+
             let result = {
                 let selector = match handle.read_selector() {
                     Ok(selector) => selector,
@@ -84,12 +90,13 @@ where
                 };
 
                 if let Err(err) = handle.check_function_modifier(match selector {
-                    Action::Approve | Action::Transfer | Action::TransferFrom => FunctionModifier::Payable,
+                    Action::Approve | Action::Transfer | Action::TransferFrom =>
+                        FunctionModifier::Payable,
                     _ => FunctionModifier::View,
                 }) {
-                    return Err(err);
+                    return Err(err)
                 }
-
+                /*
                 match selector {
                     Action::TotalSupply => Self::total_supply(token_id, handle),
                     Action::BalanceOf => Self::balance_of(token_id, handle),
@@ -101,13 +108,9 @@ where
                     Action::Symbol => Self::symbol(token_id, handle),
                     Action::Decimals => Self::decimals(token_id, handle),
                 }
+                */
             };
-            return result;
-            */
-
-            return Err(PrecompileFailure::Error {
-                exit_status: ExitError::Other("Not Implemented".into()),
-            })
+            //return result;
         }
         Err(PrecompileFailure::Error {
             exit_status: ExitError::Other("Invalid Asset Id".into()),
