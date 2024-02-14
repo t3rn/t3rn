@@ -15,9 +15,12 @@
 // along with Utils.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Provide checks related to function modifiers (view/payable).
-
-use pallet_3vm_evm_primitives::{Context, ExitError, PrecompileFailure, PrecompileResult};
+use crate::EvmResult;
+use pallet_3vm_evm_primitives::{
+    Context, ExitError, ExitRevert, PrecompileFailure, PrecompileResult,
+};
 use sp_core::U256;
+use sp_std::prelude::ToOwned;
 
 /// Represents modifiers a Solidity function can be annotated with.
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -30,19 +33,30 @@ pub enum FunctionModifier {
     /// Function that modifies the state and accept funds.
     Payable,
 }
-/*
+
 #[must_use]
 /// Check that a function call is compatible with the context it is
 /// called into.
-pub fn check_function_modifier(context: &Context, is_static: bool, modifier: FunctionModifier) -> Precompile {
+pub fn check_function_modifier(
+    context: &Context,
+    is_static: bool,
+    modifier: FunctionModifier,
+) -> EvmResult {
     if is_static && modifier != FunctionModifier::View {
-        return Err(revert("can't call non-static function in static context"));
+        return Err(PrecompileFailure::Revert {
+            exit_status: ExitRevert::Reverted,
+            output: "Can't call non-static function in static context"
+                .as_bytes()
+                .to_owned(),
+        })
     }
 
     if modifier != FunctionModifier::Payable && context.apparent_value > U256::zero() {
-        return Err(revert("function is not payable"));
+        return Err(PrecompileFailure::Revert {
+            exit_status: ExitRevert::Reverted,
+            output: "Function is not payable".as_bytes().to_owned(),
+        })
     }
 
     Ok(())
 }
- */

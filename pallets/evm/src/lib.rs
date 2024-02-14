@@ -100,7 +100,7 @@ pub use fp_evm::{
     PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
     Vicinity,
 };
-use t3rn_primitives::threevm::{convert_decimals_to_evm, ThreeVm};
+use t3rn_primitives::threevm::{convert_decimals_to_evm, Erc20Mapping, ThreeVm};
 
 pub use self::{
     pallet::*,
@@ -139,6 +139,7 @@ pub mod pallet {
 
         /// Mapping from address to account id.
         type AddressMapping: AddressMapping<Self::AccountId>;
+
         /// Currency type for withdraw and balance storage.
         type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
 

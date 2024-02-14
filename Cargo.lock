@@ -9892,6 +9892,7 @@ name = "precompile-util"
 version = "1.86.1-rc.0"
 dependencies = [
  "fp-evm",
+ "pallet-3vm-account-mapping",
  "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
@@ -15008,11 +15009,11 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 name = "tokens-precompile"
 version = "1.86.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "fp-evm",
  "frame-support",
  "frame-system",
  "num_enum 0.5.11",
- "pallet-3vm-account-mapping",
  "pallet-assets",
  "pallet-balances",
  "pallet-evm",

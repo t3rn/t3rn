@@ -16,6 +16,9 @@ use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
 
+/// Alias for Result returning an EVM precompile error.
+pub type EvmResult<T = ()> = Result<T, PrecompileFailure>;
+
 pub mod modifier;
 pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     // Ethereum precompiles:

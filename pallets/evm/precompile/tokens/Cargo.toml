@@ -24,8 +24,8 @@ precompile-util-macro  = { path = "../util/macro", default-features = false }
 
 
 # t3rn specific
-pallet-3vm-account-mapping = { path = "../../../3vm/account-mapping", default-features = false }
 t3rn-primitives            = { path = "../../../../primitives", default-features = false }
+circuit-runtime-types      = { path = "../../../../runtime/common-types", default-features = false }
 
 [features]
 default = [ "std" ]
