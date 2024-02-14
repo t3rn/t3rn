@@ -16,14 +16,11 @@
 
 //pub mod xcm;
 
-use {
-    crate::{revert, EvmResult},
-    alloc::borrow::ToOwned,
-    core::{any::type_name, ops::Range},
-    impl_trait_for_tuples::impl_for_tuples,
-    sp_core::{H160, H256, U256},
-    sp_std::{convert::TryInto, vec, vec::Vec},
-};
+use crate::{revert, EvmResult};
+use core::{any::type_name, ops::Range};
+use impl_trait_for_tuples::impl_for_tuples;
+use sp_core::{H160, H256, U256};
+use sp_std::{borrow::ToOwned, convert::TryInto, vec, vec::Vec};
 
 /// The `address` type of Solidity.
 /// H160 could represent 2 types of data (bytes20 and address) that are not encoded the same way.
@@ -96,21 +93,21 @@ impl<'a> EvmDataReader<'a> {
 
     /// Create a new input parser from a selector-initial input.
     pub fn read_selector<T>(input: &'a [u8]) -> EvmResult<T>
-        where
-            T: num_enum::TryFromPrimitive<Primitive = u32>,
+    where
+        T: num_enum::TryFromPrimitive<Primitive = u32>,
     {
         if input.len() < 4 {
-            return Err(revert("tried to parse selector out of bounds"));
+            return Err(revert("tried to parse selector out of bounds"))
         }
 
         let mut buffer = [0u8; 4];
         buffer.copy_from_slice(&input[0..4]);
         let selector = T::try_from_primitive(u32::from_be_bytes(buffer)).map_err(|_| {
             log::trace!(
-				target: "precompile-utils",
-				"Failed to match function selector for {}",
-				type_name::<T>()
-			);
+                target: "precompile-utils",
+                "Failed to match function selector for {}",
+                type_name::<T>()
+            );
             revert("unknown selector")
         })?;
 
@@ -120,7 +117,7 @@ impl<'a> EvmDataReader<'a> {
     /// Create a new input parser from a selector-initial input.
     pub fn new_skip_selector(input: &'a [u8]) -> EvmResult<Self> {
         if input.len() < 4 {
-            return Err(revert("input is too short"));
+            return Err(revert("input is too short"))
         }
 
         Ok(Self::new(&input[4..]))
@@ -164,7 +161,7 @@ impl<'a> EvmDataReader<'a> {
             .map_err(|_| revert("array offset is too large"))?;
 
         if offset >= self.input.len() {
-            return Err(revert("pointer points out of bounds"));
+            return Err(revert("pointer points out of bounds"))
         }
 
         Ok(Self {
@@ -273,7 +270,8 @@ impl EvmDataWriter {
             let free_space_offset = output.len() - offset_datum.offset_shift;
 
             // Override dummy offset to the offset it will be in the final output.
-            U256::from(free_space_offset).to_big_endian(&mut output[offset_position..offset_position_end]);
+            U256::from(free_space_offset)
+                .to_big_endian(&mut output[offset_position..offset_position_end]);
 
             // Append this data at the end of the current output.
             output.append(&mut offset_datum.data);
@@ -422,12 +420,10 @@ macro_rules! impl_evmdata_for_uints {
 				fn read(reader: &mut EvmDataReader) -> EvmResult<Self> {
 					let value256: U256 = reader.read()?;
 
+                    let error_msg = "Value Too Big For Type";
 					value256
 						.try_into()
-						.map_err(|_| revert(alloc::format!(
-							"value too big for {}",
-							core::any::type_name::<Self>()
-						)))
+						.map_err(|_| revert(error_msg.as_bytes()))
 				}
 
 				fn write(writer: &mut EvmDataWriter, value: Self) {

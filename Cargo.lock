@@ -9925,7 +9925,10 @@ dependencies = [
 name = "precompile-util-solidity"
 version = "1.86.1-rc.0"
 dependencies = [
+ "evm",
  "fp-evm",
+ "impl-trait-for-tuples",
+ "log",
  "num_enum 0.5.11",
  "pallet-evm",
  "sp-core",
