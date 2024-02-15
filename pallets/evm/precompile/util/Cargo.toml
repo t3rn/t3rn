@@ -9,10 +9,11 @@ version    = { workspace = true }
 [dependencies]
 pallet-3vm-evm             = { path = "../..", default-features = false, package = "pallet-evm" }
 pallet-3vm-evm-primitives  = { path = "../../primitives", default-features = false, package = "fp-evm" }
-#pallet-3vm-account-mapping = { path = "../../../3vm/account-mapping", default-features = false }
 portal-precompile          = { path = "../portal", default-features = false }
 tokens-precompile          = { path = "../tokens", default-features = false }
 
+frame-system              = { workspace = true }
+frame-support             = { workspace = true }
 sp-core                   = { workspace = true }
 sp-std                    = { workspace = true }
 pallet-assets             = { workspace = true }
@@ -30,6 +31,7 @@ pallet-evm-precompile-simple       = { path = "../simple", default-features = fa
 [features]
 default = [ "std" ]
 std = [
+  "frame-system/std",
   "sp-core/std",
   "sp-std/std",
   "pallet-assets/std",

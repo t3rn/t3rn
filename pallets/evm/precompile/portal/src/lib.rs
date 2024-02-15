@@ -4,6 +4,7 @@ use fp_evm::{
     ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
     PrecompileOutput, PrecompileResult,
 };
+use frame_support::{sp_runtime::app_crypto::sp_core, traits::Currency};
 use sp_std::{marker::PhantomData, vec::Vec};
 use t3rn_primitives::{
     threevm::{Precompile, PORTAL},
@@ -16,6 +17,12 @@ impl<T> EvmPrecompile for PortalPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();

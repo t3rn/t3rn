@@ -5,6 +5,7 @@ pub use pallet_3vm_evm_primitives::{
     PrecompileResult, PrecompileSet,
 };
 
+use frame_support::traits::Currency;
 use pallet_3vm_evm_primitives::{ExitError, PrecompileFailure};
 pub use pallet_evm_precompile_modexp::Modexp;
 pub use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
@@ -19,6 +20,12 @@ use tokens_precompile::TokensPrecompile;
 pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     // Ethereum precompiles:
     ECRecover,
@@ -39,6 +46,12 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match self {
@@ -68,6 +81,12 @@ where
 pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     pub inner: BTreeMap<H160, KnownPrecompile<T>>,
     phantom: PhantomData<T>,
@@ -76,6 +95,12 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     // pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
     //     Self {
@@ -99,6 +124,12 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config> PrecompileSet for Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         self.inner

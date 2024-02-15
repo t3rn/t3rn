@@ -18,9 +18,10 @@ use precompile_util_solidity::{
     revert, succeed, EvmResult,
 };
 use sp_core::{H160, U256};
-use sp_std::{marker::PhantomData, vec::Vec, str::*};
+use sp_std::{marker::PhantomData, str::*, vec::Vec};
 use t3rn_primitives::threevm::{
-    convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE, H160_POSITION_ASSET_ID_TYPE,
+    convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE,
+    H160_POSITION_ASSET_ID_TYPE,
 };
 
 #[precompile_util_macro::generate_function_selector]
@@ -43,6 +44,12 @@ impl<T> Erc20Mapping for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     fn encode_evm_address(v: TokenId) -> Option<EvmAddress> {
         let mut address = [9u8; 20];
@@ -78,6 +85,12 @@ impl<T> EvmPrecompile for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let address = handle.code_address();
@@ -121,6 +134,12 @@ impl<T> TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     fn not_supported(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
@@ -132,25 +151,22 @@ where
         match token_id {
             TokenId::Native => {
                 let native_total_issuance = <T as pallet_evm::Config>::Currency::total_issuance();
-               /* Ok(succeed(
+                Ok(succeed(
                     EvmDataWriter::new()
                         .write(U256::from(native_total_issuance))
                         .build(),
-               )) */
+                ))
             },
             TokenId::Asset(asset_id) => {
                 let asset_total_issuance =
                     pallet_assets::Pallet::<T>::total_issuance(asset_id.into());
-               /* Ok(succeed(
+                Ok(succeed(
                     EvmDataWriter::new()
                         .write(U256::from(asset_total_issuance))
                         .build(),
-              ))  */
-            }
-        };
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-        })
+                ))
+            },
+        }
     }
 
     fn name(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -217,16 +233,14 @@ where
         let mut who_balance: U256 = U256::zero();
         match token_id {
             TokenId::Native => {
-                //who_balance = U256::from(<T as pallet_evm::Config>::Currency::free_balance(&who));
+                who_balance = U256::from(<T as pallet_evm::Config>::Currency::free_balance(&who));
             },
             TokenId::Asset(asset_id) => {
-                //who_balance = U256::from(pallet_assets::Pallet::<T>::balance(asset_id.into(), &who));
+                who_balance =
+                    U256::from(pallet_assets::Pallet::<T>::balance(asset_id.into(), &who));
             },
         };
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-        })
-        //Ok(succeed(EvmDataWriter::new().write(who_balance).build()))
+        Ok(succeed(EvmDataWriter::new().write(who_balance).build()))
     }
 
     fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -235,7 +249,17 @@ where
         let mut input = handle.read_input()?;
         input.expect_arguments(2)?;
         let to: H160 = input.read::<Address>()?.into();
-        // Get the balance transfer value
+        // To Do: Get the balance transfer value
+        /*
+        match token_id {
+            TokenId::Native => {
+                //let value: <> = input.read::<Address>()?.into();
+            }
+            TokenId::Asset(asset_id) => {
+
+            }
+        }
+        */
 
         // Convert EVM address to Substrate address
         let origin =

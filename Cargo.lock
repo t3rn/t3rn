@@ -9893,6 +9893,8 @@ name = "precompile-util"
 version = "1.86.1-rc.0"
 dependencies = [
  "fp-evm",
+ "frame-support",
+ "frame-system",
  "pallet-assets",
  "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
