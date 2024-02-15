@@ -9,16 +9,19 @@ use frame_support::traits::{
     fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
     tokens::currency::Currency,
 };
+use pallet_evm::AddressMapping;
 use precompile_util_solidity::{
-    data::{Address, EvmData, EvmDataWriter},
+    data::{Address, Bytes, EvmData, EvmDataWriter},
     error,
     handle::PrecompileHandleExt,
     modifier::FunctionModifier,
     revert, succeed, EvmResult,
 };
 use sp_core::{H160, U256};
-use sp_std::{marker::PhantomData, vec::Vec};
-use t3rn_primitives::threevm::{Erc20Mapping, Precompile, H160_POSITION_ASSET_ID_TYPE};
+use sp_std::{marker::PhantomData, vec::Vec, str::*};
+use t3rn_primitives::threevm::{
+    convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE, H160_POSITION_ASSET_ID_TYPE,
+};
 
 #[precompile_util_macro::generate_function_selector]
 #[derive(Debug, PartialEq)]
@@ -129,11 +132,21 @@ where
         match token_id {
             TokenId::Native => {
                 let native_total_issuance = <T as pallet_evm::Config>::Currency::total_issuance();
+               /* Ok(succeed(
+                    EvmDataWriter::new()
+                        .write(U256::from(native_total_issuance))
+                        .build(),
+               )) */
             },
             TokenId::Asset(asset_id) => {
                 let asset_total_issuance =
                     pallet_assets::Pallet::<T>::total_issuance(asset_id.into());
-            },
+               /* Ok(succeed(
+                    EvmDataWriter::new()
+                        .write(U256::from(asset_total_issuance))
+                        .build(),
+              ))  */
+            }
         };
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
@@ -142,59 +155,93 @@ where
 
     fn name(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
-            TokenId::Native => {
-                let native_name = "TRN";
-            },
+            TokenId::Native => Ok(succeed(
+                EvmDataWriter::new()
+                    .write(Bytes::from("TRN".as_bytes()))
+                    .build(),
+            )),
             TokenId::Asset(asset_id) => {
                 let asset_name = pallet_assets::Pallet::<T>::name(asset_id.into());
+                Ok(succeed(
+                    EvmDataWriter::new()
+                        .write(Bytes::from(asset_name.as_slice()))
+                        .build(),
+                ))
             },
-        };
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-        })
+        }
     }
 
     fn symbol(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
-            TokenId::Native => {
-                let native_symbol = "TRN";
-            },
+            TokenId::Native => Ok(succeed(
+                EvmDataWriter::new()
+                    .write(Bytes::from("TRN".as_bytes()))
+                    .build(),
+            )),
             TokenId::Asset(asset_id) => {
                 let asset_symbol = pallet_assets::Pallet::<T>::symbol(asset_id.into());
+                Ok(succeed(
+                    EvmDataWriter::new()
+                        .write(Bytes::from(asset_symbol.as_slice()))
+                        .build(),
+                ))
             },
-        };
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-        })
+        }
     }
 
     fn decimals(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
-            TokenId::Native => {
-                let native_decimals = 12;
-            },
+            TokenId::Native => Ok(succeed(EvmDataWriter::new().write(U256::from(12)).build())),
             TokenId::Asset(asset_id) => {
                 let asset_decimals = pallet_assets::Pallet::<T>::decimals(asset_id.into());
+                Ok(succeed(
+                    EvmDataWriter::new()
+                        .write(U256::from(asset_decimals))
+                        .build(),
+                ))
             },
-        };
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-        })
+        }
     }
 
     fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
 
+        // Parse input
+        let mut input = handle.read_input()?;
+        input.expect_arguments(1)?;
+
+        let owner: H160 = input.read::<Address>()?.into();
+
         // Convert EVM address to Substrate address
-        // T::AddressMapping::
+        let who = <T as pallet_evm::Config>::AddressMapping::into_account_id(owner);
+        let mut who_balance: U256 = U256::zero();
+        match token_id {
+            TokenId::Native => {
+                //who_balance = U256::from(<T as pallet_evm::Config>::Currency::free_balance(&who));
+            },
+            TokenId::Asset(asset_id) => {
+                //who_balance = U256::from(pallet_assets::Pallet::<T>::balance(asset_id.into(), &who));
+            },
+        };
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })
+        //Ok(succeed(EvmDataWriter::new().write(who_balance).build()))
     }
 
     fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
-        let input = handle.input();
-        // Convert EVM Address to Substrate
+        // Record cost
+        // Parse input
+        let mut input = handle.read_input()?;
+        input.expect_arguments(2)?;
+        let to: H160 = input.read::<Address>()?.into();
+        // Get the balance transfer value
+
+        // Convert EVM address to Substrate address
+        let origin =
+            <T as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller);
+        let to = <T as pallet_evm::Config>::AddressMapping::into_account_id(to);
+
         Err(PrecompileFailure::Error {
             exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
         })

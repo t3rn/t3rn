@@ -21,10 +21,10 @@ pallet-evm                = { path = "../..", default-features = false }
 precompile-util-solidity  = { path = "../util/solidity", default-features = false }
 precompile-util-macro     = { path = "../util/macro", default-features = false }
 
-
 # t3rn specific
-t3rn-primitives            = { path = "../../../../primitives", default-features = false }
-circuit-runtime-types      = { path = "../../../../runtime/common-types", default-features = false }
+pallet-3vm-account-mapping    = { path = "../../../3vm/account-mapping", default-features = false }
+t3rn-primitives               = { path = "../../../../primitives", default-features = false }
+circuit-runtime-types         = { path = "../../../../runtime/common-types", default-features = false }
 
 [features]
 default = [ "std" ]

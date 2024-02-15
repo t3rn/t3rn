@@ -15029,6 +15029,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "num_enum 0.5.11",
+ "pallet-3vm-account-mapping",
  "pallet-assets",
  "pallet-evm",
  "parity-scale-codec",

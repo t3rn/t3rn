@@ -16,9 +16,8 @@ use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
 
-pub enum KnownPrecompile<T>
+pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config>
 where
-    T: pallet_3vm_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
 {
     // Ethereum precompiles:
