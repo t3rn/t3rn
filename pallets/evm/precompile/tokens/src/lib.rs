@@ -39,6 +39,7 @@ pub struct TokensPrecompile<T>(PhantomData<T>);
 impl<T> Erc20Mapping for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
+    <T as pallet_assets::Config>::AssetId: From<u32>,
 {
     fn encode_evm_address(v: TokenId) -> Option<EvmAddress> {
         let mut address = [9u8; 20];
@@ -73,16 +74,12 @@ where
 impl<T> EvmPrecompile for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
+    <T as pallet_assets::Config>::AssetId: From<u32>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let address = handle.code_address();
 
         if let Some(token_id) = <TokensPrecompile<T> as Erc20Mapping>::decode_evm_address(address) {
-            let _target_gas = handle.gas_limit();
-            let _context = handle.context();
-            // TODO: Route EVM selector to functions correctly
-            // TODO: Implement Actions
-
             let result = {
                 let selector = match handle.read_selector() {
                     Ok(selector) => selector,
@@ -96,21 +93,20 @@ where
                 }) {
                     return Err(err)
                 }
-                /*
+
                 match selector {
                     Action::TotalSupply => Self::total_supply(token_id, handle),
                     Action::BalanceOf => Self::balance_of(token_id, handle),
-                    Action::Allowance => Self::not_supported(token_id, handle),
+                    Action::Allowance => Self::not_supported(handle),
                     Action::Transfer => Self::transfer(token_id, handle),
-                    Action::Approve => Self::not_supported(token_id, handle),
-                    Action::TransferFrom => Self::not_supported(token_id, handle),
+                    Action::Approve => Self::not_supported(handle),
+                    Action::TransferFrom => Self::not_supported(handle),
                     Action::Name => Self::name(token_id, handle),
                     Action::Symbol => Self::symbol(token_id, handle),
                     Action::Decimals => Self::decimals(token_id, handle),
                 }
-                */
             };
-            //return result;
+            return result
         }
         Err(PrecompileFailure::Error {
             exit_status: ExitError::Other("Invalid Asset Id".into()),
@@ -121,6 +117,7 @@ where
 impl<T> TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
+    <T as pallet_assets::Config>::AssetId: From<u32>,
 {
     fn not_supported(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         Err(PrecompileFailure::Error {
@@ -128,10 +125,7 @@ where
         })
     }
 
-    fn total_supply(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
-    where
-        <T as pallet_assets::Config>::AssetId: From<u32>,
-    {
+    fn total_supply(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
             TokenId::Native => {
                 let native_total_issuance = <T as pallet_evm::Config>::Currency::total_issuance();
@@ -146,10 +140,7 @@ where
         })
     }
 
-    fn name(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
-    where
-        <T as pallet_assets::Config>::AssetId: From<u32>,
-    {
+    fn name(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
             TokenId::Native => {
                 let native_name = "TRN";
@@ -163,10 +154,7 @@ where
         })
     }
 
-    fn symbol(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
-    where
-        <T as pallet_assets::Config>::AssetId: From<u32>,
-    {
+    fn symbol(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
             TokenId::Native => {
                 let native_symbol = "TRN";
@@ -180,10 +168,7 @@ where
         })
     }
 
-    fn decimals(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
-    where
-        <T as pallet_assets::Config>::AssetId: From<u32>,
-    {
+    fn decimals(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match token_id {
             TokenId::Native => {
                 let native_decimals = 12;
@@ -197,10 +182,7 @@ where
         })
     }
 
-    fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
-    where
-        <T as pallet_assets::Config>::AssetId: From<u32>,
-    {
+    fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
 
         // Convert EVM address to Substrate address
@@ -210,10 +192,7 @@ where
         })
     }
 
-    fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
-    where
-        <T as pallet_assets::Config>::AssetId: From<u32>,
-    {
+    fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
         // Convert EVM Address to Substrate
         Err(PrecompileFailure::Error {

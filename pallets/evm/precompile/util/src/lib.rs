@@ -16,7 +16,11 @@ use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
 
-pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config> {
+pub enum KnownPrecompile<T>
+where
+    T: pallet_3vm_evm::Config + pallet_assets::Config,
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+{
     // Ethereum precompiles:
     ECRecover,
     Sha256,
@@ -33,7 +37,10 @@ pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config> {
     Noop(T),
 }
 
-impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+{
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match self {
             // Ethereum:
@@ -59,12 +66,18 @@ impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T> {
     }
 }
 
-pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config> {
+pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+{
     pub inner: BTreeMap<H160, KnownPrecompile<T>>,
     phantom: PhantomData<T>,
 }
 
-impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+{
     // pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
     //     Self {
     //         inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
@@ -84,7 +97,10 @@ impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T> {
     }
 }
 
-impl<T: pallet_3vm_evm::Config + pallet_assets::Config> PrecompileSet for Precompiles<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config> PrecompileSet for Precompiles<T>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+{
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         self.inner
             .get(&handle.code_address())

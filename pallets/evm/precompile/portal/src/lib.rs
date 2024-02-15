@@ -10,9 +10,13 @@ use t3rn_primitives::{
     T3rnCodec,
 };
 
-pub struct PortalPrecompile<T: pallet_evm::Config + pallet_assets::Config>(PhantomData<T>);
+pub struct PortalPrecompile<T>(PhantomData<T>);
 
-impl<T: pallet_evm::Config + pallet_assets::Config> EvmPrecompile for PortalPrecompile<T> {
+impl<T> EvmPrecompile for PortalPrecompile<T>
+where
+    T: pallet_evm::Config + pallet_assets::Config,
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+{
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
         let _target_gas = handle.gas_limit();
