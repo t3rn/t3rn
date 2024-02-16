@@ -13,7 +13,7 @@
 
 use sha3::{Digest, Keccak256};
 
-#[precompile_utils_macro::generate_function_selector]
+#[precompile_util_macro::generate_function_selector]
 pub enum Action {
     Toto = "toto()",
     Tata = "tata()",

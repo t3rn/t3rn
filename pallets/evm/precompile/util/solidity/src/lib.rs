@@ -12,6 +12,9 @@ pub mod handle;
 pub mod modifier;
 pub mod substrate;
 
+#[cfg(test)]
+pub mod testing;
+
 /// Alias for Result returning an EVM precompile error.
 pub type EvmResult<T = ()> = Result<T, PrecompileFailure>;
 
