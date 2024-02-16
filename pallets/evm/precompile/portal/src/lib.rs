@@ -19,6 +19,7 @@ impl<T> EvmPrecompile for PortalPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,

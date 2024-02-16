@@ -21,6 +21,7 @@ use tokens_precompile::TokensPrecompile;
 pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_3vm_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -51,6 +52,7 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> KnownPrecompile<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_3vm_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -90,6 +92,7 @@ where
 pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_3vm_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -108,6 +111,7 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_3vm_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -142,6 +146,7 @@ impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> P
     for Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_3vm_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,

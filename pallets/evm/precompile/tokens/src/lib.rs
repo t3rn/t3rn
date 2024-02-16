@@ -2,13 +2,19 @@
 
 use circuit_runtime_types::{EvmAddress, TokenId};
 use fp_evm::{
-    ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
-    PrecompileOutput, PrecompileResult,
+    ExitError, ExitRevert, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
+    PrecompileResult,
 };
-use frame_support::traits::{
-    fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
-    tokens::currency::Currency,
+
+use frame_support::{
+    sp_runtime::traits::StaticLookup,
+    traits::{
+        fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
+        tokens::currency::Currency,
+        ExistenceRequirement, OriginTrait,
+    },
 };
+use frame_system::RawOrigin;
 use pallet_evm::AddressMapping;
 use precompile_util_solidity::{
     data::{Address, Bytes, EvmData, EvmDataWriter},
@@ -46,6 +52,7 @@ impl<T> Erc20Mapping for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -91,6 +98,7 @@ impl<T> EvmPrecompile for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -144,6 +152,7 @@ impl<T> TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
         <T as frame_system::pallet::Config>::AccountId,
@@ -274,7 +283,6 @@ where
             <T as frame_system::pallet::Config>::AccountId,
         >>::Balance: EvmData,
     {
-        // Record cost
         // Parse input
         let mut input = handle.read_input()?;
         input.expect_arguments(2)?;
@@ -295,18 +303,34 @@ where
                         <T as frame_system::pallet::Config>::AccountId,
                     >>::Balance>()?
                     .into();
-                return Err(PrecompileFailure::Error {
-                    exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-                })
+
+                <T as pallet_evm::Config>::Currency::transfer(
+                    &origin,
+                    &to,
+                    value,
+                    ExistenceRequirement::KeepAlive,
+                )
+                .map_err(|e| PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: Into::<&str>::into(e).as_bytes().to_vec(),
+                })?;
             },
             TokenId::Asset(asset_id) => {
+                // Get tranfer balance value from input and
                 let value: <T as pallet_assets::Config>::Balance = input
                     .read::<<T as pallet_assets::Config>::Balance>()?
                     .into();
-                //pallet_assets::Pallet::<T>::transfer(asset_id.into(), to, value)
-                return Err(PrecompileFailure::Error {
-                    exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-                })
+
+                pallet_assets::Pallet::<T>::transfer(
+                    RawOrigin::Signed(origin).into(),
+                    asset_id.into(),
+                    <T as frame_system::Config>::Lookup::unlookup(to),
+                    value,
+                )
+                .map_err(|e| PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: Into::<&str>::into(e).as_bytes().to_vec(),
+                })?;
             },
         };
         Ok(succeed(EvmDataWriter::new().write(true).build()))

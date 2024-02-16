@@ -1,4 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
+
 pub use pallet_3vm_evm_primitives::{
     ExitError, ExitRevert, ExitSucceed, PrecompileFailure, PrecompileOutput,
 };
