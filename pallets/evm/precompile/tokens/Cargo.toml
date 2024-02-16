@@ -28,4 +28,14 @@ circuit-runtime-types         = { path = "../../../../runtime/common-types", def
 
 [features]
 default = [ "std" ]
-std     = [ "frame-support/std", "fp-evm/std", "pallet-evm/std", "t3rn-primitives/std" ]
+std     = [
+    "frame-support/std",
+    "frame-system/std",
+    "sp-std/std",
+    "sp-core/std",
+    "pallet-assets/std",
+    "pallet-3vm-account-mapping/std",
+    "fp-evm/std",
+    "pallet-evm/std",
+    "t3rn-primitives/std",
+]

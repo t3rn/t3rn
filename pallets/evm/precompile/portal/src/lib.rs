@@ -11,12 +11,18 @@ use t3rn_primitives::{
     T3rnCodec,
 };
 
+use precompile_util_solidity::data::EvmData;
+
 pub struct PortalPrecompile<T>(PhantomData<T>);
 
 impl<T> EvmPrecompile for PortalPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_evm::Config>::Currency as Currency<

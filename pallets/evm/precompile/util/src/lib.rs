@@ -13,6 +13,7 @@ pub use pallet_evm_precompile_simple::{
     ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256,
 };
 use portal_precompile::PortalPrecompile;
+use precompile_util_solidity::data::EvmData;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
@@ -20,6 +21,10 @@ use tokens_precompile::TokensPrecompile;
 pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_3vm_evm::Config>::Currency as Currency<
@@ -46,6 +51,10 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_3vm_evm::Config>::Currency as Currency<
@@ -81,6 +90,10 @@ where
 pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_3vm_evm::Config>::Currency as Currency<
@@ -95,6 +108,10 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_3vm_evm::Config>::Currency as Currency<
@@ -124,6 +141,10 @@ where
 impl<T: pallet_3vm_evm::Config + pallet_assets::Config> PrecompileSet for Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_3vm_evm::Config>::Currency as Currency<

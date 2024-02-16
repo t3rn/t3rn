@@ -44,6 +44,10 @@ impl<T> Erc20Mapping for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_evm::Config>::Currency as Currency<
@@ -85,6 +89,10 @@ impl<T> EvmPrecompile for TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_evm::Config>::Currency as Currency<
@@ -134,6 +142,10 @@ impl<T> TokensPrecompile<T>
 where
     T: pallet_evm::Config + pallet_assets::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
     sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
     sp_core::U256: From<
         <<T as pallet_evm::Config>::Currency as Currency<
@@ -243,31 +255,47 @@ where
         Ok(succeed(EvmDataWriter::new().write(who_balance).build()))
     }
 
-    fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+    fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::Balance: EvmData,
+        <<T as pallet_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance: EvmData,
+    {
         // Record cost
         // Parse input
         let mut input = handle.read_input()?;
         input.expect_arguments(2)?;
         let to: H160 = input.read::<Address>()?.into();
-        // To Do: Get the balance transfer value
-        /*
-        match token_id {
-            TokenId::Native => {
-                //let value: <> = input.read::<Address>()?.into();
-            }
-            TokenId::Asset(asset_id) => {
-
-            }
-        }
-        */
 
         // Convert EVM address to Substrate address
         let origin =
             <T as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller);
         let to = <T as pallet_evm::Config>::AddressMapping::into_account_id(to);
 
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-        })
+        match token_id {
+            TokenId::Native => {
+                let value: <<T as pallet_evm::Config>::Currency as Currency<
+                    <T as frame_system::pallet::Config>::AccountId,
+                >>::Balance = input
+                    .read::<<<T as pallet_evm::Config>::Currency as Currency<
+                        <T as frame_system::pallet::Config>::AccountId,
+                    >>::Balance>()?
+                    .into();
+                return Err(PrecompileFailure::Error {
+                    exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
+                });
+            },
+            TokenId::Asset(asset_id) => {
+                let value: <T as pallet_assets::Config>::Balance = input
+                    .read::<<T as pallet_assets::Config>::Balance>()?
+                    .into();
+                return Err(PrecompileFailure::Error {
+                    exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
+                });
+                //pallet_assets::Pallet::<T>::transfer(asset_id.into(), to, value)
+            },
+        };
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
     }
 }
