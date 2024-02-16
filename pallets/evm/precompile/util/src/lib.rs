@@ -18,7 +18,7 @@ use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
 
-pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config>
+pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
@@ -48,7 +48,7 @@ where
     Noop(T),
 }
 
-impl<T: pallet_3vm_evm::Config + pallet_assets::Config> KnownPrecompile<T>
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> KnownPrecompile<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
@@ -87,7 +87,7 @@ where
     }
 }
 
-pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config>
+pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
@@ -105,7 +105,7 @@ where
     phantom: PhantomData<T>,
 }
 
-impl<T: pallet_3vm_evm::Config + pallet_assets::Config> Precompiles<T>
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
@@ -138,7 +138,8 @@ where
     }
 }
 
-impl<T: pallet_3vm_evm::Config + pallet_assets::Config> PrecompileSet for Precompiles<T>
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> PrecompileSet
+    for Precompiles<T>
 where
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,

@@ -9931,6 +9931,8 @@ version = "1.86.1-rc.0"
 dependencies = [
  "evm",
  "fp-evm",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "log",
  "num_enum 0.5.11",

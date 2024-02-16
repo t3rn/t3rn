@@ -8,6 +8,7 @@ pub mod costs;
 pub mod data;
 pub mod handle;
 pub mod modifier;
+pub mod substrate;
 
 /// Alias for Result returning an EVM precompile error.
 pub type EvmResult<T = ()> = Result<T, PrecompileFailure>;

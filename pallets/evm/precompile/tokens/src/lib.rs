@@ -15,7 +15,9 @@ use precompile_util_solidity::{
     error,
     handle::PrecompileHandleExt,
     modifier::FunctionModifier,
-    revert, succeed, EvmResult,
+    revert,
+    substrate::RuntimeHelper,
+    succeed, EvmResult,
 };
 use sp_core::{H160, U256};
 use sp_std::{marker::PhantomData, str::*, vec::Vec};
@@ -42,7 +44,7 @@ pub struct TokensPrecompile<T>(PhantomData<T>);
 
 impl<T> Erc20Mapping for TokensPrecompile<T>
 where
-    T: pallet_evm::Config + pallet_assets::Config,
+    T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
@@ -87,7 +89,7 @@ where
 
 impl<T> EvmPrecompile for TokensPrecompile<T>
 where
-    T: pallet_evm::Config + pallet_assets::Config,
+    T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
@@ -140,7 +142,7 @@ where
 
 impl<T> TokensPrecompile<T>
 where
-    T: pallet_evm::Config + pallet_assets::Config,
+    T: pallet_evm::Config + pallet_assets::Config + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
     <<T as pallet_evm::Config>::Currency as Currency<
@@ -160,6 +162,8 @@ where
     }
 
     fn total_supply(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
         match token_id {
             TokenId::Native => {
                 let native_total_issuance = <T as pallet_evm::Config>::Currency::total_issuance();
@@ -182,6 +186,8 @@ where
     }
 
     fn name(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
         match token_id {
             TokenId::Native => Ok(succeed(
                 EvmDataWriter::new()
@@ -200,6 +206,8 @@ where
     }
 
     fn symbol(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
         match token_id {
             TokenId::Native => Ok(succeed(
                 EvmDataWriter::new()
@@ -218,6 +226,8 @@ where
     }
 
     fn decimals(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
         match token_id {
             TokenId::Native => Ok(succeed(EvmDataWriter::new().write(U256::from(12)).build())),
             TokenId::Asset(asset_id) => {
@@ -232,6 +242,8 @@ where
     }
 
     fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
         let input = handle.input();
 
         // Parse input
