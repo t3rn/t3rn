@@ -293,7 +293,8 @@ where
             <T as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller);
         let to = <T as pallet_evm::Config>::AddressMapping::into_account_id(to);
 
-        // Get tranfer balance value from input and
+        // Get transfer amount value from input and transfer assets using
+        // either pallet_evm::Config::Currnecy::transfer or pallet_assets::transfer
         match token_id {
             TokenId::Native => {
                 let value: <<T as pallet_evm::Config>::Currency as Currency<
@@ -316,7 +317,6 @@ where
                 })?;
             },
             TokenId::Asset(asset_id) => {
-                // Get tranfer balance value from input and
                 let value: <T as pallet_assets::Config>::Balance = input
                     .read::<<T as pallet_assets::Config>::Balance>()?
                     .into();
