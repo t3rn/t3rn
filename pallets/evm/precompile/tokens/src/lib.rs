@@ -273,6 +273,7 @@ where
             <T as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller);
         let to = <T as pallet_evm::Config>::AddressMapping::into_account_id(to);
 
+        // Get tranfer balance value from input and
         match token_id {
             TokenId::Native => {
                 let value: <<T as pallet_evm::Config>::Currency as Currency<
@@ -284,16 +285,16 @@ where
                     .into();
                 return Err(PrecompileFailure::Error {
                     exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-                });
+                })
             },
             TokenId::Asset(asset_id) => {
                 let value: <T as pallet_assets::Config>::Balance = input
                     .read::<<T as pallet_assets::Config>::Balance>()?
                     .into();
+                //pallet_assets::Pallet::<T>::transfer(asset_id.into(), to, value)
                 return Err(PrecompileFailure::Error {
                     exit_status: pallet_evm::ExitError::Other("Not Implemented".into()),
-                });
-                //pallet_assets::Pallet::<T>::transfer(asset_id.into(), to, value)
+                })
             },
         };
         Ok(succeed(EvmDataWriter::new().write(true).build()))

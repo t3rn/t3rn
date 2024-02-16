@@ -4,7 +4,7 @@ pub use pallet_3vm_evm_primitives::{
 };
 use sp_std::{borrow, borrow::ToOwned};
 
-//pub mod costs;
+pub mod costs;
 pub mod data;
 pub mod handle;
 pub mod modifier;

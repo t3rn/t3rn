@@ -48,7 +48,7 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
     /// This can be useful to record log costs early when their content have static size.
     #[must_use]
     fn record_log_costs_manual(&mut self, topics: usize, data_len: usize) -> EvmResult {
-        //self.record_cost(crate::costs::log_costs(topics, data_len)?)?;
+        self.record_cost(crate::costs::log_costs(topics, data_len)?)?;
 
         Ok(())
     }
@@ -57,7 +57,7 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
     #[must_use]
     fn record_log_costs(&mut self, logs: &[&Log]) -> EvmResult {
         for log in logs {
-            // self.record_log_costs_manual(log.topics.len(), log.data.len())?;
+            self.record_log_costs_manual(log.topics.len(), log.data.len())?;
         }
 
         Ok(())
