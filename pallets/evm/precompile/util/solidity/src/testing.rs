@@ -14,19 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Utils.  If not, see <http://www.gnu.org/licenses/>.
 
-use {
-    alloc::format,
-    alloc::string::String,
-    assert_matches::assert_matches,
-    pallet_3vm_evm_primitives::{
-        Context, ExitError, ExitReason, ExitSucceed, Log, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-        PrecompileResult, PrecompileSet, Transfer,
-    },
-    sp_core::{H160, H256, U256},
-    sp_std::boxed::Box,
-    sp_std::vec,
-    sp_std::vec::Vec,
+use alloc::{format, string::String};
+use assert_matches::assert_matches;
+use pallet_3vm_evm_primitives::{
+    Context, ExitError, ExitReason, ExitSucceed, Log, PrecompileFailure, PrecompileHandle,
+    PrecompileOutput, PrecompileResult, PrecompileSet, Transfer,
 };
+use sp_core::{H160, H256, U256};
+use sp_std::{boxed::Box, vec, vec::Vec};
 
 pub struct Subcall {
     pub address: H160,
@@ -90,10 +85,13 @@ impl PrecompileHandle for MockHandle {
         context: &Context,
     ) -> (ExitReason, Vec<u8>) {
         if self
-            .record_cost(crate::costs::call_cost(context.apparent_value, &evm::Config::london()))
+            .record_cost(crate::costs::call_cost(
+                context.apparent_value,
+                &evm::Config::london(),
+            ))
             .is_err()
         {
-            return (ExitReason::Error(ExitError::OutOfGas), vec![]);
+            return (ExitReason::Error(ExitError::OutOfGas), vec![])
         }
 
         match &mut self.subcall_handle {
@@ -113,15 +111,16 @@ impl PrecompileHandle for MockHandle {
                 });
 
                 if self.record_cost(cost).is_err() {
-                    return (ExitReason::Error(ExitError::OutOfGas), vec![]);
+                    return (ExitReason::Error(ExitError::OutOfGas), vec![])
                 }
 
                 for log in logs {
-                    self.log(log.address, log.topics, log.data).expect("cannot fail");
+                    self.log(log.address, log.topics, log.data)
+                        .expect("cannot fail");
                 }
 
                 (reason, output)
-            }
+            },
             None => panic!("no subcall handle registered"),
         }
     }
@@ -136,7 +135,11 @@ impl PrecompileHandle for MockHandle {
         }
     }
 
-    fn record_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) -> Result<(), ExitError> {
+    fn record_external_cost(
+        &mut self,
+        _ref_time: Option<u64>,
+        _proof_size: Option<u64>,
+    ) -> Result<(), ExitError> {
         Ok(())
     }
 
@@ -147,7 +150,11 @@ impl PrecompileHandle for MockHandle {
     }
 
     fn log(&mut self, address: H160, topics: Vec<H256>, data: Vec<u8>) -> Result<(), ExitError> {
-        self.logs.push(PrettyLog(Log { address, topics, data }));
+        self.logs.push(PrettyLog(Log {
+            address,
+            topics,
+            data,
+        }));
         Ok(())
     }
 
@@ -189,7 +196,12 @@ pub struct PrecompilesTester<'p, P> {
 }
 
 impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
-    pub fn new(precompiles: &'p P, from: impl Into<H160>, to: impl Into<H160>, data: Vec<u8>) -> Self {
+    pub fn new(
+        precompiles: &'p P,
+        from: impl Into<H160>,
+        to: impl Into<H160>,
+        data: Vec<u8>,
+    ) -> Self {
         let to = to.into();
         let mut handle = MockHandle::new(
             to.clone(),
@@ -313,27 +325,40 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
     pub fn execute_reverts(mut self, check: impl Fn(&[u8]) -> bool) {
         let res = self.execute();
         assert_matches!(
-			res,
-			Some(Err(PrecompileFailure::Revert { output, ..}))
-				if check(&output)
-		);
+            res,
+            Some(Err(PrecompileFailure::Revert { output, ..}))
+                if check(&output)
+        );
         self.assert_optionals();
     }
 
     /// Execute the precompile set and check it returns provided output.
     pub fn execute_error(mut self, error: ExitError) {
         let res = self.execute();
-        assert_eq!(res, Some(Err(PrecompileFailure::Error { exit_status: error })));
+        assert_eq!(
+            res,
+            Some(Err(PrecompileFailure::Error { exit_status: error }))
+        );
         self.assert_optionals();
     }
 }
 
 pub trait PrecompileTesterExt: PrecompileSet + Sized {
-    fn prepare_test(&self, from: impl Into<H160>, to: impl Into<H160>, data: Vec<u8>) -> PrecompilesTester<Self>;
+    fn prepare_test(
+        &self,
+        from: impl Into<H160>,
+        to: impl Into<H160>,
+        data: Vec<u8>,
+    ) -> PrecompilesTester<Self>;
 }
 
 impl<T: PrecompileSet> PrecompileTesterExt for T {
-    fn prepare_test(&self, from: impl Into<H160>, to: impl Into<H160>, data: Vec<u8>) -> PrecompilesTester<Self> {
+    fn prepare_test(
+        &self,
+        from: impl Into<H160>,
+        to: impl Into<H160>,
+        data: Vec<u8>,
+    ) -> PrecompilesTester<Self> {
         PrecompilesTester::new(self, from, to, data)
     }
 }
