@@ -11,7 +11,7 @@ num_enum         = { workspace = true }
 # Substrate specific
 sp-std           = { workspace = true }
 sp-core          = { workspace = true }
-frame-support    = { version = "4.0.0-dev", workspace = true }
+frame-support    = { workspace = true, version = "4.0.0-dev" }
 frame-system     = { workspace = true }
 pallet-assets    = { workspace = true }
 
@@ -25,6 +25,11 @@ precompile-util-macro     = { path = "../util/macro", default-features = false }
 pallet-3vm-account-mapping    = { path = "../../../3vm/account-mapping", default-features = false }
 t3rn-primitives               = { path = "../../../../primitives", default-features = false }
 circuit-runtime-types         = { path = "../../../../runtime/common-types", default-features = false }
+
+[dev-dependencies]
+hex-literal             = { workspace = true }
+sp-runtime              = { workspace = true }
+circuit-mock-runtime    = { path = "../../../../runtime/mock" }
 
 [features]
 default = [ "std" ]

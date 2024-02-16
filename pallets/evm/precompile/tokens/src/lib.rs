@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
 use circuit_runtime_types::{EvmAddress, TokenId};
 use fp_evm::{
     ExitError, ExitRevert, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
@@ -31,6 +30,9 @@ use t3rn_primitives::threevm::{
     convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE,
     H160_POSITION_ASSET_ID_TYPE,
 };
+
+#[cfg(test)]
+mod tests;
 
 #[precompile_util_macro::generate_function_selector]
 #[derive(Debug, PartialEq)]

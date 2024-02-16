@@ -13,9 +13,9 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Utils.  If not, see <http://www.gnu.org/licenses/>.
-
 use alloc::{format, string::String};
-use assert_matches::assert_matches;
+
+use core::assert_matches::assert_matches;
 use pallet_3vm_evm_primitives::{
     Context, ExitError, ExitReason, ExitSucceed, Log, PrecompileFailure, PrecompileHandle,
     PrecompileOutput, PrecompileResult, PrecompileSet, Transfer,

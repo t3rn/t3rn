@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(assert_matches)]
 extern crate alloc;
 
 pub use pallet_3vm_evm_primitives::{
@@ -12,7 +13,7 @@ pub mod handle;
 pub mod modifier;
 pub mod substrate;
 
-#[cfg(test)]
+//#[cfg(feature = "precompile-testing")]
 pub mod testing;
 
 /// Alias for Result returning an EVM precompile error.

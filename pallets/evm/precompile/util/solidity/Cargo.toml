@@ -20,7 +20,8 @@ frame-system               = { workspace = true }
 evm                        = { workspace = true }
 pallet-3vm-evm             = { path = "../../..", default-features = false, package = "pallet-evm" }
 pallet-3vm-evm-primitives  = { path = "../../../primitives", default-features = false, package = "fp-evm" }
-
+# Testing
+similar-asserts            = { workspace = true, optional = true }
 
 [features]
 default = [ "std" ]
@@ -31,5 +32,6 @@ std = [
   "frame-system/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-3vm-evm/std",
-
 ]
+
+precompile-testing = [ "similar-asserts", "std" ]

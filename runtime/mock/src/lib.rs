@@ -360,6 +360,26 @@ pub const BOB: AccountId = AccountId::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
 pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
 pub const DJANGO: AccountId = AccountId::new([4u8; 32]);
+
+pub fn sender_evm_addr() -> H160 {
+    H160::from(hex_literal::hex!(
+        "b08e7434dba205ae42d1ddcd7048ce0b0c6cfd0d"
+    ))
+    //EvmAddressMapping::<Runtime>::get_default_evm_address(&ALICE)
+}
+
+pub fn receiver_evm_addr() -> H160 {
+    H160::from(hex_literal::hex!(
+        "ceb58fc447ee30d2104dd00abfe6fe29fe470e5c"
+    ))
+}
+
+pub fn trn_evm_address() -> H160 {
+    H160::from(hex_literal::hex!(
+        "0909090909090909090909090909090900000000"
+    ))
+}
+
 pub const CLI_DEFAULT: AccountId = AccountId::new([
     108, 81, 222, 3, 128, 118, 146, 25, 212, 131, 171, 210, 104, 110, 11, 63, 79, 235, 65, 99, 161,
     143, 230, 174, 109, 98, 47, 128, 20, 242, 27, 114,

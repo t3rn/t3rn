@@ -792,6 +792,17 @@ checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
 name = "bstr"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba3569f383e8f1598449f1a423e72e99569137b47740b1da11ef19af3d5c3223"
+dependencies = [
+ "lazy_static",
+ "memchr",
+ "regex-automata 0.1.10",
+]
+
+[[package]]
+name = "bstr"
 version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c2f7349907b712260e64b0afe2f84692af14a454be26187d9df565c7f69266a"
@@ -4314,7 +4325,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "759c97c1e17c55525b57192c06a267cda0ac5210b222d6b82189a2338fa1c13d"
 dependencies = [
  "aho-corasick",
- "bstr",
+ "bstr 1.6.2",
  "fnv",
  "log",
  "regex",
@@ -9937,6 +9948,7 @@ dependencies = [
  "log",
  "num_enum 0.5.11",
  "pallet-evm",
+ "similar-asserts",
  "sp-core",
  "sp-std 8.0.0",
 ]
@@ -12444,6 +12456,26 @@ dependencies = [
  "num-traits",
  "paste",
  "wide",
+]
+
+[[package]]
+name = "similar"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32fea41aca09ee824cc9724996433064c89f7777e60762749a4170a14abbfa21"
+dependencies = [
+ "bstr 0.2.17",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "similar-asserts"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e041bb827d1bfca18f213411d51b665309f1afb37a04a5d1464530e13779fc0f"
+dependencies = [
+ "console",
+ "similar",
 ]
 
 [[package]]
@@ -15030,10 +15062,12 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 name = "tokens-precompile"
 version = "1.86.1-rc.0"
 dependencies = [
+ "circuit-mock-runtime",
  "circuit-runtime-types",
  "fp-evm",
  "frame-support",
  "frame-system",
+ "hex-literal 0.4.1",
  "num_enum 0.5.11",
  "pallet-3vm-account-mapping",
  "pallet-assets",
@@ -15042,6 +15076,7 @@ dependencies = [
  "precompile-util-macro",
  "precompile-util-solidity",
  "sp-core",
+ "sp-runtime",
  "sp-std 8.0.0",
  "t3rn-primitives",
 ]
