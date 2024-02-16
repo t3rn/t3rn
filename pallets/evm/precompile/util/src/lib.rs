@@ -68,6 +68,7 @@ where
 {
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match handle.code_address() {
+            // Maps tokens related addresses to Tokens precompile
             a if &a.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX =>
                 TokensPrecompile::<T>::execute(handle),
             _ => {
