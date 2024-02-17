@@ -2,14 +2,14 @@
 pragma solidity ^0.8.20;
 
 /// @dev The T3rn Token Precompile contract's address.
-address constant T3RN_TOKEN_PRECOMPILE_ADDRESS = 0x0909090909090909090909090909090909090909;
+address constant T3RN_TOKEN_PRECOMPILE_ADDRESS = 0x0909090909090909090909090909090900000000;
 
 /// @dev The T3rn Token Precompile contract's instance.
 T3rnToken constant T3RN_TOKEN_CONTRACT = T3rnToken(T3RN_TOKEN_PRECOMPILE_ADDRESS);
 
 /// @title The T3rn Token Precompile Interface
 /// @dev The interface through which solidity contracts will interact with pallet-assets & pallet_balances.
-/// @custom:address 0x0909090909090909090909090909090909090909
+/// @custom:address 0x0909090909090909090909090909090900000000
 interface T3rnToken {
     /// @dev Gets the total supply of a currency.
     /// @custom:selector 18160ddd
@@ -78,4 +78,4 @@ interface T3rnToken {
     /// @param spender The currency spender address.
     /// @param value uint256 The value that was approved.
     event Approval(address indexed owner, address indexed spender, uint256 value);
-}}
+}
