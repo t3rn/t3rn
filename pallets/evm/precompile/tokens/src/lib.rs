@@ -285,6 +285,7 @@ where
             <T as frame_system::pallet::Config>::AccountId,
         >>::Balance: EvmData,
     {
+        handle.record_log_costs_manual(3, 32)?;
         // Parse input
         let mut input = handle.read_input()?;
         input.expect_arguments(2)?;
