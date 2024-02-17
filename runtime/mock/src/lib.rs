@@ -4,6 +4,8 @@
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
 use codec::Encode;
 
+use circuit_runtime_pallets::pallet_3vm_evm::AddressMapping;
+
 use frame_support::{
     pallet_prelude::Weight,
     weights::{constants::ExtrinsicBaseWeight, WeightToFeeCoefficients, WeightToFeePolynomial},
@@ -360,19 +362,6 @@ pub const BOB: AccountId = AccountId::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
 pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
 pub const DJANGO: AccountId = AccountId::new([4u8; 32]);
-
-pub fn sender_evm_addr() -> H160 {
-    H160::from(hex_literal::hex!(
-        "b08e7434dba205ae42d1ddcd7048ce0b0c6cfd0d"
-    ))
-    //EvmAddressMapping::<Runtime>::get_default_evm_address(&ALICE)
-}
-
-pub fn receiver_evm_addr() -> H160 {
-    H160::from(hex_literal::hex!(
-        "ceb58fc447ee30d2104dd00abfe6fe29fe470e5c"
-    ))
-}
 
 pub fn trn_evm_address() -> H160 {
     H160::from(hex_literal::hex!(
