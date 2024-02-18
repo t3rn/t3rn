@@ -383,7 +383,7 @@ impl<T: ConfigSystem, Balance> ModuleOperations<T, Balance> for ThreeVmInfo<T, B
 }
 
 /// The index from which the endoded AssetId bytes will be encoded into an EVM address
-pub const H160_POSITION_ASSET_ID_TYPE: usize = 15;
+pub const H160_POSITION_ASSET_ID_TYPE: usize = 16;
 
 pub trait Erc20Mapping {
     /// Encode the AssetId to EvmAddress.
@@ -445,7 +445,7 @@ pub fn convert_decimals_from_evm<
 pub fn get_tokens_precompile_address() -> H160 {
     let mut address = [9u8; 20];
     for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
-        address[byte_index - H160_POSITION_ASSET_ID_TYPE] = 0;
+        address[byte_index] = 0;
     }
     H160(address)
 }

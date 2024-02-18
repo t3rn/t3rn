@@ -15,7 +15,6 @@ fn precompiles() -> Precompiles<circuit_mock_runtime::Runtime> {
     PrecompilesValue::get()
 }
 
-#[ignore]
 #[test]
 fn handles_non_supported() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -33,7 +32,6 @@ fn handles_non_supported() {
     });
 }
 
-#[ignore]
 #[test]
 fn name_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -45,7 +43,7 @@ fn name_works() {
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::Name).build(),
             )
-            .expect_cost(0)
+            .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(
                 EvmDataWriter::new()
@@ -55,7 +53,6 @@ fn name_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn symbol_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -67,7 +64,7 @@ fn symbol_works() {
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::Symbol).build(),
             )
-            .expect_cost(0)
+            .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(
                 EvmDataWriter::new()
@@ -77,7 +74,6 @@ fn symbol_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn decimals_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -89,13 +85,12 @@ fn decimals_works() {
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::Decimals).build(),
             )
-            .expect_cost(0)
+            .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(U256::from(12)).build());
     });
 }
 
-#[ignore]
 #[test]
 fn total_supply_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -107,7 +102,7 @@ fn total_supply_works() {
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::TotalSupply).build(),
             )
-            .expect_cost(0)
+            .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(U256::from(10_000_000)).build());
     });
@@ -127,7 +122,7 @@ fn balance_of_works() {
                     .write(Address::from(sender.address))
                     .build(),
             )
-            .expect_cost(0)
+            .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(U256::from(10_000_000)).build());
     });
@@ -149,7 +144,7 @@ fn transfer_works() {
                     .write(U256::from(1000u64))
                     .build(),
             )
-            .expect_cost(0)
+            .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(1u64).build());
     });

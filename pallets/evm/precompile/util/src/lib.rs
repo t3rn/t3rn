@@ -85,6 +85,7 @@ where
                     KnownPrecompile::ECRecoverPublicKey =>
                         <ECRecoverPublicKey as Precompile>::execute(handle),
                     KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
+                    KnownPrecompile::Tokens => TokensPrecompile::<T>::execute(handle),
                     KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
                         ExitError::Other("Noop precompile".into()),
                     )),
