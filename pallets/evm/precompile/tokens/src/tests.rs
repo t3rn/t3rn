@@ -110,6 +110,25 @@ fn allowance_native_not_supported() {
 }
 
 #[test]
+fn balance_of_native_works() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                trn_evm_address(),
+                EvmDataWriter::new_with_selector(Action::BalanceOf)
+                    .write(Address::from(sender.address))
+                    .build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(U256::from(10_000_000)).build());
+    });
+}
+
+#[test]
 fn approve_native_not_supported() {
     let (pairs, mut ext) = new_test_ext(1);
     let sender = &pairs[0];
@@ -140,26 +159,6 @@ fn transfer_from_native_not_supported() {
             .expect_cost(0)
             .expect_no_logs()
             .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
-    });
-}
-
-#[ignore]
-#[test]
-fn balance_of_native_works() {
-    let (pairs, mut ext) = new_test_ext(1);
-    let sender = &pairs[0];
-    ext.execute_with(|| {
-        precompiles()
-            .prepare_test(
-                sender.address,
-                trn_evm_address(),
-                EvmDataWriter::new_with_selector(Action::BalanceOf)
-                    .write(Address::from(sender.address))
-                    .build(),
-            )
-            .expect_cost(1250)
-            .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(U256::from(10_000_000)).build());
     });
 }
 
@@ -261,7 +260,6 @@ fn total_supply_asset_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn allowance_asset_works() {
     let (pairs, mut ext) = new_test_ext(2);
@@ -290,7 +288,6 @@ fn allowance_asset_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn balance_of_asset_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -307,6 +304,40 @@ fn balance_of_asset_works() {
             .expect_cost(1250)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(U256::from(10_000)).build());
+    });
+}
+
+#[test]
+fn approve_asset_not_supported() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::Approve).build(),
+            )
+            .expect_cost(0)
+            .expect_no_logs()
+            .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
+    });
+}
+
+#[test]
+fn transfer_from_asset_not_supported() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::TransferFrom).build(),
+            )
+            .expect_cost(0)
+            .expect_no_logs()
+            .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
     });
 }
 
