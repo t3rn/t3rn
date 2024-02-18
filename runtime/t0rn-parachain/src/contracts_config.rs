@@ -177,7 +177,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type OnCreate = ();
     type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
     // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
-    type PrecompilesValue = PrecompilesValue::get();
+    type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
