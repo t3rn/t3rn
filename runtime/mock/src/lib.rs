@@ -369,6 +369,12 @@ pub fn trn_evm_address() -> H160 {
     ))
 }
 
+pub fn tst_evm_address() -> H160 {
+    H160::from(hex_literal::hex!(
+        "0909090909090909090909090909090900000001"
+    ))
+}
+
 pub const CLI_DEFAULT: AccountId = AccountId::new([
     108, 81, 222, 3, 128, 118, 146, 25, 212, 131, 171, 210, 104, 110, 11, 63, 79, 235, 65, 99, 161,
     143, 230, 174, 109, 98, 47, 128, 20, 242, 27, 114,
@@ -470,6 +476,21 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
         .assimilate_storage(&mut ext)
         .unwrap();
 
+    let assets: Vec<(_, _, _, _)> = vec![(1, pairs[0].account_id.clone(), false, 1)];
+    let metadata: Vec<(_, _, _, _)> =
+        vec![(1, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)];
+    let accounts: Vec<(_, _, _)> = (0..accounts_len)
+        .map(|i| (1, pairs[i].account_id.clone(), 10_000))
+        .collect();
+
+    pallet_assets::GenesisConfig::<Runtime> {
+        assets,
+        metadata,
+        accounts,
+    }
+    .assimilate_storage(&mut ext)
+    .unwrap();
+
     (pairs, ext.into())
 }
 
@@ -495,6 +516,21 @@ pub fn new_test_ext_with_initial_balance(
     pallet_balances::GenesisConfig::<Runtime> { balances }
         .assimilate_storage(&mut ext)
         .unwrap();
+
+    let assets: Vec<(_, _, _, _)> = vec![(1, pairs[0].account_id.clone(), false, 1)];
+    let metadata: Vec<(_, _, _, _)> =
+        vec![(1, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)];
+    let accounts: Vec<(_, _, _)> = (0..accounts_len)
+        .map(|i| (1, pairs[i].account_id.clone(), initial_balance))
+        .collect();
+
+    pallet_assets::GenesisConfig::<Runtime> {
+        assets,
+        metadata,
+        accounts,
+    }
+    .assimilate_storage(&mut ext)
+    .unwrap();
 
     (pairs, ext.into())
 }

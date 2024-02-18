@@ -33,7 +33,7 @@ fn handles_non_supported() {
 }
 
 #[test]
-fn name_works() {
+fn name_native_works() {
     let (pairs, mut ext) = new_test_ext(1);
     let sender = &pairs[0];
     ext.execute_with(|| {
@@ -54,7 +54,7 @@ fn name_works() {
 }
 
 #[test]
-fn symbol_works() {
+fn symbol_native_works() {
     let (pairs, mut ext) = new_test_ext(1);
     let sender = &pairs[0];
     ext.execute_with(|| {
@@ -75,7 +75,7 @@ fn symbol_works() {
 }
 
 #[test]
-fn decimals_works() {
+fn decimals_native_works() {
     let (pairs, mut ext) = new_test_ext(1);
     let sender = &pairs[0];
     ext.execute_with(|| {
@@ -92,7 +92,7 @@ fn decimals_works() {
 }
 
 #[test]
-fn total_supply_works() {
+fn total_supply_native_works() {
     let (pairs, mut ext) = new_test_ext(1);
     let sender = &pairs[0];
     ext.execute_with(|| {
@@ -110,7 +110,7 @@ fn total_supply_works() {
 
 #[ignore]
 #[test]
-fn balance_of_works() {
+fn balance_of_native_works() {
     let (pairs, mut ext) = new_test_ext(1);
     let sender = &pairs[0];
     ext.execute_with(|| {
@@ -130,7 +130,7 @@ fn balance_of_works() {
 
 #[ignore]
 #[test]
-fn transfer_works() {
+fn transfer_native_works() {
     let (pairs, mut ext) = new_test_ext(2);
     let sender = &pairs[0];
     let receiver = &pairs[1];
@@ -139,6 +139,128 @@ fn transfer_works() {
             .prepare_test(
                 sender.address,
                 trn_evm_address(),
+                EvmDataWriter::new_with_selector(Action::Transfer)
+                    .write(Address::from(receiver.address))
+                    .write(U256::from(1000u64))
+                    .build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(1u64).build());
+    });
+}
+
+#[ignore]
+#[test]
+fn name_asset_works() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::Name).build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(
+                EvmDataWriter::new()
+                    .write(Bytes::from("TST".as_bytes()))
+                    .build(),
+            );
+    });
+}
+
+#[ignore]
+#[test]
+fn symbol_asset_works() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::Symbol).build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(
+                EvmDataWriter::new()
+                    .write(Bytes::from("TST".as_bytes()))
+                    .build(),
+            );
+    });
+}
+
+#[ignore]
+#[test]
+fn decimals_asset_works() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::Decimals).build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(U256::from(18)).build());
+    });
+}
+
+#[ignore]
+#[test]
+fn total_supply_asset_works() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::TotalSupply).build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(U256::from(10_000)).build());
+    });
+}
+
+#[ignore]
+#[test]
+fn balance_of_asset_works() {
+    let (pairs, mut ext) = new_test_ext(1);
+    let sender = &pairs[0];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
+                EvmDataWriter::new_with_selector(Action::BalanceOf)
+                    .write(Address::from(sender.address))
+                    .build(),
+            )
+            .expect_cost(1250)
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(U256::from(10_000)).build());
+    });
+}
+
+#[ignore]
+#[test]
+fn transfer_asset_works() {
+    let (pairs, mut ext) = new_test_ext(2);
+    let sender = &pairs[0];
+    let receiver = &pairs[1];
+    ext.execute_with(|| {
+        precompiles()
+            .prepare_test(
+                sender.address,
+                tst_evm_address(),
                 EvmDataWriter::new_with_selector(Action::Transfer)
                     .write(Address::from(receiver.address))
                     .write(U256::from(1000u64))
