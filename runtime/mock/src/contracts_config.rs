@@ -147,6 +147,8 @@ parameter_types! {
          (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
          (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
          (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
+         // TODO: replace these with alternative implementation that covers all possible token precompiles
+         // so they are routed correctly
          (get_tokens_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens),
          (get_tst_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens)
     ].into_iter().collect());

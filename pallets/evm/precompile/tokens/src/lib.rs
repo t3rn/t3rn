@@ -8,7 +8,9 @@ use fp_evm::{
 use frame_support::{
     sp_runtime::traits::StaticLookup,
     traits::{
-        fungibles::{metadata::Inspect, Inspect as IssuanceInspect},
+        fungibles::{
+            approvals::Inspect, metadata::Inspect as MetadataInspect, Inspect as IssuanceInspect,
+        },
         tokens::currency::Currency,
         ExistenceRequirement, OriginTrait,
     },
@@ -133,7 +135,7 @@ where
                 match selector {
                     Action::TotalSupply => Self::total_supply(token_id, handle),
                     Action::BalanceOf => Self::balance_of(token_id, handle),
-                    Action::Allowance => Self::not_supported(handle),
+                    Action::Allowance => Self::allowance(token_id, handle),
                     Action::Transfer => Self::transfer(token_id, handle),
                     Action::Approve => Self::not_supported(handle),
                     Action::TransferFrom => Self::not_supported(handle),
@@ -252,6 +254,32 @@ where
         }
     }
 
+    fn allowance(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
+        if let TokenId::Asset(asset_id) = token_id {
+            let input = handle.input();
+
+            // Parse input
+            let mut input = handle.read_input()?;
+            input.expect_arguments(2)?;
+
+            let owner: H160 = input.read::<Address>()?.into();
+            let spender: H160 = input.read::<Address>()?.into();
+
+            let amount: U256 = {
+                let owner = <T as pallet_evm::Config>::AddressMapping::into_account_id(owner);
+                let spender = <T as pallet_evm::Config>::AddressMapping::into_account_id(spender);
+
+                pallet_assets::Pallet::<T>::allowance(asset_id.into(), &owner, &spender).into()
+            };
+            return Ok(succeed(EvmDataWriter::new().write(amount).build()))
+        }
+        Err(PrecompileFailure::Error {
+            exit_status: pallet_evm::ExitError::Other("Not Supported".into()),
+        })
+    }
+
     fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
 
@@ -269,6 +297,9 @@ where
         match token_id {
             TokenId::Native => {
                 who_balance = U256::from(<T as pallet_evm::Config>::Currency::free_balance(&who));
+                //if who_balance != U256::zero() {
+                //    who_balance = who_balance.checked_div(U256::from(DECIMALS_VALUE))
+                //}
             },
             TokenId::Asset(asset_id) => {
                 who_balance =
