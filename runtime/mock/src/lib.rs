@@ -35,7 +35,9 @@ pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
 pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 pub use crate::circuit_config::GlobalOnInitQueues;
 use frame_support::traits::GenesisBuild;
-pub use pallet_3vm_account_mapping::{ethereum_signable_message, to_ascii_hex, EcdsaSignature};
+pub use pallet_3vm_account_mapping::{
+    ethereum_signable_message, to_ascii_hex, EcdsaSignature, EvmAddressMapping,
+};
 pub use pallet_3vm_evm::Config as ConfigEvm;
 pub use pallet_contracts_registry::ContractsRegistry as ContractsRegistryStorage;
 use sp_core::{crypto::AccountId32, H160};
@@ -445,6 +447,8 @@ fn address_build(seed: u8) -> AccountInfo {
     let secret_key = libsecp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
     let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
     let address = H160::from(H256::from(keccak_256(public_key)));
+
+    //let account_if = EvmAdd>::into_account_id(address);
 
     let mut data = [0u8; 32];
     data[0..20].copy_from_slice(&address[..]);

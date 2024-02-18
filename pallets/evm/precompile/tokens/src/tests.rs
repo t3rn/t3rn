@@ -150,7 +150,6 @@ fn transfer_native_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn name_asset_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -172,7 +171,6 @@ fn name_asset_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn symbol_asset_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -194,7 +192,6 @@ fn symbol_asset_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn decimals_asset_works() {
     let (pairs, mut ext) = new_test_ext(1);
@@ -212,7 +209,6 @@ fn decimals_asset_works() {
     });
 }
 
-#[ignore]
 #[test]
 fn total_supply_asset_works() {
     let (pairs, mut ext) = new_test_ext(1);

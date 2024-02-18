@@ -127,6 +127,12 @@ impl FeeCalculator for FixedGasPrice {
 const BLOCK_GAS_LIMIT: u64 = 150_000_000;
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
+fn get_tst_precompile_address() -> sp_core::H160 {
+    let mut address = *get_tokens_precompile_address().as_fixed_bytes();
+    address[19] = 1u8;
+    H160(address)
+}
+
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
@@ -141,7 +147,8 @@ parameter_types! {
          (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
          (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
          (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
-         (get_tokens_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens)
+         (get_tokens_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens),
+         (get_tst_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens)
     ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
