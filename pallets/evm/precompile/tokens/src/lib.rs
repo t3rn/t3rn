@@ -297,9 +297,6 @@ where
         match token_id {
             TokenId::Native => {
                 who_balance = U256::from(<T as pallet_evm::Config>::Currency::free_balance(&who));
-                //if who_balance != U256::zero() {
-                //    who_balance = who_balance.checked_div(U256::from(DECIMALS_VALUE))
-                //}
             },
             TokenId::Asset(asset_id) => {
                 who_balance =

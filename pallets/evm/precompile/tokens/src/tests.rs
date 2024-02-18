@@ -162,25 +162,42 @@ fn transfer_from_native_not_supported() {
     });
 }
 
-#[ignore]
 #[test]
 fn transfer_native_works() {
     let (pairs, mut ext) = new_test_ext(2);
     let sender = &pairs[0];
     let receiver = &pairs[1];
     ext.execute_with(|| {
+        assert_eq!(
+            circuit_mock_runtime::Balances::free_balance(&receiver.account_id),
+            10_000_000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Balances::free_balance(&sender.account_id),
+            10_000_000
+        );
+
         precompiles()
             .prepare_test(
                 sender.address,
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::Transfer)
                     .write(Address::from(receiver.address))
-                    .write(U256::from(1000u64))
+                    .write(U256::from(1_000_000u64))
                     .build(),
             )
-            .expect_cost(1250)
+            .expect_cost(1756)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(1u64).build());
+
+        assert_eq!(
+            circuit_mock_runtime::Balances::free_balance(&receiver.account_id),
+            11_000_000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Balances::free_balance(&sender.account_id),
+            9_000_000
+        );
     });
 }
 
@@ -341,13 +358,21 @@ fn transfer_from_asset_not_supported() {
     });
 }
 
-#[ignore]
 #[test]
 fn transfer_asset_works() {
     let (pairs, mut ext) = new_test_ext(2);
     let sender = &pairs[0];
     let receiver = &pairs[1];
     ext.execute_with(|| {
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &receiver.account_id),
+            10000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &sender.account_id),
+            10000
+        );
+
         precompiles()
             .prepare_test(
                 sender.address,
@@ -357,8 +382,17 @@ fn transfer_asset_works() {
                     .write(U256::from(1000u64))
                     .build(),
             )
-            .expect_cost(1250)
+            .expect_cost(1756)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(1u64).build());
+
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &receiver.account_id),
+            11000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &sender.account_id),
+            9000
+        );
     });
 }
