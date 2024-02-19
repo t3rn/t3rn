@@ -44,6 +44,7 @@ parameter_types! {
 
 impl pallet_3vm::Config for Runtime {
     type AccountManager = AccountManager;
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type AssetId = AssetId;
     type CircuitTargetId = CircuitTargetId;
     type ContractsRegistry = ContractsRegistry;
@@ -53,6 +54,22 @@ impl pallet_3vm::Config for Runtime {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
+    type VacuumEVMApi = Vacuum;
+}
+
+parameter_types! {
+    pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
+    pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
+    pub const StorageDepositFee: Balance = MILLIUNIT / 100;
+}
+
+impl pallet_3vm_account_mapping::Config for Runtime {
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type ChainId = ChainId;
+    type Currency = Balances;
+    type NetworkTreasuryAccount = TreasuryModuleAccount;
+    type RuntimeEvent = RuntimeEvent;
+    type StorageDepositFee = StorageDepositFee;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {

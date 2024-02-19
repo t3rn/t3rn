@@ -3,19 +3,105 @@ use crate::{
     xtx::LocalState,
     SpeedMode,
 };
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::dispatch::DispatchError;
 use frame_system::{pallet_prelude::BlockNumberFor, Config};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hexdisplay::AsBytesRef, Hasher};
+use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, Hasher, H160, U256};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{convert::TryInto, default::Default, fmt::Debug, prelude::*};
 use t3rn_types::sfx::TargetId;
 pub use t3rn_types::sfx::{FullSideEffect, SecurityLvl, SideEffect};
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, MaxEncodedLen, TypeInfo)]
+pub struct VacuumEVMOrder {
+    pub destination: TargetId,
+
+    pub asset: u32,
+
+    pub amount: U256,
+
+    pub reward_asset: H160,
+
+    pub max_reward: U256,
+
+    pub insurance: U256,
+
+    pub target_account: AccountId32,
+}
+
+impl VacuumEVMOrder {
+    pub fn new(
+        destination: TargetId,
+        asset: u32,
+        amount: U256,
+        reward_asset: H160,
+        max_reward: U256,
+        insurance: U256,
+        target_account: AccountId32,
+    ) -> Self {
+        VacuumEVMOrder {
+            destination,
+            asset,
+            amount,
+            reward_asset,
+            max_reward,
+            insurance,
+            target_account,
+        }
+    }
+
+    pub fn from_rlp_encoded_packed(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        // Take the first 4 bytes and convert them to a TargetId
+        let destination: TargetId = encoded_slice[0..4]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert destination"))?;
+
+        // Take the next 4 bytes and convert them to a u32
+        let asset: u32 = u32::from_be_bytes(
+            encoded_slice[4..8]
+                .try_into()
+                .map_err(|_| DispatchError::Other("Failed to convert asset"))?,
+        );
+
+        // Take the next 32 bytes and convert them to a Vec<u8>
+        let target_account: AccountId32 = AccountId32::decode(&mut &encoded_slice[8..40])
+            .map_err(|_| DispatchError::Other("Failed to decode AccountId32"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let amount: U256 = encoded_slice[40..72]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert amount"))?;
+
+        // Take the next 4 bytes and convert them to a u32
+        let reward_asset: H160 = H160::decode(&mut &encoded_slice[72..92])
+            .map_err(|_| DispatchError::Other("Failed to decode reward_asset"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let insurance: U256 = encoded_slice[92..124]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert insurance:"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let max_reward: U256 = encoded_slice[124..156]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert max_reward"))?;
+
+        Ok(VacuumEVMOrder {
+            destination,
+            asset,
+            amount,
+            reward_asset,
+            max_reward,
+            insurance,
+            target_account,
+        })
+    }
+}
 
 type SystemHashing<T> = <T as Config>::Hashing;
 
