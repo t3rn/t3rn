@@ -2,7 +2,10 @@ use crate::Action;
 use circuit_mock_runtime::{
     contracts_config::PrecompilesValue, evm_precompile_util::Precompiles, *,
 };
-use frame_support::{dispatch::RawOrigin, traits::fungibles::approvals::Mutate};
+use frame_support::{
+    dispatch::RawOrigin,
+    traits::fungibles::approvals::{Inspect, Mutate},
+};
 use hex_literal::hex;
 use precompile_util_solidity::{
     data::{Address, Bytes, EvmDataWriter},
@@ -139,7 +142,7 @@ fn approve_native_not_supported() {
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::Approve).build(),
             )
-            .expect_cost(0)
+            .expect_cost(1756)
             .expect_no_logs()
             .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
     });
@@ -325,19 +328,32 @@ fn balance_of_asset_works() {
 }
 
 #[test]
-fn approve_asset_not_supported() {
-    let (pairs, mut ext) = new_test_ext(1);
-    let sender = &pairs[0];
+fn approve_asset_works() {
+    let (pairs, mut ext) = new_test_ext(2);
+    let owner = &pairs[0];
+    let spender = &pairs[1];
     ext.execute_with(|| {
+        assert_eq!(
+            circuit_mock_runtime::Assets::allowance(1u32, &owner.account_id, &spender.account_id),
+            0
+        );
         precompiles()
             .prepare_test(
-                sender.address,
+                owner.address,
                 tst_evm_address(),
-                EvmDataWriter::new_with_selector(Action::Approve).build(),
+                EvmDataWriter::new_with_selector(Action::Approve)
+                    .write(Address::from(spender.address))
+                    .write(U256::from(2000u64))
+                    .build(),
             )
-            .expect_cost(0)
+            .expect_cost(3006)
             .expect_no_logs()
-            .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
+            .execute_returns(EvmDataWriter::new().write(1u64).build());
+
+        assert_eq!(
+            circuit_mock_runtime::Assets::allowance(1u32, &owner.account_id, &spender.account_id),
+            2000
+        );
     });
 }
 

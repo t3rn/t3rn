@@ -5,20 +5,19 @@ use fp_evm::{
     PrecompileResult,
 };
 
-use frame_support::{
-    sp_runtime::traits::StaticLookup,
-    traits::{
-        fungibles::{
-            approvals::Inspect, metadata::Inspect as MetadataInspect, Inspect as IssuanceInspect,
-        },
-        tokens::currency::Currency,
-        ExistenceRequirement, OriginTrait,
+use frame_support::traits::{
+    fungibles::{
+        approvals::{Inspect, Mutate},
+        metadata::Inspect as MetadataInspect,
+        Inspect as IssuanceInspect,
     },
+    tokens::currency::Currency,
+    ExistenceRequirement, OriginTrait,
 };
 use frame_system::RawOrigin;
 use pallet_evm::AddressMapping;
 use precompile_util_solidity::{
-    data::{Address, Bytes, EvmData, EvmDataWriter},
+    data::{Address, Bytes, EvmData, EvmDataReader, EvmDataWriter},
     error,
     handle::PrecompileHandleExt,
     modifier::FunctionModifier,
@@ -27,6 +26,7 @@ use precompile_util_solidity::{
     succeed, EvmResult,
 };
 use sp_core::{H160, U256};
+use sp_runtime::traits::{StaticLookup, Zero};
 use sp_std::{marker::PhantomData, str::*, vec::Vec};
 use t3rn_primitives::threevm::{
     convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE,
@@ -137,7 +137,7 @@ where
                     Action::BalanceOf => Self::balance_of(token_id, handle),
                     Action::Allowance => Self::allowance(token_id, handle),
                     Action::Transfer => Self::transfer(token_id, handle),
-                    Action::Approve => Self::not_supported(handle),
+                    Action::Approve => Self::approve(token_id, handle),
                     Action::TransferFrom => Self::not_supported(handle),
                     Action::Name => Self::name(token_id, handle),
                     Action::Symbol => Self::symbol(token_id, handle),
@@ -283,8 +283,6 @@ where
     fn balance_of(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
 
-        let input = handle.input();
-
         // Parse input
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
@@ -304,6 +302,62 @@ where
             },
         };
         Ok(succeed(EvmDataWriter::new().write(who_balance).build()))
+    }
+
+    fn approve(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::Balance: EvmData,
+    {
+        handle.record_log_costs_manual(3, 32)?;
+
+        if let TokenId::Asset(asset_id) = token_id {
+            // Read input and parse data
+            let mut input = handle.read_input()?;
+            input.expect_arguments(2)?;
+
+            let spender: H160 = input.read::<Address>()?.into();
+
+            let amount: <T as pallet_assets::Config>::Balance = input
+                .read::<<T as pallet_assets::Config>::Balance>()?
+                .into();
+
+            let owner =
+                <T as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller);
+            let spender = <T as pallet_evm::Config>::AddressMapping::into_account_id(spender);
+
+            // Check if there is existing allowance for the same pair of owner and sender
+            // and cancel it if there is one
+            handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
+
+            if pallet_assets::Pallet::<T>::allowance(asset_id.into(), &owner, &spender)
+                != Zero::zero()
+            {
+                pallet_assets::Pallet::<T>::cancel_approval(
+                    RawOrigin::Signed(owner.clone()).into(),
+                    asset_id.into(),
+                    <T as frame_system::Config>::Lookup::unlookup(spender.clone()),
+                )
+                .map_err(|e| PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: Into::<&str>::into(e).as_bytes().to_vec(),
+                })?;
+            }
+            pallet_assets::Pallet::<T>::approve_transfer(
+                RawOrigin::Signed(owner).into(),
+                asset_id.into(),
+                <T as frame_system::Config>::Lookup::unlookup(spender),
+                amount,
+            )
+            .map_err(|e| PrecompileFailure::Revert {
+                exit_status: ExitRevert::Reverted,
+                output: Into::<&str>::into(e).as_bytes().to_vec(),
+            })?;
+
+            return Ok(succeed(EvmDataWriter::new().write(true).build()))
+        }
+        Err(PrecompileFailure::Error {
+            exit_status: pallet_evm::ExitError::Other("Not Supported".into()),
+        })
     }
 
     fn transfer(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
