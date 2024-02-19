@@ -12,7 +12,6 @@ T3rnToken constant T3RN_TOKEN_CONTRACT = T3rnToken(T3RN_TOKEN_PRECOMPILE_ADDRESS
 /// @custom:address 0x0909090909090909090909090909090900000000
 interface T3rnToken {
     /// @dev Gets the total supply of a currency.
-    /// @custom:selector 18160ddd
     /// @return An uint256 representing the total supply of a currency.
     function totalSupply() external view returns (uint256);
 
@@ -25,9 +24,9 @@ interface T3rnToken {
     /// @dev Gets the currency  allowance of an address.
     /// @custom:selector dd62ed3e
     /// @param owner address The address that owns a currency
-    /// @param currency address The currency address
-    /// @return An uint256 representing of the currency for the owner.
-    function allowance(address owner, address currency) external view returns (uint256);
+    /// @param spender address The address that will spend the  currency
+    /// @return An uint256 representing of the allowed currency of the owner for the spender.
+    function allowance(address owner, address spender) external view returns (uint256);
 
     /// @dev Gets the name of a currency.
     /// @custom:selector 06fdde03

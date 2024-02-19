@@ -159,7 +159,7 @@ fn transfer_from_native_not_supported() {
                 trn_evm_address(),
                 EvmDataWriter::new_with_selector(Action::TransferFrom).build(),
             )
-            .expect_cost(0)
+            .expect_cost(1756)
             .expect_no_logs()
             .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
     });
@@ -358,19 +358,58 @@ fn approve_asset_works() {
 }
 
 #[test]
-fn transfer_from_asset_not_supported() {
-    let (pairs, mut ext) = new_test_ext(1);
+fn transfer_from_asset_works() {
+    let (pairs, mut ext) = new_test_ext(3);
     let sender = &pairs[0];
+    let from = &pairs[1];
+    let to = &pairs[2];
     ext.execute_with(|| {
+        circuit_mock_runtime::Assets::approve_transfer(
+            RawOrigin::Signed(from.account_id.clone()).into(),
+            1u32.into(),
+            sender.account_id.clone().into(),
+            2000u128.into(),
+        );
+
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &sender.account_id),
+            10000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &from.account_id),
+            10000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &to.account_id),
+            10000
+        );
+
         precompiles()
             .prepare_test(
                 sender.address,
                 tst_evm_address(),
-                EvmDataWriter::new_with_selector(Action::TransferFrom).build(),
+                EvmDataWriter::new_with_selector(Action::TransferFrom)
+                    .write(Address::from(from.address))
+                    .write(Address::from(to.address))
+                    .write(U256::from(1500u64))
+                    .build(),
             )
-            .expect_cost(0)
+            .expect_cost(1756)
             .expect_no_logs()
-            .execute_error(pallet_evm::ExitError::Other("Not Supported".into()))
+            .execute_returns(EvmDataWriter::new().write(1u64).build());
+
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &sender.account_id),
+            10000
+        );
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &from.account_id),
+            8500
+        );
+        assert_eq!(
+            circuit_mock_runtime::Assets::balance(1u32, &to.account_id),
+            11500
+        )
     });
 }
 

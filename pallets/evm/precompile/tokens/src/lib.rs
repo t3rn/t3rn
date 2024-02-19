@@ -138,7 +138,7 @@ where
                     Action::Allowance => Self::allowance(token_id, handle),
                     Action::Transfer => Self::transfer(token_id, handle),
                     Action::Approve => Self::approve(token_id, handle),
-                    Action::TransferFrom => Self::not_supported(handle),
+                    Action::TransferFrom => Self::transfer_from(token_id, handle),
                     Action::Name => Self::name(token_id, handle),
                     Action::Symbol => Self::symbol(token_id, handle),
                     Action::Decimals => Self::decimals(token_id, handle),
@@ -168,12 +168,6 @@ where
         >>::Balance,
     >,
 {
-    fn not_supported(handle: &mut impl PrecompileHandle) -> PrecompileResult {
-        Err(PrecompileFailure::Error {
-            exit_status: pallet_evm::ExitError::Other("Not Supported".into()),
-        })
-    }
-
     fn total_supply(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
 
@@ -419,5 +413,59 @@ where
             },
         };
         Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer_from(token_id: TokenId, handle: &mut impl PrecompileHandle) -> PrecompileResult
+    where
+        <T as pallet_assets::Config>::Balance: EvmData,
+    {
+        handle.record_log_costs_manual(3, 32)?;
+
+        if let TokenId::Asset(asset_id) = token_id {
+            // Read input and parse data
+            let mut input = handle.read_input()?;
+            input.expect_arguments(3)?;
+
+            let from: H160 = input.read::<Address>()?.into();
+            let to: H160 = input.read::<Address>()?.into();
+            let value: <T as pallet_assets::Config>::Balance = input
+                .read::<<T as pallet_assets::Config>::Balance>()?
+                .into();
+
+            let caller =
+                <T as pallet_evm::Config>::AddressMapping::into_account_id(handle.context().caller);
+            let from = <T as pallet_evm::Config>::AddressMapping::into_account_id(from);
+            let to = <T as pallet_evm::Config>::AddressMapping::into_account_id(to);
+
+            if caller != from {
+                pallet_assets::Pallet::<T>::transfer_approved(
+                    RawOrigin::Signed(caller.clone()).into(),
+                    asset_id.into(),
+                    <T as frame_system::Config>::Lookup::unlookup(from.clone()),
+                    <T as frame_system::Config>::Lookup::unlookup(to.clone()),
+                    value.clone(),
+                )
+                .map_err(|e| PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: Into::<&str>::into(e).as_bytes().to_vec(),
+                })?;
+            } else {
+                pallet_assets::Pallet::<T>::transfer(
+                    RawOrigin::Signed(from).into(),
+                    asset_id.into(),
+                    <T as frame_system::Config>::Lookup::unlookup(to),
+                    value,
+                )
+                .map_err(|e| PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: Into::<&str>::into(e).as_bytes().to_vec(),
+                })?;
+            }
+
+            return Ok(succeed(EvmDataWriter::new().write(true).build()))
+        }
+        Err(PrecompileFailure::Error {
+            exit_status: pallet_evm::ExitError::Other("Not Supported".into()),
+        })
     }
 }
