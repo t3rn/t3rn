@@ -442,10 +442,11 @@ pub fn convert_decimals_from_evm<
     }
 }
 
-pub fn get_tokens_precompile_address() -> H160 {
+pub fn get_tokens_precompile_address(index: u32) -> H160 {
     let mut address = [9u8; 20];
+    let index_bytes = index.to_be_bytes().to_vec();
     for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
-        address[byte_index] = 0;
+        address[byte_index] = index_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE];
     }
     H160(address)
 }

@@ -136,19 +136,9 @@ parameter_types! {
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 3333;
     pub const PotId: PalletId = PalletId(*b"PotStake");
-    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-        (sp_core::H160([0u8; 20]), evm_precompile_util::KnownPrecompile::ECRecover),
-        (sp_core::H160([1u8; 20]), evm_precompile_util::KnownPrecompile::Sha256),
-        (sp_core::H160([2u8; 20]), evm_precompile_util::KnownPrecompile::Ripemd160),
-        (sp_core::H160([3u8; 20]), evm_precompile_util::KnownPrecompile::Identity),
-        (sp_core::H160([4u8; 20]), evm_precompile_util::KnownPrecompile::Modexp),
-        (sp_core::H160([5u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-        (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-        (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-        (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
-        (get_tokens_precompile_address(), evm_precompile_util::KnownPrecompile::Tokens)
-    ].into_iter().collect());
-    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
+    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(
+        precompiles::generate_precompile_set().into_iter().collect()
+    );
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 

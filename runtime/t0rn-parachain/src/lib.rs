@@ -11,6 +11,7 @@ pub mod circuit_config;
 pub mod contracts_config;
 pub mod hooks;
 pub mod parachain_config;
+pub mod precompiles;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod treasuries_config;
@@ -70,6 +71,7 @@ pub use sp_runtime::BuildStorage;
 use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
 
 pub const TRN: Balance = UNIT;
+pub const TST: Balance = UNIT * 1_000_000;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;

@@ -67,34 +67,38 @@ where
     >,
 {
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        match self {
+            // Ethereum:
+            KnownPrecompile::ECRecover => <ECRecover as Precompile>::execute(handle),
+            KnownPrecompile::Sha256 => <Sha256 as Precompile>::execute(handle),
+            KnownPrecompile::Ripemd160 => <Ripemd160 as Precompile>::execute(handle),
+            KnownPrecompile::Identity => <Identity as Precompile>::execute(handle),
+            KnownPrecompile::Modexp => <Modexp as Precompile>::execute(handle),
+            // Non-Frontier specific nor Ethereum:
+            KnownPrecompile::Sha3FIPS256 => <Sha3FIPS256 as Precompile>::execute(handle),
+            KnownPrecompile::Sha3FIPS512 => <Sha3FIPS512 as Precompile>::execute(handle),
+            KnownPrecompile::ECRecoverPublicKey =>
+                <ECRecoverPublicKey as Precompile>::execute(handle),
+            KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
+            KnownPrecompile::Tokens => TokensPrecompile::<T>::execute(handle),
+            KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
+                ExitError::Other("Noop precompile".into()),
+            )),
+            _ => PrecompileResult::Err(PrecompileFailure::from(ExitError::Other(
+                "Unknown precompile".into(),
+            ))),
+        }
+        // TO DO: Map TokensPrecompile to related token EVM addresses using prefix
+        // (Need to update the PrecompileSet setup to support that !!!)
+        /*
         match handle.code_address() {
-            // Maps tokens related addresses to Tokens precompile
             a if &a.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX =>
                 TokensPrecompile::<T>::execute(handle),
-            _ => {
-                match self {
-                    // Ethereum:
-                    KnownPrecompile::ECRecover => <ECRecover as Precompile>::execute(handle),
-                    KnownPrecompile::Sha256 => <Sha256 as Precompile>::execute(handle),
-                    KnownPrecompile::Ripemd160 => <Ripemd160 as Precompile>::execute(handle),
-                    KnownPrecompile::Identity => <Identity as Precompile>::execute(handle),
-                    KnownPrecompile::Modexp => <Modexp as Precompile>::execute(handle),
-                    // // Non-Frontier specific nor Ethereum:
-                    KnownPrecompile::Sha3FIPS256 => <Sha3FIPS256 as Precompile>::execute(handle),
-                    KnownPrecompile::Sha3FIPS512 => <Sha3FIPS512 as Precompile>::execute(handle),
-                    KnownPrecompile::ECRecoverPublicKey =>
-                        <ECRecoverPublicKey as Precompile>::execute(handle),
-                    KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
-                    KnownPrecompile::Tokens => TokensPrecompile::<T>::execute(handle),
-                    KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
-                        ExitError::Other("Noop precompile".into()),
-                    )),
-                    _ => PrecompileResult::Err(PrecompileFailure::from(ExitError::Other(
-                        "Unknown precompile".into(),
-                    ))),
-                }
-            },
-        }
+            //...
+            _ => PrecompileResult::Err(PrecompileFailure::from(ExitError::Other(
+                "Unknown precompile".into(),
+            )))
+         */
     }
 }
 

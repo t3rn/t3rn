@@ -1,7 +1,8 @@
 use parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, EvmConfig,
-    GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeGenesisConfig, SessionConfig,
-    SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, TRN, U256, WASM_BINARY,
+    opaque::Block, AccountId, AssetsConfig, AuraId, BalancesConfig, CollatorSelectionConfig,
+    EvmConfig, GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeGenesisConfig,
+    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, TRN, TST, U256,
+    WASM_BINARY,
 };
 
 use codec::Encode;
@@ -420,7 +421,47 @@ fn polkadot_genesis_full(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
-        assets: Default::default(),
+        assets: AssetsConfig {
+            assets: vec![(
+                2,
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                false,
+                1,
+            )],
+            metadata: vec![(2, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)],
+            accounts: vec![
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Dave"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Eve"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                    1000 * TST,
+                ),
+            ],
+        },
         aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: PolkadotXcmConfig {
