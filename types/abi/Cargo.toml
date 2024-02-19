@@ -30,7 +30,7 @@ rlp = { workspace = true, optional = true }
 ethabi      = "18.0.0"
 hex         = "0.4"
 hex-literal = "0.4.1"
-serde_json  = "1.0.41"
+serde_json  = "1.0.113"
 rlp-derive = "0.1.0"
 
 # for mini-mock events
