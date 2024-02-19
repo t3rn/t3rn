@@ -23,6 +23,7 @@ use evm::{
     gasometer::{GasCost, StorageTarget},
     ExitError, ExitReason, Opcode, Transfer,
 };
+
 // Substrate
 use frame_support::{
     traits::{
@@ -46,6 +47,7 @@ use fp_evm::{
     Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
     ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
+use t3rn_primitives::threevm::{convert_decimals_from_evm, DECIMALS_VALUE};
 
 use crate::{
     runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
@@ -202,9 +204,30 @@ where
                 // With tip, we include as much of the tip on top of base_fee that we can, never
                 // exceeding max_fee_per_gas
                 (Some(max_fee_per_gas), Some(max_priority_fee_per_gas), _) => {
-                    let actual_priority_fee_per_gas = max_fee_per_gas
+                    // Manually convert the fees from EVM to TRN decimals to avaid unexpected errors
+                    let mut substrate_max_fee_per_gas = U256::zero();
+                    let mut substrate_max_priority_fee_per_gas = U256::zero();
+                    if max_fee_per_gas != U256::zero() {
+                        substrate_max_fee_per_gas = max_fee_per_gas
+                            .checked_div(U256::from(DECIMALS_VALUE))
+                            .ok_or(RunnerError {
+                                error: Error::<T>::GasPriceTooLow,
+                                weight,
+                            })?;
+                    }
+                    if max_priority_fee_per_gas != U256::zero() {
+                        substrate_max_priority_fee_per_gas = max_priority_fee_per_gas
+                            .checked_div(U256::from(DECIMALS_VALUE))
+                            .ok_or(RunnerError {
+                                error: Error::<T>::GasPriceTooLow,
+                                weight,
+                            })?;
+                    }
+                    // Calculate priority fee per gas
+                    let actual_priority_fee_per_gas = substrate_max_fee_per_gas
                         .saturating_sub(base_fee)
-                        .min(max_priority_fee_per_gas);
+                        .min(substrate_max_priority_fee_per_gas);
+
                     (
                         base_fee.saturating_add(actual_priority_fee_per_gas),
                         actual_priority_fee_per_gas,
@@ -905,16 +928,23 @@ where
     fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
         let source = T::AddressMapping::into_account_id(transfer.source);
         let target = T::AddressMapping::into_account_id(transfer.target);
-        T::Currency::transfer(
-            &source,
-            &target,
+        if let Some(substrate_value) = convert_decimals_from_evm::<BalanceOf<T>>(
             transfer
                 .value
                 .try_into()
                 .map_err(|_| ExitError::OutOfFund)?,
-            ExistenceRequirement::AllowDeath,
-        )
-        .map_err(|_| ExitError::OutOfFund)
+        ) {
+            return T::Currency::transfer(
+                &source,
+                &target,
+                substrate_value,
+                ExistenceRequirement::AllowDeath,
+            )
+            .map_err(|_| ExitError::OutOfFund)
+        }
+        Err(ExitError::Other(sp_std::borrow::Cow::Borrowed(
+            "Invalid Decimals",
+        )))
     }
 
     fn reset_balance(&mut self, _address: H160) {

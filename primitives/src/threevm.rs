@@ -7,18 +7,21 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::Weight;
+use frame_support::{dispatch::Weight, traits::WithdrawReasons};
 use frame_system::{pallet_prelude::BlockNumberFor, Config as ConfigSystem};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
-use sp_runtime::{DispatchError, DispatchResult};
+use sp_runtime::{
+    traits::{CheckedDiv, Zero},
+    DispatchError, DispatchResult, Saturating,
+};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
 };
 
-use circuit_runtime_types::{AssetId, EvmAddress};
+use circuit_runtime_types::{EvmAddress, TokenId};
 
 // Precompile pointers baked into the binary.
 // Genesis exists only to map hashes to pointers.
@@ -380,13 +383,13 @@ impl<T: ConfigSystem, Balance> ModuleOperations<T, Balance> for ThreeVmInfo<T, B
 }
 
 /// The index from which the endoded AssetId bytes will be encoded into an EVM address
-pub const H160_POSITION_ASSET_ID_TYPE: usize = 15;
+pub const H160_POSITION_ASSET_ID_TYPE: usize = 16;
 
 pub trait Erc20Mapping {
     /// Encode the AssetId to EvmAddress.
-    fn encode_evm_address(v: AssetId) -> Option<EvmAddress>;
+    fn encode_evm_address(v: TokenId) -> Option<EvmAddress>;
     /// Decode the AssetId from EvmAddress.
-    fn decode_evm_address(v: EvmAddress) -> Option<AssetId>;
+    fn decode_evm_address(v: EvmAddress) -> Option<TokenId>;
 }
 
 /// A mapping between `AccountId` and `EvmAddress`.
@@ -406,4 +409,44 @@ pub trait AddressMapping<AccountId> {
     /// Returns true if a given AccountId is associated with a given EvmAddress
     /// and false if is not.
     fn is_linked(account_id: &AccountId, evm: &EvmAddress) -> bool;
+}
+
+/// Convert decimal between TRN(12) and EVM(18) and therefore the 1_000_000 conversion.
+pub const DECIMALS_VALUE: u32 = 1_000_000u32;
+
+/// Convert decimal from native(TRN 12) to EVM(18).
+pub fn convert_decimals_to_evm<B: Zero + Saturating + From<u32>>(b: B) -> B {
+    if b.is_zero() {
+        return b
+    }
+    b.saturating_mul(DECIMALS_VALUE.into())
+}
+
+/// Convert decimal from native EVM(18) to TRN(12).
+pub fn convert_decimals_from_evm<
+    B: Zero + Saturating + CheckedDiv + PartialEq + Copy + From<u32>,
+>(
+    b: B,
+) -> Option<B> {
+    if b.is_zero() {
+        return Some(b)
+    }
+    let res = b
+        .checked_div(&Into::<B>::into(DECIMALS_VALUE))
+        .expect("divisor is non-zero; qed");
+
+    if res.saturating_mul(DECIMALS_VALUE.into()) == b {
+        Some(res)
+    } else {
+        None
+    }
+}
+
+pub fn get_tokens_precompile_address(index: u32) -> H160 {
+    let mut address = [9u8; 20];
+    let index_bytes = index.to_be_bytes().to_vec();
+    for byte_index in H160_POSITION_ASSET_ID_TYPE..20 {
+        address[byte_index] = index_bytes[byte_index - H160_POSITION_ASSET_ID_TYPE];
+    }
+    H160(address)
 }

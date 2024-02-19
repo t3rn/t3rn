@@ -25,7 +25,9 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -112,7 +114,7 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (1_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -134,18 +136,9 @@ parameter_types! {
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 3333;
     pub const PotId: PalletId = PalletId(*b"PotStake");
-    // pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-    //     (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-    //     (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-    //     (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-    //     (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-    //     (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-    //     (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-    //     (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-    //     (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-    //     (40_u64, evm_precompile_util::KnownPrecompile::Portal)
-    // ].into_iter().collect());
-    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
+    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(
+        precompiles::generate_precompile_set().into_iter().collect()
+    );
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
@@ -168,10 +161,10 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = pallet_3vm_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type OnCreate = ();
-    type PrecompilesType = ();
-    // type PrecompilesValue = PrecompilesValue;
+    type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
+    type PrecompilesValue = PrecompilesValue;
     // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
-    type PrecompilesValue = ();
+    // type PrecompilesValue = ();
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
@@ -206,11 +199,11 @@ impl pallet_3vm_account_mapping::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StorageDepositFee = StorageDepositFee;
 }
-
+/*
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
-        let mut address = [0u8; 20];
+        let mut address = [9u8; 20];
         let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
@@ -231,7 +224,7 @@ impl Erc20Mapping for Runtime {
         Some(asset_id)
     }
 }
-
+*/
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
     fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
@@ -240,6 +233,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
 
     fn is_self_contained(&self) -> bool {
+        log::info!("is_self_contained: {:?}", self);
         match self {
             RuntimeCall::Ethereum(call) => call.is_self_contained(),
             _ => false,
@@ -247,6 +241,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
     }
 
     fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        log::info!("check_self_contained: {:?}", self);
         match self {
             RuntimeCall::Ethereum(call) => call.check_self_contained(),
             _ => None,
@@ -259,6 +254,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
         dispatch_info: &DispatchInfoOf<RuntimeCall>,
         len: usize,
     ) -> Option<TransactionValidity> {
+        log::info!("validate_self_contained: {:?}", info);
         match self {
             RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
             _ => None,
@@ -271,6 +267,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
         dispatch_info: &DispatchInfoOf<RuntimeCall>,
         len: usize,
     ) -> Option<Result<(), TransactionValidityError>> {
+        log::info!("pre_dispatch_self_contained: {:?}", info);
         match self {
             RuntimeCall::Ethereum(call) =>
                 call.pre_dispatch_self_contained(info, dispatch_info, len),
@@ -283,6 +280,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
         info: Self::SignedInfo,
     ) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>>
     {
+        log::info!("apply_self_contained: {:?}", info);
         match self {
             call @ RuntimeCall::Ethereum(pallet_3vm_ethereum::Call::transact { .. }) =>
                 Some(call.dispatch(RuntimeOrigin::from(

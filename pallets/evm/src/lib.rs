@@ -100,7 +100,7 @@ pub use fp_evm::{
     PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
     Vicinity,
 };
-use t3rn_primitives::threevm::ThreeVm;
+use t3rn_primitives::threevm::{convert_decimals_to_evm, Erc20Mapping, ThreeVm};
 
 pub use self::{
     pallet::*,
@@ -139,6 +139,7 @@ pub mod pallet {
 
         /// Mapping from address to account id.
         type AddressMapping: AddressMapping<Self::AccountId>;
+
         /// Currency type for withdraw and balance storage.
         type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
 
@@ -494,6 +495,8 @@ pub mod pallet {
         Reentrancy,
         /// EIP-3607,
         TransactionMustComeFromEOA,
+        /// Invalid decimals
+        InvalidDecimals,
     }
 
     impl<T> From<InvalidEvmTransactionError> for Error<T> {
@@ -978,7 +981,9 @@ impl<T: Config> Pallet<T> {
         (
             Account {
                 nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-                balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+                balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+                    convert_decimals_to_evm::<<<T as pallet::Config>::Currency as frame_support::traits::fungible::Inspect<<T as frame_system::Config>::AccountId>>::Balance>(balance),
+                )),
             },
             T::DbWeight::get().reads(2),
         )
@@ -1101,7 +1106,6 @@ where
                 .unwrap_or_else(|_| C::NegativeImbalance::zero());
 
             let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
-            // Handle base fee. Can be either burned, rationed, etc ...
             OU::on_unbalanced(base_fee);
             return Some(tip)
         }

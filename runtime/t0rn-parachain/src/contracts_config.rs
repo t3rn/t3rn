@@ -25,7 +25,9 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -112,7 +114,11 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        // Original fee was  1_000_000_000 but since need to convert Balance decimals
+        // from 18 (EVM) to 12 (t3rn) the number was divided by 10^6
+        // If using another fee calculator the min gas price needs to be converted using
+        // t3rn_primitives::threevm::convert_decimals_from_evm<T>
+        (1_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -133,28 +139,20 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 3333;
-    // pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-    //     (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-    //     (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-    //     (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-    //     (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-    //     (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-    //     (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-    //     (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-    //     (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-    //     (40_u64, evm_precompile_util::KnownPrecompile::Portal)
-    // ].into_iter().collect());
-    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
+    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(
+        precompiles::generate_precompile_set().into_iter().collect()
+    );
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
 // pub struct Precompiles<Runtime> {
 //     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
 //     phantom: PhantomData<Runtime>,
-// }
+//}
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = EvmAddressMapping<Runtime>;
+    //type Erc20Mapping = Erc20Mapping;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
@@ -167,10 +165,9 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = pallet_3vm_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type OnCreate = ();
-    type PrecompilesType = ();
-    // type PrecompilesValue = PrecompilesValue;
+    type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
     // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
-    type PrecompilesValue = ();
+    type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
@@ -206,10 +203,11 @@ impl pallet_3vm_account_mapping::Config for Runtime {
     type StorageDepositFee = StorageDepositFee;
 }
 
+/*
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
-        let mut address = [0u8; 20];
+        let mut address = [9u8; 20];
         let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
@@ -230,7 +228,7 @@ impl Erc20Mapping for Runtime {
         Some(asset_id)
     }
 }
-
+*/
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
     fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;

@@ -31,6 +31,8 @@ pallet-3vm-evm               = { default-features = false, path = "../../../pall
 pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
 fp-storage                   = { workspace = true, default-features = false  }
 
+t3rn-primitives = { path = "../../../primitives", default-features = false }
+
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../../runtime/mock" }
 circuit-runtime-pallets = { path = "../../../runtime/common-pallets" }

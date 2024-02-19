@@ -1,4 +1,5 @@
 use super::*;
+pub use crate::contracts_config::UncheckedExtrinsic;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
@@ -12,9 +13,9 @@ pub type SignedExtra = (
     frame_system::CheckWeight<Runtime>,
     pallet_asset_tx_payment::ChargeAssetTxPayment<Runtime>,
 );
-/// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+// /Unchecked extrinsic type as expected by this runtime.
+//pub type UncheckedExtrinsic =
+//    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 

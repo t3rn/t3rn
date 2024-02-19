@@ -27,7 +27,9 @@ use sp_runtime::{
     transaction_validity::{TransactionValidity, TransactionValidityError},
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -130,15 +132,19 @@ parameter_types! {
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 42;
     pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-        (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-        (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-        (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-        (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-        (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-        (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-        (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-        (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-        (40_u64, evm_precompile_util::KnownPrecompile::Portal)
+         (sp_core::H160([0u8; 20]), evm_precompile_util::KnownPrecompile::ECRecover),
+         (sp_core::H160([1u8; 20]), evm_precompile_util::KnownPrecompile::Sha256),
+         (sp_core::H160([2u8; 20]), evm_precompile_util::KnownPrecompile::Ripemd160),
+         (sp_core::H160([3u8; 20]), evm_precompile_util::KnownPrecompile::Identity),
+         (sp_core::H160([4u8; 20]), evm_precompile_util::KnownPrecompile::Modexp),
+         (sp_core::H160([5u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS256),
+         (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
+         (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
+         (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
+         // TRN address
+         (get_tokens_precompile_address(0), evm_precompile_util::KnownPrecompile::Tokens),
+         // TST address
+         (get_tokens_precompile_address(1), evm_precompile_util::KnownPrecompile::Tokens)
     ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
@@ -159,7 +165,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ();
     type OnCreate = ();
-    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
+    type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
@@ -218,10 +224,11 @@ impl pallet_3vm_account_mapping::Config for Runtime {
     type StorageDepositFee = StorageDepositFee;
 }
 
+/*
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
-        let mut address = [0u8; 20];
+        let mut address = [9u8; 20];
         let asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
@@ -242,6 +249,7 @@ impl Erc20Mapping for Runtime {
         Some(asset_id)
     }
 }
+*/
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =

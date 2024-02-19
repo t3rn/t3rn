@@ -5,6 +5,7 @@ pub use pallet_3vm_evm_primitives::{
     PrecompileResult, PrecompileSet,
 };
 
+use frame_support::traits::Currency;
 use pallet_3vm_evm_primitives::{ExitError, PrecompileFailure};
 pub use pallet_evm_precompile_modexp::Modexp;
 pub use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
@@ -12,9 +13,28 @@ pub use pallet_evm_precompile_simple::{
     ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256,
 };
 use portal_precompile::PortalPrecompile;
+use precompile_util_solidity::data::EvmData;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
-pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
+use tokens_precompile::TokensPrecompile;
+
+pub const TOKENS_PRECOMPILE_PREFIX: &[u8] = &[9u8; 16];
+
+pub enum KnownPrecompile<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
+{
     // Ethereum precompiles:
     ECRecover,
     Sha256,
@@ -27,10 +47,25 @@ pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     ECRecoverPublicKey,
     // T3rn precompiles:
     Portal,
+    Tokens,
     Noop(T),
 }
 
-impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> KnownPrecompile<T>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
+{
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match self {
             // Ethereum:
@@ -39,12 +74,13 @@ impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
             KnownPrecompile::Ripemd160 => <Ripemd160 as Precompile>::execute(handle),
             KnownPrecompile::Identity => <Identity as Precompile>::execute(handle),
             KnownPrecompile::Modexp => <Modexp as Precompile>::execute(handle),
-            // // Non-Frontier specific nor Ethereum:
+            // Non-Frontier specific nor Ethereum:
             KnownPrecompile::Sha3FIPS256 => <Sha3FIPS256 as Precompile>::execute(handle),
             KnownPrecompile::Sha3FIPS512 => <Sha3FIPS512 as Precompile>::execute(handle),
             KnownPrecompile::ECRecoverPublicKey =>
                 <ECRecoverPublicKey as Precompile>::execute(handle),
             KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
+            KnownPrecompile::Tokens => TokensPrecompile::<T>::execute(handle),
             KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
                 ExitError::Other("Noop precompile".into()),
             )),
@@ -52,18 +88,64 @@ impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
                 "Unknown precompile".into(),
             ))),
         }
+        // TO DO: Map TokensPrecompile to related token EVM addresses using prefix
+        // (Need to update the PrecompileSet setup to support that !!!)
+        /*
+        match handle.code_address() {
+            a if &a.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX =>
+                TokensPrecompile::<T>::execute(handle),
+            //...
+            _ => PrecompileResult::Err(PrecompileFailure::from(ExitError::Other(
+                "Unknown precompile".into(),
+            )))
+         */
     }
 }
 
-pub struct Precompiles<T: pallet_3vm_evm::Config> {
+pub struct Precompiles<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
+{
     pub inner: BTreeMap<H160, KnownPrecompile<T>>,
     phantom: PhantomData<T>,
 }
 
-impl<T: pallet_3vm_evm::Config> Precompiles<T> {
-    pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> Precompiles<T>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
+{
+    // pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
+    //     Self {
+    //         inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
+    //         phantom: Default::default(),
+    //     }
+    // }
+
+    pub fn new(inner: BTreeMap<H160, KnownPrecompile<T>>) -> Self {
         Self {
-            inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
+            inner: inner.into_iter().map(|(k, v)| (k, v)).collect(),
             phantom: Default::default(),
         }
     }
@@ -73,7 +155,22 @@ impl<T: pallet_3vm_evm::Config> Precompiles<T> {
     }
 }
 
-impl<T: pallet_3vm_evm::Config> PrecompileSet for Precompiles<T> {
+impl<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config> PrecompileSet
+    for Precompiles<T>
+where
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
+{
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         self.inner
             .get(&handle.code_address())

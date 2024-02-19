@@ -64,7 +64,7 @@ export const handleXcmTransferCommand = async (
     const xcmWeightLimitParam =
       XcmTransferParameters.createWeightLimit(targetApi)
 
-    const keyring = new Keyring({type: 'sr25519'})
+    const keyring = new Keyring({ type: 'sr25519' })
     let signer = keyring.addFromUri(args.signer)
     if (args.signer == '//Circuit') {
       if (process.env.CIRCUIT_SIGNER_KEY === undefined) {
@@ -83,77 +83,83 @@ export const handleXcmTransferCommand = async (
     }
 
     if (args.type == 'relay') {
-        if (args.dest == 1000) {
-            await signAndSend(
-                    targetApi.tx.xcmPallet.limitedTeleportAssets(
-                        xcmDestParam,
-                        xcmBeneficiaryParam,
-                        xcmAssetsParam,
-                        xcmAssetFeeItem,
-                        xcmWeightLimitParam
-                    ),
-                    targetApi,
-                    signer,
-            )
-        }
-        else {
-            await signAndSend(
-                targetApi.tx.xcmPallet.limitedReserveTransferAssets(
-                    xcmDestParam,
-                    xcmBeneficiaryParam,
-                    xcmAssetsParam,
-                    xcmAssetFeeItem,
-                    xcmWeightLimitParam
-                ),
-                targetApi,
-                signer,
-            )
-        }
-    }
-    else if (args.type == 'para' && args.targetAsset == 'TRN') {
-        const xcmNativeAssetAmount = XcmTransferParameters.createNativeAssetAmount(targetApi, args.targetAmount)
-        const xcmFeeAsset = XcmTransferParameters.createAssets(targetApi, 'ROC', args.type, 2000000000000)
+      if (args.dest == 1000) {
         await signAndSend(
-            targetApi.tx.withdrawTeleport.withdrawAndTeleport(
-                xcmDestParam,
-                xcmBeneficiaryParam,
-                xcmNativeAssetAmount,
-                xcmFeeAsset
-            ),
-            targetApi,
-            signer,
-        )
-    } else if (args.type == 'system' && args.targetAsset == 'TRN') {
-        await signAndSend(
-          targetApi.tx.polkadotXcm.limitedTeleportAssets(
-              xcmDestParam,
-              xcmBeneficiaryParam,
-              xcmAssetsParam,
-              xcmAssetFeeItem,
-              xcmWeightLimitParam,
+          targetApi.tx.xcmPallet.limitedTeleportAssets(
+            xcmDestParam,
+            xcmBeneficiaryParam,
+            xcmAssetsParam,
+            xcmAssetFeeItem,
+            xcmWeightLimitParam,
           ),
           targetApi,
           signer,
         )
-    } else {
+      } else {
         await signAndSend(
-          targetApi.tx.polkadotXcm
-              .limitedReserveTransferAssets(
-                  xcmDestParam,
-                  xcmBeneficiaryParam,
-                  xcmAssetsParam,
-                  xcmAssetFeeItem,
-                  xcmWeightLimitParam,
-              ),
-              targetApi,
-              signer,
+          targetApi.tx.xcmPallet.limitedReserveTransferAssets(
+            xcmDestParam,
+            xcmBeneficiaryParam,
+            xcmAssetsParam,
+            xcmAssetFeeItem,
+            xcmWeightLimitParam,
+          ),
+          targetApi,
+          signer,
         )
+      }
+    } else if (args.type == 'para' && args.targetAsset == 'TRN') {
+      const xcmNativeAssetAmount =
+        XcmTransferParameters.createNativeAssetAmount(
+          targetApi,
+          args.targetAmount,
+        )
+      const xcmFeeAsset = XcmTransferParameters.createAssets(
+        targetApi,
+        'ROC',
+        args.type,
+        2000000000000,
+      )
+      await signAndSend(
+        targetApi.tx.withdrawTeleport.withdrawAndTeleport(
+          xcmDestParam,
+          xcmBeneficiaryParam,
+          xcmNativeAssetAmount,
+          xcmFeeAsset,
+        ),
+        targetApi,
+        signer,
+      )
+    } else if (args.type == 'system' && args.targetAsset == 'TRN') {
+      await signAndSend(
+        targetApi.tx.polkadotXcm.limitedTeleportAssets(
+          xcmDestParam,
+          xcmBeneficiaryParam,
+          xcmAssetsParam,
+          xcmAssetFeeItem,
+          xcmWeightLimitParam,
+        ),
+        targetApi,
+        signer,
+      )
+    } else {
+      await signAndSend(
+        targetApi.tx.polkadotXcm.limitedReserveTransferAssets(
+          xcmDestParam,
+          xcmBeneficiaryParam,
+          xcmAssetsParam,
+          xcmAssetFeeItem,
+          xcmWeightLimitParam,
+        ),
+        targetApi,
+        signer,
+      )
     }
-    await new Promise(f => setTimeout(f, 10000))
+    await new Promise((f) => setTimeout(f, 10000))
     spinner.succeed(colorLogMsg('SUCCESS', `Sent XCM transfer`))
     spinner.stopAndPersist({
-        symbol: '🎉',
-        text: colorLogMsg('SUCCESS', `Sent XCM transfer`),
+      symbol: '🎉',
+      text: colorLogMsg('SUCCESS', `Sent XCM transfer`),
     })
   } catch (e) {
     spinner.fail(colorLogMsg('ERROR', e))
