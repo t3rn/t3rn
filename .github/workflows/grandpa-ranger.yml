@@ -77,7 +77,7 @@ jobs:
 
       - name: Annotate Code Linting Results
         if: github.event_name == 'pull_request'
-        uses: ataylorme/eslint-annotate-action@v2
+        uses: ataylorme/eslint-annotate-action@v3
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/grandpa-ranger/eslint_report.json
