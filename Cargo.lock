@@ -792,6 +792,17 @@ checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
 name = "bstr"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba3569f383e8f1598449f1a423e72e99569137b47740b1da11ef19af3d5c3223"
+dependencies = [
+ "lazy_static",
+ "memchr",
+ "regex-automata 0.1.10",
+]
+
+[[package]]
+name = "bstr"
 version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c2f7349907b712260e64b0afe2f84692af14a454be26187d9df565c7f69266a"
@@ -1021,7 +1032,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-mock-runtime"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
@@ -1033,6 +1044,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "hex",
  "hex-literal 0.3.4",
  "libsecp256k1",
  "log",
@@ -1067,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-pallets"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1111,7 +1123,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.86.1-rc.0",
+ "pallet-contracts 1.87.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-dynamic-fee",
@@ -1172,7 +1184,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-types"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -1186,7 +1198,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-node"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-standalone-runtime",
  "clap",
@@ -1240,7 +1252,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-runtime"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -1265,7 +1277,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.86.1-rc.0",
+ "pallet-contracts 1.87.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -3276,7 +3288,7 @@ dependencies = [
 
 [[package]]
 name = "fc-cli"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "clap",
@@ -3302,7 +3314,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "async-trait",
  "fp-consensus",
@@ -3317,7 +3329,7 @@ dependencies = [
 
 [[package]]
 name = "fc-db"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "async-trait",
  "ethereum",
@@ -3350,7 +3362,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "ethereum",
@@ -3380,7 +3392,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3450,7 +3462,7 @@ dependencies = [
 
 [[package]]
 name = "fc-storage"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3682,14 +3694,14 @@ dependencies = [
  "ethereum-types",
  "fp-evm",
  "frame-support",
- "num_enum",
+ "num_enum 0.6.1",
  "parity-scale-codec",
  "sp-std 8.0.0",
 ]
 
 [[package]]
 name = "fp-evm"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "evm",
@@ -4313,7 +4325,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "759c97c1e17c55525b57192c06a267cda0ac5210b222d6b82189a2338fa1c13d"
 dependencies = [
  "aho-corasick",
- "bstr",
+ "bstr 1.6.2",
  "fnv",
  "log",
  "regex",
@@ -6731,11 +6743,31 @@ dependencies = [
 
 [[package]]
 name = "num_enum"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f646caf906c20226733ed5b1374287eb97e3c2a5c227ce668c1f2ce20ae57c9"
+dependencies = [
+ "num_enum_derive 0.5.11",
+]
+
+[[package]]
+name = "num_enum"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a015b430d3c108a207fd776d2e2196aaf8b1cf8cf93253e3a097ff3085076a1"
 dependencies = [
- "num_enum_derive",
+ "num_enum_derive 0.6.1",
+]
+
+[[package]]
+name = "num_enum_derive"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcbff9bc912032c62bf65ef1d5aea88983b420f4f839db1e9b0c281a25c9c799"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -6922,7 +6954,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-3vm"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "frame-benchmarking",
@@ -6963,6 +6995,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
+ "hex-literal 0.4.1",
  "libsecp256k1",
  "pallet-balances",
  "pallet-evm",
@@ -6978,7 +7012,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-account-manager"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7072,7 +7106,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-attesters"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7214,7 +7248,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7246,7 +7280,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit-vacuum"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7272,7 +7306,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-clock"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata 15.1.0",
@@ -7311,7 +7345,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "array-bytes",
  "assert_matches",
@@ -7424,7 +7458,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "frame-benchmarking",
@@ -7461,7 +7495,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry-rpc-runtime-api"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "pallet-contracts-registry",
  "parity-scale-codec",
@@ -7472,7 +7506,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "fp-dynamic-fee",
  "fp-evm",
@@ -7594,11 +7628,12 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 8.0.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
 name = "pallet-evm"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "environmental",
  "evm",
@@ -7626,7 +7661,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7903,7 +7938,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7935,7 +7970,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-portal-rpc-runtime-api",
@@ -7951,7 +7986,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc-runtime-api"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "pallet-portal",
  "parity-scale-codec",
@@ -7996,7 +8031,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-rewards"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8321,7 +8356,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -8351,7 +8386,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-xdns-rpc-runtime-api",
@@ -8366,7 +8401,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc-runtime-api"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
@@ -9848,9 +9883,11 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "pallet-assets",
  "pallet-evm",
  "pallet-portal",
  "parity-scale-codec",
+ "precompile-util-solidity",
  "rlp",
  "sp-std 8.0.0",
  "t3rn-mini-mock-runtime",
@@ -9865,9 +9902,12 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-util"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
  "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
@@ -9879,6 +9919,36 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "portal-precompile",
+ "precompile-util-solidity",
+ "sp-core",
+ "sp-std 8.0.0",
+ "tokens-precompile",
+]
+
+[[package]]
+name = "precompile-util-macro"
+version = "0.1.0"
+dependencies = [
+ "num_enum 0.5.11",
+ "proc-macro2",
+ "quote",
+ "sha3",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "precompile-util-solidity"
+version = "1.87.0-rc.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "num_enum 0.5.11",
+ "pallet-evm",
+ "similar-asserts",
  "sp-core",
  "sp-std 8.0.0",
 ]
@@ -12389,6 +12459,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "similar"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32fea41aca09ee824cc9724996433064c89f7777e60762749a4170a14abbfa21"
+dependencies = [
+ "bstr 0.2.17",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "similar-asserts"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e041bb827d1bfca18f213411d51b665309f1afb37a04a5d1464530e13779fc0f"
+dependencies = [
+ "console",
+ "similar",
+]
+
+[[package]]
 name = "siphasher"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13799,7 +13889,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -13890,7 +13980,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -13933,7 +14023,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.86.1-rc.0",
+ "pallet-contracts 1.87.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -13968,6 +14058,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",
+ "precompile-util",
  "scale-info",
  "serde",
  "smallvec",
@@ -13995,7 +14086,7 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-collator"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -14073,7 +14164,7 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-runtime"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -14112,7 +14203,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.86.1-rc.0",
+ "pallet-contracts 1.87.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -14173,7 +14264,7 @@ dependencies = [
 
 [[package]]
 name = "t2rn"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-primitives-core",
@@ -14242,7 +14333,7 @@ dependencies = [
 
 [[package]]
 name = "t2rn-parachain-runtime"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -14271,7 +14362,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.86.1-rc.0",
+ "pallet-contracts 1.87.0-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -14296,6 +14387,7 @@ dependencies = [
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
  "polkadot-runtime-common",
+ "precompile-util",
  "scale-info",
  "serde",
  "sp-api",
@@ -14320,7 +14412,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-abi"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -14394,7 +14486,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-collator"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -14536,7 +14628,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-primitives"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -14601,7 +14693,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -14626,7 +14718,7 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-collator"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "clap",
  "color-print",
@@ -14704,7 +14796,7 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-runtime"
-version = "1.86.1-rc.0"
+version = "1.87.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -14965,6 +15057,29 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tokens-precompile"
+version = "1.87.0-rc.0"
+dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-types",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.4.1",
+ "num_enum 0.5.11",
+ "pallet-3vm-account-mapping",
+ "pallet-assets",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-util-macro",
+ "precompile-util-solidity",
+ "sp-core",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "t3rn-primitives",
+]
 
 [[package]]
 name = "tokio"

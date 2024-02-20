@@ -47,7 +47,7 @@ t3rn-primitives                  = { default-features = false, path = "../../pri
 t3rn-types                       = { path = "../../types", default-features = false }
 
 # Smart contracts VMs
-#evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
+evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
 pallet-3vm                      = { default-features = false, path = "../../pallets/3vm" }
 pallet-3vm-account-mapping      = { default-features = false, path = "../../pallets/3vm/account-mapping" }
 pallet-3vm-contracts            = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
@@ -149,7 +149,7 @@ std = [
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
   #  "pallet-evm-rpc-runtime-api/std",
-  #  "evm-precompile-util/std",
+  "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-contracts-registry/std",
   "pallet-balances/std",

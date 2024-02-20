@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.87.0-rc.0] - 2024-02-19
+### :sparkles: New Features
+- [`59a6a97`](https://github.com/t3rn/t3rn/commit/59a6a97601a02ba53bb5d2ef25943add0e25f8b8) - Substrate tokens ERC20 precompile,  EVM CLI, EVM to Substrate decimals conversion, Working EVM Transfers *(PR [#1563](https://github.com/t3rn/t3rn/pull/1563) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.86.1-rc.0] - 2024-02-06
 ### :bug: Bug Fixes
 - [`244968c`](https://github.com/t3rn/t3rn/commit/244968c3976b75ab029a83da9cabaee3af042d8c) - update docs sidebar *(PR [#1552](https://github.com/t3rn/t3rn/pull/1552) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
@@ -2065,3 +2070,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.85.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.84.1-rc.0...v1.85.0-rc.0
 [v1.86.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.85.0-rc.0...v1.86.0-rc.0
 [v1.86.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.0-rc.0...v1.86.1-rc.0
+[v1.87.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.1-rc.0...v1.87.0-rc.0

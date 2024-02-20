@@ -11,6 +11,7 @@ pub mod circuit_config;
 pub mod contracts_config;
 pub mod hooks;
 pub mod parachain_config;
+pub mod precompiles;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod treasuries_config;
@@ -70,6 +71,7 @@ pub use sp_runtime::BuildStorage;
 use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
 
 pub const TRN: Balance = UNIT;
+pub const TST: Balance = UNIT * 1_000_000;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -745,7 +747,7 @@ impl_runtime_apis! {
         fn extrinsic_filter(
             xts: Vec<<Block as BlockT>::Extrinsic>,
         ) -> Vec<pallet_3vm_ethereum::Transaction> {
-            xts.into_iter().filter_map(|xt| match xt.function {
+            xts.into_iter().filter_map(|xt| match xt.0.function {
                 RuntimeCall::Ethereum(pallet_3vm_ethereum::Call::transact { transaction }) => Some(transaction),
                 _ => None
             }).collect::<Vec<pallet_3vm_ethereum::Transaction>>()

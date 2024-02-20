@@ -24,7 +24,7 @@
 
 use circuit_runtime_types::{AccountIndex, EvmAddress};
 use frame_support::{
-    ensure,
+    ensure, log,
     pallet_prelude::*,
     traits::{Currency, ExistenceRequirement, IsType, OnKilledAccount},
     transactional,
@@ -42,7 +42,7 @@ use sp_runtime::{
     MultiAddress,
 };
 use sp_std::{marker::PhantomData, vec::Vec};
-use t3rn_primitives::threevm::AddressMapping;
+use t3rn_primitives::{attesters::ETH_SIGNED_MESSAGE_PREFIX, threevm::AddressMapping};
 //pub use weights::WeightInfo;
 
 //#[cfg(feature = "runtime-benchmarks")]
@@ -79,19 +79,8 @@ pub fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
 
 /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
 pub fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-    let prefix: &'static [u8] = b"T3rn claim EVM account with:";
-    let mut l = prefix.len() + what.len() + extra.len();
-    let mut rev = Vec::new();
-    while l > 0 {
-        rev.push(b'0' + (l % 10) as u8);
-        l /= 10;
-    }
-    let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-    v.extend(rev.into_iter().rev());
-    v.extend_from_slice(&prefix[..]);
-    v.extend_from_slice(what);
-    v.extend_from_slice(extra);
-    v
+    let message_digest = keccak_256([what, extra].concat().as_slice());
+    [&ETH_SIGNED_MESSAGE_PREFIX[..], &message_digest[..]].concat()
 }
 
 #[frame_support::pallet]
@@ -146,6 +135,8 @@ pub mod pallet {
         BadSignature,
         /// Invalid signature
         InvalidSignature,
+        // Pre-image address not matching recovered
+        PreImageAddressNotMatchingRecovered,
         /// Account ref count is not zero
         NonZeroRefCount,
     }
@@ -186,7 +177,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             eth_address: EvmAddress,
             eth_signature: EcdsaSignature,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
             // check if user already mapped account
@@ -199,11 +190,18 @@ pub mod pallet {
                 Error::<T>::EthAddressHasMapped
             );
 
-            // recover evm address from signature
-            let data = eth_address.using_encoded(to_ascii_hex);
+            let data = eth_address.0.as_slice();
+
             let address = Self::eth_recover(&eth_signature, &data, &[][..])
                 .ok_or(Error::<T>::BadSignature)?;
-            ensure!(eth_address == address, Error::<T>::InvalidSignature);
+
+            ensure!(
+                eth_address == address,
+                Error::<T>::PreImageAddressNotMatchingRecovered
+            );
+
+            Accounts::<T>::insert(eth_address, &who);
+            EvmAddresses::<T>::insert(&who, eth_address);
 
             // check if the evm padded address already exists
             let account_id = T::AddressMapping::into_account_id(&eth_address);
@@ -226,15 +224,12 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )?;
 
-            Accounts::<T>::insert(eth_address, &who);
-            EvmAddresses::<T>::insert(&who, eth_address);
-
             Self::deposit_event(Event::ClaimAccount {
                 account_id: who,
                 evm_address: eth_address,
             });
 
-            Ok(())
+            Ok(Pays::No.into())
         }
 
         /// Claim account mapping between Substrate accounts and a generated EVM
@@ -243,7 +238,7 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
         #[transactional]
-        pub fn claim_default_account(origin: OriginFor<T>) -> DispatchResult {
+        pub fn claim_default_account(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
             // ensure account_id has not been mapped
@@ -267,7 +262,7 @@ pub mod pallet {
                 evm_address: eth_address,
             });
 
-            Ok(())
+            Ok(Pays::No.into())
         }
     }
 }
@@ -291,7 +286,8 @@ impl<T: Config> Pallet<T> {
     pub fn eth_sign(secret: &libsecp256k1::SecretKey, _who: &T::AccountId) -> EcdsaSignature {
         let address = Self::eth_address(secret);
 
-        let what = address.using_encoded(to_ascii_hex);
+        let what = address.0.as_slice();
+        // dbg!("{:?}", what);
         let msg = keccak_256(&Self::ethereum_signable_message(&what, &[][..]));
         let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
         let mut r = [0u8; 65];
@@ -303,19 +299,8 @@ impl<T: Config> Pallet<T> {
 
     // Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
     fn ethereum_signable_message(what: &[u8], extra: &[u8]) -> Vec<u8> {
-        let prefix: &'static [u8] = b"T3rn claim EVM account with:";
-        let mut l = prefix.len() + what.len() + extra.len();
-        let mut rev = Vec::new();
-        while l > 0 {
-            rev.push(b'0' + (l % 10) as u8);
-            l /= 10;
-        }
-        let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-        v.extend(rev.into_iter().rev());
-        v.extend_from_slice(&prefix[..]);
-        v.extend_from_slice(what);
-        v.extend_from_slice(extra);
-        v
+        let message_digest = keccak_256([what, extra].concat().as_slice());
+        [&ETH_SIGNED_MESSAGE_PREFIX[..], &message_digest[..]].concat()
     }
 
     // Attempts to recover the Ethereum address from a message signature signed by using
@@ -332,8 +317,14 @@ impl<T: Config> Pallet<T> {
 // Creates a an EvmAddress from an AccountId by appending the bytes "evm:" to
 // the account_id and hashing it.
 fn account_to_default_evm_address(account_id: &impl Encode) -> EvmAddress {
-    let payload = (b"evm:", account_id);
-    EvmAddress::from_slice(&payload.using_encoded(blake2_256)[0..20])
+    EvmAddress::from_slice(&account_id.encode().as_slice()[12..])
+}
+
+fn create_default_substrate_address(address: &EvmAddress) -> AccountId32 {
+    let mut data: [u8; 32] = [0u8; 32];
+    data[0..4].copy_from_slice(b"evm:");
+    data[4..24].copy_from_slice(&address[..]);
+    AccountId32::from(data)
 }
 
 pub struct EvmAddressMapping<T>(sp_std::marker::PhantomData<T>);
@@ -345,12 +336,13 @@ where
     // Returns the AccountId used go generate the given EvmAddress.
     fn into_account_id(address: &EvmAddress) -> T::AccountId {
         if let Some(acc) = Accounts::<T>::get(address) {
+            log::info!(
+                "AddressMapping::into_account_id - found matching account: {:?}",
+                acc
+            );
             acc
         } else {
-            let mut data: [u8; 32] = [0u8; 32];
-            data[0..4].copy_from_slice(b"evm:");
-            data[4..24].copy_from_slice(&address[..]);
-            AccountId32::from(data).into()
+            create_default_substrate_address(address).into()
         }
     }
 
@@ -405,12 +397,10 @@ where
     // Returns the AccountId used go generate the given EvmAddress.
     fn into_account_id(address: EvmAddress) -> T::AccountId {
         if let Some(acc) = Accounts::<T>::get(&address) {
+            log::info!("into_account_id - found matching account: {:?}", acc);
             acc
         } else {
-            let mut data: [u8; 32] = [0u8; 32];
-            data[0..4].copy_from_slice(b"evm:");
-            data[4..24].copy_from_slice(&address[..]);
-            AccountId32::from(data).into()
+            create_default_substrate_address(&address).into()
         }
     }
 }
