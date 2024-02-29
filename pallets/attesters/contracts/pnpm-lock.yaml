@@ -38,8 +38,8 @@ devDependencies:
     specifier: ^2.0.6
     version: 2.0.6(@nomiclabs/hardhat-ethers@2.2.3)(@types/sinon-chai@3.2.9)(ethereum-waffle@4.0.10)(ethers@5.7.2)(hardhat@2.17.0)
   '@openzeppelin/contracts':
-    specifier: ^4.9.3
-    version: 4.9.3
+    specifier: ^4.9.6
+    version: 4.9.6
   '@typechain/ethers-v5':
     specifier: ^10.2.1
     version: 10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2)(ethers@5.7.2)(typechain@8.3.0)(typescript@5.1.6)
@@ -1099,8 +1099,8 @@ packages:
       hardhat: 2.17.0(ts-node@10.9.1)(typescript@5.1.6)
     dev: true
 
-  /@openzeppelin/contracts@4.9.3:
-    resolution: {integrity: sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==}
+  /@openzeppelin/contracts@4.9.6:
+    resolution: {integrity: sha512-xSmezSupL+y9VkHZJGDoCBpmnB2ogM13ccaYDWqJTfS3dbuHkgjuwDFUmaFauBCboQMGB/S5UqUl2y54X99BmA==}
     dev: true
 
   /@openzeppelin/merkle-tree@1.0.5:
