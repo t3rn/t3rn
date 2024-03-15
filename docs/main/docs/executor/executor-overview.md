@@ -108,7 +108,7 @@ export default {
   },
 ```
 
-Revisit [arbitrage strategy section](#arbitrage-strategy) for more details on the arbitrage strategy configuration.
+Revisit [arbitrage strategy section](#how-to-run-t3rns-default-executor-with-arbitrage-strategy) for more details on the arbitrage strategy configuration.
 
 <img height="32%" src="/img/executor-running.png"/>
 
