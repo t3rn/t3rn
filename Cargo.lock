@@ -9908,6 +9908,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-assets",
+ "pallet-balances",
  "pallet-evm",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",

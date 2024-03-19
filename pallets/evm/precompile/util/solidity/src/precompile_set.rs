@@ -19,15 +19,17 @@
 //! default and must be disabled explicely throught type annotations.
 
 use crate::{revert, EvmResult, StatefulPrecompile};
-use pallet_3vm_evm_primitives::{
-    ExitError, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult, PrecompileSet,
-};
 use frame_support::pallet_prelude::Get;
 use impl_trait_for_tuples::impl_for_tuples;
 use pallet_3vm_evm::AddressMapping;
+use pallet_3vm_evm_primitives::{
+    ExitError, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
+    PrecompileResult, PrecompileSet,
+};
 use sp_core::H160;
 use sp_std::{
-    cell::RefCell, collections::btree_map::BTreeMap, marker::PhantomData, ops::RangeInclusive, vec, vec::Vec,
+    cell::RefCell, collections::btree_map::BTreeMap, marker::PhantomData, ops::RangeInclusive, vec,
+    vec::Vec,
 };
 
 // CONFIGURATION TYPES
@@ -94,7 +96,10 @@ impl DelegateCallSupport for AllowDelegateCall {
     }
 }
 
-pub fn is_precompile_or_fail<R: pallet_3vm_evm::Config>(address: H160, gas: u64) -> EvmResult<bool> {
+pub fn is_precompile_or_fail<R: pallet_3vm_evm::Config>(
+    address: H160,
+    gas: u64,
+) -> EvmResult<bool> {
     match <R as pallet_3vm_evm::Config>::PrecompilesValue::get().is_precompile(address, gas) {
         IsPrecompileResult::Answer { is_precompile, .. } => Ok(is_precompile),
         IsPrecompileResult::OutOfGas => Err(PrecompileFailure::Error {
@@ -141,11 +146,11 @@ pub struct PrecompileAt<A, P, R = ForbidRecursion, D = ForbidDelegateCall> {
 }
 
 impl<A, P, R, D> PrecompileSetFragment for PrecompileAt<A, P, R, D>
-    where
-        A: Get<H160>,
-        P: Precompile,
-        R: RecursionLimit,
-        D: DelegateCallSupport,
+where
+    A: Get<H160>,
+    P: Precompile,
+    R: RecursionLimit,
+    D: DelegateCallSupport,
 {
     #[inline(always)]
     fn new() -> Self {
@@ -161,12 +166,14 @@ impl<A, P, R, D> PrecompileSetFragment for PrecompileAt<A, P, R, D>
 
         // Check if this is the address of the precompile.
         if A::get() != code_address {
-            return None;
+            return None
         }
 
         // Check DELEGATECALL config.
         if !D::allow_delegate_call() && code_address != handle.context().address {
-            return Some(Err(revert("cannot be called with DELEGATECALL or CALLCODE")));
+            return Some(Err(revert(
+                "cannot be called with DELEGATECALL or CALLCODE",
+            )))
         }
 
         // Check and increase recursion level if needed.
@@ -174,11 +181,11 @@ impl<A, P, R, D> PrecompileSetFragment for PrecompileAt<A, P, R, D>
             match self.current_recursion_level.try_borrow_mut() {
                 Ok(mut recursion_level) => {
                     if *recursion_level > max_recursion_level {
-                        return Some(Err(revert("precompile is called with too high nesting")));
+                        return Some(Err(revert("precompile is called with too high nesting")))
                     }
 
                     *recursion_level += 1;
-                }
+                },
                 // We don't hold the borrow and are in single-threaded code, thus we should
                 // not be able to fail borrowing in nested calls.
                 Err(_) => return Some(Err(revert("couldn't check precompile nesting"))),
@@ -192,7 +199,7 @@ impl<A, P, R, D> PrecompileSetFragment for PrecompileAt<A, P, R, D>
             match self.current_recursion_level.try_borrow_mut() {
                 Ok(mut recursion_level) => {
                     *recursion_level -= 1;
-                }
+                },
                 // We don't hold the borrow and are in single-threaded code, thus we should
                 // not be able to fail borrowing in nested calls.
                 Err(_) => return Some(Err(revert("couldn't check precompile nesting"))),
@@ -228,11 +235,11 @@ pub struct StatefulPrecompileAt<A, P, R = ForbidRecursion, D = ForbidDelegateCal
 }
 
 impl<A, P, R, D> PrecompileSetFragment for StatefulPrecompileAt<A, P, R, D>
-    where
-        A: Get<H160>,
-        P: StatefulPrecompile,
-        R: RecursionLimit,
-        D: DelegateCallSupport,
+where
+    A: Get<H160>,
+    P: StatefulPrecompile,
+    R: RecursionLimit,
+    D: DelegateCallSupport,
 {
     #[inline(always)]
     fn new() -> Self {
@@ -249,12 +256,14 @@ impl<A, P, R, D> PrecompileSetFragment for StatefulPrecompileAt<A, P, R, D>
 
         // Check if this is the address of the precompile.
         if A::get() != code_address {
-            return None;
+            return None
         }
 
         // Check DELEGATECALL config.
         if !D::allow_delegate_call() && code_address != handle.context().address {
-            return Some(Err(revert("cannot be called with DELEGATECALL or CALLCODE")));
+            return Some(Err(revert(
+                "cannot be called with DELEGATECALL or CALLCODE",
+            )))
         }
 
         // Check and increase recursion level if needed.
@@ -262,11 +271,11 @@ impl<A, P, R, D> PrecompileSetFragment for StatefulPrecompileAt<A, P, R, D>
             match self.current_recursion_level.try_borrow_mut() {
                 Ok(mut recursion_level) => {
                     if *recursion_level > max_recursion_level {
-                        return Some(Err(revert("precompile is called with too high nesting")));
+                        return Some(Err(revert("precompile is called with too high nesting")))
                     }
 
                     *recursion_level += 1;
-                }
+                },
                 // We don't hold the borrow and are in single-threaded code, thus we should
                 // not be able to fail borrowing in nested calls.
                 Err(_) => return Some(Err(revert("couldn't check precompile nesting"))),
@@ -280,7 +289,7 @@ impl<A, P, R, D> PrecompileSetFragment for StatefulPrecompileAt<A, P, R, D>
             match self.current_recursion_level.try_borrow_mut() {
                 Ok(mut recursion_level) => {
                     *recursion_level -= 1;
-                }
+                },
                 // We don't hold the borrow and are in single-threaded code, thus we should
                 // not be able to fail borrowing in nested calls.
                 Err(_) => return Some(Err(revert("couldn't check precompile nesting"))),
@@ -316,12 +325,12 @@ pub struct PrecompileSetStartingWith<A, P, V, R = ForbidRecursion, D = ForbidDel
 }
 
 impl<A, P, V, R, D> PrecompileSetFragment for PrecompileSetStartingWith<A, P, V, R, D>
-    where
-        A: Get<&'static [u8]>,
-        P: PrecompileSet + Default,
-        R: RecursionLimit,
-        D: DelegateCallSupport,
-        V: pallet_3vm_evm::Config,
+where
+    A: Get<&'static [u8]>,
+    P: PrecompileSet + Default,
+    R: RecursionLimit,
+    D: DelegateCallSupport,
+    V: pallet_3vm_evm::Config,
 {
     #[inline(always)]
     fn new() -> Self {
@@ -337,12 +346,14 @@ impl<A, P, V, R, D> PrecompileSetFragment for PrecompileSetStartingWith<A, P, V,
         let code_address = handle.code_address();
 
         if !is_precompile_or_fail::<V>(code_address, handle.remaining_gas()).ok()? {
-            return None;
+            return None
         }
 
         // Check DELEGATECALL config.
         if !D::allow_delegate_call() && code_address != handle.context().address {
-            return Some(Err(revert("cannot be called with DELEGATECALL or CALLCODE")));
+            return Some(Err(revert(
+                "cannot be called with DELEGATECALL or CALLCODE",
+            )))
         }
 
         // Check and increase recursion level if needed.
@@ -352,11 +363,11 @@ impl<A, P, V, R, D> PrecompileSetFragment for PrecompileSetStartingWith<A, P, V,
                     let recursion_level = recursion_level_map.entry(code_address).or_insert(0);
 
                     if *recursion_level > max_recursion_level {
-                        return Some(Err(revert("precompile is called with too high nesting")));
+                        return Some(Err(revert("precompile is called with too high nesting")))
                     }
 
                     *recursion_level += 1;
-                }
+                },
                 // We don't hold the borrow and are in single-threaded code, thus we should
                 // not be able to fail borrowing in nested calls.
                 Err(_) => return Some(Err(revert("couldn't check precompile nesting"))),
@@ -375,7 +386,7 @@ impl<A, P, V, R, D> PrecompileSetFragment for PrecompileSetStartingWith<A, P, V,
                     };
 
                     *recursion_level -= 1;
-                }
+                },
                 // We don't hold the borrow and are in single-threaded code, thus we should
                 // not be able to fail borrowing in nested calls.
                 Err(_) => return Some(Err(revert("couldn't check precompile nesting"))),
@@ -388,7 +399,7 @@ impl<A, P, V, R, D> PrecompileSetFragment for PrecompileSetStartingWith<A, P, V,
     #[inline(always)]
     fn is_precompile(&self, address: H160, remaining_gas: u64) -> IsPrecompileResult {
         if address.as_bytes().starts_with(A::get()) {
-            return self.precompile_set.is_precompile(address, remaining_gas);
+            return self.precompile_set.is_precompile(address, remaining_gas)
         }
         IsPrecompileResult::Answer {
             is_precompile: false,
@@ -408,8 +419,8 @@ impl<A, P, V, R, D> PrecompileSetFragment for PrecompileSetStartingWith<A, P, V,
 pub struct RevertPrecompile<A>(PhantomData<A>);
 
 impl<A> PrecompileSetFragment for RevertPrecompile<A>
-    where
-        A: Get<H160>,
+where
+    A: Get<H160>,
 {
     #[inline(always)]
     fn new() -> Self {
@@ -500,10 +511,10 @@ pub struct PrecompilesInRangeInclusive<R, P> {
 }
 
 impl<S, E, P> PrecompileSetFragment for PrecompilesInRangeInclusive<(S, E), P>
-    where
-        S: Get<H160>,
-        E: Get<H160>,
-        P: PrecompileSetFragment,
+where
+    S: Get<H160>,
+    E: Get<H160>,
+    P: PrecompileSetFragment,
 {
     fn new() -> Self {
         Self {

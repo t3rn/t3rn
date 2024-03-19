@@ -3,7 +3,7 @@
 extern crate alloc;
 
 pub use pallet_3vm_evm_primitives::{
-    ExitError, ExitRevert, ExitSucceed, PrecompileFailure, PrecompileOutput, PrecompileHandle
+    ExitError, ExitRevert, ExitSucceed, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 };
 use sp_std::{borrow, borrow::ToOwned};
 
@@ -11,8 +11,8 @@ pub mod costs;
 pub mod data;
 pub mod handle;
 pub mod modifier;
-pub mod substrate;
 pub mod precompile_set;
+pub mod substrate;
 
 //#[cfg(feature = "precompile-testing")]
 pub mod testing;
