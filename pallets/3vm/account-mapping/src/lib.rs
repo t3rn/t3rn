@@ -200,9 +200,6 @@ pub mod pallet {
                 Error::<T>::PreImageAddressNotMatchingRecovered
             );
 
-            Accounts::<T>::insert(eth_address, &who);
-            EvmAddresses::<T>::insert(&who, eth_address);
-
             // check if the evm padded address already exists
             let account_id = T::AddressMapping::into_account_id(&eth_address);
             if frame_system::Pallet::<T>::account_exists(&account_id) {
@@ -223,6 +220,9 @@ pub mod pallet {
                 T::StorageDepositFee::get(),
                 ExistenceRequirement::KeepAlive,
             )?;
+
+            Accounts::<T>::insert(eth_address, &who);
+            EvmAddresses::<T>::insert(&who, eth_address);
 
             Self::deposit_event(Event::ClaimAccount {
                 account_id: who,
