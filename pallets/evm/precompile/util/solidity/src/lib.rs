@@ -3,7 +3,7 @@
 extern crate alloc;
 
 pub use pallet_3vm_evm_primitives::{
-    ExitError, ExitRevert, ExitSucceed, PrecompileFailure, PrecompileOutput,
+    ExitError, ExitRevert, ExitSucceed, PrecompileFailure, PrecompileOutput, PrecompileHandle
 };
 use sp_std::{borrow, borrow::ToOwned};
 
@@ -12,12 +12,25 @@ pub mod data;
 pub mod handle;
 pub mod modifier;
 pub mod substrate;
+pub mod precompile_set;
 
 //#[cfg(feature = "precompile-testing")]
 pub mod testing;
 
 /// Alias for Result returning an EVM precompile error.
 pub type EvmResult<T = ()> = Result<T, PrecompileFailure>;
+
+/// Trait similar to `fp_evm::Precompile` but with a `&self` parameter to manage some
+/// state (this state is only kept in a single transaction and is lost afterward).
+pub trait StatefulPrecompile {
+    /// Instanciate the precompile.
+    /// Will be called once when building the PrecompileSet at the start of each
+    /// Ethereum transaction.
+    fn new() -> Self;
+
+    /// Execute the precompile with a reference to its state.
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput>;
+}
 
 /// Return an error with provided (static) text.
 /// Using the `revert` function of `Gasometer` is preferred as erroring
