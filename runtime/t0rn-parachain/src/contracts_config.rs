@@ -140,20 +140,12 @@ parameter_types! {
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 3310;
     pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();
-  //  pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(
-  //      precompiles::generate_precompile_set().into_iter().collect()
-  //  );
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
-// pub struct Precompiles<Runtime> {
-//     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
-//     phantom: PhantomData<Runtime>,
-//}
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = EvmAddressMapping<Runtime>;
-    //type Erc20Mapping = Erc20Mapping;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
@@ -167,8 +159,6 @@ impl pallet_3vm_evm::Config for Runtime {
     type OnChargeTransaction = pallet_3vm_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type OnCreate = ();
     type PrecompilesType = evm_precompile_util::T3rnPrecompiles<Self>;
-    //type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
-    // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
