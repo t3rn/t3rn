@@ -37,7 +37,10 @@ impl<T> T3rnPrecompiles<T> {
 
 impl<T> PrecompileSet for T3rnPrecompiles<T>
 where
-    T: pallet_3vm_evm::Config + pallet_assets::Config + pallet_balances::Config + frame_system::Config,
+    T: pallet_3vm_evm::Config
+        + pallet_assets::Config
+        + pallet_balances::Config
+        + frame_system::Config,
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,

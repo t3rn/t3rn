@@ -82,8 +82,9 @@ where
     }
 }
 
-pub struct MockPrecompileSet<T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config>
-where
+pub struct MockPrecompileSet<
+    T: pallet_3vm_evm::Config + pallet_assets::Config + frame_system::Config,
+> where
     <T as pallet_assets::Config>::AssetId: From<u32>,
     <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
     <T as pallet_assets::Config>::Balance: EvmData,
