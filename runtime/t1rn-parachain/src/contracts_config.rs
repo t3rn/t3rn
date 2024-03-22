@@ -114,25 +114,10 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 42;
-    // pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-    //     (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-    //     (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-    //     (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-    //     (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-    //     (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-    //     (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-    //     (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-    //     (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-    //     (40_u64, evm_precompile_util::KnownPrecompile::Portal)
-    // ].into_iter().collect());
-    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    // pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();;
 }
 
-// pub struct Precompiles<Runtime> {
-//     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
-//     phantom: PhantomData<Runtime>,
-// }
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = HashedAddressMapping<Keccak256>;
@@ -148,9 +133,9 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ();
     type OnCreate = ();
-    type PrecompilesType = ();
+    // type PrecompilesType = evm_precompile_util::T3rnPrecompiles<Self>;
     // type PrecompilesValue = PrecompilesValue;
-    // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
+    type PrecompilesType = ();
     type PrecompilesValue = ();
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
