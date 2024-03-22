@@ -36,7 +36,7 @@ To facilitate its multichain transactions, t3rn relies on essential network part
 1. **Collator Node Operation:**
    - To participate in the t3rn network, you can set up and run a collator node. This involves installing the software, configuring settings, and syncing with the desired network (e.g., t2rn, t0rn, t1rn, or t3rn).
 1. **Smart Contract Development:**
-   - Develop smart contracts using Solidity or any WASM-compatible language. Deploy your contracts to t3rn’s open-source registry to make them available for multichain execution and collaboration. Learn more about the [t3rn Smart Contract Hub](t3rn_protocol_wiki/smart-contract-hub).
+   - Develop smart contracts using Solidity or any WASM-compatible language. Deploy your contracts to t3rn’s open-source registry to make them available for multichain execution and collaboration. Learn more about the [t3rn Smart Contract Hub](t3rn-protocol-wiki/smart-contract-hub).
 1. **Participate as an Executor or Attester:**
    - Join the network as an Executor to process transactions or as an Attester to validate them. Engage in the ecosystem by bidding on orders, executing transactions, and submitting attestations.
 1. **Explore t3rn's Capabilities:**
@@ -50,4 +50,4 @@ To facilitate its multichain transactions, t3rn relies on essential network part
 - [**Run an Executor**](executor/executor-overview)
 - **Run a Writer** coming soon.
 - **Strategies** coming soon.
-- [**Smart Contract Hub**](t3rn_protocol_wiki/smart-contract-hub)
+- [**Smart Contract Hub**](t3rn-protocol-wiki/smart-contract-hub)
