@@ -27,7 +27,7 @@
     "@lodestar/types": "^1.11.3",
     "@polkadot/types": "^8.9.1",
     "@t3rn/sdk": "^0.4.11",
-    "@t3rn/types": "^0.1.11",
+    "@t3rn/types": "^0.1.12",
     "chalk": "^4.1.2",
     "clean-stack": "^3.0.1",
     "cli-progress": "^3.12.0",

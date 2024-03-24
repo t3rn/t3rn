@@ -8,7 +8,7 @@ import '@polkadot/api-base/types/consts';
 import type { ApiTypes, AugmentedConst } from '@polkadot/api-base/types';
 import type { Option, U8aFixed, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AccountId32, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
-import type { FrameSupportPalletId, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, PalletContractsSchedule, SpVersionRuntimeVersion, SpWeightsRuntimeDbWeight, SpWeightsWeightV2Weight } from '@polkadot/types/lookup';
+import type { FrameSupportPalletId, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, PalletContractsSchedule, SpVersionRuntimeVersion, SpWeightsRuntimeDbWeight } from '@polkadot/types/lookup';
 
 export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>;
 
@@ -259,6 +259,21 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       spendPeriod: u32 & AugmentedConst<ApiType>;
     };
+    grandpa: {
+      /**
+       * Max Authorities in use
+       **/
+      maxAuthorities: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of entries to keep in the set id to session index mapping.
+       * 
+       * Since the `SetIdSession` map is only used for validating equivocations this
+       * value should relate to the bonding duration of whatever staking system is
+       * being used (if any). If equivocation handling is not enabled then this value
+       * can be zero.
+       **/
+      maxSetIdSessionEntries: u64 & AugmentedConst<ApiType>;
+    };
     identity: {
       /**
        * The amount held on deposit for a registered identity
@@ -395,20 +410,6 @@ declare module '@polkadot/api-base/types/consts' {
        * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
        **/
       headersToStore: u32 & AugmentedConst<ApiType>;
-    };
-    scheduler: {
-      /**
-       * The maximum weight that may be scheduled per block for any dispatchables.
-       **/
-      maximumWeight: SpWeightsWeightV2Weight & AugmentedConst<ApiType>;
-      /**
-       * The maximum number of scheduled calls in the queue for a single block.
-       * 
-       * NOTE:
-       * + Dependent pallets' benchmarks might require a higher limit for the setting. Set a
-       * higher limit under `runtime-benchmarks` feature.
-       **/
-      maxScheduledPerBlock: u32 & AugmentedConst<ApiType>;
     };
     sepoliaBridge: {
       committeeMajorityThreshold: u32 & AugmentedConst<ApiType>;
