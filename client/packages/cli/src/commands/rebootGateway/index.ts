@@ -1,18 +1,17 @@
 import { Args } from '@/types.ts'
-import { log } from '@/utils/log.ts'
+import { colorLogMsg, log } from '@/utils/log.ts'
 import '@t3rn/types'
 import ora from 'ora'
-import { colorLogMsg } from '@/utils/log.ts'
 import { createCircuitContext } from '@/utils/circuit.ts'
-import {
-  //@ts-ignore - TS doesn't know about the type
-  T3rnPrimitivesGatewayVendor,
-} from '@polkadot/types/lookup'
+import { T3rnPrimitivesGatewayVendor } from '@polkadot/types/lookup'
 import { createType } from '@t3rn/types'
 
 export const spinner = ora()
 
-export const handleRebootCommand = async (args: Args<'vendor' | 'export'>) => {
+export const handleRebootCommand = async (
+  args: Args<'vendor' | 'export'>,
+  options: { [key: string]: string },
+) => {
   log('INFO', `Rebooting ${args} gateway...`)
 
   if (!args) {
@@ -27,7 +26,8 @@ export const handleRebootCommand = async (args: Args<'vendor' | 'export'>) => {
       'ws://localhost:9944',
       'ws://0.0.0.0:9944',
       'ws://127.0.0.1:9944',
-    ].includes(endpoint)
+    ].includes(endpoint) &&
+    !options.force
   ) {
     log(
       'ERROR',
@@ -43,9 +43,10 @@ export const handleRebootCommand = async (args: Args<'vendor' | 'export'>) => {
       'T3rnPrimitivesGatewayVendor',
       args.toLowerCase() as never,
     )
-    log('INFO', verificationVendor)
+    log('INFO', verificationVendor as unknown as string)
     await sdk.circuit.tx.signAndSendSafe(
       sdk.circuit.tx.createSudo(
+        // @ts-ignore
         circuit.tx.xdns.rebootSelfGateway(verificationVendor.toJSON()),
       ),
     )

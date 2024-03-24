@@ -138,7 +138,7 @@ const fetchInitData = async (
   if (res.status !== 200) {
     const reason = await res.text()
     throw new Error(
-      `Failed fetch init data, STATUS: ${res.status}, REASON: ${reason}`,
+      `Failed to fetch init data, STATUS: ${res.status}, REASON: ${reason}`,
     )
   }
 
