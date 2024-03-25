@@ -2,17 +2,19 @@ use crate::{BalanceOf, Config, Error, Pallet, PrecompileIndex};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
 use frame_system::ensure_signed;
+use sp_core::H160;
 use sp_std::prelude::*;
 use t3rn_primitives::{
-    circuit::{LocalTrigger, OnLocalTrigger},
+    circuit::{LocalTrigger, OnLocalTrigger, VacuumEVMOrder},
     execution_source_to_option,
     portal::{Portal, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
-        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation, GET_STATE, PORTAL,
-        POST_SIGNAL, SUBMIT,
+        AddressMapping, GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
+        VacuumAccess, GET_STATE, PORTAL, POST_SIGNAL, SUBMIT,
     },
     SpeedMode, T3rnCodec,
 };
+
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
@@ -94,6 +96,40 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                     Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
                 }
             },
+            VACUUM_ORDER => {
+                let args: CodecResult<VacuumEVMOrder> = match codec {
+                    T3rnCodec::Scale => Decode::decode(&mut &args[..]),
+                    T3rnCodec::Rlp => VacuumEVMOrder::from_rlp_encoded_packed(&args[..]).map_err(|e| {
+                        log::debug!(target: LOG_TARGET, "Failed to decode vacuum order: {:?}", e);
+                        codec::Error::from("Failed to decode vacuum order")
+                    }),
+                };
+
+                if let Ok(args) = args {
+                    match invoke::<T>(PrecompileArgs::VacuumOrder(origin, args)) {
+                        Ok(PrecompileInvocation::VacuumOrder(success)) => {
+                            match success {
+                                true => {
+                                    output.push(0); // It's an ok
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                                false => {
+                                    output.push(1); // It's an error
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                            }
+                        },
+                        Err(e) => {
+                            log::error!(target: LOG_TARGET, "Failed to invoke vacuum: {:?}", e);
+                            output.push(1); // It's an error
+                            output.append(&mut e.encode());
+                        },
+                        _ => {},
+                    }
+                } else {
+                    Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output);
+                }
+            },
             POST_SIGNAL => {
                 let args: CodecResult<ExecutionSignal<T::Hash>> = match codec {
                     T3rnCodec::Scale => Decode::decode(args),
@@ -159,16 +195,18 @@ fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::R
             },
         },
         T3rnCodec::Rlp => {
-            // TODO: inject addressmapping here, dont always assume padded 12
-            let address_bytes = [args.take(..=20)?, &[0_u8; 12][..]].concat();
+            // Check if longer than 20b and assume address_bytes
+            let address_bytes = if args.len() > 20 {
+                args.split_at(20).0
+            } else {
+                return None
+            };
+            let evm_address = H160::from_slice(&address_bytes);
 
-            match <T::AccountId as Decode>::decode(&mut &address_bytes[..]) {
-                Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),
-                Err(err) => {
-                    log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
-                    None
-                },
-            }
+            // Tap into evm_address
+            let mapped_account = T::AddressMapping::into_account_id(&evm_address);
+
+            Some(T::RuntimeOrigin::from(RawOrigin::Signed(mapped_account)))
         },
     }
 }
@@ -214,6 +252,20 @@ pub(crate) fn invoke<T: Config>(
             } else {
                 Err(Error::<T>::CannotTriggerWithoutSideEffects.into())
             }
+        },
+        PrecompileArgs::VacuumOrder(origin, vacuum_order) => {
+            log::debug!(target: LOG_TARGET, "Vacuum Order");
+            let success = <Pallet<T> as VacuumAccess<T>>::evm_order(&origin, vacuum_order)?;
+            // let success = true;
+            Ok(PrecompileInvocation::VacuumOrder(success))
+        },
+        PrecompileArgs::VacuumBid(origin, vacuum_order) => {
+            let success = true;
+            Ok(PrecompileInvocation::VacuumBid(success))
+        },
+        PrecompileArgs::VacuumConfirm(origin, vacuum_order) => {
+            let success = true;
+            Ok(PrecompileInvocation::VacuumConfirm(success))
         },
         PrecompileArgs::Signal(origin, signal) => {
             match <Pallet<T> as Signaller<T::Hash>>::signal(&signal) {
@@ -266,9 +318,9 @@ pub(crate) fn invoke<T: Config>(
 mod tests {
     use super::*;
     use crate::mock::{new_test_ext, AccountId, Test, ALICE};
-    use sp_core::{H160, H256};
+    use sp_core::{H160, H256, U256};
     use sp_runtime::traits::Hash;
-    use t3rn_primitives::circuit::LocalStateExecutionView;
+    use t3rn_primitives::{circuit::LocalStateExecutionView, threevm::VACUUM};
     use t3rn_sdk_primitives::{
         storage::BoundedVec,
         xc::{Chain, Operation},
@@ -405,11 +457,44 @@ mod tests {
     }
 
     #[test]
+    fn invoke_vacuum_remote_order_to_single_order_as_rlp_contract_arguments() {
+        new_test_ext().execute_with(|| {
+            // Mocks RLP pack-encoded arguments for vacuum order
+            // function order(bytes4 destination, uint32 asset, bytes32 targetAccount, uint256 amount, address rewardAsset, uint256 insurance, uint256 maxReward) public payable
+            let mut args: Vec<u8> = vec![T3rnCodec::Rlp.into()];
+            let msg_sender_20b = H160([1u8; 20]).encode();
+            let target_4bytes = 4_u32.to_be_bytes().to_vec();
+            let asset_uint32 = 1_u32.to_be_bytes().to_vec();
+            let target_account_32bytes = H256([2u8; 32]).encode();
+            let amount_uint256 = U256::from(1).encode();
+            let reward_asset_address_20b = H160([3u8; 20]).encode();
+            let insurance_uint256 = U256::from(0).encode();
+            let max_reward_uint256 = U256::from(11).encode();
+
+            args.extend(target_4bytes);
+            args.extend(asset_uint32);
+            args.extend(target_account_32bytes);
+            args.extend(amount_uint256);
+            args.extend(reward_asset_address_20b);
+            args.extend(insurance_uint256);
+            args.extend(max_reward_uint256);
+
+            let mut out = Vec::<u8>::new();
+
+            dbg!("args len test: ", args.len());
+
+            invoke_raw::<Test>(&VACUUM, &mut &args[..], &mut out);
+
+            assert_eq!(out, vec![0]);
+        });
+    }
+
+    #[test]
     fn invoke_submit_sfx_with_speed_mode() {
         new_test_ext().execute_with(|| {
-            let account = 4_u64;
-            let caller = 5_u64;
-            let dest = 6_u64;
+            let account = AccountId::from([4u8; 32]);
+            let caller = AccountId::from([5u8; 32]);
+            let dest = AccountId::from([6u8; 32]);
             let mut side_effects_bounded_vec: BoundedVec<Chain<AccountId, u128, H256>, 16> =
                 BoundedVec::default();
 

@@ -38,6 +38,7 @@ hex = "0.4.0"
 # t3rn dependencies
 circuit-runtime-types            = { path = "../../runtime/common-types" }
 pallet-account-manager           = { path = "../account-manager" }
+pallet-circuit-vacuum            = { path = "../circuit/vacuum" }
 pallet-circuit                   = { path = "../circuit" }
 pallet-contracts-registry        = { path = "../contracts-registry" }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }

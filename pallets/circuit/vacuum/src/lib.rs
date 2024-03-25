@@ -105,6 +105,8 @@ where
 pub mod pallet {
     use super::*;
     use t3rn_primitives::{
+        circuit::types::VacuumEVMOrder,
+        threevm::VacuumAccess,
         xdns::{TokenRecord, Xdns},
         TokenInfo,
     };
@@ -419,6 +421,81 @@ pub mod pallet {
             }));
 
             Ok(().into())
+        }
+    }
+
+    impl<T: Config> VacuumAccess<T> for Pallet<T> {
+        fn evm_order(
+            origin: &T::RuntimeOrigin,
+            vacuum_evm_order: VacuumEVMOrder,
+        ) -> Result<bool, DispatchError> {
+            let amount_localized =
+                BalanceOf::<T>::decode(&mut &vacuum_evm_order.amount.as_u128().encode()[..])
+                    .map_err(|_e| {
+                        DispatchError::Other("Vacuum::remote_order -- error decoding amount")
+                    })?;
+            let max_reward_localized =
+                BalanceOf::<T>::decode(&mut &vacuum_evm_order.max_reward.as_u128().encode()[..])
+                    .map_err(|_e| {
+                        DispatchError::Other("Vacuum::remote_order -- error decoding max_reward")
+                    })?;
+            let insurance_localized =
+                BalanceOf::<T>::decode(&mut &vacuum_evm_order.insurance.as_u128().encode()[..])
+                    .map_err(|_e| {
+                        DispatchError::Other("Vacuum::remote_order -- error decoding insurance")
+                    })?;
+
+            let reward_asset_localized = T::Xdns::get_token_by_eth_address(
+                vacuum_evm_order.destination,
+                vacuum_evm_order.reward_asset,
+            )?
+            .token_id;
+
+            let target_account = T::AccountId::decode(
+                &mut &vacuum_evm_order.target_account.encode()[..],
+            )
+            .map_err(|_e| {
+                DispatchError::Other("Vacuum::remote_order -- error decoding target_account")
+            })?;
+
+            Pallet::<T>::single_order(
+                origin.clone(),
+                vacuum_evm_order.destination,
+                vacuum_evm_order.asset,
+                amount_localized,
+                reward_asset_localized,
+                max_reward_localized,
+                insurance_localized,
+                target_account,
+                SpeedMode::Fast,
+            )
+            .map_err(|e| {
+                log::error!("Vacuum::evm_order -- error calling single_order: {:?}", e);
+                DispatchError::Other("Vacuum::evm_order -- error calling single_order")
+            })?;
+
+            Ok(true)
+        }
+
+        fn evm_bid(
+            origin: &T::RuntimeOrigin,
+            vacuum_evm_order: VacuumEVMOrder,
+        ) -> Result<bool, DispatchError> {
+            Ok(true)
+        }
+
+        fn evm_confirm(
+            origin: &T::RuntimeOrigin,
+            vacuum_evm_order: VacuumEVMOrder,
+        ) -> Result<bool, DispatchError> {
+            Ok(true)
+        }
+
+        fn evm_3d_order(
+            origin: &T::RuntimeOrigin,
+            vacuum_evm_order: VacuumEVMOrder,
+        ) -> Result<bool, DispatchError> {
+            Ok(true)
         }
     }
 }

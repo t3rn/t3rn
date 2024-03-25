@@ -10,9 +10,11 @@ use t3rn_primitives::monetary::MILLIT3RN;
 use frame_system::EnsureRoot;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
+use frame_support::PalletId;
+pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use sp_runtime::{
     generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256},
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
@@ -127,6 +129,7 @@ construct_runtime!(
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
+        AccountMapping: pallet_3vm_account_mapping = 126,
 
          // Portal
         Portal: pallet_portal = 128,

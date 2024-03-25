@@ -123,6 +123,7 @@ xcm-primitives           = { workspace = true }
 # Smart contracts VMs
 #evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
 pallet-3vm                      = { default-features = false, path = "../../pallets/3vm" }
+pallet-3vm-account-mapping      = { default-features = false, path = "../../pallets/3vm/account-mapping" }
 pallet-3vm-contracts            = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
@@ -171,6 +172,7 @@ std = [
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
+  "pallet-3vm-account-mapping/std",
   "pallet-vacuum/std",
   #  "evm-precompile-util/std",
   "pallet-account-manager/std",
@@ -257,6 +259,7 @@ runtime-benchmarks = [
   "pallet-vacuum/runtime-benchmarks",
   "pallet-3vm-contracts/runtime-benchmarks",
   "pallet-3vm-evm/runtime-benchmarks",
+  "pallet-3vm-account-mapping/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-membership/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
@@ -285,6 +288,7 @@ try-runtime = [
   "pallet-attesters/try-runtime",
   "pallet-rewards/try-runtime",
   "pallet-3vm/try-runtime",
+  "pallet-3vm-account-mapping/try-runtime",
   "pallet-account-manager/try-runtime",
   "pallet-asset-registry/try-runtime",
   "pallet-withdraw-teleport/try-runtime",
