@@ -422,41 +422,83 @@ fn polkadot_genesis_full(
         // of this.
         aura: Default::default(),
         assets: AssetsConfig {
-            assets: vec![(
-                2,
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                false,
-                1,
-            )],
-            metadata: vec![(2, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)],
-            accounts: vec![
+            assets: vec![
+                (
+                    1,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
                 (
                     2,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+                (
+                    20,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+                (
+                    1984,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+                (
+                    2984,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+            ],
+            metadata: vec![
+                (1, "DOT".as_bytes().to_vec(), "DOT".as_bytes().to_vec(), 10),
+                (2, "BTC".as_bytes().to_vec(), "BTC".as_bytes().to_vec(), 8),
+                (20, "SOL".as_bytes().to_vec(), "SOL".as_bytes().to_vec(), 9),
+                (
+                    1984,
+                    "USDT".as_bytes().to_vec(),
+                    "USDT".as_bytes().to_vec(),
+                    6,
+                ),
+                (
+                    2984,
+                    "RUSD".as_bytes().to_vec(),
+                    "RUSD".as_bytes().to_vec(),
+                    18,
+                ),
+            ],
+            accounts: vec![
+                (
+                    2984,
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     1000 * TST,
                 ),
                 (
-                    2,
+                    2984,
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
                     1000 * TST,
                 ),
                 (
-                    2,
+                    2984,
                     get_account_id_from_seed::<sr25519::Public>("Charlie"),
                     1000 * TST,
                 ),
                 (
-                    2,
+                    2984,
                     get_account_id_from_seed::<sr25519::Public>("Dave"),
                     1000 * TST,
                 ),
                 (
-                    2,
+                    2984,
                     get_account_id_from_seed::<sr25519::Public>("Eve"),
                     1000 * TST,
                 ),
                 (
-                    2,
+                    2984,
                     get_account_id_from_seed::<sr25519::Public>("Ferdie"),
                     1000 * TST,
                 ),
