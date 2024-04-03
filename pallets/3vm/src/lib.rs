@@ -12,7 +12,7 @@ use sp_runtime::traits::StaticLookup;
 use sp_std::vec::Vec;
 use t3rn_primitives::{
     account_manager::Outcome,
-    circuit::{LocalStateExecutionView, OnLocalTrigger, VacuumEVMOrder},
+    circuit::{LocalStateExecutionView, OnLocalTrigger, VacuumEVMOrder, VacuumEVMProof},
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, ContractsRegistry, KindValidator, RegistryContract},
     threevm::{
@@ -249,8 +249,29 @@ impl<T: Config> VacuumAccess<T> for Pallet<T> {
     fn evm_3d_order(
         origin: &T::RuntimeOrigin,
         vacuum_evm_order: VacuumEVMOrder,
+        nonce: u32,
     ) -> Result<bool, DispatchError> {
-        <T as Config>::VacuumEVMApi::evm_3d_order(origin, vacuum_evm_order)
+        <T as Config>::VacuumEVMApi::evm_3d_order(origin, vacuum_evm_order, nonce)
+    }
+
+    fn evm_submit_correctness_proof(
+        origin: &T::RuntimeOrigin,
+        gateway_id: [u8; 4],
+        vacuum_evm_proof: VacuumEVMProof,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_submit_correctness_proof(
+            origin,
+            gateway_id,
+            vacuum_evm_proof,
+        )
+    }
+
+    fn evm_submit_fault_proof(
+        origin: &T::RuntimeOrigin,
+        gateway_id: [u8; 4],
+        vacuum_evm_proof: VacuumEVMProof,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_submit_fault_proof(origin, gateway_id, vacuum_evm_proof)
     }
 }
 

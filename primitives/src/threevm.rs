@@ -21,7 +21,7 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
-use crate::circuit::VacuumEVMOrder;
+use crate::circuit::{VacuumEVMOrder, VacuumEVMProof};
 use circuit_runtime_types::{EvmAddress, TokenId};
 
 // Precompile pointers baked into the binary.
@@ -159,9 +159,22 @@ where
         vacuum_evm_order: VacuumEVMOrder,
     ) -> Result<bool, DispatchError>;
 
+    fn evm_submit_fault_proof(
+        origin: &T::RuntimeOrigin,
+        gateway_id: [u8; 4],
+        vacuum_evm_proof: VacuumEVMProof,
+    ) -> Result<bool, DispatchError>;
+
+    fn evm_submit_correctness_proof(
+        origin: &T::RuntimeOrigin,
+        gateway_id: [u8; 4],
+        vacuum_evm_proof: VacuumEVMProof,
+    ) -> Result<bool, DispatchError>;
+
     fn evm_3d_order(
         origin: &T::RuntimeOrigin,
         vacuum_evm_order: VacuumEVMOrder,
+        nonce: u32,
     ) -> Result<bool, DispatchError>;
 }
 

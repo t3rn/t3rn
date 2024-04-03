@@ -35,6 +35,7 @@ use t3rn_primitives::circuit::{
 };
 use t3rn_types::sfx::TargetId;
 t3rn_primitives::reexport_currency_types!();
+use t3rn_primitives::circuit::VacuumEVMProof;
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct OrderStatusRead<Hash, BlockNumber, Account> {
@@ -129,6 +130,8 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         OrderStatusRead(OrderStatusRead<T::Hash, BlockNumberFor<T>, T::AccountId>),
+        FaultProofConfirmed([u8; 4], VacuumEVMProof),
+        CorrectnessProofConfirmed([u8; 4], VacuumEVMProof),
     }
 
     #[pallet::error]
@@ -491,10 +494,129 @@ pub mod pallet {
             Ok(true)
         }
 
+        fn evm_submit_correctness_proof(
+            origin: &T::RuntimeOrigin,
+            gateway_id: TargetId,
+            vacuum_evm_proof: VacuumEVMProof,
+        ) -> Result<bool, DispatchError> {
+            let who = ensure_signed(origin.clone())?;
+
+            let verified_order_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.order_proof.clone(),
+            )?;
+
+            let verified_bid_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.bid_proof.clone(),
+            )?;
+
+            let verified_execution_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.execution_proof.clone(),
+            )?;
+
+            let verified_attestation_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.attestation_proof.clone(),
+            )?;
+
+            Self::deposit_event(Event::CorrectnessProofConfirmed(
+                gateway_id,
+                vacuum_evm_proof.clone(),
+            ));
+
+            Ok(true)
+        }
+
+        fn evm_submit_fault_proof(
+            origin: &T::RuntimeOrigin,
+            gateway_id: TargetId,
+            vacuum_evm_proof: VacuumEVMProof,
+        ) -> Result<bool, DispatchError> {
+            let who = ensure_signed(origin.clone())?;
+
+            let verified_order_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.order_proof.clone(),
+            )?;
+
+            let verified_bid_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.bid_proof.clone(),
+            )?;
+
+            let verified_execution_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.execution_proof.clone(),
+            )?;
+
+            let verified_attestation_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_proof.attestation_proof.clone(),
+            )?;
+
+            Self::deposit_event(Event::FaultProofConfirmed(
+                gateway_id,
+                vacuum_evm_proof.clone(),
+            ));
+
+            Ok(true)
+        }
+
         fn evm_3d_order(
             origin: &T::RuntimeOrigin,
             vacuum_evm_order: VacuumEVMOrder,
+            nonce: u32,
         ) -> Result<bool, DispatchError> {
+            let amount_localized =
+                BalanceOf::<T>::decode(&mut &vacuum_evm_order.amount.as_u128().encode()[..])
+                    .map_err(|_e| {
+                        DispatchError::Other("Vacuum::remote_order -- error decoding amount")
+                    })?;
+            let max_reward_localized =
+                BalanceOf::<T>::decode(&mut &vacuum_evm_order.max_reward.as_u128().encode()[..])
+                    .map_err(|_e| {
+                        DispatchError::Other("Vacuum::remote_order -- error decoding max_reward")
+                    })?;
+
+            let reward_asset_localized = T::Xdns::get_token_by_eth_address(
+                vacuum_evm_order.destination,
+                vacuum_evm_order.reward_asset,
+            )?
+            .token_id;
+
+            Pallet::<T>::dynamic_destination_deal(
+                origin.clone(),
+                vacuum_evm_order.destination,
+                vacuum_evm_order.asset,
+                amount_localized,
+                reward_asset_localized,
+                max_reward_localized,
+                nonce,
+                SpeedMode::Fast,
+            )
+            .map_err(|e| {
+                log::error!("Vacuum::evm_order -- error calling single_order: {:?}", e);
+                DispatchError::Other("Vacuum::evm_order -- error calling single_order")
+            })?;
+
             Ok(true)
         }
     }

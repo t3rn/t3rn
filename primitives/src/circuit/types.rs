@@ -103,6 +103,62 @@ impl VacuumEVMOrder {
     }
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+pub struct VacuumEVMProof {
+    pub order_proof: Vec<u8>,
+
+    pub bid_proof: Vec<u8>,
+
+    pub execution_proof: Vec<u8>,
+
+    pub attestation_proof: Vec<u8>,
+}
+
+impl VacuumEVMProof {
+    pub fn new(
+        order_proof: Vec<u8>,
+        bid_proof: Vec<u8>,
+        execution_proof: Vec<u8>,
+        attestation_proof: Vec<u8>,
+    ) -> Self {
+        VacuumEVMProof {
+            order_proof,
+            bid_proof,
+            execution_proof,
+            attestation_proof,
+        }
+    }
+
+    pub fn from_rlp(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        let mut order_proof = vec![];
+        let mut bid_proof = vec![];
+        let mut execution_proof = vec![];
+        let mut attestation_proof = vec![];
+
+        let mut index = 0;
+        let mut proof_vec = vec![
+            &mut order_proof,
+            &mut bid_proof,
+            &mut execution_proof,
+            &mut attestation_proof,
+        ];
+
+        for proof in proof_vec.iter_mut() {
+            let proof_len = encoded_slice[index] as usize;
+            index += 1;
+            proof.extend_from_slice(&encoded_slice[index..index + proof_len]);
+            index += proof_len;
+        }
+
+        Ok(VacuumEVMProof {
+            order_proof,
+            bid_proof,
+            execution_proof,
+            attestation_proof,
+        })
+    }
+}
+
 type SystemHashing<T> = <T as Config>::Hashing;
 
 /// Status of Circuit storage items:
