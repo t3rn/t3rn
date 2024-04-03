@@ -4,9 +4,9 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Perbill, RuntimeDebug};
 
-pub const DECIMALS: u8 = 12;
-pub const MILLIT3RN: u64 = 1_000_000_000;
-pub const TRN: u64 = 1_000_000_000_000;
+pub const DECIMALS: u8 = 18;
+pub const MILLIT3RN: u64 = 1_000_000_000_000_000;
+pub const TRN: u64 = 1_000_000_000_000_000_000;
 pub const EXISTENTIAL_DEPOSIT: u64 = 1;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

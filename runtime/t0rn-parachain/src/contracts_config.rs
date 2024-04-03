@@ -30,8 +30,8 @@ use t3rn_primitives::threevm::{
 };
 
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
+const UNIT: Balance = 1_000_000_000_000_000_000;
+const MILLIUNIT: Balance = 1_000_000_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -138,7 +138,7 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-    pub const ChainId: u64 = 3333;
+    pub const ChainId: u64 = 3300;
     pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(
         precompiles::generate_precompile_set().into_iter().collect()
     );

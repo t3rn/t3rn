@@ -79,9 +79,9 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(25);
 
 // Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 1_000_000_000_000;
-pub const MILLIUNIT: Balance = 1_000_000_000;
-pub const MICROUNIT: Balance = 1_000_000;
+pub const UNIT: Balance = 1_000_000_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000_000_000;
+pub const MICROUNIT: Balance = 1_000_000_000_000;
 
 pub const DECIMALS: u8 = 12;
 pub const MILLIT3RN: u64 = 1_000_000_000;

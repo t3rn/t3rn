@@ -30,8 +30,8 @@ use t3rn_primitives::threevm::{
 };
 
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
+const UNIT: Balance = 1_000_000_000_000_000_000;
+const MILLIUNIT: Balance = 1_000_000_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {

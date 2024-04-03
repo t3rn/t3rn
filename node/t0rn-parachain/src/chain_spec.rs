@@ -121,7 +121,7 @@ pub fn local_testnet_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT.into());
 
     ChainSpec::from_genesis(
@@ -220,7 +220,7 @@ pub fn local_testnet_config() -> ChainSpec {
 pub fn kusama_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TIN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
@@ -296,7 +296,7 @@ pub fn kusama_config() -> ChainSpec {
 pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT.into());
 
     ChainSpec::from_genesis(
@@ -485,7 +485,7 @@ fn polkadot_genesis_full(
                     GenesisAccount {
                         nonce: U256::zero(),
                         // Using a larger number, so I can tell the accounts apart by balance.
-                        balance: U256::from(2u64 << 56),
+                        balance: U256::from(300 * TRN),
                         code: vec![],
                         storage: std::collections::BTreeMap::new(),
                     },
@@ -495,7 +495,7 @@ fn polkadot_genesis_full(
                     H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C")
                         .expect("internal H160 is valid; qed"),
                     GenesisAccount {
-                        balance: U256::from(1u64 << 56),
+                        balance: U256::from(72000 * TRN),
                         code: Default::default(),
                         nonce: Default::default(),
                         storage: Default::default(),
@@ -506,7 +506,7 @@ fn polkadot_genesis_full(
                     H160::from_str("2C7A1CaAC34549ef4D6718ECCF3120AC2f74Df5C")
                         .expect("internal H160 is valid; qed"),
                     GenesisAccount {
-                        balance: U256::from(1u64 << 56),
+                        balance: U256::from(150 * TRN),
                         code: Default::default(),
                         nonce: Default::default(),
                         storage: Default::default(),
@@ -530,7 +530,7 @@ fn polkadot_genesis_full(
 pub fn rococo_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "T0RN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT_T0RN.into());
 
     ChainSpec::from_genesis(

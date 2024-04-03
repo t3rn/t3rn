@@ -19,8 +19,8 @@ use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
 
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
+const UNIT: Balance = 1_000_000_000_000_000_000;
+const MILLIUNIT: Balance = 1_000_000_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {

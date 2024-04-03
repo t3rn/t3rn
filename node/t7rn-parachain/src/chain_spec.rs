@@ -116,7 +116,7 @@ pub fn local_testnet_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
@@ -215,7 +215,7 @@ pub fn local_testnet_config() -> ChainSpec {
 pub fn kusama_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TIN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
@@ -291,7 +291,7 @@ pub fn kusama_config() -> ChainSpec {
 pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(
@@ -425,7 +425,7 @@ fn polkadot_genesis_shell(
 pub fn rococo_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "T0RN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 18.into());
     properties.insert("ss58Format".into(), SS58_FORMAT_T1RN.into());
 
     ChainSpec::from_genesis(

@@ -71,7 +71,7 @@ pub use sp_runtime::BuildStorage;
 use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
 
 pub const TRN: Balance = UNIT;
-pub const TST: Balance = UNIT * 1_000_000;
+pub const TST: Balance = UNIT;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
