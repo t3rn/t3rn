@@ -28,10 +28,7 @@ use precompile_util_solidity::{
 use sp_core::{H160, U256};
 use sp_runtime::traits::{StaticLookup, Zero};
 use sp_std::{marker::PhantomData, str::*, vec::Vec};
-use t3rn_primitives::threevm::{
-    convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE,
-    H160_POSITION_ASSET_ID_TYPE,
-};
+use t3rn_primitives::threevm::{Erc20Mapping, Precompile, H160_POSITION_ASSET_ID_TYPE};
 
 #[cfg(test)]
 mod tests;
