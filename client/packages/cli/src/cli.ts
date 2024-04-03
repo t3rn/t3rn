@@ -17,6 +17,7 @@ import { handleAddSfxAbiCommand } from '@/commands/sfxABI/index.js'
 import { handleEvmClaimAaddressCommand } from '@/commands/evm/claimEvmAddress.ts'
 import { handleEvmGetBalanceCommand } from '@/commands/evm/getBalance.ts'
 import { handleEvmTransferCommand } from '@/commands/evm/transfer.ts'
+import { handleEvmDeployCommand } from '@/commands/evm/deploy.ts'
 import {
   handleFastWriterCommand,
   handleMockWriterCommand,
@@ -300,7 +301,7 @@ withExportMode(
 withExportMode(
   program
     .command('evmTransfer')
-    .description('Check EVM balance for an account.')
+    .description('Transfer funds through EVM.')
     .requiredOption(
       '--endpoint <string>',
       'The RPC endpoint to transfer balance on',
@@ -309,6 +310,20 @@ withExportMode(
     .requiredOption('--receiver <string>', 'The receiver account - EVM address')
     .requiredOption('--amount <number>', 'The balance that will be transferred')
     .action(handleEvmTransferCommand),
+)
+
+withExportMode(
+    program
+        .command('evmDeploy')
+        .description('Deploy EVM smart contract.')
+        .requiredOption(
+            '--endpoint <string>',
+            'The RPC endpoint to upload smart contract on',
+        )
+        .requiredOption('--owner <string>', 'The owner account - EVM private key')
+        .requiredOption('--contract-abi <string>', 'The abi file of the contract')
+        .requiredOption('--contract-bytecode <string>', 'The bytecode file of the contract')
+        .action(handleEvmDeployCommand),
 )
 
 program.parse(process.argv)
