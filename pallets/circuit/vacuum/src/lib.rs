@@ -35,7 +35,7 @@ use t3rn_primitives::circuit::{
 };
 use t3rn_types::sfx::TargetId;
 t3rn_primitives::reexport_currency_types!();
-use t3rn_primitives::circuit::VacuumEVMProof;
+use t3rn_primitives::circuit::{VacuumEVM3DOrder, VacuumEVMProof};
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct OrderStatusRead<Hash, BlockNumber, Account> {
@@ -480,13 +480,6 @@ pub mod pallet {
             Ok(true)
         }
 
-        fn evm_bid(
-            origin: &T::RuntimeOrigin,
-            vacuum_evm_order: VacuumEVMOrder,
-        ) -> Result<bool, DispatchError> {
-            Ok(true)
-        }
-
         fn evm_confirm(
             origin: &T::RuntimeOrigin,
             vacuum_evm_order: VacuumEVMOrder,
@@ -496,10 +489,11 @@ pub mod pallet {
 
         fn evm_submit_correctness_proof(
             origin: &T::RuntimeOrigin,
-            gateway_id: TargetId,
             vacuum_evm_proof: VacuumEVMProof,
         ) -> Result<bool, DispatchError> {
             let who = ensure_signed(origin.clone())?;
+
+            let gateway_id = vacuum_evm_proof.gateway_id.clone();
 
             let verified_order_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
                 gateway_id,
@@ -539,10 +533,11 @@ pub mod pallet {
 
         fn evm_submit_fault_proof(
             origin: &T::RuntimeOrigin,
-            gateway_id: TargetId,
             vacuum_evm_proof: VacuumEVMProof,
         ) -> Result<bool, DispatchError> {
             let who = ensure_signed(origin.clone())?;
+
+            let gateway_id = vacuum_evm_proof.gateway_id.clone();
 
             let verified_order_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
                 gateway_id,
@@ -582,9 +577,9 @@ pub mod pallet {
 
         fn evm_3d_order(
             origin: &T::RuntimeOrigin,
-            vacuum_evm_order: VacuumEVMOrder,
-            nonce: u32,
+            vacuum_evm_order: VacuumEVM3DOrder,
         ) -> Result<bool, DispatchError> {
+            let nonce = vacuum_evm_order.nonce;
             let amount_localized =
                 BalanceOf::<T>::decode(&mut &vacuum_evm_order.amount.as_u128().encode()[..])
                     .map_err(|_e| {

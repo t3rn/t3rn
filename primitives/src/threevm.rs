@@ -21,13 +21,17 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
-use crate::circuit::{VacuumEVMOrder, VacuumEVMProof};
+use crate::circuit::{VacuumEVM3DOrder, VacuumEVMOrder, VacuumEVMProof};
 use circuit_runtime_types::{EvmAddress, TokenId};
 
 // Precompile pointers baked into the binary.
 // Genesis exists only to map hashes to pointers.
 pub const GET_STATE: u8 = 55;
-pub const VACUUM: u8 = 88;
+pub const VACUUM_ORDER: u8 = 90;
+pub const VACUUM_3D_ORDER: u8 = 91;
+pub const VACUUM_CONFIRM: u8 = 92;
+pub const VACUUM_SUBMIT_CORRECTNESS_PROOF: u8 = 93;
+pub const VACUUM_SUBMIT_FAULT_PROOF: u8 = 94;
 pub const SUBMIT: u8 = 56;
 pub const POST_SIGNAL: u8 = 57;
 pub const PORTAL: u8 = 70;
@@ -51,8 +55,10 @@ where
         SpeedMode,
     ),
     VacuumOrder(T::RuntimeOrigin, VacuumEVMOrder),
-    VacuumBid(T::RuntimeOrigin, VacuumEVMOrder),
+    Vacuum3DOrder(T::RuntimeOrigin, VacuumEVM3DOrder),
     VacuumConfirm(T::RuntimeOrigin, VacuumEVMOrder),
+    VacuumSubmitCorrectnessProof(T::RuntimeOrigin, VacuumEVMProof),
+    VacuumSubmitFaultProof(T::RuntimeOrigin, VacuumEVMProof),
     Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
     Portal(PortalPrecompileArgs),
 }
@@ -64,8 +70,10 @@ pub enum PrecompileInvocation<T: ConfigSystem, Balance> {
     Signal,
     Portal(PortalExecution<T>),
     VacuumOrder(bool),
-    VacuumBid(bool),
     VacuumConfirm(bool),
+    Vacuum3DOrder(bool),
+    VacuumSubmitFaultProof(bool),
+    VacuumSubmitCorrectnessProof(bool),
 }
 
 impl<T: ConfigSystem, Balance> PrecompileInvocation<T, Balance> {
@@ -149,11 +157,6 @@ where
         vacuum_evm_order: VacuumEVMOrder,
     ) -> Result<bool, DispatchError>;
 
-    fn evm_bid(
-        origin: &T::RuntimeOrigin,
-        vacuum_evm_order: VacuumEVMOrder,
-    ) -> Result<bool, DispatchError>;
-
     fn evm_confirm(
         origin: &T::RuntimeOrigin,
         vacuum_evm_order: VacuumEVMOrder,
@@ -161,20 +164,17 @@ where
 
     fn evm_submit_fault_proof(
         origin: &T::RuntimeOrigin,
-        gateway_id: [u8; 4],
         vacuum_evm_proof: VacuumEVMProof,
     ) -> Result<bool, DispatchError>;
 
     fn evm_submit_correctness_proof(
         origin: &T::RuntimeOrigin,
-        gateway_id: [u8; 4],
         vacuum_evm_proof: VacuumEVMProof,
     ) -> Result<bool, DispatchError>;
 
     fn evm_3d_order(
         origin: &T::RuntimeOrigin,
-        vacuum_evm_order: VacuumEVMOrder,
-        nonce: u32,
+        vacuum_evm_order: VacuumEVM3DOrder,
     ) -> Result<bool, DispatchError>;
 }
 

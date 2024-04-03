@@ -12,7 +12,9 @@ use sp_runtime::traits::StaticLookup;
 use sp_std::vec::Vec;
 use t3rn_primitives::{
     account_manager::Outcome,
-    circuit::{LocalStateExecutionView, OnLocalTrigger, VacuumEVMOrder, VacuumEVMProof},
+    circuit::{
+        LocalStateExecutionView, OnLocalTrigger, VacuumEVM3DOrder, VacuumEVMOrder, VacuumEVMProof,
+    },
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, ContractsRegistry, KindValidator, RegistryContract},
     threevm::{
@@ -232,13 +234,6 @@ impl<T: Config> VacuumAccess<T> for Pallet<T> {
         <T as Config>::VacuumEVMApi::evm_order(origin, vacuum_evm_order)
     }
 
-    fn evm_bid(
-        origin: &T::RuntimeOrigin,
-        vacuum_evm_order: VacuumEVMOrder,
-    ) -> Result<bool, DispatchError> {
-        <T as Config>::VacuumEVMApi::evm_bid(origin, vacuum_evm_order)
-    }
-
     fn evm_confirm(
         origin: &T::RuntimeOrigin,
         vacuum_evm_order: VacuumEVMOrder,
@@ -248,30 +243,23 @@ impl<T: Config> VacuumAccess<T> for Pallet<T> {
 
     fn evm_3d_order(
         origin: &T::RuntimeOrigin,
-        vacuum_evm_order: VacuumEVMOrder,
-        nonce: u32,
+        vacuum_evm_order: VacuumEVM3DOrder,
     ) -> Result<bool, DispatchError> {
-        <T as Config>::VacuumEVMApi::evm_3d_order(origin, vacuum_evm_order, nonce)
+        <T as Config>::VacuumEVMApi::evm_3d_order(origin, vacuum_evm_order)
     }
 
     fn evm_submit_correctness_proof(
         origin: &T::RuntimeOrigin,
-        gateway_id: [u8; 4],
         vacuum_evm_proof: VacuumEVMProof,
     ) -> Result<bool, DispatchError> {
-        <T as Config>::VacuumEVMApi::evm_submit_correctness_proof(
-            origin,
-            gateway_id,
-            vacuum_evm_proof,
-        )
+        <T as Config>::VacuumEVMApi::evm_submit_correctness_proof(origin, vacuum_evm_proof)
     }
 
     fn evm_submit_fault_proof(
         origin: &T::RuntimeOrigin,
-        gateway_id: [u8; 4],
         vacuum_evm_proof: VacuumEVMProof,
     ) -> Result<bool, DispatchError> {
-        <T as Config>::VacuumEVMApi::evm_submit_fault_proof(origin, gateway_id, vacuum_evm_proof)
+        <T as Config>::VacuumEVMApi::evm_submit_fault_proof(origin, vacuum_evm_proof)
     }
 }
 

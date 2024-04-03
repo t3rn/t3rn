@@ -5,7 +5,7 @@ use frame_system::ensure_signed;
 use sp_core::H160;
 use sp_std::prelude::*;
 use t3rn_primitives::{
-    circuit::{LocalTrigger, OnLocalTrigger, VacuumEVMOrder},
+    circuit::{LocalTrigger, OnLocalTrigger, VacuumEVM3DOrder, VacuumEVMOrder, VacuumEVMProof},
     execution_source_to_option,
     portal::{Portal, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
@@ -19,6 +19,14 @@ use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
 };
+
+// pub enum VacuumAction {
+//     VacuumOrder = 90u8,
+//     Vacuum3DOrder = 91u8,
+//     VacuumConfirm = 92u8,
+//     VacuumSubmitCorrectnessProof = 93u8,
+//     VacuumSubmitFaultProof = 94u8,
+// }
 
 const LOG_TARGET: &str = "3vm::precompile";
 
@@ -108,6 +116,142 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 if let Ok(args) = args {
                     match invoke::<T>(PrecompileArgs::VacuumOrder(origin, args)) {
                         Ok(PrecompileInvocation::VacuumOrder(success)) => {
+                            match success {
+                                true => {
+                                    output.push(0); // It's an ok
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                                false => {
+                                    output.push(1); // It's an error
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                            }
+                        },
+                        Err(e) => {
+                            log::error!(target: LOG_TARGET, "Failed to invoke vacuum: {:?}", e);
+                            output.push(1); // It's an error
+                            output.append(&mut e.encode());
+                        },
+                        _ => {},
+                    }
+                } else {
+                    Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output);
+                }
+            },
+            VACUUM_3D_ORDER => {
+                let args: CodecResult<VacuumEVM3DOrder> = match codec {
+                    T3rnCodec::Scale => Decode::decode(&mut &args[..]),
+                    T3rnCodec::Rlp => VacuumEVM3DOrder::from_rlp_encoded_packed(&args[..]).map_err(|e| {
+                        log::debug!(target: LOG_TARGET, "Failed to decode vacuum order: {:?}", e);
+                        codec::Error::from("Failed to decode vacuum order")
+                    }),
+                };
+
+                if let Ok(args) = args {
+                    match invoke::<T>(PrecompileArgs::Vacuum3DOrder(origin, args)) {
+                        Ok(PrecompileInvocation::VacuumOrder(success)) => {
+                            match success {
+                                true => {
+                                    output.push(0); // It's an ok
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                                false => {
+                                    output.push(1); // It's an error
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                            }
+                        },
+                        Err(e) => {
+                            log::error!(target: LOG_TARGET, "Failed to invoke vacuum: {:?}", e);
+                            output.push(1); // It's an error
+                            output.append(&mut e.encode());
+                        },
+                        _ => {},
+                    }
+                } else {
+                    Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output);
+                }
+            },
+            VACUUM_CONFIRM => {
+                let args: CodecResult<VacuumEVMOrder> = match codec {
+                    T3rnCodec::Scale => Decode::decode(&mut &args[..]),
+                    T3rnCodec::Rlp => VacuumEVMOrder::from_rlp_encoded_packed(&args[..]).map_err(|e| {
+                        log::debug!(target: LOG_TARGET, "Failed to decode vacuum order: {:?}", e);
+                        codec::Error::from("Failed to decode vacuum order")
+                    }),
+                };
+
+                if let Ok(args) = args {
+                    match invoke::<T>(PrecompileArgs::VacuumConfirm(origin, args)) {
+                        Ok(PrecompileInvocation::VacuumConfirm(success)) => {
+                            match success {
+                                true => {
+                                    output.push(0); // It's an ok
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                                false => {
+                                    output.push(1); // It's an error
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                            }
+                        },
+                        Err(e) => {
+                            log::error!(target: LOG_TARGET, "Failed to invoke vacuum: {:?}", e);
+                            output.push(1); // It's an error
+                            output.append(&mut e.encode());
+                        },
+                        _ => {},
+                    }
+                } else {
+                    Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output);
+                }
+            },
+            VACUUM_SUBMIT_CORRECTNESS_PROOF => {
+                let args: CodecResult<VacuumEVMProof> = match codec {
+                    T3rnCodec::Scale => Decode::decode(&mut &args[..]),
+                    T3rnCodec::Rlp => VacuumEVMProof::from_rlp(&args[..]).map_err(|e| {
+                        log::debug!(target: LOG_TARGET, "Failed to decode vacuum order: {:?}", e);
+                        codec::Error::from("Failed to decode vacuum order")
+                    }),
+                };
+
+                if let Ok(args) = args {
+                    match invoke::<T>(PrecompileArgs::VacuumSubmitCorrectnessProof(origin, args)) {
+                        Ok(PrecompileInvocation::VacuumSubmitCorrectnessProof(success)) => {
+                            match success {
+                                true => {
+                                    output.push(0); // It's an ok
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                                false => {
+                                    output.push(1); // It's an error
+                                    Ok::<_, Error<T>>(()).encode_to(output)
+                                },
+                            }
+                        },
+                        Err(e) => {
+                            log::error!(target: LOG_TARGET, "Failed to invoke vacuum: {:?}", e);
+                            output.push(1); // It's an error
+                            output.append(&mut e.encode());
+                        },
+                        _ => {},
+                    }
+                } else {
+                    Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output);
+                }
+            },
+            VACUUM_SUBMIT_FAULT_PROOF => {
+                let args: CodecResult<VacuumEVMProof> = match codec {
+                    T3rnCodec::Scale => Decode::decode(&mut &args[..]),
+                    T3rnCodec::Rlp => VacuumEVMProof::from_rlp(&args[..]).map_err(|e| {
+                        log::debug!(target: LOG_TARGET, "Failed to decode vacuum order: {:?}", e);
+                        codec::Error::from("Failed to decode vacuum order")
+                    }),
+                };
+
+                if let Ok(args) = args {
+                    match invoke::<T>(PrecompileArgs::VacuumSubmitFaultProof(origin, args)) {
+                        Ok(PrecompileInvocation::VacuumSubmitFaultProof(success)) => {
                             match success {
                                 true => {
                                     output.push(0); // It's an ok
@@ -259,13 +403,21 @@ pub(crate) fn invoke<T: Config>(
             // let success = true;
             Ok(PrecompileInvocation::VacuumOrder(success))
         },
-        PrecompileArgs::VacuumBid(origin, vacuum_order) => {
-            let success = true;
-            Ok(PrecompileInvocation::VacuumBid(success))
-        },
         PrecompileArgs::VacuumConfirm(origin, vacuum_order) => {
             let success = true;
             Ok(PrecompileInvocation::VacuumConfirm(success))
+        },
+        PrecompileArgs::Vacuum3DOrder(origin, vacuum_order) => {
+            let success = true;
+            Ok(PrecompileInvocation::VacuumOrder(success))
+        },
+        PrecompileArgs::VacuumSubmitCorrectnessProof(origin, vacuum_proof) => {
+            let success = true;
+            Ok(PrecompileInvocation::VacuumSubmitCorrectnessProof(success))
+        },
+        PrecompileArgs::VacuumSubmitFaultProof(origin, vacuum_proof) => {
+            let success = true;
+            Ok(PrecompileInvocation::VacuumSubmitFaultProof(success))
         },
         PrecompileArgs::Signal(origin, signal) => {
             match <Pallet<T> as Signaller<T::Hash>>::signal(&signal) {

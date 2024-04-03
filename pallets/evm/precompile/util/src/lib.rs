@@ -17,6 +17,7 @@ use precompile_util_solidity::data::EvmData;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
+use vacuum_precompile::VacuumPrecompile;
 
 pub const TOKENS_PRECOMPILE_PREFIX: &[u8] = &[9u8; 16];
 
@@ -48,6 +49,7 @@ where
     // T3rn precompiles:
     Portal,
     Tokens,
+    Vacuum,
     Noop(T),
 }
 
@@ -80,6 +82,7 @@ where
             KnownPrecompile::ECRecoverPublicKey =>
                 <ECRecoverPublicKey as Precompile>::execute(handle),
             KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
+            KnownPrecompile::Vacuum => VacuumPrecompile::<T>::execute(handle),
             KnownPrecompile::Tokens => TokensPrecompile::<T>::execute(handle),
             KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
                 ExitError::Other("Noop precompile".into()),

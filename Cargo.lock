@@ -9950,6 +9950,7 @@ dependencies = [
  "sp-core",
  "sp-std 8.0.0",
  "tokens-precompile",
+ "vacuum-precompile",
 ]
 
 [[package]]
@@ -15674,6 +15675,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
 dependencies = [
  "getrandom 0.2.10",
+]
+
+[[package]]
+name = "vacuum-precompile"
+version = "1.5.0-rc.0"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-util-solidity",
+ "rlp",
+ "sp-std 8.0.0",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]

@@ -40,6 +40,10 @@ pub fn generate_precompile_set(
             sp_core::H160([8u8; 20]),
             evm_precompile_util::KnownPrecompile::Portal
         ),
+        (
+            sp_core::H160([9u8; 20]),
+            evm_precompile_util::KnownPrecompile::Vacuum
+        ),
     ];
     // Link the first 10000 asset ids addresses to TokensPrecompile
     // TODO: automate tokens precompile setup so it tokens does not need to be manually added

@@ -10,6 +10,7 @@ version    = { workspace = true }
 pallet-3vm-evm             = { path = "../..", default-features = false, package = "pallet-evm" }
 pallet-3vm-evm-primitives  = { path = "../../primitives", default-features = false, package = "fp-evm" }
 portal-precompile          = { path = "../portal", default-features = false }
+vacuum-precompile          = { path = "../vacuum", default-features = false }
 tokens-precompile          = { path = "../tokens", default-features = false }
 precompile-util-solidity  = { path = "./solidity", default-features = false }
 

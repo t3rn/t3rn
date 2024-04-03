@@ -146,6 +146,7 @@ parameter_types! {
     //     (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
     //     (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
     //     (40_u64, evm_precompile_util::KnownPrecompile::Portal)
+    //     (40_u64, evm_precompile_util::KnownPrecompile::Vacuum)
     // ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
