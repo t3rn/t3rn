@@ -35,7 +35,7 @@ use t3rn_primitives::circuit::{
 };
 use t3rn_types::sfx::TargetId;
 t3rn_primitives::reexport_currency_types!();
-use t3rn_primitives::circuit::{VacuumEVM3DOrder, VacuumEVMProof};
+use t3rn_primitives::circuit::{VacuumEVM3DOrder, VacuumEVMProof, VacuumEVMTeleportOrder};
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct OrderStatusRead<Hash, BlockNumber, Account> {
@@ -484,6 +484,73 @@ pub mod pallet {
             origin: &T::RuntimeOrigin,
             vacuum_evm_order: VacuumEVMOrder,
         ) -> Result<bool, DispatchError> {
+            Ok(true)
+        }
+
+        fn evm_teleport_order(
+            origin: &T::RuntimeOrigin,
+            vacuum_evm_order: VacuumEVMTeleportOrder,
+        ) -> Result<bool, DispatchError> {
+            let who = ensure_signed(origin.clone())?;
+
+            let gateway_id = vacuum_evm_order.gateway_id.clone();
+
+            let verified_order_bytes_inclusion_receipt = T::CircuitSubmitAPI::verify_sfx_proof(
+                gateway_id,
+                SpeedMode::Finalized,
+                None,
+                vacuum_evm_order.order_proof.clone(),
+            )?;
+
+            let decoded_remote_order_log =
+                RemoteEVMOrderLog::decode(&mut &verified_order_bytes_inclusion_receipt.message[..])
+                    .map_err(|e| {
+                        log::error!(
+                            "Vecuum::remote_order -- error decoding RemoteEVMOrderLog: {:?}",
+                            e
+                        );
+                        DispatchError::Other(
+                            "Vecuum::remote_order -- error decoding RemoteEVMOrderLog",
+                        )
+                    })?;
+
+            let decoded_remote_order: RemoteEVMOrderLocalized = RemoteEVMOrderLocalized {
+                from: decoded_remote_order_log.sender,
+                destination: decoded_remote_order_log.destination,
+                asset: T::Xdns::get_token_by_eth_address(
+                    gateway_id,
+                    decoded_remote_order_log.reward_asset,
+                )?
+                .token_id,
+                target_account: decoded_remote_order_log.target_account,
+                reward_asset: decoded_remote_order_log.reward_asset,
+                amount: decoded_remote_order_log.amount,
+                insurance: decoded_remote_order_log.insurance,
+                max_reward: decoded_remote_order_log.max_reward,
+                nonce: decoded_remote_order_log.nonce,
+            };
+
+            let side_effect: SideEffect<T::AccountId, BalanceOf<T>> =
+                decoded_remote_order.clone().try_into()?;
+            let remote_origin: OrderOrigin<T::AccountId> =
+                OrderOrigin::from_remote_nonce(decoded_remote_order.nonce);
+
+            T::CircuitSubmitAPI::on_remote_origin_trigger(
+                origin.clone(),
+                remote_origin.to_account_id(),
+                vec![side_effect],
+                SpeedMode::Fast,
+            )
+            .map_err(|e| {
+                log::error!(
+                    "Vacuum::evm_teleport_order -- error calling on_remote_origin_trigger: {:?}",
+                    e
+                );
+                DispatchError::Other(
+                    "Vacuum::evm_teleport_order -- error calling on_remote_origin_trigger",
+                )
+            })?;
+
             Ok(true)
         }
 

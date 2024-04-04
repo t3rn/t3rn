@@ -14,6 +14,7 @@ use t3rn_primitives::{
     account_manager::Outcome,
     circuit::{
         LocalStateExecutionView, OnLocalTrigger, VacuumEVM3DOrder, VacuumEVMOrder, VacuumEVMProof,
+        VacuumEVMTeleportOrder,
     },
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, ContractsRegistry, KindValidator, RegistryContract},
@@ -232,6 +233,13 @@ impl<T: Config> VacuumAccess<T> for Pallet<T> {
         vacuum_evm_order: VacuumEVMOrder,
     ) -> Result<bool, DispatchError> {
         <T as Config>::VacuumEVMApi::evm_order(origin, vacuum_evm_order)
+    }
+
+    fn evm_teleport_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMTeleportOrder,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_teleport_order(origin, vacuum_evm_order)
     }
 
     fn evm_confirm(

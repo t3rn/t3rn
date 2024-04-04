@@ -21,6 +21,7 @@ pub enum VacuumAction {
     VacuumConfirm = 92,
     VacuumSubmitCorrectnessProof = 93,
     VacuumSubmitFaultProof = 94,
+    VacuumTeleportOrder = 96,
 }
 
 impl<T> EvmPrecompile for VacuumPrecompile<T>
@@ -56,6 +57,7 @@ where
                 2 => VacuumAction::VacuumConfirm,
                 3 => VacuumAction::VacuumSubmitCorrectnessProof,
                 4 => VacuumAction::VacuumSubmitFaultProof,
+                5 => VacuumAction::VacuumTeleportOrder,
                 _ =>
                     return Err(PrecompileFailure::Error {
                         exit_status: ExitError::Other("Invalid action selector".into()),

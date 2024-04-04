@@ -103,6 +103,54 @@ impl VacuumEVMOrder {
     }
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+pub struct VacuumEVMTeleportOrder {
+    pub gateway_id: [u8; 4],
+
+    pub order_proof: Vec<u8>,
+}
+
+impl VacuumEVMTeleportOrder {
+    pub fn new(gateway_id: [u8; 4], order_proof: Vec<u8>) -> Self {
+        VacuumEVMTeleportOrder {
+            gateway_id,
+            order_proof,
+        }
+    }
+
+    pub fn from_rlp(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        let mut gateway_id: [u8; 4] = Default::default();
+        let mut order_proof = vec![];
+
+        // Assume at least 4 bytes for the gateway_id
+        if encoded_slice.len() < 4 {
+            return Err(DispatchError::Other("Invalid encoded slice"))
+        }
+
+        // Take the first 4 bytes and convert them to a TargetId
+        gateway_id.copy_from_slice(&encoded_slice[0..4]);
+
+        let encoded_slice = &encoded_slice[4..];
+
+        // Skip the first 4 bytes
+
+        let mut index = 0;
+        let mut proof_vec = vec![&mut order_proof];
+
+        for proof in proof_vec.iter_mut() {
+            let proof_len = encoded_slice[index] as usize;
+            index += 1;
+            proof.extend_from_slice(&encoded_slice[index..index + proof_len]);
+            index += proof_len;
+        }
+
+        Ok(VacuumEVMTeleportOrder {
+            gateway_id,
+            order_proof,
+        })
+    }
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, MaxEncodedLen, TypeInfo)]
 pub struct VacuumEVM3DOrder {
     pub destination: TargetId,
