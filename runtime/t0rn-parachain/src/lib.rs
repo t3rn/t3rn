@@ -16,8 +16,6 @@ pub mod system_config;
 pub mod treasuries_config;
 pub mod xbi_config;
 
-pub mod precompiles;
-
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 

@@ -49,7 +49,6 @@ pub mod circuit_config;
 pub mod consensus_aura_config;
 pub mod contracts_config;
 pub mod hooks;
-pub mod precompiles;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod treasuries_config;

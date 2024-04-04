@@ -10,7 +10,6 @@ use frame_support::{
     PalletId,
 };
 
-// use evm_precompile_util::KnownPrecompile;
 use circuit_runtime_types::{AssetId, EvmAddress};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
@@ -25,9 +24,7 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{
-    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
-};
+use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -138,9 +135,7 @@ parameter_types! {
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 3301;
     pub const PotId: PalletId = PalletId(*b"PotStake");
-    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(
-        precompiles::generate_precompile_set().into_iter().collect()
-    );
+    pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
@@ -159,7 +154,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = pallet_3vm_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type OnCreate = ();
-    type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
+    type PrecompilesType = evm_precompile_util::T3rnPrecompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
