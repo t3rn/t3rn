@@ -25,13 +25,12 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{
-    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+use t3rn_primitives::{
+    monetary::{MILLIUNIT, UNIT},
+    threevm::{get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE},
 };
 
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {

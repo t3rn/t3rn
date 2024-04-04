@@ -74,7 +74,7 @@ fn decimals_native_works() {
             )
             .expect_cost(1250)
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(U256::from(12)).build());
+            .execute_returns(EvmDataWriter::new().write(U256::from(18)).build());
     });
 }
 

@@ -61,8 +61,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1, // 0 = old, 1 = new; see above for details
 };
 
-pub const TRN: Balance = UNIT;
-
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
