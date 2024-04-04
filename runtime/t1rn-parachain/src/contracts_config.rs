@@ -135,20 +135,7 @@ const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-    pub const ChainId: u64 = 42;
-    // pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-    //     (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-    //     (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-    //     (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-    //     (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-    //     (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-    //     (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-    //     (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-    //     (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-    //     (40_u64, evm_precompile_util::KnownPrecompile::Portal)
-    //     (40_u64, evm_precompile_util::KnownPrecompile::Vacuum)
-    // ].into_iter().collect());
-    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
+    pub const ChainId: u64 = 3331;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
