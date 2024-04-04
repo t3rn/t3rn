@@ -63,15 +63,23 @@ where
         let address = handle.code_address();
         match address {
             // Ethereum precompiles
-            a if hash(&1) == a => Some(<ECRecover as Precompile>::execute(handle)),
-            a if hash(&2) == a => Some(<Sha256 as Precompile>::execute(handle)),
-            a if hash(&3) == a => Some(<Ripemd160 as Precompile>::execute(handle)),
-            a if hash(&4) == a => Some(<Identity as Precompile>::execute(handle)),
-            a if hash(&5) == a => Some(<Modexp as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]) == a =>
+                Some(<ECRecover as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]) == a =>
+                Some(<Sha256 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]) == a =>
+                Some(<Ripemd160 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4]) == a =>
+                Some(<Identity as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]) == a =>
+                Some(<Modexp as Precompile>::execute(handle)),
             // Non-Ethereum precompiles
-            a if hash(&101) == a => Some(<Sha3FIPS256 as Precompile>::execute(handle)),
-            a if hash(&102) == a => Some(<Sha3FIPS512 as Precompile>::execute(handle)),
-            a if hash(&103) == a => Some(<ECRecoverPublicKey as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101]) == a =>
+                Some(<Sha3FIPS256 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102]) == a =>
+                Some(<Sha3FIPS512 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 103]) == a =>
+                Some(<ECRecoverPublicKey as Precompile>::execute(handle)),
             // t3rn precompiles
             a if H160([7u8; 20]) == a => Some(PortalPrecompile::<T>::execute(handle)),
             a if H160([8u8; 20]) == a => Some(VacuumPrecompile::<T>::execute(handle)),

@@ -14667,6 +14667,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hash-db 0.15.2",
+ "hex",
  "hex-literal 0.3.4",
  "k256",
  "libsecp256k1",
