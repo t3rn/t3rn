@@ -12,13 +12,14 @@ pallet-3vm-evm-primitives  = { path = "../../primitives", default-features = fal
 portal-precompile          = { path = "../portal", default-features = false }
 vacuum-precompile          = { path = "../vacuum", default-features = false }
 tokens-precompile          = { path = "../tokens", default-features = false }
-precompile-util-solidity  = { path = "./solidity", default-features = false }
+precompile-util-solidity   = { path = "./solidity", default-features = false }
 
 frame-system              = { workspace = true }
 frame-support             = { workspace = true }
 sp-core                   = { workspace = true }
 sp-std                    = { workspace = true }
 pallet-assets             = { workspace = true }
+pallet-balances           = { workspace = true }
 
 pallet-evm-precompile-3vm-dispatch = { path = "../3vm-dispatch", default-features = false }
 pallet-evm-precompile-blake2       = { path = "../blake2", default-features = false }
@@ -36,6 +37,7 @@ std = [
   "frame-system/std",
   "sp-core/std",
   "sp-std/std",
+  "pallet-balances/std",
   "pallet-assets/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-3vm-evm/std",

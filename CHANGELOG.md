@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.87.1-rc.0] - 2024-04-04
+### :bug: Bug Fixes
+- [`9048c01`](https://github.com/t3rn/t3rn/commit/9048c01b7fd32ec7928baed8bd9c4376381a839c) - update docs executor breakdown *(PR [#1571](https://github.com/t3rn/t3rn/pull/1571) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`b01617e`](https://github.com/t3rn/t3rn/commit/b01617e17cebdd393a3fb672c6cabad092c35449) - update link structure *(PR [#1583](https://github.com/t3rn/t3rn/pull/1583) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`4446d48`](https://github.com/t3rn/t3rn/commit/4446d4819ee7231759e2a00e281c16d24d23108c) - support  for all AssetId  values through TokensPrecompile *(PR [#1593](https://github.com/t3rn/t3rn/pull/1593) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.87.0-rc.0] - 2024-02-19
 ### :sparkles: New Features
 - [`59a6a97`](https://github.com/t3rn/t3rn/commit/59a6a97601a02ba53bb5d2ef25943add0e25f8b8) - Substrate tokens ERC20 precompile,  EVM CLI, EVM to Substrate decimals conversion, Working EVM Transfers *(PR [#1563](https://github.com/t3rn/t3rn/pull/1563) by [@chexware](https://github.com/chexware))*
@@ -2071,3 +2078,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.86.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.85.0-rc.0...v1.86.0-rc.0
 [v1.86.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.0-rc.0...v1.86.1-rc.0
 [v1.87.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.1-rc.0...v1.87.0-rc.0
+[v1.87.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.0-rc.0...v1.87.1-rc.0

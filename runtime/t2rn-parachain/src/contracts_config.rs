@@ -144,10 +144,6 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
-// pub struct Precompiles<Runtime> {
-//     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
-//     phantom: PhantomData<Runtime>,
-// }
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = EvmAddressMapping<Runtime>;
@@ -165,8 +161,6 @@ impl pallet_3vm_evm::Config for Runtime {
     type OnCreate = ();
     type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
     type PrecompilesValue = PrecompilesValue;
-    // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
-    // type PrecompilesValue = ();
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;

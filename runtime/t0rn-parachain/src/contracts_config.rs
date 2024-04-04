@@ -10,8 +10,8 @@ use frame_support::{
     PalletId,
 };
 
-// use evm_precompile_util::KnownPrecompile;
 use circuit_runtime_types::{AssetId, EvmAddress};
+use evm_precompile_util::KnownPrecompile;
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_ethereum::PostLogContent;
@@ -147,14 +147,9 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
-// pub struct Precompiles<Runtime> {
-//     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
-//     phantom: PhantomData<Runtime>,
-//}
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = EvmAddressMapping<Runtime>;
-    //type Erc20Mapping = Erc20Mapping;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
