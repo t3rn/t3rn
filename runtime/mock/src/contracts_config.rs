@@ -132,20 +132,20 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 42;
-    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-         (sp_core::H160([0u8; 20]), evm_precompile_util::KnownPrecompile::ECRecover),
-         (sp_core::H160([1u8; 20]), evm_precompile_util::KnownPrecompile::Sha256),
-         (sp_core::H160([2u8; 20]), evm_precompile_util::KnownPrecompile::Ripemd160),
-         (sp_core::H160([3u8; 20]), evm_precompile_util::KnownPrecompile::Identity),
-         (sp_core::H160([4u8; 20]), evm_precompile_util::KnownPrecompile::Modexp),
-         (sp_core::H160([5u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-         (sp_core::H160([6u8; 20]), evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-         (sp_core::H160([7u8; 20]), evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-         (sp_core::H160([8u8; 20]), evm_precompile_util::KnownPrecompile::Portal),
+    pub PrecompilesValue: evm_precompile_util::precompile_mock::MockPrecompileSet<Runtime> = evm_precompile_util::precompile_mock::MockPrecompileSet::<Runtime>::new(sp_std::vec![
+         (sp_core::H160([0u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::ECRecover),
+         (sp_core::H160([1u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Sha256),
+         (sp_core::H160([2u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Ripemd160),
+         (sp_core::H160([3u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Identity),
+         (sp_core::H160([4u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Modexp),
+         (sp_core::H160([5u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Sha3FIPS256),
+         (sp_core::H160([6u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Sha3FIPS512),
+         (sp_core::H160([7u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::ECRecoverPublicKey),
+         (sp_core::H160([8u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Portal),
          // TRN address
-         (get_tokens_precompile_address(0), evm_precompile_util::KnownPrecompile::Tokens),
+         (get_tokens_precompile_address(0), evm_precompile_util::precompile_mock::KnownPrecompile::Tokens),
          // TST address
-         (get_tokens_precompile_address(1), evm_precompile_util::KnownPrecompile::Tokens)
+         (get_tokens_precompile_address(1), evm_precompile_util::precompile_mock::KnownPrecompile::Tokens)
     ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
@@ -166,7 +166,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ();
     type OnCreate = ();
-    type PrecompilesType = evm_precompile_util::Precompiles<Runtime>;
+    type PrecompilesType = evm_precompile_util::precompile_mock::MockPrecompileSet<Runtime>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
