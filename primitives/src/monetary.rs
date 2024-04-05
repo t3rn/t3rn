@@ -5,11 +5,11 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Perbill, RuntimeDebug};
 
-pub const DECIMALS: u8 = 18;
+pub const DECIMALS: u8 = 12;
 // Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 1_000_000_000_000_000_000;
-pub const MILLIUNIT: Balance = 1_000_000_000_000_000;
-pub const MICROUNIT: Balance = 1_000_000_000_000;
+pub const UNIT: Balance = 1_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000;
+pub const MICROUNIT: Balance = 1_000_000;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;

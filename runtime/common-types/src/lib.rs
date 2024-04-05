@@ -12,7 +12,7 @@ use sp_runtime::{
     MultiSignature, Perbill, Saturating,
 };
 
-pub const MILLIUNIT: Balance = 1_000_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000;
 
 /// An index to a block.
 pub type BlockNumber = u32;
