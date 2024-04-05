@@ -40,8 +40,21 @@ export const handleEvmDeployCommand = async (
         const provider = new JsonRpcProvider(args.endpoint)
 
         const contractOwnerWallet = new Wallet(args.owner, provider)
-        const contractBytecode = fs.readFileSync(arg.contractBytecode).toString();
+        spinner.stopAndPersist({
+            symbol: '\u2713',
+            text: colorLogMsg('INFO', `Contract owner: ${contractOwnerWallet.address}`),
+        })
+
         const contractAbi = JSON.parse(fs.readFileSync(args.contractAbi).toString());
+        spinner.stopAndPersist({
+            symbol: '\u2713',
+            text: colorLogMsg('INFO', `Succesfully read contract's ABI`),
+        })
+        const contractBytecode = fs.readFileSync(args.contractBytecode).toString();
+        spinner.stopAndPersist({
+            symbol: '\u2713',
+            text: colorLogMsg('INFO', `Succesfully read contract's bytecode`),
+        })
 
         const contractFactory = new ContractFactory(contractAbi, contractBytecode, contractOwnerWallet)
 
