@@ -80,8 +80,22 @@ where
     }
 
     fn is_precompile(&self, _address: H160, gas: u64) -> IsPrecompileResult {
+        let mut is_precompile_result: bool = false;
+        if (_address == hash(&1)
+            || _address == hash(&2)
+            || _address == hash(&3)
+            || _address == hash(&4)
+            || _address == hash(&5)
+            || _address == hash(&101)
+            || _address == hash(&102)
+            || _address == hash(&103)
+            || _address == hash(&10001)
+            || &_address.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX)
+        {
+            is_precompile_result = true;
+        }
         IsPrecompileResult::Answer {
-            is_precompile: true,
+            is_precompile: is_precompile_result,
             extra_cost: 0,
         }
     }
