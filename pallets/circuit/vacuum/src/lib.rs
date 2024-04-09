@@ -451,7 +451,7 @@ mod tests {
         claimable::CircuitRole,
         clock::OnHookQueues,
         light_client::LightClientAsyncAPI,
-        monetary::TRN,
+        monetary::UNIT,
         portal::Portal as PortalT,
         EthereumToken, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount,
         TreasuryAccountProvider,
@@ -476,8 +476,8 @@ mod tests {
         assert!(XDNS::all_token_ids().contains(&asset_id));
         // Load requester enough some funds
         let issuer_is_escrow_account = MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
-        Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
-        Balances::deposit_creating(&executor, (100_000 * TRN) as Balance); // To cover fees
+        Balances::deposit_creating(&requester, (100_000 * UNIT) as Balance); // To cover fees
+        Balances::deposit_creating(&executor, (100_000 * UNIT) as Balance); // To cover fees
         let requester_starting_balance = Assets::balance(asset_id, &requester);
         let executor_starting_balance = Assets::balance(asset_id, &executor);
         assert_ok!(Assets::mint(

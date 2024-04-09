@@ -27,9 +27,9 @@ use frame_support::{
 use sp_runtime::BuildStorage;
 use std::{collections::BTreeMap, str::FromStr};
 
-use t3rn_primitives::threevm::{
-    convert_decimals_from_evm, convert_decimals_to_evm, DECIMALS_VALUE,
-};
+//use t3rn_primitives::threevm::{
+//    convert_decimals_from_evm, convert_decimals_to_evm, DECIMALS_VALUE,
+//};
 
 mod proof_size_test {
     use super::*;
@@ -761,10 +761,10 @@ fn ed_0_refund_patch_works() {
             evm_addr,
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(convert_decimals_to_evm::<u128>(1_000_000u128)),
+            U256::from(1_000_000u128),
             21776,
-            U256::from(convert_decimals_to_evm::<u128>(1_000_000u128)),
-            Some(U256::from(convert_decimals_to_evm::<u128>(1_000_000u128))),
+            U256::from(1_000_000u128),
+            Some(U256::from(1_000_000u128)),
             Some(U256::from(0)),
             Vec::new(),
         );
@@ -834,10 +834,7 @@ fn reducible_balance() {
         Balances::set_lock(lock_id, &account_id, to_lock, WithdrawReasons::RESERVE);
         // Reducible is, as currently configured in `account_basic`, (balance - lock - existential).
         let reducible_balance = EVM::account_basic(&evm_addr).0.balance;
-        assert_eq!(
-            reducible_balance,
-            (genesis_balance - convert_decimals_to_evm::<u64>(to_lock + existential))
-        );
+        assert_eq!(reducible_balance, (genesis_balance - to_lock + existential));
     });
 }
 
@@ -851,19 +848,16 @@ fn author_should_get_tip() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(convert_decimals_to_evm::<u64>(1u64)),
+            U256::from(1u64),
             1000000,
-            U256::from(convert_decimals_to_evm::<u64>(2_000_000u64)),
-            Some(U256::from(convert_decimals_to_evm::<u64>(1))),
+            U256::from(2_000_000u64),
+            Some(U256::from(1)),
             None,
             Vec::new(),
         );
         result.expect("EVM can be called");
         let after_tip = EVM::account_basic(&author).0.balance;
-        assert_eq!(
-            after_tip,
-            (before_tip + convert_decimals_to_evm::<u64>(21_000))
-        );
+        assert_eq!(after_tip, (before_tip + 21_000));
     });
 }
 
@@ -876,7 +870,7 @@ fn issuance_after_tip() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(convert_decimals_to_evm::<u64>(1u64)),
+            U256::from(1u64),
             1000000,
             U256::from(2_000_000_000),
             Some(U256::from(1)),
@@ -929,9 +923,9 @@ fn refunds_should_work() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(convert_decimals_to_evm::<u128>(1u128)),
+            U256::from(1u128),
             1000000,
-            U256::from(convert_decimals_to_evm::<u128>(2_000_000)),
+            U256::from(2_000_000),
             None,
             None,
             Vec::new(),
@@ -939,10 +933,7 @@ fn refunds_should_work() {
         let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
         let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
         let after_call = EVM::account_basic(&H160::default()).0.balance;
-        assert_eq!(
-            after_call,
-            before_call - total_cost * U256::from(DECIMALS_VALUE)
-        );
+        assert_eq!(after_call, before_call - total_cost);
     });
 }
 
@@ -965,10 +956,10 @@ fn refunds_and_priority_should_work() {
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(convert_decimals_to_evm::<u128>(1)),
+            U256::from(1),
             1000000,
-            max_fee_per_gas * U256::from(DECIMALS_VALUE),
-            Some(tip * U256::from(DECIMALS_VALUE)),
+            max_fee_per_gas,
+            Some(tip),
             None,
             Vec::new(),
         );
@@ -979,15 +970,9 @@ fn refunds_and_priority_should_work() {
 
         // The tip is deducted but never refunded to the caller.
         let after_tip = EVM::account_basic(&author).0.balance;
-        assert_eq!(
-            after_tip,
-            (before_tip + actual_tip * U256::from(DECIMALS_VALUE))
-        );
+        assert_eq!(after_tip, (before_tip + actual_tip));
 
-        assert_eq!(
-            after_call,
-            before_call - total_cost * U256::from(DECIMALS_VALUE)
-        );
+        assert_eq!(after_call, before_call - total_cost);
     });
 }
 

@@ -32,7 +32,7 @@ use frame_support::{
 use pallet_3vm_evm::AddressMapping;
 use sp_core::{H256, U256};
 use std::str::FromStr;
-use t3rn_primitives::threevm::convert_decimals_to_evm;
+//use t3rn_primitives::threevm::convert_decimals_to_evm;
 
 fn eip2930_erc20_creation_unsigned_transaction() -> EIP2930UnsignedTransaction {
     EIP2930UnsignedTransaction {
@@ -542,7 +542,7 @@ fn validated_transaction_apply_zero_gas_price_works() {
             gas_price: U256::zero(),
             gas_limit: U256::from(21_000),
             action: ethereum::TransactionAction::Call(bob.address),
-            value: U256::from(convert_decimals_to_evm::<u64>(100u64)),
+            value: U256::from(100u64),
             input: Default::default(),
         }
         .sign(&alice.private_key, None);
