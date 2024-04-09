@@ -462,7 +462,7 @@ mod tests {
 
     use t3rn_primitives::{
         circuit::{AdaptiveTimeout, CircuitStatus},
-        monetary::EXISTENTIAL_DEPOSIT,
+        monetary::MOCK_EXISTENTIAL_DEPOSIT as EXISTENTIAL_DEPOSIT,
     };
     use t3rn_types::fsx::TargetId;
 
