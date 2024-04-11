@@ -45,12 +45,12 @@ export const handleEvmDeployCommand = async (
             text: colorLogMsg('INFO', `Contract owner: ${contractOwnerWallet.address}`),
         })
 
-        const contractAbi = JSON.parse(fs.readFileSync(args.contractAbi).toString());
+        const contractAbi = JSON.parse(fs.readFileSync(args.contractAbi).toString())
         spinner.stopAndPersist({
             symbol: '\u2713',
             text: colorLogMsg('INFO', `Succesfully read contract's ABI`),
         })
-        const contractBytecode = fs.readFileSync(args.contractBytecode).toString();
+        const contractBytecode = fs.readFileSync(args.contractBytecode).toString()
         spinner.stopAndPersist({
             symbol: '\u2713',
             text: colorLogMsg('INFO', `Succesfully read contract's bytecode`),
