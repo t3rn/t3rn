@@ -73,24 +73,23 @@ where
             a if hash(&10001) == a => Some(PortalPrecompile::<T>::execute(handle)),
             a if &a.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX =>
                 Some(TokensPrecompile::<T>::execute(handle)),
-            _ => Some(PrecompileResult::Err(PrecompileFailure::from(
-                ExitError::Other("Unknown precompile".into()),
-            ))),
+            // Default
+            _ => None,
         }
     }
 
-    fn is_precompile(&self, _address: H160, gas: u64) -> IsPrecompileResult {
+    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
         let mut is_precompile_result: bool = false;
-        if (_address == hash(&1)
-            || _address == hash(&2)
-            || _address == hash(&3)
-            || _address == hash(&4)
-            || _address == hash(&5)
-            || _address == hash(&101)
-            || _address == hash(&102)
-            || _address == hash(&103)
-            || _address == hash(&10001)
-            || &_address.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX)
+        if (address == hash(&1)
+            || address == hash(&2)
+            || address == hash(&3)
+            || address == hash(&4)
+            || address == hash(&5)
+            || address == hash(&101)
+            || address == hash(&102)
+            || address == hash(&103)
+            || address == hash(&10001)
+            || &address.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX)
         {
             is_precompile_result = true;
         }
