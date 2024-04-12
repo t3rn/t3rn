@@ -1,7 +1,8 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AssetsConfig, AuraId, BalancesConfig, CollatorSelectionConfig,
     EvmConfig, GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeGenesisConfig,
-    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, U256, WASM_BINARY,
+    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, TRN, TST, U256,
+    WASM_BINARY,
 };
 use t3rn_primitives::monetary::UNIT as TRN;
 
@@ -433,32 +434,32 @@ fn polkadot_genesis_full(
                 (
                     2,
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    1000 * TRN,
+                    1000 * TST,
                 ),
                 (
                     2,
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    1000 * TRN,
+                    1000 * TST,
                 ),
                 (
                     2,
                     get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    1000 * TRN,
+                    1000 * TST,
                 ),
                 (
                     2,
                     get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    1000 * TRN,
+                    1000 * TST,
                 ),
                 (
                     2,
                     get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    1000 * TRN,
+                    1000 * TST,
                 ),
                 (
                     2,
                     get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    1000 * TRN,
+                    1000 * TST,
                 ),
             ],
         },
@@ -485,7 +486,7 @@ fn polkadot_genesis_full(
                     GenesisAccount {
                         nonce: U256::zero(),
                         // Using a larger number, so I can tell the accounts apart by balance.
-                        balance: U256::from(300 * TRN),
+                        balance: U256::from(2u64 << 56),
                         code: vec![],
                         storage: std::collections::BTreeMap::new(),
                     },
@@ -495,7 +496,7 @@ fn polkadot_genesis_full(
                     H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C")
                         .expect("internal H160 is valid; qed"),
                     GenesisAccount {
-                        balance: U256::from(72000 * TRN),
+                        balance: U256::from(1u64 << 56),
                         code: Default::default(),
                         nonce: Default::default(),
                         storage: Default::default(),
@@ -506,7 +507,7 @@ fn polkadot_genesis_full(
                     H160::from_str("2C7A1CaAC34549ef4D6718ECCF3120AC2f74Df5C")
                         .expect("internal H160 is valid; qed"),
                     GenesisAccount {
-                        balance: U256::from(150 * TRN),
+                        balance: U256::from(1u64 << 56),
                         code: Default::default(),
                         nonce: Default::default(),
                         storage: Default::default(),
