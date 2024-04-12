@@ -1,10 +1,11 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AssetsConfig, AuraId, BalancesConfig, CollatorSelectionConfig,
     EvmConfig, GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeGenesisConfig,
-    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, TRN, TST, U256,
-    WASM_BINARY,
+    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, U256, WASM_BINARY,
 };
 use t3rn_primitives::monetary::UNIT as TRN;
+
+const TST: u128 = TRN * 1_000_000;
 
 use codec::Encode;
 

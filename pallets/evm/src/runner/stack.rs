@@ -502,19 +502,12 @@ where
         config: &evm::Config,
     ) -> Result<CreateInfo, RunnerError<Self::Error>> {
         let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-        let substrate_value: U256 =
-            value
-                .checked_div(U256::from(DECIMALS_VALUE))
-                .ok_or(RunnerError {
-                    error: Error::<T>::Undefined,
-                    weight,
-                })?;
         if validate {
             Self::validate(
                 source,
                 None,
                 init.clone(),
-                substrate_value,
+                value,
                 gas_limit,
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
@@ -529,7 +522,7 @@ where
         let precompiles = T::PrecompilesValue::get();
         Self::execute(
             source,
-            substrate_value,
+            value,
             gas_limit,
             max_fee_per_gas,
             max_priority_fee_per_gas,
@@ -565,19 +558,12 @@ where
         config: &evm::Config,
     ) -> Result<CreateInfo, RunnerError<Self::Error>> {
         let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-        let substrate_value: U256 =
-            value
-                .checked_div(U256::from(DECIMALS_VALUE))
-                .ok_or(RunnerError {
-                    error: Error::<T>::Undefined,
-                    weight,
-                })?;
         if validate {
             Self::validate(
                 source,
                 None,
                 init.clone(),
-                substrate_value,
+                value,
                 gas_limit,
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
@@ -593,7 +579,7 @@ where
         let code_hash = H256::from(sp_io::hashing::keccak_256(&init));
         Self::execute(
             source,
-            substrate_value,
+            value,
             gas_limit,
             max_fee_per_gas,
             max_priority_fee_per_gas,
