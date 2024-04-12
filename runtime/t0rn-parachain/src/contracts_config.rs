@@ -137,7 +137,7 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-    pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+    pub const GasLimitPovSizeRatio: u64 = 4;
     pub const ChainId: u64 = 3310;
     pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
