@@ -649,7 +649,6 @@ mod tests {
         });
     }
 
-    #[ignore]
     #[test]
     fn invoke_vacuum_remote_order_to_single_order_as_rlp_contract_arguments() {
         new_test_ext().execute_with(|| {
