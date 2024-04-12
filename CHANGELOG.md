@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.87.3-rc.0] - 2024-04-12
+### :bug: Bug Fixes
+- [`5df29af`](https://github.com/t3rn/t3rn/commit/5df29afeb738b9a43ffcaa87f1b82570d25085d6) - contract deployment works without producing OutOfGas and UnknownPrecompile errors *(PR [#1598](https://github.com/t3rn/t3rn/pull/1598) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.87.2-rc.0] - 2024-04-04
 ### :bug: Bug Fixes
 - [`445569e`](https://github.com/t3rn/t3rn/commit/445569e51762b928edbf798d39f6859553424d04) - claiming EVM address with Substrate account also transfer the balance from the address *(PR [#1592](https://github.com/t3rn/t3rn/pull/1592) by [@chexware](https://github.com/chexware))*
@@ -2085,3 +2090,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.87.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.1-rc.0...v1.87.0-rc.0
 [v1.87.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.0-rc.0...v1.87.1-rc.0
 [v1.87.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.1-rc.0...v1.87.2-rc.0
+[v1.87.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.2-rc.0...v1.87.3-rc.0

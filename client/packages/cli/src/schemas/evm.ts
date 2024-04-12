@@ -44,6 +44,28 @@ export const EvmTransferSchema = z.object({
     .positive(),
 })
 
+export const EvmDeploySchema = z.object({
+    endpoint: z
+        .string({
+            invalid_type_error: 'Endpoint must be a string',
+            required_error: 'Endpoint is required',
+        })
+        .startsWith('http://'),
+    owner: z.string({
+        invalid_type_error: 'Owner must be a string',
+        required_error: 'Owner is required',
+    }),
+    contractAbi: z.string({
+        invalid_type_error: 'Contract abi must be a string',
+        required_error: 'Contract abi is required',
+    }),
+    contractBytecode: z.string({
+        invalid_type_error: 'Contract bytecode must be a string',
+        required_error: 'Contract bytecode is required',
+    }),
+
+})
+
 export const EvmClaimAddressSchema = z.object({
   endpoint: z
     .string({
