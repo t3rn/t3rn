@@ -12,6 +12,8 @@ use sp_runtime::{
     MultiSignature, Perbill, Saturating,
 };
 
+pub const MILLIUNIT: Balance = 1_000_000_000;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -77,19 +79,6 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We assume that ~25% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(25);
-
-// Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 1_000_000_000_000;
-pub const MILLIUNIT: Balance = 1_000_000_000;
-pub const MICROUNIT: Balance = 1_000_000;
-
-pub const DECIMALS: u8 = 12;
-pub const MILLIT3RN: u64 = 1_000_000_000;
-pub const MT3RN: Balance = MILLIT3RN as Balance;
-pub const TRN: u64 = 1_000_000_000_000;
-
-/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(

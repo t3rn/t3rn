@@ -84,6 +84,7 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }
+t3rn-primitives       = { default-features = false, path = "../../primitives" }
 
 [features]
 default = [ "std" ]
@@ -141,6 +142,7 @@ std = [
   "xcm-executor/std",
   "xcm/std",
   "circuit-runtime-types/std",
+  "t3rn-primitives/std",
 ]
 
 runtime-benchmarks = [

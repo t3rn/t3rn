@@ -19,7 +19,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1,
 };
 
-use t3rn_primitives::monetary::MILLIT3RN;
+use t3rn_primitives::monetary::MILLIUNIT as BASE_MILLIUNIT;
 
 use frame_system::EnsureRoot;
 
@@ -62,7 +62,8 @@ use pallet_3vm_evm::Runner;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const MT3RN: Balance = MILLIT3RN as Balance;
+const MILLIUNIT: Balance = BASE_MILLIUNIT * 1_000_000;
+const MT3RN: Balance = MILLIUNIT as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;

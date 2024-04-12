@@ -100,7 +100,8 @@ pub use fp_evm::{
     PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
     Vicinity,
 };
-use t3rn_primitives::threevm::{convert_decimals_to_evm, Erc20Mapping, ThreeVm};
+//use t3rn_primitives::threevm::{convert_decimals_to_evm, Erc20Mapping, ThreeVm};
+use t3rn_primitives::threevm::{Erc20Mapping, ThreeVm};
 
 pub use self::{
     pallet::*,
@@ -981,9 +982,10 @@ impl<T: Config> Pallet<T> {
         (
             Account {
                 nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-                balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
-                    convert_decimals_to_evm::<<<T as pallet::Config>::Currency as frame_support::traits::fungible::Inspect<<T as frame_system::Config>::AccountId>>::Balance>(balance),
-                )),
+                balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+                // balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+                //     convert_decimals_to_evm::<<<T as pallet::Config>::Currency as frame_support::traits::fungible::Inspect<<T as frame_system::Config>::AccountId>>::Balance>(balance),
+                // )),
             },
             T::DbWeight::get().reads(2),
         )

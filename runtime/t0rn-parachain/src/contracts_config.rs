@@ -25,13 +25,12 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{
-    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+use t3rn_primitives::{
+    monetary::{MILLIUNIT, UNIT},
+    threevm::{get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE},
 };
 
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -118,7 +117,7 @@ impl FeeCalculator for FixedGasPrice {
         // from 18 (EVM) to 12 (t3rn) the number was divided by 10^6
         // If using another fee calculator the min gas price needs to be converted using
         // t3rn_primitives::threevm::convert_decimals_from_evm<T>
-        (1_000u128.into(), Weight::from_parts(7u64, 0))
+        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 

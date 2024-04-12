@@ -47,7 +47,7 @@ use fp_evm::{
     Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
     ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
-use t3rn_primitives::threevm::{convert_decimals_from_evm, DECIMALS_VALUE};
+//use t3rn_primitives::threevm::{convert_decimals_from_evm, DECIMALS_VALUE};
 
 use crate::{
     runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
@@ -203,6 +203,7 @@ where
                 // With tip, we include as much of the tip on top of base_fee that we can, never
                 // exceeding max_fee_per_gas
                 (Some(max_fee_per_gas), Some(max_priority_fee_per_gas), _) => {
+                    /*
                     // Manually convert the fees from EVM to TRN decimals to avaid unexpected errors
                     let mut substrate_max_fee_per_gas = U256::zero();
                     let mut substrate_max_priority_fee_per_gas = U256::zero();
@@ -226,6 +227,15 @@ where
                     let actual_priority_fee_per_gas = substrate_max_fee_per_gas
                         .saturating_sub(base_fee)
                         .min(substrate_max_priority_fee_per_gas);
+
+                    (
+                        base_fee.saturating_add(actual_priority_fee_per_gas),
+                        actual_priority_fee_per_gas,
+                    )
+                     */
+                    let actual_priority_fee_per_gas = max_fee_per_gas
+                        .saturating_sub(base_fee)
+                        .min(max_priority_fee_per_gas);
 
                     (
                         base_fee.saturating_add(actual_priority_fee_per_gas),
@@ -492,19 +502,12 @@ where
         config: &evm::Config,
     ) -> Result<CreateInfo, RunnerError<Self::Error>> {
         let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-        let substrate_value: U256 =
-            value
-                .checked_div(U256::from(DECIMALS_VALUE))
-                .ok_or(RunnerError {
-                    error: Error::<T>::Undefined,
-                    weight,
-                })?;
         if validate {
             Self::validate(
                 source,
                 None,
                 init.clone(),
-                substrate_value,
+                value,
                 gas_limit,
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
@@ -519,7 +522,7 @@ where
         let precompiles = T::PrecompilesValue::get();
         Self::execute(
             source,
-            substrate_value,
+            value,
             gas_limit,
             max_fee_per_gas,
             max_priority_fee_per_gas,
@@ -555,19 +558,12 @@ where
         config: &evm::Config,
     ) -> Result<CreateInfo, RunnerError<Self::Error>> {
         let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-        let substrate_value: U256 =
-            value
-                .checked_div(U256::from(DECIMALS_VALUE))
-                .ok_or(RunnerError {
-                    error: Error::<T>::Undefined,
-                    weight,
-                })?;
         if validate {
             Self::validate(
                 source,
                 None,
                 init.clone(),
-                substrate_value,
+                value,
                 gas_limit,
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
@@ -583,7 +579,7 @@ where
         let code_hash = H256::from(sp_io::hashing::keccak_256(&init));
         Self::execute(
             source,
-            substrate_value,
+            value,
             gas_limit,
             max_fee_per_gas,
             max_priority_fee_per_gas,
@@ -943,6 +939,7 @@ where
     fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
         let source = T::AddressMapping::into_account_id(transfer.source);
         let target = T::AddressMapping::into_account_id(transfer.target);
+        /*
         if let Some(substrate_value) = convert_decimals_from_evm::<BalanceOf<T>>(
             transfer
                 .value
@@ -960,6 +957,17 @@ where
         Err(ExitError::Other(sp_std::borrow::Cow::Borrowed(
             "Invalid Decimals",
         )))
+        */
+        return T::Currency::transfer(
+            &source,
+            &target,
+            transfer
+                .value
+                .try_into()
+                .map_err(|_| ExitError::OutOfFund)?,
+            ExistenceRequirement::AllowDeath,
+        )
+        .map_err(|_| ExitError::OutOfFund)
     }
 
     fn reset_balance(&mut self, _address: H160) {

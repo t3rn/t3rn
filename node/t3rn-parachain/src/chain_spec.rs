@@ -1,7 +1,7 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, TRN, WASM_BINARY,
+    SystemConfig, WASM_BINARY,
 };
 
 pub use codec::Encode;
@@ -16,6 +16,7 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
+use t3rn_primitives::monetary::UNIT as TRN;
 
 const PARACHAIN_ID: u32 = 3333;
 const PARACHAIN_ID_T1RN: u32 = 3333;

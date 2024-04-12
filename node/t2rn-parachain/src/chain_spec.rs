@@ -6,7 +6,9 @@ use t2rn_parachain_runtime::{
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
-pub const TRN: u128 = 1_000_000_000_000;
+use t3rn_primitives::monetary::UNIT as BASE_UNIT;
+
+const TRN: u128 = BASE_UNIT * 1_000_000;
 
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 
@@ -249,7 +251,7 @@ fn testnet_genesis(
                     GenesisAccount {
                         nonce: U256::zero(),
                         // Using a larger number, so I can tell the accounts apart by balance.
-                        balance: U256::from(2u64 << 56),
+                        balance: U256::from(2000 * TRN),
                         code: vec![],
                         storage: std::collections::BTreeMap::new(),
                     },
@@ -259,7 +261,7 @@ fn testnet_genesis(
                     H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C")
                         .expect("internal H160 is valid; qed"),
                     GenesisAccount {
-                        balance: U256::from(1u64 << 56),
+                        balance: U256::from(1000 * TRN),
                         code: Default::default(),
                         nonce: Default::default(),
                         storage: Default::default(),
@@ -270,7 +272,7 @@ fn testnet_genesis(
                     H160::from_str("2C7A1CaAC34549ef4D6718ECCF3120AC2f74Df5C")
                         .expect("internal H160 is valid; qed"),
                     GenesisAccount {
-                        balance: U256::from(1u64 << 56),
+                        balance: U256::from(500 * TRN),
                         code: Default::default(),
                         nonce: Default::default(),
                         storage: Default::default(),

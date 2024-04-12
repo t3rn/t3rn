@@ -67,10 +67,10 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
-
-pub const TRN: Balance = UNIT;
-pub const TST: Balance = UNIT * 1_000_000;
+use t3rn_primitives::{
+    light_client::HeightResult,
+    monetary::{MICROUNIT, MILLIUNIT},
+};
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -118,7 +118,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const MT3RN: Balance = MILLIT3RN as Balance;
+const MT3RN: Balance = MILLIUNIT as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;
