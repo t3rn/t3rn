@@ -31,6 +31,7 @@ sc-consensus            = { workspace = true }
 sc-consensus-aura       = { workspace = true }
 sc-executor             = { workspace = true }
 sc-consensus-grandpa    = { workspace = true }
+sc-consensus-grandpa-rpc= { workspace = true }
 sc-keystore             = { workspace = true }
 sc-service              = { workspace = true }
 sc-telemetry            = { workspace = true }
