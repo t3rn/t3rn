@@ -26,12 +26,9 @@ use sp_runtime::{
     ConsensusEngineId, RuntimeAppPublic,
 };
 use t3rn_primitives::{
-    monetary::{MILLIUNIT as BASE_MILLIUNIT, UNIT as BASE_UNIT},
+    monetary::{MILLIUNIT, UNIT},
     threevm::{get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE},
 };
-
-const UNIT: Balance = BASE_UNIT * 1_000_000;
-const MILLIUNIT: Balance = BASE_MILLIUNIT * 1_000_000;
 
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
