@@ -5,7 +5,7 @@ use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{FutureExt, StreamExt};
 use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
-use sc_consensus_grandpa::SharedVoterState;
+use sc_consensus_grandpa::{FinalityProofProvider, SharedVoterState};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncParams};
 use sc_telemetry::{Telemetry, TelemetryWorker};
@@ -226,6 +226,13 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
     let enable_grandpa = !config.disable_grandpa;
     let prometheus_registry = config.prometheus_registry().cloned();
 
+    let finality_proof_provider = FinalityProofProvider::new_for_service(
+        backend.clone(),
+        Some(grandpa_link.shared_authority_set().clone()),
+    );
+    let justification_stream = grandpa_link.justification_stream();
+    let shared_authority_set = grandpa_link.shared_authority_set().clone();
+
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = fc_storage::overrides_handle(client.clone());
@@ -295,28 +302,37 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 
         let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        Box::new(move |deny_unsafe, subscription| {
-            let deps = crate::rpc::FullDeps {
-                client: client.clone(),
-                pool: pool.clone(),
-                graph: pool.pool().clone(),
-                network: network.clone(),
-                sync: sync.clone(),
-                deny_unsafe,
-                is_authority: true,
-                frontier_backend: frontier_backend.clone(),
-                filter_pool: filter_pool.clone(),
-                fee_history_limit: FEE_HISTORY_LIMIT,
-                fee_history_cache: fee_history_cache.clone(),
-                block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
-                forced_parent_hashes: None,
-                enable_evm_rpc: true,
-            };
+        Box::new(
+            move |deny_unsafe, subscription: sc_rpc::SubscriptionTaskExecutor| {
+                let deps = crate::rpc::FullDeps {
+                    client: client.clone(),
+                    pool: pool.clone(),
+                    graph: pool.pool().clone(),
+                    network: network.clone(),
+                    sync: sync.clone(),
+                    deny_unsafe,
+                    is_authority: true,
+                    frontier_backend: frontier_backend.clone(),
+                    filter_pool: filter_pool.clone(),
+                    fee_history_limit: FEE_HISTORY_LIMIT,
+                    fee_history_cache: fee_history_cache.clone(),
+                    block_data_cache: block_data_cache.clone(),
+                    overrides: overrides.clone(),
+                    forced_parent_hashes: None,
+                    enable_evm_rpc: true,
+                    grandpa: crate::rpc::GrandpaDeps {
+                        shared_voter_state: SharedVoterState::empty(),
+                        shared_authority_set: shared_authority_set.clone(),
+                        justification_stream: justification_stream.clone(),
+                        subscription_executor: subscription.clone(),
+                        finality_provider: finality_proof_provider.clone(),
+                    },
+                };
 
-            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
-                .map_err(Into::into)
-        })
+                crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                    .map_err(Into::into)
+            },
+        )
     };
 
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
