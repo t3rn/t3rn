@@ -117,7 +117,7 @@ impl FeeCalculator for FixedGasPrice {
         // from 18 (EVM) to 12 (t3rn) the number was divided by 10^6
         // If using another fee calculator the min gas price needs to be converted using
         // t3rn_primitives::threevm::convert_decimals_from_evm<T>
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (1_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
