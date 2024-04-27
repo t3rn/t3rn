@@ -12,8 +12,6 @@ use sp_runtime::{
     MultiSignature, Perbill, Saturating,
 };
 
-pub const MILLIUNIT: Balance = 1_000_000_000;
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -87,6 +85,9 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 );
 
 // Currency primitives
+pub const UNIT: Balance = 1_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000;
+pub const MICROUNIT: Balance = 1_000_000;
 
 // EVM primitives
 /// EVM max POV size
