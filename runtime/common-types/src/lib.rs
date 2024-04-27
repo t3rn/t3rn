@@ -86,6 +86,27 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64,
 );
 
+// Currency primitives
+
+// EVM primitives
+/// EVM max POV size
+pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
+/// EVM gas price
+pub const GAS_PRICE: u128 = 1_000;
+
+/// EVM block gas limit
+pub const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+
+/// EVM gas weight
+pub const GAS_WEIGHT: Weight = Weight::from_parts(7u64, 0);
+
+/// EVM weight per gas
+pub const WEIGHT_PER_GAS: Weight = Weight::from_parts(20_000, 0);
+
+/// EVM gas limit POV size ratio
+pub const GAS_LIMIT_POV_SIZE_RATIO: u64 = 4;
+
 parameter_types! {
 
     // This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.
