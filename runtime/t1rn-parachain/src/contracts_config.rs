@@ -10,8 +10,8 @@ use frame_support::{
 };
 
 use circuit_runtime_types::{
-    BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE as BASE_GAS_PRICE, GAS_WEIGHT,
-    WEIGHT_PER_GAS,
+    BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE as BASE_GAS_PRICE, GAS_WEIGHT, MILLIUNIT,
+    UNIT, WEIGHT_PER_GAS,
 };
 
 // use evm_precompile_util::KnownPrecompile;
@@ -22,7 +22,6 @@ use pallet_3vm_evm_primitives::FeeCalculator;
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
-use t3rn_primitives::monetary::{MILLIUNIT, UNIT};
 
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 

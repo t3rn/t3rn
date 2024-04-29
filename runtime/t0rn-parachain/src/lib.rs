@@ -67,10 +67,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::{
-    light_client::HeightResult,
-    monetary::{MICROUNIT, MILLIUNIT},
-};
+use t3rn_primitives::light_client::HeightResult;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;

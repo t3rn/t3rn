@@ -19,7 +19,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1,
 };
 
-use t3rn_primitives::monetary::MILLIUNIT as BASE_MILLIUNIT;
+use circuit_runtime_types::MILLIUNIT as BASE_MILLIUNIT;
 
 use frame_system::EnsureRoot;
 

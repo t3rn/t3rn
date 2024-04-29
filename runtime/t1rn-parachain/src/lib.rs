@@ -18,7 +18,6 @@ pub mod xbi_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
-use t3rn_primitives::monetary::{MICROUNIT, MILLIUNIT, UNIT};
 
 use frame_system::EnsureRoot;
 use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
