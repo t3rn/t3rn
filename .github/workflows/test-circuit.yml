@@ -109,7 +109,7 @@ jobs:
         uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-nextest
-          version: '^0.9.68'
+          version: '0.9.68'
 
       - name: Install cargo-llvm-cov
         uses: baptiste0928/cargo-install@v2
