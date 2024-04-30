@@ -7283,6 +7283,7 @@ dependencies = [
 name = "pallet-circuit-vacuum"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
