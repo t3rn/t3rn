@@ -6,7 +6,7 @@ use t2rn_parachain_runtime::{
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 
-use t3rn_primitives::monetary::UNIT as BASE_UNIT;
+use circuit_runtime_types::UNIT as BASE_UNIT;
 
 const TRN: u128 = BASE_UNIT * 1_000_000;
 

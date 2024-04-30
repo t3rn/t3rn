@@ -1,6 +1,4 @@
-use circuit_runtime_types::{
-    Balance, MICROUNIT as BASE_MICROUNIT, MILLIUNIT as BASE_MILLIUNIT, UNIT as BASE_UNIT,
-};
+use circuit_runtime_types::{Balance, MILLIUNIT};
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -8,10 +6,6 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Perbill, RuntimeDebug};
 
 pub const DECIMALS: u8 = 12;
-// Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = BASE_UNIT;
-pub const MILLIUNIT: Balance = BASE_MILLIUNIT;
-pub const MICROUNIT: Balance = BASE_MICROUNIT;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;

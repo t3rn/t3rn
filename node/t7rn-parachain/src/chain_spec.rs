@@ -1,9 +1,9 @@
+use circuit_runtime_types::UNIT as TRN;
 use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
     SystemConfig, WASM_BINARY,
 };
-use t3rn_primitives::monetary::UNIT as TRN;
 
 pub use codec::Encode;
 

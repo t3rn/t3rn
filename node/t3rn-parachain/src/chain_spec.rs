@@ -6,6 +6,7 @@ use parachain_runtime::{
 
 pub use codec::Encode;
 
+use circuit_runtime_types::UNIT as TRN;
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::ChainSpecExtension;
@@ -16,7 +17,6 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::monetary::UNIT as TRN;
 
 const PARACHAIN_ID: u32 = 3333;
 const PARACHAIN_ID_T1RN: u32 = 3333;
