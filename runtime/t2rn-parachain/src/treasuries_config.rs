@@ -3,8 +3,8 @@ use frame_support::{parameter_types, traits::NeverEnsureOrigin, PalletId};
 use frame_system::EnsureRoot;
 use sp_runtime::{traits::AccountIdConversion, Permill};
 
-use t3rn_primitives::{TreasuryAccount, TreasuryAccountProvider};
 use circuit_runtime_types::UNIT as TRN;
+use t3rn_primitives::{TreasuryAccount, TreasuryAccountProvider};
 
 pub type DefaultTreasuryInstance = ();
 pub type EscrowTreasuryInstance = pallet_treasury::pallet::Instance1;
