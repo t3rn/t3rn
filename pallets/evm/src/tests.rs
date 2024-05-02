@@ -27,9 +27,9 @@ use frame_support::{
 use sp_runtime::BuildStorage;
 use std::{collections::BTreeMap, str::FromStr};
 
-//use t3rn_primitives::threevm::{
-//    convert_decimals_from_evm, convert_decimals_to_evm, DECIMALS_VALUE,
-//};
+use t3rn_primitives::threevm::{
+   convert_decimals_from_evm, convert_decimals_to_evm, DECIMALS_VALUE,
+};
 
 mod proof_size_test {
     use super::*;
@@ -761,10 +761,10 @@ fn ed_0_refund_patch_works() {
             evm_addr,
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1_000_000u128),
+            U256::from(1_000_000u128 * DECIMALS_VALUE as u128),
             21776,
-            U256::from(1_000_000u128),
-            Some(U256::from(1_000_000u128)),
+            U256::from(1_000_000u128 * DECIMALS_VALUE as u128),
+            Some(U256::from(1_000_000u128 * DECIMALS_VALUE as u128)),
             Some(U256::from(0)),
             Vec::new(),
         );
@@ -825,7 +825,7 @@ fn reducible_balance() {
         let existential = ExistentialDeposit::get();
 
         // Genesis Balance.
-        let genesis_balance = EVM::account_basic(&evm_addr).0.balance;
+        let genesis_balance = EVM::account_basic(&evm_addr).0.balance / DECIMALS_VALUE;
 
         // Lock identifier.
         let lock_id: LockIdentifier = *b"te/stlok";
@@ -833,30 +833,31 @@ fn reducible_balance() {
         let to_lock = 1000;
         Balances::set_lock(lock_id, &account_id, to_lock, WithdrawReasons::RESERVE);
         // Reducible is, as currently configured in `account_basic`, (balance - lock - existential).
-        let reducible_balance = EVM::account_basic(&evm_addr).0.balance;
+        let reducible_balance = EVM::account_basic(&evm_addr).0.balance / DECIMALS_VALUE;
         assert_eq!(reducible_balance, (genesis_balance - to_lock + existential));
     });
 }
 
+//#[ignore]
 #[test]
 fn author_should_get_tip() {
     new_test_ext().execute_with(|| {
         let author = EVM::find_author();
-        let before_tip = EVM::account_basic(&author).0.balance;
+        let before_tip = EVM::account_basic(&author).0.balance / DECIMALS_VALUE;
         let result = EVM::call(
             RuntimeOrigin::root(),
             H160::default(),
             H160::from_str("1000000000000000000000000000000000000001").unwrap(),
             Vec::new(),
-            U256::from(1u64),
+            U256::from(1u64 * DECIMALS_VALUE as u64),
             1000000,
-            U256::from(2_000_000u64),
-            Some(U256::from(1)),
+            U256::from(2_000_000u64 * DECIMALS_VALUE as u64),
+            Some(U256::from(1 * DECIMALS_VALUE)),
             None,
             Vec::new(),
         );
         result.expect("EVM can be called");
-        let after_tip = EVM::account_basic(&author).0.balance;
+        let after_tip = EVM::account_basic(&author).0.balance / DECIMALS_VALUE;
         assert_eq!(after_tip, (before_tip + 21_000));
     });
 }
