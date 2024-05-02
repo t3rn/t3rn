@@ -28,7 +28,7 @@ use sp_runtime::BuildStorage;
 use std::{collections::BTreeMap, str::FromStr};
 
 use t3rn_primitives::threevm::{
-   convert_decimals_from_evm, convert_decimals_to_evm, DECIMALS_VALUE,
+    convert_decimals_from_evm, convert_decimals_to_evm, DECIMALS_VALUE,
 };
 
 mod proof_size_test {
