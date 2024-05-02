@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.88.1-rc.0] - 2024-05-02
+### :bug: Bug Fixes
+- [`f6ed048`](https://github.com/t3rn/t3rn/commit/f6ed048df01faaf6083c3d77f972beb33dabaaa9) - guardian integration flow gas price error *(PR [#1600](https://github.com/t3rn/t3rn/pull/1600) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.88.0-rc.0] - 2024-04-17
 ### :sparkles: New Features
 - [`512e64e`](https://github.com/t3rn/t3rn/commit/512e64e8edb44b20684c29f0ceb10dc6cd37173a) - added GRANDPA RPC config to t2rn *(PR [#1599](https://github.com/t3rn/t3rn/pull/1599) by [@chexware](https://github.com/chexware))*
@@ -2103,3 +2108,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.87.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.2-rc.0...v1.87.3-rc.0
 [v1.87.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.3-rc.0...v1.87.4-rc.0
 [v1.88.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.4-rc.0...v1.88.0-rc.0
+[v1.88.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.0-rc.0...v1.88.1-rc.0
