@@ -20,7 +20,7 @@ use sp_blockchain::{
 use sp_core::H256;
 use sp_runtime::{traits::BlakeTwo256, OpaqueExtrinsic};
 use std::{collections::BTreeMap, sync::Arc};
-use t2rn_parachain_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
+use t2rn_parachain_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Nonce};
 
 use pallet_portal_rpc::{Portal, PortalApiServer};
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
@@ -37,6 +37,8 @@ use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use cumulus_primitives_core::PersistedValidationData;
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+
+use sc_consensus_grandpa::FinalityProofProvider;
 
 pub fn open_frontier_backend<C>(
     client: Arc<C>,
@@ -59,8 +61,22 @@ where
     )?))
 }
 
+/// Dependencies for GRANDPA
+pub struct GrandpaDeps<B> {
+    /// Voting round info.
+    pub shared_voter_state: sc_consensus_grandpa::SharedVoterState,
+    /// Authority set info.
+    pub shared_authority_set: sc_consensus_grandpa::SharedAuthoritySet<Hash, BlockNumber>,
+    /// Receives notifications about justification events from Grandpa.
+    pub justification_stream: sc_consensus_grandpa::GrandpaJustificationStream<Block>,
+    /// Executor to drive the subscription manager in the Grandpa RPC handler.
+    pub subscription_executor: sc_rpc::SubscriptionTaskExecutor,
+    /// Finality proof provider.
+    pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
+}
+
 /// Full client dependencies.
-pub struct FullDeps<C, P, A: ChainApi> {
+pub struct FullDeps<C, P, A: ChainApi, BE> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
@@ -89,12 +105,14 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
     /// Enable EVM RPC servers
     pub enable_evm_rpc: bool,
+    /// Grandpa block import setup.
+    pub grandpa: GrandpaDeps<BE>,
     /// Mandated parent hashes for a given block hash.
     pub forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 }
 
 pub fn create_full<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+    deps: FullDeps<C, P, A, BE>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -114,6 +132,7 @@ where
     C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId, Balance, Hash>,
     C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
     C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+    C::Api: sp_consensus_grandpa::GrandpaApi<Block>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
@@ -122,6 +141,7 @@ where
     A: ChainApi<Block = Block> + 'static,
 {
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+    use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
     use substrate_frame_rpc_system::{System, SystemApiServer};
 
     let mut module = RpcModule::new(());
@@ -140,6 +160,7 @@ where
         overrides,
         block_data_cache,
         enable_evm_rpc,
+        grandpa,
         forced_parent_hashes,
     } = deps;
 
@@ -147,6 +168,25 @@ where
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     module.merge(Xdns::new(client.clone()).into_rpc())?;
     module.merge(Portal::new(client.clone()).into_rpc())?;
+
+    let GrandpaDeps {
+        shared_voter_state,
+        shared_authority_set,
+        justification_stream,
+        subscription_executor,
+        finality_provider,
+    } = grandpa;
+
+    module.merge(
+        Grandpa::new(
+            subscription_executor,
+            shared_authority_set.clone(),
+            shared_voter_state,
+            justification_stream,
+            finality_provider,
+        )
+        .into_rpc(),
+    )?;
 
     // Ethereum  modules
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;

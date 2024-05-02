@@ -1,3 +1,4 @@
+use circuit_runtime_types::UNIT as TRN;
 use circuit_standalone_runtime::{
     AccountId,
     AuraConfig,
@@ -12,7 +13,6 @@ use circuit_standalone_runtime::{
     XDNSConfig, // EvmConfig
     WASM_BINARY,
 };
-use t3rn_primitives::monetary::UNIT as TRN;
 
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;

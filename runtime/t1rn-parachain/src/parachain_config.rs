@@ -10,7 +10,7 @@ use frame_support::traits::ConstBool;
 pub use sp_runtime::BuildStorage;
 
 // XCM Imports
-use t3rn_primitives::monetary::{MICROUNIT, MILLIUNIT};
+use circuit_runtime_types::{MICROUNIT, MILLIUNIT};
 use xcm::latest::prelude::BodyId;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the

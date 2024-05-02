@@ -4,8 +4,8 @@ use parachain_runtime::{
     SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 
+use circuit_runtime_types::UNIT as TRN;
 use codec::Encode;
-use t3rn_primitives::monetary::UNIT as TRN;
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;

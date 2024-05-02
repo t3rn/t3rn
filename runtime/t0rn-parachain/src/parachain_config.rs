@@ -9,7 +9,7 @@ use frame_support::traits::ConstBool;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use t3rn_primitives::monetary::{MICROUNIT, MILLIUNIT, UNIT};
+use circuit_runtime_types::{MICROUNIT, MILLIUNIT, UNIT};
 // XCM Imports
 use xcm::latest::prelude::BodyId;
 

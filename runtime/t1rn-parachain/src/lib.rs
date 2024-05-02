@@ -18,7 +18,6 @@ pub mod xbi_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
-use t3rn_primitives::monetary::{MICROUNIT, MILLIUNIT, UNIT};
 
 use frame_system::EnsureRoot;
 use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
@@ -77,11 +76,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t3rn"),
     impl_name: create_runtime_str!("t3rn Circuit Collator"),
-    authoring_version: 45,
-    spec_version: 45,
-    impl_version: 45,
+    authoring_version: 47,
+    spec_version: 47,
+    impl_version: 47,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 45,
+    transaction_version: 47,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073

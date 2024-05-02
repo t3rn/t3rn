@@ -67,10 +67,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::{
-    light_client::HeightResult,
-    monetary::{MICROUNIT, MILLIUNIT},
-};
+use t3rn_primitives::light_client::HeightResult;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -90,11 +87,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 22,
-    spec_version: 22,
-    impl_version: 22,
+    authoring_version: 24,
+    spec_version: 24,
+    impl_version: 24,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 23,
+    transaction_version: 25,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073

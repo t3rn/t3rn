@@ -12,8 +12,6 @@ use sp_runtime::{
     MultiSignature, Perbill, Saturating,
 };
 
-pub const MILLIUNIT: Balance = 1_000_000_000;
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -85,6 +83,30 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
     cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64,
 );
+
+// Currency primitives
+pub const UNIT: Balance = 1_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000;
+pub const MICROUNIT: Balance = 1_000_000;
+
+// EVM primitives
+/// EVM max POV size
+pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
+/// EVM gas price
+pub const GAS_PRICE: u128 = 1_000;
+
+/// EVM block gas limit
+pub const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+
+/// EVM gas weight
+pub const GAS_WEIGHT: Weight = Weight::from_parts(7u64, 0);
+
+/// EVM weight per gas
+pub const WEIGHT_PER_GAS: Weight = Weight::from_parts(20_000, 0);
+
+/// EVM gas limit POV size ratio
+pub const GAS_LIMIT_POV_SIZE_RATIO: u64 = 4;
 
 parameter_types! {
 

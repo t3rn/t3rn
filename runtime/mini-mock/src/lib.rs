@@ -232,7 +232,7 @@ impl pallet_clock::Config for MiniRuntime {
     type RoundDuration = ConstU32<300>;
     type RuntimeEvent = RuntimeEvent;
 }
-use t3rn_primitives::monetary::UNIT as TRN;
+use circuit_runtime_types::UNIT as TRN;
 
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%

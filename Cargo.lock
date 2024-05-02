@@ -1032,7 +1032,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-mock-runtime"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-pallets"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1123,7 +1123,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.87.4-rc.0",
+ "pallet-contracts 1.88.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-dynamic-fee",
@@ -1184,7 +1184,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-types"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -1198,8 +1198,9 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-node"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "circuit-standalone-runtime",
  "clap",
  "frame-benchmarking",
@@ -1252,7 +1253,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-runtime"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -1277,7 +1278,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.87.4-rc.0",
+ "pallet-contracts 1.88.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -3288,7 +3289,7 @@ dependencies = [
 
 [[package]]
 name = "fc-cli"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "clap",
@@ -3314,7 +3315,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "async-trait",
  "fp-consensus",
@@ -3329,7 +3330,7 @@ dependencies = [
 
 [[package]]
 name = "fc-db"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "async-trait",
  "ethereum",
@@ -3362,7 +3363,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "ethereum",
@@ -3392,7 +3393,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3462,7 +3463,7 @@ dependencies = [
 
 [[package]]
 name = "fc-storage"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3701,7 +3702,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "evm",
@@ -6954,7 +6955,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-3vm"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "frame-benchmarking",
@@ -7012,7 +7013,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-account-manager"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7106,7 +7107,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-attesters"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7248,7 +7249,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7280,8 +7281,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit-vacuum"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7306,7 +7308,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-clock"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata 15.1.0",
@@ -7345,7 +7347,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "array-bytes",
  "assert_matches",
@@ -7458,7 +7460,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "frame-benchmarking",
@@ -7495,7 +7497,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry-rpc-runtime-api"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "pallet-contracts-registry",
  "parity-scale-codec",
@@ -7506,7 +7508,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "fp-dynamic-fee",
  "fp-evm",
@@ -7633,7 +7635,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "environmental",
  "evm",
@@ -7661,7 +7663,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7938,7 +7940,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7970,7 +7972,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-portal-rpc-runtime-api",
@@ -7986,7 +7988,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc-runtime-api"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "pallet-portal",
  "parity-scale-codec",
@@ -8031,7 +8033,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-rewards"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8356,7 +8358,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -8386,7 +8388,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-xdns-rpc-runtime-api",
@@ -8401,7 +8403,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc-runtime-api"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
@@ -9902,7 +9904,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-util"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -9939,7 +9941,7 @@ dependencies = [
 
 [[package]]
 name = "precompile-util-solidity"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -13890,8 +13892,9 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -13981,7 +13984,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -14024,7 +14027,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.87.4-rc.0",
+ "pallet-contracts 1.88.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -14087,8 +14090,9 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-collator"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -14165,7 +14169,7 @@ dependencies = [
 
 [[package]]
 name = "t1rn-parachain-runtime"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "assets-common",
  "circuit-runtime-types",
@@ -14204,7 +14208,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.87.4-rc.0",
+ "pallet-contracts 1.88.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -14265,8 +14269,9 @@ dependencies = [
 
 [[package]]
 name = "t2rn"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
@@ -14302,6 +14307,7 @@ dependencies = [
  "sc-consensus",
  "sc-consensus-aura",
  "sc-consensus-grandpa",
+ "sc-consensus-grandpa-rpc",
  "sc-executor",
  "sc-keystore",
  "sc-network",
@@ -14334,7 +14340,7 @@ dependencies = [
 
 [[package]]
 name = "t2rn-parachain-runtime"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "fp-evm",
@@ -14363,7 +14369,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-vacuum",
  "pallet-clock",
- "pallet-contracts 1.87.4-rc.0",
+ "pallet-contracts 1.88.1-rc.0",
  "pallet-contracts-primitives 24.0.0",
  "pallet-contracts-registry",
  "pallet-eth2-finality-verifier",
@@ -14413,7 +14419,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-abi"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -14487,8 +14493,9 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-collator"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -14630,7 +14637,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-primitives"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -14695,7 +14702,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "bytes",
  "circuit-runtime-types",
@@ -14720,8 +14727,9 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-collator"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -14798,7 +14806,7 @@ dependencies = [
 
 [[package]]
 name = "t7rn-parachain-runtime"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -15063,7 +15071,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokens-precompile"
-version = "1.87.4-rc.0"
+version = "1.88.1-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-types",

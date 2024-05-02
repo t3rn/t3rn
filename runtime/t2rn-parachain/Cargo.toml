@@ -104,8 +104,7 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 
 # Common
 # circuit-runtime-pallets = { path = "../common-pallets", default-features = false  }
-circuit-runtime-types           = { path = "../common-types", default-features = false }
-
+circuit-runtime-types      = { path = "../../runtime/common-types", default-features = false }
 pallet-maintenance-mode         = { path = "../../pallets/maintenance-mode", default-features = false }
 
 [features]
