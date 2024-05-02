@@ -7,7 +7,6 @@ const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
 use circuit_runtime_types::UNIT as TRN;
 
-
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 
 use codec::Encode;
