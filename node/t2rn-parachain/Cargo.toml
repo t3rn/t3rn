@@ -68,6 +68,7 @@ frame-system           = { workspace = true }
 
 # Local Dependencies
 t2rn-parachain-runtime     = { path = "../../runtime/t2rn-parachain" }
+circuit-runtime-types      = { path = "../../runtime/common-types", default-features = false }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }

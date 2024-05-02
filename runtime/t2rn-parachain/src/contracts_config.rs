@@ -11,7 +11,10 @@ use frame_support::{
 };
 
 // use evm_precompile_util::KnownPrecompile;
-use circuit_runtime_types::{AssetId, EvmAddress};
+use circuit_runtime_types::{
+    AssetId, EvmAddress, BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE as BASE_GAS_PRICE,
+    GAS_WEIGHT, MILLIUNIT as BASE_MILLIUNIT, UNIT as BASE_UNIT, WEIGHT_PER_GAS,
+};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_ethereum::PostLogContent;
@@ -25,15 +28,16 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::{
-    monetary::{MILLIUNIT as BASE_MILLIUNIT, UNIT as BASE_UNIT},
-    threevm::{get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE},
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
 };
 
 const UNIT: Balance = BASE_UNIT * 1_000_000;
 const MILLIUNIT: Balance = BASE_MILLIUNIT * 1_000_000;
 
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
+
+const GAS_PRICE: u128 = BASE_GAS_PRICE * 1_000_000;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
     (items as Balance * UNIT + (bytes as Balance) * (5 * MILLIUNIT / 100)) / 10
@@ -115,12 +119,9 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (GAS_PRICE.into(), GAS_WEIGHT)
     }
 }
-
-const BLOCK_GAS_LIMIT: u64 = 150_000_000;
-const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -134,11 +135,11 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-    pub const GasLimitPovSizeRatio: u64 = 4;
+    pub const GasLimitPovSizeRatio: u64 = GAS_LIMIT_POV_SIZE_RATIO;
     pub const ChainId: u64 = 3301;
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();
-    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub WeightPerGas: Weight = WEIGHT_PER_GAS;
 }
 
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately

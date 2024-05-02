@@ -1200,6 +1200,7 @@ dependencies = [
 name = "circuit-standalone-node"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "circuit-standalone-runtime",
  "clap",
  "frame-benchmarking",
@@ -7282,6 +7283,7 @@ dependencies = [
 name = "pallet-circuit-vacuum"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -13892,6 +13894,7 @@ dependencies = [
 name = "t0rn-parachain-collator"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -14089,6 +14092,7 @@ dependencies = [
 name = "t1rn-parachain-collator"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -14267,6 +14271,7 @@ dependencies = [
 name = "t2rn"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
@@ -14490,6 +14495,7 @@ dependencies = [
 name = "t3rn-parachain-collator"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",
@@ -14723,6 +14729,7 @@ dependencies = [
 name = "t7rn-parachain-collator"
 version = "1.88.0-rc.0"
 dependencies = [
+ "circuit-runtime-types",
  "clap",
  "color-print",
  "cumulus-client-cli",

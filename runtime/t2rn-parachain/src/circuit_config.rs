@@ -71,7 +71,9 @@ impl pallet_attesters::Config for Runtime {
     type Xdns = XDNS;
 }
 
-use t3rn_primitives::{monetary::UNIT as BASE_UNIT, xdns::PalletAssetsOverlay};
+use t3rn_primitives::xdns::PalletAssetsOverlay;
+
+use circuit_runtime_types::UNIT as BASE_UNIT;
 
 pub const TRN: Balance = BASE_UNIT * 1_000_000;
 

@@ -5,7 +5,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use t3rn_primitives::monetary::MILLIUNIT;
+use circuit_runtime_types::MILLIUNIT;
 
 use frame_system::EnsureRoot;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;

@@ -426,7 +426,8 @@ pub mod pallet {
 #[cfg(test)]
 mod tests {
     use codec::Encode;
-    use t3rn_primitives::circuit::OrderOrigin;
+
+    use circuit_runtime_types::UNIT;
 
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
@@ -446,12 +447,12 @@ mod tests {
     use t3rn_primitives::{
         circuit::{
             types::{OrderSFX, SFXAction},
-            CircuitSubmitAPI,
+            AdaptiveTimeout, CircuitStatus, CircuitSubmitAPI, OrderOrigin,
         },
         claimable::CircuitRole,
         clock::OnHookQueues,
         light_client::LightClientAsyncAPI,
-        monetary::UNIT,
+        monetary::MOCK_EXISTENTIAL_DEPOSIT as EXISTENTIAL_DEPOSIT,
         portal::Portal as PortalT,
         EthereumToken, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount,
         TreasuryAccountProvider,
@@ -460,10 +461,6 @@ mod tests {
 
     use frame_support::{traits::Currency, weights::Weight};
 
-    use t3rn_primitives::{
-        circuit::{AdaptiveTimeout, CircuitStatus},
-        monetary::MOCK_EXISTENTIAL_DEPOSIT as EXISTENTIAL_DEPOSIT,
-    };
     use t3rn_types::fsx::TargetId;
 
     pub fn mint_required_assets_for_optimistic_actors(

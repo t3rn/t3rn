@@ -5,13 +5,13 @@ use frame_support::{
     PalletId,
 };
 
+use circuit_runtime_types::{MICROUNIT, UNIT as TRN};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::{cmp::Ordering, prelude::*};
-use t3rn_primitives::monetary::{MICROUNIT, UNIT as TRN};
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
