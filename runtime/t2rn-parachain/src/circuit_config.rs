@@ -71,11 +71,8 @@ impl pallet_attesters::Config for Runtime {
     type Xdns = XDNS;
 }
 
+use circuit_runtime_types::UNIT as TRN;
 use t3rn_primitives::xdns::PalletAssetsOverlay;
-
-use circuit_runtime_types::UNIT as BASE_UNIT;
-
-pub const TRN: Balance = BASE_UNIT * 1_000_000;
 
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%

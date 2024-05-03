@@ -12,8 +12,8 @@ use frame_support::{
 
 // use evm_precompile_util::KnownPrecompile;
 use circuit_runtime_types::{
-    AssetId, EvmAddress, BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE as BASE_GAS_PRICE,
-    GAS_WEIGHT, MILLIUNIT as BASE_MILLIUNIT, UNIT as BASE_UNIT, WEIGHT_PER_GAS,
+    AssetId, EvmAddress, BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE, GAS_WEIGHT,
+    MILLIUNIT, UNIT, WEIGHT_PER_GAS,
 };
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
@@ -32,12 +32,7 @@ use t3rn_primitives::threevm::{
     get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
 };
 
-const UNIT: Balance = BASE_UNIT * 1_000_000;
-const MILLIUNIT: Balance = BASE_MILLIUNIT * 1_000_000;
-
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
-
-const GAS_PRICE: u128 = BASE_GAS_PRICE * 1_000_000;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
     (items as Balance * UNIT + (bytes as Balance) * (5 * MILLIUNIT / 100)) / 10
