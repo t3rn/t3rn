@@ -11,11 +11,11 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("t2rn"),
     impl_name: create_runtime_str!("t2rn"),
-    authoring_version: 39,
-    spec_version: 39,
-    impl_version: 39,
+    authoring_version: 40,
+    spec_version: 40,
+    impl_version: 40,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 39,
+    transaction_version: 40,
     state_version: 1,
 };
 

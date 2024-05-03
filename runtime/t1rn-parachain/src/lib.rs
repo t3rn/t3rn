@@ -76,11 +76,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t3rn"),
     impl_name: create_runtime_str!("t3rn Circuit Collator"),
-    authoring_version: 47,
-    spec_version: 47,
-    impl_version: 47,
+    authoring_version: 48,
+    spec_version: 48,
+    impl_version: 48,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 47,
+    transaction_version: 48,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
