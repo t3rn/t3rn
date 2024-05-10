@@ -19,7 +19,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1,
 };
 
-use circuit_runtime_types::MILLIUNIT as BASE_MILLIUNIT;
+use circuit_runtime_types::MILLIUNIT;
 
 use frame_system::EnsureRoot;
 
@@ -62,7 +62,6 @@ use pallet_3vm_evm::Runner;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const MILLIUNIT: Balance = BASE_MILLIUNIT * 1_000_000;
 const MT3RN: Balance = MILLIUNIT as Balance;
 
 parameter_types! {
