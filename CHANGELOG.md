@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.88.3-rc.0] - 2024-05-14
+### :bug: Bug Fixes
+- [`a24e478`](https://github.com/t3rn/t3rn/commit/a24e478536c76e2378fe65a01f0ba579e0f4dc33) - remove last 18 decimals converted unit for t2rn *(PR [#1602](https://github.com/t3rn/t3rn/pull/1602) by [@chexware](https://github.com/chexware))*
+
+
 ## [v1.88.2-rc.0] - 2024-05-03
 ### :bug: Bug Fixes
 - [`360797e`](https://github.com/t3rn/t3rn/commit/360797ed483948c3a8f182537bc83cabd11ca1fa) - re-enable EVM decimals  conversion *(PR [#1601](https://github.com/t3rn/t3rn/pull/1601) by [@chexware](https://github.com/chexware))*
@@ -2115,3 +2120,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.88.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.4-rc.0...v1.88.0-rc.0
 [v1.88.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.0-rc.0...v1.88.1-rc.0
 [v1.88.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.1-rc.0...v1.88.2-rc.0
+[v1.88.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.2-rc.0...v1.88.3-rc.0
