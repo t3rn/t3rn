@@ -1,22 +1,11 @@
 use sp_core::crypto::UncheckedInto;
 use t2rn_parachain_runtime::{
-    AccountId,
-    AuraConfig,
-    BalancesConfig,
-    GrandpaConfig,
-    RuntimeGenesisConfig,
-    Signature,
-    SudoConfig,
-    SystemConfig,
-    // SessionConfig,
-    // CollatorSelectionConfig,
-    XDNSConfig, // EvmConfig
-    WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisAccount, GrandpaConfig,
+    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, XDNSConfig, H160, U256, WASM_BINARY,
 };
 const CANDIDACY_BOND: u128 = 0; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 2;
-
-pub const TRN: u128 = 1_000_000_000_000;
+use circuit_runtime_types::UNIT as TRN;
 
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 
@@ -27,6 +16,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::str::FromStr;
 use t3rn_abi::sfx_abi::SFXAbi;
 use t3rn_primitives::xdns::GatewayRecord;
 use t3rn_types::sfx::Sfx4bId;
@@ -138,6 +128,13 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>(
                         "0xe0326c64f378729b5e0292bbae5b9f9131d7b3d2227676cef628182fd9aff37c",
                     ),
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    get_account_id_from_seed::<sr25519::Public>("Executor//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Cli//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Ranger//default"),
                 ],
                 vec![],
                 standard_sfx_abi(),
@@ -192,7 +189,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, SUPPLY))
+                .map(|k| (k, 100 * TRN))
                 .collect(),
         },
         // session: SessionConfig {
@@ -208,6 +205,7 @@ fn testnet_genesis(
         //     ..Default::default()
         // },
         treasury: Default::default(),
+        ethereum: Default::default(),
         escrow_treasury: Default::default(),
         fee_treasury: Default::default(),
         parachain_treasury: Default::default(),
@@ -239,7 +237,48 @@ fn testnet_genesis(
         attesters: Default::default(),
         clock: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
-        evm: Default::default(),
+        // evm: Default::default(), // Default evm configuration
+        evm: EvmConfig {
+            accounts: {
+                let mut accounts = std::collections::BTreeMap::new();
+                accounts.insert(
+                    // EVM Alice
+                    H160::from_str("B08E7434dBA205Ae42D1DDcD7048Ce0B0c6cfD0d")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        nonce: U256::zero(),
+                        // Using a larger number, so I can tell the accounts apart by balance.
+                        balance: U256::from(2000 * TRN),
+                        code: vec![],
+                        storage: std::collections::BTreeMap::new(),
+                    },
+                );
+                accounts.insert(
+                    // H160 address for Metamask interaction testing
+                    H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        balance: U256::from(1000 * TRN),
+                        code: Default::default(),
+                        nonce: Default::default(),
+                        storage: Default::default(),
+                    },
+                );
+                accounts.insert(
+                    // Executor EVM account
+                    H160::from_str("2C7A1CaAC34549ef4D6718ECCF3120AC2f74Df5C")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        balance: U256::from(500 * TRN),
+                        code: Default::default(),
+                        nonce: Default::default(),
+                        storage: Default::default(),
+                    },
+                );
+                accounts.encode()
+            },
+            _marker: Default::default(),
+        },
         maintenance_mode: Default::default(),
     }
 }

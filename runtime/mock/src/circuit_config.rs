@@ -96,7 +96,8 @@ impl pallet_vacuum::Config for Runtime {
     type Xdns = XDNS;
 }
 
-use t3rn_primitives::{monetary::TRN, xdns::PalletAssetsOverlay};
+use circuit_runtime_types::UNIT as TRN;
+use t3rn_primitives::xdns::PalletAssetsOverlay;
 
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%
@@ -346,7 +347,6 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
 
 parameter_types! {
     pub const SyncCommitteeSize: u32 = 26;
-    pub const GenesisValidatorsRoot: [u8; 32] = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteePeriod: u32 = 256;
     pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
@@ -356,7 +356,6 @@ parameter_types! {
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
     type RuntimeEvent = RuntimeEvent;
@@ -368,7 +367,6 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
 impl pallet_sepolia_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
     type RuntimeEvent = RuntimeEvent;

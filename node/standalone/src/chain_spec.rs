@@ -1,3 +1,4 @@
+use circuit_runtime_types::UNIT as TRN;
 use circuit_standalone_runtime::{
     AccountId,
     AuraConfig,
@@ -59,7 +60,6 @@ fn standard_sfx_abi() -> Vec<(Sfx4bId, SFXAbi)> {
 }
 
 pub(crate) const SS58_FORMAT_T1RN: u16 = 4815;
-pub const TRN: u128 = 1_000_000_000_000;
 const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
 
 /// Derive an Aura id from a SS58 address.

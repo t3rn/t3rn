@@ -14,6 +14,10 @@ import { handleXcmTransferCommand } from './commands/xcmTransfer/index.ts'
 import { handleAssetRegistrationCommand } from './commands/registerAsset/index.ts'
 import { handleResetGatewayCommand } from './commands/resetGateway/index.ts'
 import { handleAddSfxAbiCommand } from '@/commands/sfxABI/index.js'
+import { handleEvmClaimAaddressCommand } from '@/commands/evm/claimEvmAddress.ts'
+import { handleEvmGetBalanceCommand } from '@/commands/evm/getBalance.ts'
+import { handleEvmTransferCommand } from '@/commands/evm/transfer.ts'
+import { handleEvmDeployCommand } from '@/commands/evm/deploy.ts'
 import {
   handleFastWriterCommand,
   handleMockWriterCommand,
@@ -264,6 +268,62 @@ withExportMode(
       'Repeat the transaction x times as utility::batch calls',
     )
     .action(handleMockWriterCommand),
+)
+
+withExportMode(
+  program
+    .command('claimEvmAddress')
+    .description('Claim EVM address for a substrate address')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to transfer balance on',
+    )
+    .requiredOption(
+      '--substrate-signer <string>',
+      'The substrate account private key',
+    )
+    .requiredOption('--evm-signer <string>', 'The evm account private key')
+    .action(handleEvmClaimAaddressCommand),
+)
+
+withExportMode(
+  program
+    .command('evmGetBalance')
+    .description('Check EVM balance for an account.')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to check the balance on',
+    )
+    .requiredOption('--account <string>', 'The account - EVM address')
+    .action(handleEvmGetBalanceCommand),
+)
+
+withExportMode(
+  program
+    .command('evmTransfer')
+    .description('Transfer funds through EVM.')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to transfer balance on',
+    )
+    .requiredOption('--sender <string>', 'The sender account - EVM private key')
+    .requiredOption('--receiver <string>', 'The receiver account - EVM address')
+    .requiredOption('--amount <number>', 'The balance that will be transferred')
+    .action(handleEvmTransferCommand),
+)
+
+withExportMode(
+    program
+        .command('evmDeploy')
+        .description('Deploy EVM smart contract.')
+        .requiredOption(
+            '--endpoint <string>',
+            'The RPC endpoint to upload smart contract on',
+        )
+        .requiredOption('--owner <string>', 'The owner account - EVM private key')
+        .requiredOption('--contract-abi <string>', 'The abi file of the contract')
+        .requiredOption('--contract-bytecode <string>', 'The bytecode file of the contract')
+        .action(handleEvmDeployCommand),
 )
 
 program.parse(process.argv)

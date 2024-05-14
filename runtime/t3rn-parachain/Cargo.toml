@@ -86,7 +86,8 @@ pallet-collator-selection           = { git = 'https://github.com/paritytech/cum
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
 # Commons
-circuit-runtime-types = { path = "../common-types", default-features = false }
+circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
+t3rn-primitives       = { default-features = false, path = "../../primitives" }
 
 [features]
 default = [ "std" ]
@@ -145,6 +146,7 @@ std = [
   "xcm/std",
   "circuit-runtime-types/std",
   "frame-try-runtime/std"
+  "t3rn-primitives/std",
 ]
 
 runtime-benchmarks = [

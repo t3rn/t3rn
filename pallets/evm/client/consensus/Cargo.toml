@@ -1,0 +1,24 @@
+[package]
+name = "fc-consensus"
+version = { workspace = true }
+license = { workspace = true }
+description = "Frontier consensus for substrate."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+# Substrate
+sc-consensus = { workspace = true }
+sp-api = { workspace = true }
+sp-block-builder = { workspace = true, features = ["default"] }
+sp-consensus = { workspace = true }
+sp-runtime = { workspace = true }
+# Frontier
+fp-consensus = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }

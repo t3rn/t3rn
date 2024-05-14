@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
 pub use pallet_3vm_evm_primitives::{
     Context, IsPrecompileResult, LinearCostPrecompile, Precompile, PrecompileHandle,
     PrecompileResult, PrecompileSet,
 };
 
+use frame_support::traits::Currency;
 use pallet_3vm_evm_primitives::{ExitError, PrecompileFailure};
 pub use pallet_evm_precompile_modexp::Modexp;
 pub use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
@@ -12,85 +12,90 @@ pub use pallet_evm_precompile_simple::{
     ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256,
 };
 use portal_precompile::PortalPrecompile;
+use precompile_util_solidity::data::EvmData;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
-pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
-    // Ethereum precompiles:
-    ECRecover,
-    Sha256,
-    Ripemd160,
-    Identity,
-    Modexp,
-    // Non-Frontier specific nor Ethereum precompiles:
-    Sha3FIPS256,
-    Sha3FIPS512,
-    ECRecoverPublicKey,
-    // T3rn precompiles:
-    Portal,
-    Noop(T),
-}
+use tokens_precompile::TokensPrecompile;
 
-impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
-    pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
-        match self {
-            // Ethereum:
-            KnownPrecompile::ECRecover => <ECRecover as Precompile>::execute(handle),
-            KnownPrecompile::Sha256 => <Sha256 as Precompile>::execute(handle),
-            KnownPrecompile::Ripemd160 => <Ripemd160 as Precompile>::execute(handle),
-            KnownPrecompile::Identity => <Identity as Precompile>::execute(handle),
-            KnownPrecompile::Modexp => <Modexp as Precompile>::execute(handle),
-            // // Non-Frontier specific nor Ethereum:
-            KnownPrecompile::Sha3FIPS256 => <Sha3FIPS256 as Precompile>::execute(handle),
-            KnownPrecompile::Sha3FIPS512 => <Sha3FIPS512 as Precompile>::execute(handle),
-            KnownPrecompile::ECRecoverPublicKey =>
-                <ECRecoverPublicKey as Precompile>::execute(handle),
-            KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
-            KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
-                ExitError::Other("Noop precompile".into()),
-            )),
-            _ => PrecompileResult::Err(PrecompileFailure::from(ExitError::Other(
-                "Unknown precompile".into(),
-            ))),
-        }
-    }
-}
+pub mod precompile_mock;
 
-pub struct Precompiles<T: pallet_3vm_evm::Config> {
-    pub inner: BTreeMap<H160, KnownPrecompile<T>>,
-    phantom: PhantomData<T>,
-}
-
-impl<T: pallet_3vm_evm::Config> Precompiles<T> {
-    pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
-        Self {
-            inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
-            phantom: Default::default(),
-        }
-    }
-
-    pub fn used_addresses(&self) -> Vec<H160> {
-        self.inner.keys().cloned().collect()
-    }
-}
-
-impl<T: pallet_3vm_evm::Config> PrecompileSet for Precompiles<T> {
-    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
-        self.inner
-            .get(&handle.code_address())
-            .map(|precompile| precompile.execute(handle))
-    }
-
-    /// Check if the given address is a precompile. Should only be called to
-    /// perform the check while not executing the precompile afterward, since
-    /// `execute` already performs a check internally.
-    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
-        IsPrecompileResult::Answer {
-            is_precompile: self.used_addresses().contains(&address),
-            extra_cost: 0,
-        }
-    }
-}
+pub const TOKENS_PRECOMPILE_PREFIX: &[u8] = &[9u8; 16];
 
 fn hash(a: &u64) -> H160 {
     H160::from_low_u64_be(*a)
+}
+
+// Precompile set that will be used in production. Allows
+#[derive(Debug, Default, Clone, Copy)]
+pub struct T3rnPrecompiles<T>(PhantomData<T>);
+
+impl<T> T3rnPrecompiles<T> {
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<T> PrecompileSet for T3rnPrecompiles<T>
+where
+    T: pallet_3vm_evm::Config
+        + pallet_assets::Config
+        + pallet_balances::Config
+        + frame_system::Config,
+    <T as pallet_assets::Config>::AssetId: From<u32>,
+    <T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+    <T as pallet_assets::Config>::Balance: EvmData,
+    <<T as pallet_3vm_evm::Config>::Currency as Currency<
+        <T as frame_system::pallet::Config>::AccountId,
+    >>::Balance: EvmData,
+    sp_core::U256: From<<T as pallet_assets::Config>::Balance>,
+    sp_core::U256: From<
+        <<T as pallet_3vm_evm::Config>::Currency as Currency<
+            <T as frame_system::pallet::Config>::AccountId,
+        >>::Balance,
+    >,
+    TokensPrecompile<T>: Precompile,
+    PortalPrecompile<T>: Precompile,
+{
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+        let address = handle.code_address();
+        match address {
+            // Ethereum precompiles
+            a if hash(&1) == a => Some(<ECRecover as Precompile>::execute(handle)),
+            a if hash(&2) == a => Some(<Sha256 as Precompile>::execute(handle)),
+            a if hash(&3) == a => Some(<Ripemd160 as Precompile>::execute(handle)),
+            a if hash(&4) == a => Some(<Identity as Precompile>::execute(handle)),
+            a if hash(&5) == a => Some(<Modexp as Precompile>::execute(handle)),
+            // Non-Ethereum precompiles
+            a if hash(&101) == a => Some(<Sha3FIPS256 as Precompile>::execute(handle)),
+            a if hash(&102) == a => Some(<Sha3FIPS512 as Precompile>::execute(handle)),
+            a if hash(&103) == a => Some(<ECRecoverPublicKey as Precompile>::execute(handle)),
+            // t3rn precompiles
+            a if hash(&10001) == a => Some(PortalPrecompile::<T>::execute(handle)),
+            a if &a.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX =>
+                Some(TokensPrecompile::<T>::execute(handle)),
+            // Default
+            _ => None,
+        }
+    }
+
+    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+        let mut is_precompile_result: bool = false;
+        if (address == hash(&1)
+            || address == hash(&2)
+            || address == hash(&3)
+            || address == hash(&4)
+            || address == hash(&5)
+            || address == hash(&101)
+            || address == hash(&102)
+            || address == hash(&103)
+            || address == hash(&10001)
+            || &address.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX)
+        {
+            is_precompile_result = true;
+        }
+        IsPrecompileResult::Answer {
+            is_precompile: is_precompile_result,
+            extra_cost: 0,
+        }
+    }
 }

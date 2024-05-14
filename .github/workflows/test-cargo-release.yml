@@ -12,12 +12,17 @@ jobs:
     name: Cargo Release Dry Run
     runs-on: [self-hosted]
     steps:
+      - name: Clean up
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./ || true
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-
 
       - name: Calculate semantic version
         id: version

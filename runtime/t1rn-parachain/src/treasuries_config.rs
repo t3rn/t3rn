@@ -3,7 +3,8 @@ use frame_support::{parameter_types, traits::NeverEnsureOrigin, PalletId};
 use frame_system::EnsureRoot;
 use sp_runtime::{traits::AccountIdConversion, Permill};
 
-use t3rn_primitives::{monetary::TRN, TreasuryAccount, TreasuryAccountProvider};
+use circuit_runtime_types::UNIT as TRN;
+use t3rn_primitives::{TreasuryAccount, TreasuryAccountProvider};
 
 pub type DefaultTreasuryInstance = ();
 pub type EscrowTreasuryInstance = pallet_treasury::pallet::Instance1;
@@ -16,7 +17,7 @@ parameter_types! {
     pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
     pub const MaxApprovals: u32 = 10;
     pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub const SpendPeriod: u32 = 60 / 12;
+    pub const SpendPeriod: u32 = 7 * 24 * 60 * 60;
     pub const ProposalBondMinimum: Balance = 100 * (TRN as Balance);
 }
 

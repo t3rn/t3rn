@@ -126,13 +126,17 @@ xcm-primitives           = { workspace = true }
 #pallet-xbi-portal     = { workspace = true }
 
 # Smart contracts VMs
-#evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
+evm-precompile-util             = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
 pallet-3vm                      = { default-features = false, path = "../../pallets/3vm" }
 pallet-3vm-account-mapping      = { default-features = false, path = "../../pallets/3vm/account-mapping" }
 pallet-3vm-contracts            = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
+fp-rpc                          = { default-features = false, path = "../../pallets/evm/rpc" }
+pallet-3vm-ethereum             = { default-features = false, path = "../../pallets/3vm/ethereum", package = "pallet-ethereum" }
+fp-self-contained               = { workspace = true, default-features = false }
+
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }
@@ -178,8 +182,11 @@ std = [
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
+  "pallet-3vm-ethereum/std",
+  "fp-rpc/std",
+  "fp-self-contained/std",
   "pallet-vacuum/std",
-  #  "evm-precompile-util/std",
+  "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-preimage/std",
   'pallet-scheduler/std',
@@ -266,8 +273,6 @@ runtime-benchmarks = [
   "pallet-circuit/runtime-benchmarks",
   "pallet-clock/runtime-benchmarks",
   "pallet-vacuum/runtime-benchmarks",
-  "pallet-3vm-contracts/runtime-benchmarks",
-  "pallet-3vm-evm/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-membership/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
@@ -281,13 +286,20 @@ runtime-benchmarks = [
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
-  "pallet-celestia-light-client/runtime-benchmarks",
+#  "pallet-celestia-light-client/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-sepolia-finality-verifier/runtime-benchmarks",
   "pallet-asset-tx-payment/runtime-benchmarks",
   "pallet-sudo/runtime-benchmarks",
   "assets-common/runtime-benchmarks",
-
+  # 3VM
+  "pallet-3vm/runtime-benchmarks",
+  "pallet-3vm-evm/runtime-benchmarks",
+  "pallet-3vm-ethereum/runtime-benchmarks",
+  "pallet-3vm-contracts/runtime-benchmarks",
+  "pallet-3vm-account-mapping/runtime-benchmarks",
+  # Other
+  # "pallet-celestia-light-client/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -339,4 +351,10 @@ try-runtime = [
   "pallet-xcm/try-runtime",
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
+  "pallet-3vm/try-runtime",
+  "pallet-3vm-evm/try-runtime",
+  "pallet-3vm-ethereum/try-runtime",
+  "pallet-3vm-contracts/try-runtime",
+  "pallet-3vm-account-mapping/try-runtime",
+  "fp-self-contained/try-runtime",
 ]

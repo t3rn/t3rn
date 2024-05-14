@@ -1,8 +1,11 @@
+use circuit_runtime_types::UNIT as TRN;
 use parachain_runtime::{
-    opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
-    PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
+    opaque::Block, AccountId, AssetsConfig, AuraId, BalancesConfig, CollatorSelectionConfig,
+    EvmConfig, GenesisAccount, ParachainInfoConfig, PolkadotXcmConfig, RuntimeGenesisConfig,
+    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, U256, WASM_BINARY,
 };
+
+const TST: u128 = TRN * 1_000_000;
 
 use codec::Encode;
 
@@ -13,7 +16,7 @@ use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public, H160};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
@@ -390,6 +393,7 @@ fn polkadot_genesis_full(
         clock: Default::default(),
         account_manager: Default::default(),
         treasury: Default::default(),
+        ethereum: Default::default(),
         escrow_treasury: Default::default(),
         fee_treasury: Default::default(),
         parachain_treasury: Default::default(),
@@ -419,7 +423,47 @@ fn polkadot_genesis_full(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
-        assets: Default::default(),
+        assets: AssetsConfig {
+            assets: vec![(
+                2,
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                false,
+                1,
+            )],
+            metadata: vec![(2, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)],
+            accounts: vec![
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Dave"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Eve"),
+                    1000 * TST,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                    1000 * TST,
+                ),
+            ],
+        },
         aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: PolkadotXcmConfig {
@@ -433,7 +477,47 @@ fn polkadot_genesis_full(
         transaction_payment: Default::default(),
         contracts_registry: Default::default(),
         attesters: Default::default(),
-        evm: Default::default(),
+        evm: EvmConfig {
+            accounts: {
+                let mut accounts = std::collections::BTreeMap::new();
+                accounts.insert(
+                    // EVM Alice
+                    H160::from_str("B08E7434dBA205Ae42D1DDcD7048Ce0B0c6cfD0d")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        nonce: U256::zero(),
+                        // Using a larger number, so I can tell the accounts apart by balance.
+                        balance: U256::from(2u64 << 56),
+                        code: vec![],
+                        storage: std::collections::BTreeMap::new(),
+                    },
+                );
+                accounts.insert(
+                    // H160 address for Metamask interaction testing
+                    H160::from_str("CEB58Fc447ee30D2104dD00ABFe6Fe29fe470e5C")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        balance: U256::from(1u64 << 56),
+                        code: Default::default(),
+                        nonce: Default::default(),
+                        storage: Default::default(),
+                    },
+                );
+                accounts.insert(
+                    // Executor EVM account
+                    H160::from_str("2C7A1CaAC34549ef4D6718ECCF3120AC2f74Df5C")
+                        .expect("internal H160 is valid; qed"),
+                    GenesisAccount {
+                        balance: U256::from(1u64 << 56),
+                        code: Default::default(),
+                        nonce: Default::default(),
+                        storage: Default::default(),
+                    },
+                );
+                accounts.encode()
+            },
+            _marker: Default::default(),
+        },
         three_vm: Default::default(),
         rewards: Default::default(),
         maintenance: Default::default(),

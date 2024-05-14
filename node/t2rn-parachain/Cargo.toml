@@ -31,6 +31,7 @@ sc-consensus            = { workspace = true }
 sc-consensus-aura       = { workspace = true }
 sc-executor             = { workspace = true }
 sc-consensus-grandpa    = { workspace = true }
+sc-consensus-grandpa-rpc= { workspace = true }
 sc-keystore             = { workspace = true }
 sc-service              = { workspace = true }
 sc-telemetry            = { workspace = true }
@@ -46,6 +47,7 @@ sp-runtime              = { workspace = true }
 sp-timestamp            = { workspace = true }
 sc-offchain             = { workspace = true }
 sc-network              = { workspace = true }
+sc-network-sync         = { workspace = true }
 
 # These dependencies are used for the node template's RPCs
 
@@ -66,12 +68,32 @@ frame-system           = { workspace = true }
 
 # Local Dependencies
 t2rn-parachain-runtime     = { path = "../../runtime/t2rn-parachain" }
+circuit-runtime-types      = { path = "../../runtime/common-types", default-features = false }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
 t3rn-abi                   = { path = "../../types/abi" }
 t3rn-primitives            = { path = "../../primitives" }
 t3rn-types                 = { path = "../../types" }
+
+# EVM dependencies
+fp-rpc = { workspace = true, features = ["std"] }
+fp-consensus = { workspace = true }
+fc-storage = { workspace = true }
+fp-storage = { workspace = true }
+fc-cli = { workspace = true }
+fc-rpc = { workspace = true }
+fc-rpc-core = { workspace = true }
+fc-consensus = { workspace = true }
+fc-mapping-sync = { workspace = true }
+fc-db = { workspace = true }
+pallet-dynamic-fee = { workspace = true, optional = true }
+pallet-3vm-ethereum = { path = "../../pallets/3vm/ethereum", package = "pallet-ethereum", features = ["std"] }
+
+# Cumulus EVM dependencies
+cumulus-primitives-core                 = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
+cumulus-primitives-parachain-inherent   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
+cumulus-test-relay-sproof-builder       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

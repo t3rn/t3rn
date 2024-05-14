@@ -1,11 +1,12 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, TRN, WASM_BINARY,
+    SystemConfig, WASM_BINARY,
 };
 
 pub use codec::Encode;
 
+use circuit_runtime_types::UNIT as TRN;
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::ChainSpecExtension;

@@ -73,13 +73,13 @@ frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
 parachain-runtime          = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
-
-pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
+pallet-portal-rpc          = { path = "../../pallets/portal/rpc", default-features = false }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
 t3rn-abi                   = { path = "../../types/abi" }
 t3rn-primitives            = { path = "../../primitives" }
 t3rn-types                 = { path = "../../types" }
+circuit-runtime-types      = { path = "../../runtime/common-types"}
 
 sc-chain-spec                  = { workspace = true }
 sc-offchain                    = { workspace = true }
@@ -102,11 +102,25 @@ cumulus-primitives-parachain-inherent   = { git = 'https://github.com/paritytech
 cumulus-relay-chain-inprocess-interface = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
 cumulus-relay-chain-interface           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
 cumulus-relay-chain-rpc-interface       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
+cumulus-test-relay-sproof-builder       = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0' }
 xcm                                     = { workspace = true }
 
 # try-runtime CLI dependencies
 frame-try-runtime = { workspace = true, default-features = true, optional = true }
 try-runtime-cli   = { workspace = true, optional = true }
+# EVM dependencies
+fp-rpc = { workspace = true }
+fp-consensus = { workspace = true }
+fp-storage = { workspace = true }
+fc-storage = { workspace = true }
+fc-cli = { workspace = true }
+fc-rpc = { workspace = true }
+fc-rpc-core = { workspace = true }
+fc-consensus = { workspace = true }
+fc-mapping-sync = { workspace = true }
+fc-db = { workspace = true }
+pallet-dynamic-fee = { workspace = true, optional = true }
+pallet-3vm-ethereum = { path = "../../pallets/3vm/ethereum", package = "pallet-ethereum", features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }

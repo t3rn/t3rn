@@ -11,12 +11,14 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v
 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 frame-system  = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+pallet-assets = { workspace = true }
 
 fp-evm        = { path = "../../primitives", default-features = false }
 pallet-evm    = { path = "../..", default-features = false }
 pallet-portal = { path = "../../../portal", default-features = false }
 
-t3rn-primitives = { default-features = false, path = "../../../../primitives" }
+precompile-util-solidity  = { path = "../util/solidity", default-features = false }
+t3rn-primitives           = { default-features = false, path = "../../../../primitives" }
 
 [dev-dependencies]
 pallet-evm             = { path = "../.." }
@@ -25,4 +27,13 @@ t3rn-mini-mock-runtime = { path = "../../../../runtime/mini-mock" }
 
 [features]
 default = [ "std" ]
-std     = [ "pallet-portal/std", "sp-std/std", "codec/std", "t3rn-primitives/std", "frame-support/std", "frame-system/std", "fp-evm/std", "pallet-evm/std" ]
+std     = [
+    "pallet-portal/std",
+    "sp-std/std",
+    "codec/std",
+    "t3rn-primitives/std",
+    "frame-support/std",
+    "frame-system/std",
+    "fp-evm/std",
+    "pallet-evm/std"
+]
