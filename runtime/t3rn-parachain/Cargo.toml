@@ -145,7 +145,7 @@ std = [
   "xcm-executor/std",
   "xcm/std",
   "circuit-runtime-types/std",
-  "frame-try-runtime/std"
+  "frame-try-runtime/std",
   "t3rn-primitives/std",
 ]
 
