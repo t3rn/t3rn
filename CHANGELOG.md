@@ -4,6 +4,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.88.3-rc.0] - 2024-05-14
+### :bug: Bug Fixes
+- [`a24e478`](https://github.com/t3rn/t3rn/commit/a24e478536c76e2378fe65a01f0ba579e0f4dc33) - remove last 18 decimals converted unit for t2rn *(PR [#1602](https://github.com/t3rn/t3rn/pull/1602) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.88.2-rc.0] - 2024-05-03
+### :bug: Bug Fixes
+- [`360797e`](https://github.com/t3rn/t3rn/commit/360797ed483948c3a8f182537bc83cabd11ca1fa) - re-enable EVM decimals  conversion *(PR [#1601](https://github.com/t3rn/t3rn/pull/1601) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.88.1-rc.0] - 2024-05-02
+### :bug: Bug Fixes
+- [`f6ed048`](https://github.com/t3rn/t3rn/commit/f6ed048df01faaf6083c3d77f972beb33dabaaa9) - guardian integration flow gas price error *(PR [#1600](https://github.com/t3rn/t3rn/pull/1600) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.88.0-rc.0] - 2024-04-17
+### :sparkles: New Features
+- [`512e64e`](https://github.com/t3rn/t3rn/commit/512e64e8edb44b20684c29f0ceb10dc6cd37173a) - added GRANDPA RPC config to t2rn *(PR [#1599](https://github.com/t3rn/t3rn/pull/1599) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.87.4-rc.0] - 2024-04-12
+### :bug: Bug Fixes
+- [`3388c47`](https://github.com/t3rn/t3rn/commit/3388c470d6589edc8fc64e5ab6e0cac6af08f712) - updated native token from 12 to 18 decimals *(PR [#1597](https://github.com/t3rn/t3rn/pull/1597) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.87.3-rc.0] - 2024-04-12
+### :bug: Bug Fixes
+- [`5df29af`](https://github.com/t3rn/t3rn/commit/5df29afeb738b9a43ffcaa87f1b82570d25085d6) - contract deployment works without producing OutOfGas and UnknownPrecompile errors *(PR [#1598](https://github.com/t3rn/t3rn/pull/1598) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.87.2-rc.0] - 2024-04-04
+### :bug: Bug Fixes
+- [`445569e`](https://github.com/t3rn/t3rn/commit/445569e51762b928edbf798d39f6859553424d04) - claiming EVM address with Substrate account also transfer the balance from the address *(PR [#1592](https://github.com/t3rn/t3rn/pull/1592) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.87.1-rc.0] - 2024-04-04
+### :bug: Bug Fixes
+- [`9048c01`](https://github.com/t3rn/t3rn/commit/9048c01b7fd32ec7928baed8bd9c4376381a839c) - update docs executor breakdown *(PR [#1571](https://github.com/t3rn/t3rn/pull/1571) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`b01617e`](https://github.com/t3rn/t3rn/commit/b01617e17cebdd393a3fb672c6cabad092c35449) - update link structure *(PR [#1583](https://github.com/t3rn/t3rn/pull/1583) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`4446d48`](https://github.com/t3rn/t3rn/commit/4446d4819ee7231759e2a00e281c16d24d23108c) - support  for all AssetId  values through TokensPrecompile *(PR [#1593](https://github.com/t3rn/t3rn/pull/1593) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.87.0-rc.0] - 2024-02-19
+### :sparkles: New Features
+- [`59a6a97`](https://github.com/t3rn/t3rn/commit/59a6a97601a02ba53bb5d2ef25943add0e25f8b8) - Substrate tokens ERC20 precompile,  EVM CLI, EVM to Substrate decimals conversion, Working EVM Transfers *(PR [#1563](https://github.com/t3rn/t3rn/pull/1563) by [@chexware](https://github.com/chexware))*
+
+
+## [v1.86.1-rc.0] - 2024-02-06
+### :bug: Bug Fixes
+- [`244968c`](https://github.com/t3rn/t3rn/commit/244968c3976b75ab029a83da9cabaee3af042d8c) - update docs sidebar *(PR [#1552](https://github.com/t3rn/t3rn/pull/1552) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+
+
+## [v1.86.0-rc.0] - 2024-01-23
+### :sparkles: New Features
+- [`4514ef9`](https://github.com/t3rn/t3rn/commit/4514ef9356579e0be4f27e9928154d9844711477) - enable pre-funded Metamask accounts for t0rn & t2rn  *(PR [#1550](https://github.com/t3rn/t3rn/pull/1550) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.85.0-rc.0] - 2024-01-17
+### :sparkles: New Features
+- [`4d20bf2`](https://github.com/t3rn/t3rn/commit/4d20bf2f9e3ff76a89f506e591f4709f7ccfc48c) - update Celestia light client to v1.0.4 *(PR [#1543](https://github.com/t3rn/t3rn/pull/1543) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.84.0-rc.0] - 2024-01-16
+### :sparkles: New Features
+- [`72925c8`](https://github.com/t3rn/t3rn/commit/72925c8839699f6ebcce8f10e7f6023e1ad6aa1f) - bump sepolia & ethereum light client versions; fix benchmarks  *(PR [#1540](https://github.com/t3rn/t3rn/pull/1540) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.83.1-rc.0] - 2024-01-13
+### :bug: Bug Fixes
+- [`6bacb0f`](https://github.com/t3rn/t3rn/commit/6bacb0ff5fd5a5cd9fa4b8bf3b74c6386877fc55) - correct typo in docs release main docs CI pipeline [skip ci] *(PR [#1535](https://github.com/t3rn/t3rn/pull/1535) by [@ahkohd](https://github.com/ahkohd))*
+
+### :wrench: Chores
+- [`2200ea2`](https://github.com/t3rn/t3rn/commit/2200ea2611032e7b920d4d4626ffccf544d579f3) - plug GRANDPA proveFinality RPC to standalone node *(PR [#1534](https://github.com/t3rn/t3rn/pull/1534) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.83.0-rc.0] - 2024-01-12
+### :sparkles: New Features
+- [`43fbf67`](https://github.com/t3rn/t3rn/commit/43fbf67d9871b7a16731f5ee753a9742ca3f5d5b) - add pallet-ethereum to t0rn and t2rn with EVM RPC *(PR [#1531](https://github.com/t3rn/t3rn/pull/1531) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`699e00a`](https://github.com/t3rn/t3rn/commit/699e00a80d394102a02743a614603de5eccf2125) - all issues that hinders build success *(PR [#1530](https://github.com/t3rn/t3rn/pull/1530) by [@ahkohd](https://github.com/ahkohd))*
+
+### :wrench: Chores
+- [`caa4b66`](https://github.com/t3rn/t3rn/commit/caa4b6623dcece08db7a4b22338454876f2ab22c) - update environment variable *(PR [#1533](https://github.com/t3rn/t3rn/pull/1533) by [@ahkohd](https://github.com/ahkohd))*
+
+
 ## [v1.82.1-rc.0] - 2024-01-10
 ### :bug: Bug Fixes
 - [`21ebf2f`](https://github.com/t3rn/t3rn/commit/21ebf2f4a5f7f1c224eb0e2d2b23f2293b44f1aa) - update link and title *(PR [#1516](https://github.com/t3rn/t3rn/pull/1516) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
@@ -2020,3 +2106,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.81.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.2-rc.0...v1.81.3-rc.0
 [v1.82.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.81.4-rc.0...v1.82.0-rc.0
 [v1.82.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.0-rc.0...v1.82.1-rc.0
+[v1.83.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.82.1-rc.0...v1.83.0-rc.0
+[v1.83.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.0-rc.0...v1.83.1-rc.0
+[v1.84.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.83.1-rc.0...v1.84.0-rc.0
+[v1.85.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.84.1-rc.0...v1.85.0-rc.0
+[v1.86.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.85.0-rc.0...v1.86.0-rc.0
+[v1.86.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.0-rc.0...v1.86.1-rc.0
+[v1.87.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.86.1-rc.0...v1.87.0-rc.0
+[v1.87.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.0-rc.0...v1.87.1-rc.0
+[v1.87.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.1-rc.0...v1.87.2-rc.0
+[v1.87.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.2-rc.0...v1.87.3-rc.0
+[v1.87.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.3-rc.0...v1.87.4-rc.0
+[v1.88.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.87.4-rc.0...v1.88.0-rc.0
+[v1.88.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.0-rc.0...v1.88.1-rc.0
+[v1.88.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.1-rc.0...v1.88.2-rc.0
+[v1.88.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.2-rc.0...v1.88.3-rc.0

@@ -1,0 +1,84 @@
+[package]
+name = "pallet-ethereum"
+version = "1.0.0-dev"
+license = "Apache-2.0"
+description = "Ethereum compatibility full block processing emulation pallet for t3rn."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+environmental = { version = "1.1.4", default-features = false, optional = true }
+ethereum = { workspace = true, features = ["with-codec"], default-features = false  }
+ethereum-types = { workspace = true, default-features = false  }
+evm = { workspace = true, features = ["with-codec"], default-features = false  }
+scale-codec = { package = "parity-scale-codec", workspace = true, default-features = false  }
+scale-info = { workspace = true, default-features = false  }
+# Substrate
+frame-support = { workspace = true, default-features = false  }
+frame-system = { workspace = true, default-features = false  }
+sp-io = { workspace = true, default-features = false  }
+sp-runtime = { workspace = true, default-features = false  }
+sp-std = { workspace = true, default-features = false  }
+# Frontier
+fp-consensus = { workspace = true, default-features = false }
+fp-ethereum = { default-features = false, path = "./primitives" }
+fp-rpc                       = { workspace = true }
+pallet-3vm-evm               = { default-features = false, path = "../../../pallets/evm", package = "pallet-evm" }
+pallet-3vm-evm-primitives    = { default-features = false, path = "../../../pallets/evm/primitives", package = "fp-evm" }
+fp-storage                   = { workspace = true, default-features = false  }
+
+t3rn-primitives = { path = "../../../primitives", default-features = false }
+
+[dev-dependencies]
+circuit-mock-runtime    = { path = "../../../runtime/mock" }
+circuit-runtime-pallets = { path = "../../../runtime/common-pallets" }
+hex = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
+rlp = { workspace = true }
+# Substrate
+pallet-balances = { workspace = true, features = ["default"] }
+pallet-timestamp = { workspace = true, features = ["default"] }
+sp-core = { workspace = true, features = ["default"] }
+# Frontier
+fp-self-contained = { workspace = true, features = ["default"] }
+
+[features]
+default = ["std"]
+std = [
+    "ethereum/std",
+    "evm/std",
+    "ethereum-types/std",
+    "rlp/std",
+    "scale-codec/std",
+    "scale-info/std",
+    # Substrate
+    "frame-support/std",
+    "frame-system/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    # EVM
+    "fp-consensus/std",
+    "fp-ethereum/std",
+    "fp-rpc/std",
+    "pallet-3vm-evm/std",
+    "pallet-3vm-evm-primitives/std",
+    "fp-storage/std",
+    # Circuit
+    "circuit-runtime-pallets/std",
+]
+runtime-benchmarks = [
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+#    "pallet-3vm-evm/runtime-benchmarks",
+]
+try-runtime = [
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+#    "pallet-3vm-evm/try-runtime",
+]
+forbid-evm-reentrancy = ["dep:environmental"]

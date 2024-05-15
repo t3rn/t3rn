@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t7rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.82.0-rc.0"
+version     = "1.88.3-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -86,7 +86,8 @@ frame-try-runtime            = { workspace = true, optional = true }
 try-runtime-cli              = { workspace = true, optional = true }
 
 # Commons
-circuit-runtime-types = { path = "../common-types", default-features = false }
+circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
+t3rn-primitives       = { default-features = false, path = "../../primitives" }
 
 [features]
 default = [ "std" ]
@@ -144,6 +145,7 @@ std = [
   "xcm-executor/std",
   "xcm/std",
   "circuit-runtime-types/std",
+  "t3rn-primitives/std",
 ]
 
 runtime-benchmarks = [

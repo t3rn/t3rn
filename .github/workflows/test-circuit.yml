@@ -54,6 +54,12 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
     steps:
+      - name: Clean up workspace first
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./ || true
       - name: ☁ Checkout git repo
         uses: actions/checkout@v4
         with:
@@ -103,6 +109,7 @@ jobs:
         uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-nextest
+          version: '0.9.68'
 
       - name: Install cargo-llvm-cov
         uses: baptiste0928/cargo-install@v2
@@ -113,7 +120,8 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex node --lcov --output-path lcov.info
+          args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex "(node|3vm|evm)" --lcov --output-path lcov.info
+
 
       - name: Upload coverage data
         uses: codecov/codecov-action@v3

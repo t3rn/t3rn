@@ -129,25 +129,25 @@ mod tests {
 
     #[test]
     fn test_initialize_and_submit_ethereum() {
-        let init = generate_initialization(None, None);
-        let submission_data = generate_epoch_update(
-            0,
-            3,
-            Some(
-                init.checkpoint
-                    .attested_beacon
-                    .hash_tree_root::<Runtime>()
-                    .unwrap(),
-            ),
-            None,
-            None,
-        );
-
         ExtBuilder::default()
             .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
+                let init = generate_initialization(None, None);
+                let submission_data = generate_epoch_update(
+                    0,
+                    3,
+                    Some(
+                        init.checkpoint
+                            .attested_beacon
+                            .hash_tree_root::<Runtime>()
+                            .unwrap(),
+                    ),
+                    None,
+                    None,
+                );
+
                 assert_ok!(Portal::initialize(Origin::root(), *b"eth2", init.encode()));
 
                 assert_eq!(

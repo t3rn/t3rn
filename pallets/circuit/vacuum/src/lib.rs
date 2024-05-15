@@ -426,7 +426,8 @@ pub mod pallet {
 #[cfg(test)]
 mod tests {
     use codec::Encode;
-    use t3rn_primitives::circuit::OrderOrigin;
+
+    use circuit_runtime_types::UNIT;
 
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
@@ -446,12 +447,12 @@ mod tests {
     use t3rn_primitives::{
         circuit::{
             types::{OrderSFX, SFXAction},
-            CircuitSubmitAPI,
+            AdaptiveTimeout, CircuitStatus, CircuitSubmitAPI, OrderOrigin,
         },
         claimable::CircuitRole,
         clock::OnHookQueues,
         light_client::LightClientAsyncAPI,
-        monetary::TRN,
+        monetary::MOCK_EXISTENTIAL_DEPOSIT as EXISTENTIAL_DEPOSIT,
         portal::Portal as PortalT,
         EthereumToken, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount,
         TreasuryAccountProvider,
@@ -460,10 +461,6 @@ mod tests {
 
     use frame_support::{traits::Currency, weights::Weight};
 
-    use t3rn_primitives::{
-        circuit::{AdaptiveTimeout, CircuitStatus},
-        monetary::EXISTENTIAL_DEPOSIT,
-    };
     use t3rn_types::fsx::TargetId;
 
     pub fn mint_required_assets_for_optimistic_actors(
@@ -476,8 +473,8 @@ mod tests {
         assert!(XDNS::all_token_ids().contains(&asset_id));
         // Load requester enough some funds
         let issuer_is_escrow_account = MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
-        Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
-        Balances::deposit_creating(&executor, (100_000 * TRN) as Balance); // To cover fees
+        Balances::deposit_creating(&requester, (100_000 * UNIT) as Balance); // To cover fees
+        Balances::deposit_creating(&executor, (100_000 * UNIT) as Balance); // To cover fees
         let requester_starting_balance = Assets::balance(asset_id, &requester);
         let executor_starting_balance = Assets::balance(asset_id, &executor);
         assert_ok!(Assets::mint(

@@ -1,34 +1,40 @@
 use crate::*;
 
 use crate::{
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
+    accounts_config::EscrowAccount, pallet_3vm_contracts::NoopMigration,
+    pallet_3vm_ethereum::Transaction, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
     ContractsRegistry, Portal, RandomnessCollectiveFlip, RuntimeCall, RuntimeEvent, ThreeVm,
     Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
-use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor, PalletId};
-
-use crate::pallet_3vm_contracts::NoopMigration;
 use circuit_runtime_pallets::{
     evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
     pallet_3vm_evm::HashedAddressMapping, pallet_3vm_evm_primitives,
 };
+use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor, PalletId};
 
+use crate::pallet_3vm_ethereum::PostLogContent;
 use circuit_runtime_types::{AssetId, EvmAddress};
+use ethereum::{TransactionAction, TransactionSignature};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_evm::{EnsureAddressTruncated, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
+use rlp::RlpStream;
 use sp_core::{H160, U256};
 use sp_runtime::{
-    traits::{AccountIdConversion, Keccak256},
+    traits::{AccountIdConversion, DispatchInfoOf, Dispatchable, Keccak256},
+    transaction_validity::{TransactionValidity, TransactionValidityError},
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+};
+
+use circuit_runtime_types::{MILLIUNIT, UNIT};
 
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
+
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -115,7 +121,7 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (1_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -126,16 +132,20 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
     pub const ChainId: u64 = 42;
-    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-        (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-        (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-        (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-        (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-        (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-        (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-        (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-        (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-        (40_u64, evm_precompile_util::KnownPrecompile::Portal)
+    pub PrecompilesValue: evm_precompile_util::precompile_mock::MockPrecompileSet<Runtime> = evm_precompile_util::precompile_mock::MockPrecompileSet::<Runtime>::new(sp_std::vec![
+         (sp_core::H160([0u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::ECRecover),
+         (sp_core::H160([1u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Sha256),
+         (sp_core::H160([2u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Ripemd160),
+         (sp_core::H160([3u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Identity),
+         (sp_core::H160([4u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Modexp),
+         (sp_core::H160([5u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Sha3FIPS256),
+         (sp_core::H160([6u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Sha3FIPS512),
+         (sp_core::H160([7u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::ECRecoverPublicKey),
+         (sp_core::H160([8u8; 20]), evm_precompile_util::precompile_mock::KnownPrecompile::Portal),
+         // TRN address
+         (get_tokens_precompile_address(0), evm_precompile_util::precompile_mock::KnownPrecompile::Tokens),
+         // TST address
+         (get_tokens_precompile_address(1), evm_precompile_util::precompile_mock::KnownPrecompile::Tokens)
     ].into_iter().collect());
     // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
     pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
@@ -156,7 +166,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ();
     type OnCreate = ();
-    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
+    type PrecompilesType = evm_precompile_util::precompile_mock::MockPrecompileSet<Runtime>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
@@ -165,6 +175,17 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightInfo = ();
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
+}
+
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
+impl pallet_3vm_ethereum::Config for Runtime {
+    type ExtraDataLength = ConstU32<30>;
+    type PostLogContent = PostBlockAndTxnHashes;
+    type RuntimeEvent = RuntimeEvent;
+    type StateRoot = pallet_3vm_ethereum::IntermediateStateRoot<Self>;
 }
 
 //     type AddressMapping = IdentityAddressMapping;
@@ -204,10 +225,11 @@ impl pallet_3vm_account_mapping::Config for Runtime {
     type StorageDepositFee = StorageDepositFee;
 }
 
+/*
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
-        let mut address = [0u8; 20];
+        let mut address = [9u8; 20];
         let asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
@@ -226,5 +248,243 @@ impl Erc20Mapping for Runtime {
         }
         let asset_id = u32::from_be_bytes(asset_id_bytes);
         Some(asset_id)
+    }
+}
+*/
+
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic =
+    fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+
+impl fp_self_contained::SelfContainedCall for RuntimeCall {
+    type SignedInfo = H160;
+
+    fn is_self_contained(&self) -> bool {
+        match self {
+            RuntimeCall::Ethereum(call) => call.is_self_contained(),
+            _ => false,
+        }
+    }
+
+    fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        match self {
+            RuntimeCall::Ethereum(call) => call.check_self_contained(),
+            _ => None,
+        }
+    }
+
+    fn validate_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<TransactionValidity> {
+        match self {
+            RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn pre_dispatch_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<Result<(), TransactionValidityError>> {
+        match self {
+            RuntimeCall::Ethereum(call) =>
+                call.pre_dispatch_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn apply_self_contained(
+        self,
+        info: Self::SignedInfo,
+    ) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>>
+    {
+        match self {
+            call @ RuntimeCall::Ethereum(crate::pallet_3vm_ethereum::Call::transact { .. }) =>
+                Some(call.dispatch(RuntimeOrigin::from(
+                    crate::pallet_3vm_ethereum::RawOrigin::EthereumTransaction(info),
+                ))),
+            _ => None,
+        }
+    }
+}
+
+pub fn contract_address(sender: H160, nonce: u64) -> H160 {
+    let mut rlp = RlpStream::new_list(2);
+    rlp.append(&sender);
+    rlp.append(&nonce);
+
+    H160::from_slice(&keccak_256(&rlp.out())[12..])
+}
+
+pub fn storage_address(sender: H160, slot: H256) -> H256 {
+    H256::from(keccak_256(
+        [&H256::from(sender)[..], &slot[..]].concat().as_slice(),
+    ))
+}
+
+pub struct LegacyUnsignedTransaction {
+    pub nonce: U256,
+    pub gas_price: U256,
+    pub gas_limit: U256,
+    pub action: TransactionAction,
+    pub value: U256,
+    pub input: Vec<u8>,
+}
+
+impl LegacyUnsignedTransaction {
+    fn signing_rlp_append(&self, s: &mut RlpStream) {
+        s.begin_list(9);
+        s.append(&self.nonce);
+        s.append(&self.gas_price);
+        s.append(&self.gas_limit);
+        s.append(&self.action);
+        s.append(&self.value);
+        s.append(&self.input);
+        s.append(&ChainId::get());
+        s.append(&0u8);
+        s.append(&0u8);
+    }
+
+    fn signing_hash(&self) -> H256 {
+        let mut stream = RlpStream::new();
+        self.signing_rlp_append(&mut stream);
+        H256::from(keccak_256(&stream.out()))
+    }
+
+    pub fn sign(&self, key: &H256) -> Transaction {
+        self.sign_with_chain_id(key, ChainId::get())
+    }
+
+    pub fn sign_with_chain_id(&self, key: &H256, chain_id: u64) -> Transaction {
+        let hash = self.signing_hash();
+        let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
+        let s = libsecp256k1::sign(
+            &msg,
+            &libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap(),
+        );
+        let sig = s.0.serialize();
+
+        let sig = TransactionSignature::new(
+            s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
+            H256::from_slice(&sig[0..32]),
+            H256::from_slice(&sig[32..64]),
+        )
+        .unwrap();
+
+        Transaction::Legacy(ethereum::LegacyTransaction {
+            nonce: self.nonce,
+            gas_price: self.gas_price,
+            gas_limit: self.gas_limit,
+            action: self.action,
+            value: self.value,
+            input: self.input.clone(),
+            signature: sig,
+        })
+    }
+}
+
+pub struct EIP2930UnsignedTransaction {
+    pub nonce: U256,
+    pub gas_price: U256,
+    pub gas_limit: U256,
+    pub action: TransactionAction,
+    pub value: U256,
+    pub input: Vec<u8>,
+}
+
+impl EIP2930UnsignedTransaction {
+    pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
+        let secret = {
+            let mut sk: [u8; 32] = [0u8; 32];
+            sk.copy_from_slice(&secret[0..]);
+            libsecp256k1::SecretKey::parse(&sk).unwrap()
+        };
+        let chain_id = chain_id.unwrap_or(ChainId::get());
+        let msg = ethereum::EIP2930TransactionMessage {
+            chain_id,
+            nonce: self.nonce,
+            gas_price: self.gas_price,
+            gas_limit: self.gas_limit,
+            action: self.action,
+            value: self.value,
+            input: self.input.clone(),
+            access_list: vec![],
+        };
+        let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
+
+        let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
+        let rs = signature.serialize();
+        let r = H256::from_slice(&rs[0..32]);
+        let s = H256::from_slice(&rs[32..64]);
+        Transaction::EIP2930(ethereum::EIP2930Transaction {
+            chain_id: msg.chain_id,
+            nonce: msg.nonce,
+            gas_price: msg.gas_price,
+            gas_limit: msg.gas_limit,
+            action: msg.action,
+            value: msg.value,
+            input: msg.input.clone(),
+            access_list: msg.access_list,
+            odd_y_parity: recid.serialize() != 0,
+            r,
+            s,
+        })
+    }
+}
+
+pub struct EIP1559UnsignedTransaction {
+    pub nonce: U256,
+    pub max_priority_fee_per_gas: U256,
+    pub max_fee_per_gas: U256,
+    pub gas_limit: U256,
+    pub action: TransactionAction,
+    pub value: U256,
+    pub input: Vec<u8>,
+}
+
+impl EIP1559UnsignedTransaction {
+    pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
+        let secret = {
+            let mut sk: [u8; 32] = [0u8; 32];
+            sk.copy_from_slice(&secret[0..]);
+            libsecp256k1::SecretKey::parse(&sk).unwrap()
+        };
+        let chain_id = chain_id.unwrap_or(ChainId::get());
+        let msg = ethereum::EIP1559TransactionMessage {
+            chain_id,
+            nonce: self.nonce,
+            max_priority_fee_per_gas: self.max_priority_fee_per_gas,
+            max_fee_per_gas: self.max_fee_per_gas,
+            gas_limit: self.gas_limit,
+            action: self.action,
+            value: self.value,
+            input: self.input.clone(),
+            access_list: vec![],
+        };
+        let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
+
+        let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
+        let rs = signature.serialize();
+        let r = H256::from_slice(&rs[0..32]);
+        let s = H256::from_slice(&rs[32..64]);
+        Transaction::EIP1559(ethereum::EIP1559Transaction {
+            chain_id: msg.chain_id,
+            nonce: msg.nonce,
+            max_priority_fee_per_gas: msg.max_priority_fee_per_gas,
+            max_fee_per_gas: msg.max_fee_per_gas,
+            gas_limit: msg.gas_limit,
+            action: msg.action,
+            value: msg.value,
+            input: msg.input.clone(),
+            access_list: msg.access_list,
+            odd_y_parity: recid.serialize() != 0,
+            r,
+            s,
+        })
     }
 }

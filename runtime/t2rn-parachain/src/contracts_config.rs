@@ -6,28 +6,32 @@ use crate::{
 use frame_support::{
     pallet_prelude::ConstU32,
     parameter_types,
-    traits::{ConstBool, FindAuthor},
+    traits::{ConstBool, Currency, FindAuthor, OnUnbalanced},
     PalletId,
 };
 
 // use evm_precompile_util::KnownPrecompile;
-use circuit_runtime_types::{AssetId, EvmAddress};
+use circuit_runtime_types::{
+    AssetId, EvmAddress, BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE, GAS_WEIGHT,
+    MILLIUNIT, UNIT, WEIGHT_PER_GAS,
+};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
+use pallet_3vm_ethereum::PostLogContent;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
 use sp_runtime::{
-    traits::{AccountIdConversion, Keccak256},
+    traits::{AccountIdConversion, DispatchInfoOf, Dispatchable, Keccak256},
+    transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
+use t3rn_primitives::threevm::{
+    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
+};
 
-// Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -110,39 +114,32 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (GAS_PRICE.into(), GAS_WEIGHT)
     }
 }
 
-const BLOCK_GAS_LIMIT: u64 = 150_000_000;
-const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+
+pub struct ToStakingPot;
+impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let staking_pot = PotId::get().into_account_truncating();
+        Balances::resolve_creating(&staking_pot, amount);
+    }
+}
 
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-    pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-    pub const ChainId: u64 = 42;
-    // pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-    //     (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
-    //     (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
-    //     (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
-    //     (3_u64, evm_precompile_util::KnownPrecompile::Identity),
-    //     (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
-    //     (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
-    //     (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
-    //     (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-    //     (40_u64, evm_precompile_util::KnownPrecompile::Portal)
-    // ].into_iter().collect());
-    // pub MockPrecompiles: MockPrecompiles = MockPrecompileSet;
-    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub const GasLimitPovSizeRatio: u64 = GAS_LIMIT_POV_SIZE_RATIO;
+    pub const ChainId: u64 = 3301;
+    pub const PotId: PalletId = PalletId(*b"PotStake");
+    pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();
+    pub WeightPerGas: Weight = WEIGHT_PER_GAS;
 }
 
-// pub struct Precompiles<Runtime> {
-//     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
-//     phantom: PhantomData<Runtime>,
-// }
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
-    type AddressMapping = HashedAddressMapping<Keccak256>;
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
@@ -153,12 +150,10 @@ impl pallet_3vm_evm::Config for Runtime {
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
-    type OnChargeTransaction = ();
+    type OnChargeTransaction = pallet_3vm_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type OnCreate = ();
-    type PrecompilesType = ();
-    // type PrecompilesValue = PrecompilesValue;
-    // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
-    type PrecompilesValue = ();
+    type PrecompilesType = evm_precompile_util::T3rnPrecompiles<Self>;
+    type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
@@ -166,6 +161,17 @@ impl pallet_3vm_evm::Config for Runtime {
     type WeightInfo = ();
     type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressTruncated;
+}
+
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
+impl pallet_3vm_ethereum::Config for Runtime {
+    type ExtraDataLength = ConstU32<30>;
+    type PostLogContent = PostBlockAndTxnHashes;
+    type RuntimeEvent = RuntimeEvent;
+    type StateRoot = pallet_3vm_ethereum::IntermediateStateRoot<Self>;
 }
 
 parameter_types! {
@@ -182,11 +188,11 @@ impl pallet_3vm_account_mapping::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StorageDepositFee = StorageDepositFee;
 }
-
+/*
 // AssetId to EvmAddress mapping
 impl Erc20Mapping for Runtime {
     fn encode_evm_address(v: AssetId) -> Option<EvmAddress> {
-        let mut address = [0u8; 20];
+        let mut address = [9u8; 20];
         let mut asset_id_bytes: Vec<u8> = v.to_be_bytes().to_vec();
 
         for byte_index in 0..asset_id_bytes.len() {
@@ -205,5 +211,71 @@ impl Erc20Mapping for Runtime {
         }
         let asset_id = u32::from_be_bytes(asset_id_bytes);
         Some(asset_id)
+    }
+}
+*/
+/// Unchecked extrinsic type as expected by this runtime.
+pub type UncheckedExtrinsic =
+    fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+
+impl fp_self_contained::SelfContainedCall for RuntimeCall {
+    type SignedInfo = H160;
+
+    fn is_self_contained(&self) -> bool {
+        log::info!("is_self_contained: {:?}", self);
+        match self {
+            RuntimeCall::Ethereum(call) => call.is_self_contained(),
+            _ => false,
+        }
+    }
+
+    fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        log::info!("check_self_contained: {:?}", self);
+        match self {
+            RuntimeCall::Ethereum(call) => call.check_self_contained(),
+            _ => None,
+        }
+    }
+
+    fn validate_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<TransactionValidity> {
+        log::info!("validate_self_contained: {:?}", info);
+        match self {
+            RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn pre_dispatch_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<RuntimeCall>,
+        len: usize,
+    ) -> Option<Result<(), TransactionValidityError>> {
+        log::info!("pre_dispatch_self_contained: {:?}", info);
+        match self {
+            RuntimeCall::Ethereum(call) =>
+                call.pre_dispatch_self_contained(info, dispatch_info, len),
+            _ => None,
+        }
+    }
+
+    fn apply_self_contained(
+        self,
+        info: Self::SignedInfo,
+    ) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>>
+    {
+        log::info!("apply_self_contained: {:?}", info);
+        match self {
+            call @ RuntimeCall::Ethereum(pallet_3vm_ethereum::Call::transact { .. }) =>
+                Some(call.dispatch(RuntimeOrigin::from(
+                    pallet_3vm_ethereum::RawOrigin::EthereumTransaction(info),
+                ))),
+            _ => None,
+        }
     }
 }

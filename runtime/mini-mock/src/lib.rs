@@ -232,7 +232,7 @@ impl pallet_clock::Config for MiniRuntime {
     type RoundDuration = ConstU32<300>;
     type RuntimeEvent = RuntimeEvent;
 }
-use t3rn_primitives::monetary::TRN;
+use circuit_runtime_types::UNIT as TRN;
 
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%
@@ -409,7 +409,6 @@ parameter_types! {
     pub const HeadersToStoreEth: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
     pub const SessionLength: u64 = 5;
     pub const SyncCommitteeSize: u32 = 26;
-    pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteePeriod: u32 = 6;
     pub const CommitteeMajorityThreshold: u32 = 80;
@@ -418,7 +417,6 @@ parameter_types! {
 impl pallet_eth2_finality_verifier::Config for MiniRuntime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
     type RuntimeEvent = RuntimeEvent;
@@ -430,7 +428,6 @@ impl pallet_eth2_finality_verifier::Config for MiniRuntime {
 impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
     type RuntimeEvent = RuntimeEvent;

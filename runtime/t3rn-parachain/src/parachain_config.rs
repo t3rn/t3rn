@@ -5,15 +5,13 @@ use frame_support::{
     PalletId,
 };
 
+use circuit_runtime_types::{MICROUNIT, UNIT as TRN};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::{cmp::Ordering, prelude::*};
-
-// TODO: remove when we import t3rn_primitives
-pub(crate) const TRN: u64 = 1_000_000_000_000;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -218,7 +216,7 @@ parameter_types! {
     pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
     pub const MaxApprovals: u32 = 100;
     pub const ProposalBond: Permill = Permill::from_percent(3);
-    pub const SpendPeriod: u32 = (60 * 60 * 24) / 12;
+    pub const SpendPeriod: u32 = 7 * 24 * 60 * 60;
     pub const ProposalBondMinimum: u128 = 10_u128 * (TRN as u128);
 }
 

@@ -1,8 +1,10 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 //! Runtime utilities
 
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
 use codec::Encode;
+
+use circuit_runtime_pallets::pallet_3vm_evm::AddressMapping;
 
 use frame_support::{
     pallet_prelude::Weight,
@@ -22,7 +24,7 @@ pub use crate::signed_extrinsics_config::*;
 mod accounts_config;
 mod circuit_config;
 mod consensus_aura_config;
-mod contracts_config;
+pub mod contracts_config;
 mod hooks;
 mod system_no_version_config;
 pub mod test_utils;
@@ -33,14 +35,17 @@ pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
 pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 pub use crate::circuit_config::GlobalOnInitQueues;
 use frame_support::traits::GenesisBuild;
-pub use pallet_3vm_account_mapping::{ethereum_signable_message, to_ascii_hex, EcdsaSignature};
+pub use pallet_3vm_account_mapping::{
+    ethereum_signable_message, to_ascii_hex, EcdsaSignature, EvmAddressMapping,
+};
 pub use pallet_3vm_evm::Config as ConfigEvm;
 pub use pallet_contracts_registry::ContractsRegistry as ContractsRegistryStorage;
-use sp_core::crypto::AccountId32;
+use sp_core::{crypto::AccountId32, H160};
 use sp_io::hashing::keccak_256;
 
 use smallvec::smallvec;
 use sp_runtime::BuildStorage;
+pub type SignedExtra = (frame_system::CheckSpecVersion<Runtime>,);
 frame_support::construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -98,6 +103,7 @@ frame_support::construct_runtime!(
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
         AccountMapping: pallet_3vm_account_mapping = 126,
+        Ethereum: pallet_3vm_ethereum = 227,
 
         // Portal
         Portal: pallet_portal = 128,
@@ -358,6 +364,19 @@ pub const BOB: AccountId = AccountId::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
 pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
 pub const DJANGO: AccountId = AccountId::new([4u8; 32]);
+
+pub fn trn_evm_address() -> H160 {
+    H160::from(hex_literal::hex!(
+        "0909090909090909090909090909090900000000"
+    ))
+}
+
+pub fn tst_evm_address() -> H160 {
+    H160::from(hex_literal::hex!(
+        "0909090909090909090909090909090900000001"
+    ))
+}
+
 pub const CLI_DEFAULT: AccountId = AccountId::new([
     108, 81, 222, 3, 128, 118, 146, 25, 212, 131, 171, 210, 104, 110, 11, 63, 79, 235, 65, 99, 161,
     143, 230, 174, 109, 98, 47, 128, 20, 242, 27, 114,
@@ -372,7 +391,12 @@ pub const EXECUTOR_SECOND: AccountId = AccountId::new([
 ]);
 
 pub fn alice() -> libsecp256k1::SecretKey {
-    libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+    libsecp256k1::SecretKey::parse_slice(
+        hex!("e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a")
+            .to_vec()
+            .as_slice(),
+    )
+    .expect("32 bytes, within curve order")
 }
 
 pub fn bob() -> libsecp256k1::SecretKey {
@@ -391,11 +415,15 @@ pub fn eth(secret: &libsecp256k1::SecretKey) -> EvmAddress {
 }
 
 pub fn sig(secret: &libsecp256k1::SecretKey, what: &[u8], extra: &[u8]) -> EcdsaSignature {
-    let msg = keccak_256(&ethereum_signable_message(&to_ascii_hex(what)[..], extra));
+    // let msg = keccak_256(&ethereum_signable_message(&to_ascii_hex(what)[..], extra));
+    let msg = keccak_256(&ethereum_signable_message(what, extra));
     let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
     let mut r = [0u8; 65];
     r[0..64].copy_from_slice(&sig.serialize()[..]);
     r[64] = recovery_id.serialize();
+
+    println!("signed: {:?}", hex::encode(&msg));
+
     EcdsaSignature(r)
 }
 
@@ -406,4 +434,103 @@ pub fn bob_account_id() -> AccountId32 {
     data[0..4].copy_from_slice(b"evm:");
     data[4..24].copy_from_slice(&address[..]);
     AccountId32::from(Into::<[u8; 32]>::into(data))
+}
+
+pub struct AccountInfo {
+    pub address: H160,
+    pub account_id: AccountId32,
+    pub private_key: H256,
+}
+
+fn address_build(seed: u8) -> AccountInfo {
+    let private_key = H256::from_slice(&[(seed + 1) as u8; 32]);
+    let secret_key = libsecp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
+    let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
+    let address = H160::from(H256::from(keccak_256(public_key)));
+    let account_id = <Runtime as pallet_3vm_evm::Config>::AddressMapping::into_account_id(address);
+
+    AccountInfo {
+        private_key,
+        account_id,
+        address,
+    }
+}
+
+// This function basically just builds a genesis storage key/value store according to
+// our desired mockup.
+pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+    // sc_cli::init_logger("");
+    let mut ext = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
+        .unwrap();
+
+    let pairs = (0..accounts_len)
+        .map(|i| address_build(i as u8))
+        .collect::<Vec<_>>();
+
+    let balances: Vec<_> = (0..accounts_len)
+        .map(|i| (pairs[i].account_id.clone(), 10_000_000))
+        .collect();
+
+    pallet_balances::GenesisConfig::<Runtime> { balances }
+        .assimilate_storage(&mut ext)
+        .unwrap();
+
+    let assets: Vec<(_, _, _, _)> = vec![(1, pairs[0].account_id.clone(), false, 1)];
+    let metadata: Vec<(_, _, _, _)> =
+        vec![(1, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)];
+    let accounts: Vec<(_, _, _)> = (0..accounts_len)
+        .map(|i| (1, pairs[i].account_id.clone(), 10_000))
+        .collect();
+
+    pallet_assets::GenesisConfig::<Runtime> {
+        assets,
+        metadata,
+        accounts,
+    }
+    .assimilate_storage(&mut ext)
+    .unwrap();
+
+    (pairs, ext.into())
+}
+
+// This function basically just builds a genesis storage key/value store according to
+// our desired mockup.
+pub fn new_test_ext_with_initial_balance(
+    accounts_len: usize,
+    initial_balance: u128,
+) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+    // sc_cli::init_logger("");
+    let mut ext = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
+        .unwrap();
+
+    let pairs = (0..accounts_len)
+        .map(|i| address_build(i as u8))
+        .collect::<Vec<_>>();
+
+    let balances: Vec<_> = (0..accounts_len)
+        .map(|i| (pairs[i].account_id.clone(), initial_balance))
+        .collect();
+
+    pallet_balances::GenesisConfig::<Runtime> { balances }
+        .assimilate_storage(&mut ext)
+        .unwrap();
+
+    let assets: Vec<(_, _, _, _)> = vec![(1, pairs[0].account_id.clone(), false, 1)];
+    let metadata: Vec<(_, _, _, _)> =
+        vec![(1, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)];
+    let accounts: Vec<(_, _, _)> = (0..accounts_len)
+        .map(|i| (1, pairs[i].account_id.clone(), initial_balance))
+        .collect();
+
+    pallet_assets::GenesisConfig::<Runtime> {
+        assets,
+        metadata,
+        accounts,
+    }
+    .assimilate_storage(&mut ext)
+    .unwrap();
+
+    (pairs, ext.into())
 }
