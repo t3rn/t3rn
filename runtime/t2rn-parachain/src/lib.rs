@@ -11,15 +11,15 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("t2rn"),
     impl_name: create_runtime_str!("t2rn"),
-    authoring_version: 36,
-    spec_version: 36,
-    impl_version: 36,
+    authoring_version: 41,
+    spec_version: 41,
+    impl_version: 41,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 36,
+    transaction_version: 41,
     state_version: 1,
 };
 
-use t3rn_primitives::monetary::MILLIT3RN;
+use circuit_runtime_types::MILLIUNIT;
 
 use frame_system::EnsureRoot;
 
@@ -62,7 +62,7 @@ use pallet_3vm_evm::Runner;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const MT3RN: Balance = MILLIT3RN as Balance;
+const MT3RN: Balance = MILLIUNIT as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;

@@ -78,24 +78,35 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// This is used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(25);
 
-// Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 1_000_000_000_000;
-pub const MILLIUNIT: Balance = 1_000_000_000;
-pub const MICROUNIT: Balance = 1_000_000;
-
-pub const DECIMALS: u8 = 12;
-pub const MILLIT3RN: u64 = 1_000_000_000;
-pub const MT3RN: Balance = MILLIT3RN as Balance;
-pub const TRN: u64 = 1_000_000_000_000;
-
-/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
-
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
     cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64,
 );
+
+// Currency primitives
+pub const UNIT: Balance = 1_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000;
+pub const MICROUNIT: Balance = 1_000_000;
+
+// EVM primitives
+/// EVM max POV size
+pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
+/// EVM gas price
+pub const GAS_PRICE: u128 = 1_000;
+
+/// EVM block gas limit
+pub const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+
+/// EVM gas weight
+pub const GAS_WEIGHT: Weight = Weight::from_parts(7u64, 0);
+
+/// EVM weight per gas
+pub const WEIGHT_PER_GAS: Weight = Weight::from_parts(20_000, 0);
+
+/// EVM gas limit POV size ratio
+pub const GAS_LIMIT_POV_SIZE_RATIO: u64 = 4;
 
 parameter_types! {
 

@@ -9,6 +9,11 @@ use frame_support::{
     traits::{ConstBool, FindAuthor},
 };
 
+use circuit_runtime_types::{
+    BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE, GAS_WEIGHT, MILLIUNIT, UNIT,
+    WEIGHT_PER_GAS,
+};
+
 // use evm_precompile_util::KnownPrecompile;
 use frame_support::PalletId;
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
@@ -23,9 +28,6 @@ use sp_runtime::{
     ConsensusEngineId, RuntimeAppPublic,
 };
 
-// Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -125,18 +127,16 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (GAS_PRICE.into(), GAS_WEIGHT)
     }
 }
 
-const BLOCK_GAS_LIMIT: u64 = 150_000_000;
-const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
-
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-    pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+    pub const GasLimitPovSizeRatio: u64 = GAS_LIMIT_POV_SIZE_RATIO;
     pub const ChainId: u64 = 3331;
-    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub WeightPerGas: Weight = WEIGHT_PER_GAS;
+    // pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();;
 }
 
 // pub struct Precompiles<Runtime> {

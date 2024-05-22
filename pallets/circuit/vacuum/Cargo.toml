@@ -29,9 +29,10 @@ xcm-builder           = { workspace = true, default-features = false, optional =
 pallet-circuit        = { path = "..", default-features = false, optional = true}
 pallet-xdns           = { path = "../../xdns", default-features = false}
 
-t3rn-abi        = { path = "../../../types/abi", default-features = false }
-t3rn-types      = { path = "../../../types", default-features = false, features = [ "runtime" ] }
-t3rn-primitives = { path = "../../../primitives", default-features = false }
+t3rn-abi                = { path = "../../../types/abi", default-features = false }
+t3rn-types              = { path = "../../../types", default-features = false, features = [ "runtime" ] }
+t3rn-primitives         = { path = "../../../primitives", default-features = false }
+circuit-runtime-types   = { path = "../../../runtime/common-types", default-features = false }
 
 
 rlp = { version = "0.5.2", features = [ "derive" ], default-features = false  }
@@ -57,6 +58,7 @@ std = [
     "frame-support/std",
     "frame-system/std",
     "t3rn-primitives/std",
+    "circuit-runtime-types/std",
     "t3rn-abi/std",
     "t3rn-types/std",
     "xcm-builder/std",
