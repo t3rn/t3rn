@@ -91,6 +91,7 @@ impl pallet_vacuum::Config for Runtime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;
+    type RewardsWriteApi = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_vacuum::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;

@@ -490,6 +490,7 @@ impl pallet_circuit_vacuum::Config for MiniRuntime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;
+    type RewardsWriteApi = Rewards;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_circuit_vacuum::weights::SubstrateWeight<MiniRuntime>;
     type Xdns = XDNS;

@@ -246,10 +246,24 @@ impl pallet_3vm::Config for Test {
     type VacuumEVMApi = Vacuum;
 }
 
+pub struct RewardsMockApi;
+
+impl t3rn_primitives::rewards::RewardsWriteApi<AccountId32, u64, u32> for RewardsMockApi {
+    fn repatriate_for_faulty_or_missing_attestation(
+        _sfx_id: &H256,
+        _fsx: &t3rn_types::fsx::FullSideEffect<AccountId, BlockNumber, Balance>,
+        _status: &t3rn_primitives::circuit::CircuitStatus,
+        _requester: Option<AccountId>,
+    ) -> bool {
+        true
+    }
+}
+
 impl pallet_circuit_vacuum::Config for Test {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;
+    type RewardsWriteApi = RewardsMockApi;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_circuit_vacuum::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;

@@ -35,6 +35,8 @@ t3rn-sdk-primitives = { workspace = true }
 [dev-dependencies]
 hex = "0.4.0"
 
+t3rn-types     = { path = "../../types" }
+
 # t3rn dependencies
 circuit-runtime-types            = { path = "../../runtime/common-types" }
 pallet-account-manager           = { path = "../account-manager" }

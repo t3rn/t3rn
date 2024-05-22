@@ -988,7 +988,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> AttestersWriteApi<T::AccountId, BalanceOf<T>, DispatchError> for Pallet<T> {
+    impl<T: Config> AttestersWriteApi<T::AccountId, DispatchError> for Pallet<T> {
         fn request_sfx_attestation_commit(
             target: TargetId,
             sfx_id: H256,
