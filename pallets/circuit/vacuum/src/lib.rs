@@ -12,11 +12,11 @@ use crate::weights::WeightInfo;
 
 pub use pallet::*;
 use sp_runtime::traits::{Keccak256, Zero};
-
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use t3rn_primitives::{
     circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
     rewards::RewardsWriteApi,
+    threevm::AddressMapping,
     xdns::Xdns,
     ExecutionSource, SpeedMode,
 };
@@ -277,6 +277,8 @@ pub mod pallet {
             BalanceOf<Self>,
             BlockNumberFor<Self>,
         >;
+        type AddressMapping: AddressMapping<Self::AccountId>;
+
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
         type WeightInfo: weights::WeightInfo;
     }
@@ -788,6 +790,12 @@ pub mod pallet {
             // Verify executor's address equals the winner's address
             assert!(bid.winner == decoded_remote_commit.sender, "Vacuum::evm_submit_fault_proof -- executor's address does not match the winner's address");
 
+            // Map bid.winner to local account id
+            let executor = T::AddressMapping::into_account_id(&bid.winner);
+
+            // Ensure the executor is the one who submitted the fault proof to avoid confusion
+            assert!(executor == who, "Vacuum::evm_submit_fault_proof -- executor's address does not match the fault proof submitter's address");
+
             // Verify execution has been provided to correct target account with matching amount & asset
             assert!(
                 decoded_remote_commit.amount == localized_order.amount,
@@ -848,7 +856,6 @@ pub mod pallet {
                 &attestation.sfx_id,
                 &sfx_only_fsx,
                 &CircuitStatus::Finished,
-                // Should be mapping executor's address to local account
                 Some(who.clone()),
             );
 

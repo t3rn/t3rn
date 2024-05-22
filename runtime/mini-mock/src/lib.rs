@@ -1,3 +1,4 @@
+use circuit_runtime_types::EvmAddress;
 use codec::{Decode, Encode};
 use frame_support::{
     assert_ok,
@@ -487,6 +488,7 @@ impl pallet_circuit::Config for MiniRuntime {
 }
 
 impl pallet_circuit_vacuum::Config for MiniRuntime {
+    type AddressMapping = AddressMappingMock;
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;
@@ -557,6 +559,42 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for MiniRuntime {
     type RationalConfirmationOffset = ConstU32<10u32>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
+}
+
+pub struct AddressMappingMock;
+
+impl AddressMapping<AccountId> for AddressMappingMock {
+    /// Returns the AccountId used go generate the given EvmAddress.
+    fn into_account_id(evm: &EvmAddress) -> AccountId {
+        let mut account_id = [0u8; 32];
+        account_id.copy_from_slice(&evm.0[12..32]);
+        AccountId::new(account_id)
+    }
+
+    /// Returns the EvmAddress associated with a given AccountId or the
+    /// underlying EvmAddress of the AccountId.
+    /// Returns None if there is no EvmAddress associated with the AccountId
+    /// and there is no underlying EvmAddress in the AccountId.
+    fn get_evm_address(account_id: &AccountId) -> Option<EvmAddress> {
+        Some(EvmAddress::default())
+    }
+
+    /// Returns the EVM address associated with an account ID and generates an
+    /// account mapping if no association exists.
+    fn get_or_create_evm_address(account_id: &AccountId) -> EvmAddress {
+        EvmAddress::default()
+    }
+
+    /// Returns the default EVM address associated with an account ID.
+    fn get_default_evm_address(account_id: &AccountId) -> EvmAddress {
+        EvmAddress::default()
+    }
+
+    /// Returns true if a given AccountId is associated with a given EvmAddress
+    /// and false if is not.
+    fn is_linked(account_id: &AccountId, evm: &EvmAddress) -> bool {
+        true
+    }
 }
 
 // Mock from pallet events
@@ -1075,6 +1113,7 @@ use pallet_eth2_finality_verifier::{
     mock::{generate_epoch_update, generate_initialization},
     LightClientAsyncAPI,
 };
+use t3rn_primitives::threevm::AddressMapping;
 
 pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
     use t3rn_primitives::portal::Portal as PortalT;

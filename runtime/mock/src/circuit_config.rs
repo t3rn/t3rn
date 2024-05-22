@@ -88,6 +88,7 @@ impl pallet_attesters::Config for Runtime {
 }
 
 impl pallet_vacuum::Config for Runtime {
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;

@@ -260,6 +260,7 @@ impl t3rn_primitives::rewards::RewardsWriteApi<AccountId32, u64, u32> for Reward
 }
 
 impl pallet_circuit_vacuum::Config for Test {
+    type AddressMapping = EvmAddressMapping<Test>;
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;

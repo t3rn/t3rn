@@ -120,6 +120,7 @@ impl pallet_clock::Config for Runtime {
 }
 
 impl pallet_vacuum::Config for Runtime {
+    type AddressMapping = crate::contracts_config::EvmAddressMapping<Runtime>;
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type ReadSFX = Circuit;
