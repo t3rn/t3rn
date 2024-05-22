@@ -73,7 +73,7 @@ frame-benchmarking-cli = { workspace = true }
 frame-system           = { workspace = true }
 
 parachain-runtime          = { path = "../../runtime/t1rn-parachain", package = "t1rn-parachain-runtime" }
-
+circuit-runtime-types      = { path = "../../runtime/common-types", default-features = false }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }

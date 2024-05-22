@@ -3,6 +3,7 @@ use frame_support::{pallet_prelude::ConstU32, parameter_types, weights::Identity
 
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::BlakeTwo256;
+use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT;
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
 }

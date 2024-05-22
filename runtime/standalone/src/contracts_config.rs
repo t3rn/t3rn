@@ -18,10 +18,9 @@ pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
 use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
 
-// Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
-const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
+use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT as _EXISTENTIAL_DEPOSIT;
+
+use circuit_runtime_types::{MILLIUNIT, UNIT};
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
     (items as Balance * UNIT + (bytes as Balance) * (5 * MILLIUNIT / 100)) / 10

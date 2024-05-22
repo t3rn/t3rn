@@ -67,10 +67,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
-
-pub const TRN: Balance = UNIT;
-pub const TST: Balance = UNIT * 1_000_000;
+use t3rn_primitives::light_client::HeightResult;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -90,11 +87,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 21,
-    spec_version: 21,
-    impl_version: 21,
+    authoring_version: 26,
+    spec_version: 26,
+    impl_version: 26,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 22,
+    transaction_version: 27,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -118,7 +115,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const MT3RN: Balance = MILLIT3RN as Balance;
+const MT3RN: Balance = MILLIUNIT as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;

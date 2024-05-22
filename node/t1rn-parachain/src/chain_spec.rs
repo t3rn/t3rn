@@ -1,9 +1,10 @@
 use parachain_runtime::{
     opaque::Block, AccountId, AuraId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig,
     PolkadotXcmConfig, RuntimeApi, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, TRN, WASM_BINARY,
+    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 
+use circuit_runtime_types::UNIT as TRN;
 use codec::Encode;
 
 use cumulus_primitives_core::ParaId;

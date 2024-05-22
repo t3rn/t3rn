@@ -10,7 +10,11 @@ use frame_support::{
     PalletId,
 };
 
-use circuit_runtime_types::{AssetId, EvmAddress};
+// use evm_precompile_util::KnownPrecompile;
+use circuit_runtime_types::{
+    AssetId, EvmAddress, BLOCK_GAS_LIMIT, GAS_LIMIT_POV_SIZE_RATIO, GAS_PRICE, GAS_WEIGHT,
+    MILLIUNIT, UNIT, WEIGHT_PER_GAS,
+};
 pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_ethereum::PostLogContent;
@@ -26,9 +30,6 @@ use sp_runtime::{
 };
 use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
 
-// Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -113,12 +114,9 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000u128.into(), Weight::from_parts(7u64, 0))
+        (GAS_PRICE.into(), GAS_WEIGHT)
     }
 }
-
-const BLOCK_GAS_LIMIT: u64 = 150_000_000;
-const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -132,11 +130,11 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 
 parameter_types! {
     pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-    pub const GasLimitPovSizeRatio: u64 = 4;
+    pub const GasLimitPovSizeRatio: u64 = GAS_LIMIT_POV_SIZE_RATIO;
     pub const ChainId: u64 = 3301;
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();
-    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub WeightPerGas: Weight = WEIGHT_PER_GAS;
 }
 
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately

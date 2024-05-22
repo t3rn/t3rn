@@ -28,7 +28,7 @@ use frame_support::{assert_err, dispatch::DispatchClass, traits::Get, weights::W
 use pallet_3vm_evm::{AddressMapping, GasWeightMapping};
 use sp_core::{H256, U256};
 use std::str::FromStr;
-use t3rn_primitives::threevm::convert_decimals_to_evm;
+//use t3rn_primitives::threevm::convert_decimals_to_evm;
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
     EIP1559UnsignedTransaction {
@@ -619,7 +619,7 @@ fn validated_transaction_apply_zero_gas_price_works() {
             max_fee_per_gas: U256::zero(),
             gas_limit: U256::from(21_000),
             action: ethereum::TransactionAction::Call(bob.address),
-            value: U256::from(convert_decimals_to_evm::<u64>(100u64)),
+            value: U256::from(100u64 * 1_000_000u64),
             input: Default::default(),
         }
         .sign(&alice.private_key, None);

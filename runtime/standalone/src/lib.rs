@@ -5,7 +5,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use t3rn_primitives::monetary::MILLIT3RN;
+use circuit_runtime_types::MILLIUNIT;
 
 use frame_system::EnsureRoot;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -37,6 +37,7 @@ pub use frame_support::{
     },
     StorageValue,
 };
+
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -60,7 +61,7 @@ pub use impl_versioned_runtime_with_api::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const MT3RN: Balance = MILLIT3RN as Balance;
+const MT3RN: Balance = MILLIUNIT as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;

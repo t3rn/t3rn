@@ -31,9 +31,10 @@ use t3rn_primitives::threevm::{
     get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
 };
 
+use circuit_runtime_types::{MILLIUNIT, UNIT};
+
 // Unit = the base number of indivisible units for balances
-const UNIT: Balance = 1_000_000_000_000;
-const MILLIUNIT: Balance = 1_000_000_000;
+
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -122,7 +123,7 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> (U256, Weight) {
         // Return some meaningful gas price and weight
-        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+        (1_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 

@@ -28,9 +28,9 @@ use precompile_util_solidity::{
 use sp_core::{H160, U256};
 use sp_runtime::traits::{StaticLookup, Zero};
 use sp_std::{marker::PhantomData, str::*, vec::Vec};
-use t3rn_primitives::threevm::{
-    convert_decimals_from_evm, Erc20Mapping, Precompile, DECIMALS_VALUE,
-    H160_POSITION_ASSET_ID_TYPE,
+use t3rn_primitives::{
+    monetary::DECIMALS,
+    threevm::{Erc20Mapping, Precompile, H160_POSITION_ASSET_ID_TYPE},
 };
 
 #[cfg(test)]
@@ -236,7 +236,9 @@ where
         handle.record_cost(RuntimeHelper::<T>::db_read_gas_cost())?;
 
         match token_id {
-            TokenId::Native => Ok(succeed(EvmDataWriter::new().write(U256::from(12)).build())),
+            TokenId::Native => Ok(succeed(
+                EvmDataWriter::new().write(U256::from(DECIMALS)).build(),
+            )),
             TokenId::Asset(asset_id) => {
                 let asset_decimals = pallet_assets::Pallet::<T>::decimals(asset_id.into());
                 Ok(succeed(
