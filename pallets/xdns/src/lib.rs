@@ -631,6 +631,17 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn add_remote_bidding_address(
+            origin: OriginFor<T>,
+            target_id: TargetId,
+            remote_address: H256,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+            <RemoteBiddingAddresses<T>>::insert(target_id, remote_address);
+            Ok(().into())
+        }
+
         /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
         pub fn purge_supported_bridging_asset(
@@ -906,6 +917,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn remote_order_addresses)]
     pub type RemoteOrderAddresses<T: Config> = StorageMap<_, Identity, TargetId, H256, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn remote_bidding_addresses)]
+    pub type RemoteBiddingAddresses<T: Config> =
+        StorageMap<_, Identity, TargetId, H256, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn per_target_asset_estimates)]
@@ -1532,6 +1548,17 @@ pub mod pallet {
         fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<H256, DispatchError> {
             <RemoteOrderAddresses<T>>::get(gateway_id)
                 .ok_or(Error::<T>::RemoteOrderAddressNotFound.into())
+        }
+
+        fn get_remote_bidding_contract_address(
+            gateway_id: TargetId,
+        ) -> Result<H256, DispatchError> {
+            <RemoteBiddingAddresses<T>>::get(gateway_id)
+                .ok_or(Error::<T>::RemoteOrderAddressNotFound.into())
+        }
+
+        fn get_self_token_id() -> AssetId {
+            T::SelfTokenId::get()
         }
 
         fn mint(asset_id: AssetId, user: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {

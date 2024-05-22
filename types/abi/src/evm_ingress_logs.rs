@@ -5,6 +5,92 @@ use sp_core::{crypto::AccountId32, H160, H256, U256};
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
+pub fn get_remote_bid_abi_descriptor() -> Vec<u8> {
+    b"WinnerSelected:Log(sfxId+:H256,winner+:Account20)".to_vec()
+}
+
+pub struct RemoteEVMBidLog {
+    pub sfx_id: H256,
+    pub winner: H160,
+}
+
+// Implement custom Scale decoding for RemoteEVMBidLog
+impl Decode for RemoteEVMBidLog {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        // Skip first byte
+        input.read_byte()?;
+
+        let sfx_id = H256::decode(input)?;
+        let winner = H160::decode(input)?;
+
+        Ok(RemoteEVMBidLog { sfx_id, winner })
+    }
+}
+
+// event Confirmation(
+//         bytes32 indexed id,
+//         address indexed target,
+//         uint256 indexed amount,
+//         address asset,
+//         address sender
+//     );
+pub fn get_remote_confirmation_abi_descriptor() -> Vec<u8> {
+    b"Confirmation:Log(sfxId+:H256,target+:Account20,amount+:Value256,asset:Account20,sender:Account20)".to_vec()
+}
+
+pub struct RemoteEVMConfirmationLog {
+    pub sfx_id: H256,
+    pub target: H160,
+    pub amount: U256,
+    pub asset: H160,
+    pub sender: H160,
+}
+
+// Implement custom Scale decoding for RemoteEVMConfirmationLog
+impl Decode for RemoteEVMConfirmationLog {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        // Skip first byte
+        input.read_byte()?;
+
+        let sfx_id = H256::decode(input)?;
+        let target = H160::decode(input)?;
+        let amount = U256::decode(input)?;
+        let asset = H160::decode(input)?;
+        let sender = H160::decode(input)?;
+
+        Ok(RemoteEVMConfirmationLog {
+            sfx_id,
+            target,
+            amount,
+            asset,
+            sender,
+        })
+    }
+}
+
+// event TransferCommitApplied(bytes32 indexed sfxId, address indexed executor);
+pub fn get_remote_transfer_commit_applied_abi_descriptor() -> Vec<u8> {
+    b"TransferCommitApplied:Log(sfxId+:H256,executor+:Account20)".to_vec()
+}
+
+pub struct RemoteEVMCommitLog {
+    pub sfx_id: H256,
+    pub executor: H160,
+}
+
+// Implement custom Scale decoding for RemoteEVMCommitLog
+impl Decode for RemoteEVMCommitLog {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        // Skip first byte
+        input.read_byte()?;
+
+        let sfx_id = H256::decode(input)?;
+        let executor = H160::decode(input)?;
+
+        Ok(RemoteEVMCommitLog { sfx_id, executor })
+    }
+}
+
 // emit OrderCreated(id, destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward, nonce);
 // event RemoteOrderIndexedCreated(bytes32 indexed id, uint32 indexed nonce, address indexed sender, bytes input);
 // where input = abi.encode(destination, asset, targetAccount, amount, rewardAsset, insurance, maxReward)

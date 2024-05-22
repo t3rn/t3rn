@@ -250,7 +250,11 @@ impl VacuumEVM3DOrder {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct VacuumEVMProof {
-    pub gateway_id: [u8; 4],
+    pub circuit_gateway_id: [u8; 4],
+
+    pub source_gateway_id: [u8; 4],
+
+    pub destination_gateway_id: [u8; 4],
 
     pub order_proof: Vec<u8>,
 
@@ -263,14 +267,18 @@ pub struct VacuumEVMProof {
 
 impl VacuumEVMProof {
     pub fn new(
-        gateway_id: [u8; 4],
+        circuit_gateway_id: [u8; 4],
+        source_gateway_id: [u8; 4],
+        destination_gateway_id: [u8; 4],
         order_proof: Vec<u8>,
         bid_proof: Vec<u8>,
         execution_proof: Vec<u8>,
         attestation_proof: Vec<u8>,
     ) -> Self {
         VacuumEVMProof {
-            gateway_id,
+            circuit_gateway_id,
+            source_gateway_id,
+            destination_gateway_id,
             order_proof,
             bid_proof,
             execution_proof,
@@ -279,21 +287,29 @@ impl VacuumEVMProof {
     }
 
     pub fn from_rlp(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
-        let mut gateway_id: [u8; 4] = Default::default();
+        let mut circuit_gateway_id: [u8; 4] = Default::default();
+        let mut source_gateway_id: [u8; 4] = Default::default();
+        let mut destination_gateway_id: [u8; 4] = Default::default();
         let mut order_proof = vec![];
         let mut bid_proof = vec![];
         let mut execution_proof = vec![];
         let mut attestation_proof = vec![];
 
-        // Assume at least 4 bytes for the gateway_id
-        if encoded_slice.len() < 4 {
+        // Assume at least 12 bytes for the circuit_gateway_id & source_gateway_id & destination_gateway_id
+        if encoded_slice.len() < 12 {
             return Err(DispatchError::Other("Invalid encoded slice"))
         }
 
         // Take the first 4 bytes and convert them to a TargetId
-        gateway_id.copy_from_slice(&encoded_slice[0..4]);
+        circuit_gateway_id.copy_from_slice(&encoded_slice[0..4]);
 
-        let encoded_slice = &encoded_slice[4..];
+        // Take the next 4 bytes and convert them to a TargetId
+        source_gateway_id.copy_from_slice(&encoded_slice[4..8]);
+
+        // Take the next 4 bytes and convert them to a TargetId
+        destination_gateway_id.copy_from_slice(&encoded_slice[8..12]);
+
+        let encoded_slice = &encoded_slice[12..];
 
         // Skip the first 4 bytes
 
@@ -313,7 +329,9 @@ impl VacuumEVMProof {
         }
 
         Ok(VacuumEVMProof {
-            gateway_id,
+            circuit_gateway_id,
+            source_gateway_id,
+            destination_gateway_id,
             order_proof,
             bid_proof,
             execution_proof,

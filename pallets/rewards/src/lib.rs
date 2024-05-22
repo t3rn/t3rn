@@ -831,7 +831,7 @@ pub mod pallet {
         /// `amount_to_be_repatriated = slash_treasury_balance * repatriation_percentage`.
         /// The repatratration can't exceed the 50% of the max_reward of SFX.
         /// Remaining funds in the SlashTreasury after repatriation are used as a base for Finality Fee, therefore land in Fee Treasury.
-        fn repatriate_for_late_attestation(
+        fn repatriate_for_faulty_or_missing_attestation(
             sfx_id: &H256,
             fsx: &FullSideEffect<
                 T::AccountId,
@@ -842,7 +842,7 @@ pub mod pallet {
             requester: Option<T::AccountId>,
         ) -> bool {
             let sfx_max_reward = fsx.input.max_reward;
-            let max_repatriation = Perbill::from_percent(50).mul_ceil(sfx_max_reward);
+            let max_repatriation = Perbill::from_percent(200).mul_ceil(sfx_max_reward);
             let slash_treasury_account =
                 T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Slash);
             let slash_treasury_balance = T::Currency::free_balance(&slash_treasury_account);
@@ -1644,7 +1644,7 @@ pub mod test {
             };
 
             let sfx_id = H256::from([99u8; 32]);
-            assert!(Rewards::repatriate_for_late_attestation(
+            assert!(Rewards::repatriate_for_faulty_or_missing_attestation(
                 &sfx_id,
                 &fsx,
                 &CircuitStatus::Reverted(Cause::Timeout),
@@ -1704,7 +1704,7 @@ pub mod test {
 
             let sfx_id = H256::from([99u8; 32]);
 
-            assert!(!Rewards::repatriate_for_late_attestation(
+            assert!(!Rewards::repatriate_for_faulty_or_missing_attestation(
                 &sfx_id,
                 &fsx,
                 &CircuitStatus::Reverted(Cause::Timeout),

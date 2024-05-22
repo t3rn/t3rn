@@ -9,14 +9,18 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 pub mod weights;
 use crate::weights::WeightInfo;
+
 pub use pallet::*;
-use sp_runtime::traits::Keccak256;
+use sp_runtime::traits::{Keccak256, Zero};
 
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use t3rn_primitives::{
     circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
-    SpeedMode,
+    rewards::RewardsWriteApi,
+    xdns::Xdns,
+    ExecutionSource, SpeedMode,
 };
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 pub type Asset = u32;
@@ -26,7 +30,11 @@ use frame_support::sp_runtime::Saturating;
 use scale_info::TypeInfo;
 use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, H160, H256, U256};
 use t3rn_abi::{
-    evm_ingress_logs::{get_remote_order_abi_descriptor, RemoteEVMOrderLog},
+    evm_ingress_logs::{
+        get_remote_bid_abi_descriptor, get_remote_order_abi_descriptor,
+        get_remote_transfer_commit_applied_abi_descriptor, RemoteEVMBidLog, RemoteEVMCommitLog,
+        RemoteEVMConfirmationLog, RemoteEVMOrderLog,
+    },
     recode::recode_bytes_with_descriptor,
     Codec,
 };
@@ -56,6 +64,151 @@ pub struct RemoteEVMOrderLocalized {
     pub insurance: U256,
     pub max_reward: U256,
     pub nonce: u32,
+}
+impl RemoteEVMOrderLocalized {
+    pub fn rlp_to_remote_order_log<T: Config>(
+        verified_event_bytes: Vec<u8>,
+        remote_target_id: TargetId,
+    ) -> Result<RemoteEVMOrderLocalized, DispatchError> {
+        let recoded_message = recode_bytes_with_descriptor(
+            verified_event_bytes.clone(),
+            get_remote_order_abi_descriptor(),
+            Codec::Rlp,
+            Codec::Scale,
+        )?;
+
+        let decoded_remote_order_log = RemoteEVMOrderLog::decode(&mut &recoded_message[..])
+            .map_err(|e| {
+                DispatchError::Other(
+                    "RemoteEVMOrderLocalized::remote_order -- error decoding RemoteEVMOrderLog",
+                )
+            })?;
+
+        let decoded_remote_order: RemoteEVMOrderLocalized = RemoteEVMOrderLocalized {
+            from: decoded_remote_order_log.sender,
+            destination: decoded_remote_order_log.destination,
+            asset: T::Xdns::get_token_by_eth_address(
+                remote_target_id,
+                decoded_remote_order_log.reward_asset,
+            )?
+            .token_id,
+            target_account: decoded_remote_order_log.target_account,
+            reward_asset: decoded_remote_order_log.reward_asset,
+            amount: decoded_remote_order_log.amount,
+            insurance: decoded_remote_order_log.insurance,
+            max_reward: decoded_remote_order_log.max_reward,
+            nonce: decoded_remote_order_log.nonce,
+        };
+
+        Ok(decoded_remote_order)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, TypeInfo)]
+pub struct RemoteEVMConfirmationAppliedLocalized {
+    pub sfx_id: H256,
+    pub target: H160,
+    pub amount: U256,
+    pub asset: H160,
+    pub sender: H160,
+}
+
+impl RemoteEVMConfirmationAppliedLocalized {
+    pub fn rlp_to_remote_commit_log<T: Config>(
+        verified_event_bytes: Vec<u8>,
+    ) -> Result<RemoteEVMConfirmationAppliedLocalized, DispatchError> {
+        let recoded_message = recode_bytes_with_descriptor(
+            verified_event_bytes.clone(),
+            get_remote_transfer_commit_applied_abi_descriptor(),
+            Codec::Rlp,
+            Codec::Scale,
+        )?;
+
+        let decoded_remote_commit_log = RemoteEVMConfirmationLog::decode(&mut &recoded_message[..])
+            .map_err(|e| {
+                DispatchError::Other(
+                    "RemoteEVMConfirmationAppliedLocalized::remote_order -- error decoding RemoteEVMCommitLog",
+                )
+            })?;
+
+        let decoded_remote_commit: RemoteEVMConfirmationAppliedLocalized =
+            RemoteEVMConfirmationAppliedLocalized {
+                sfx_id: decoded_remote_commit_log.sfx_id,
+                target: decoded_remote_commit_log.target,
+                amount: decoded_remote_commit_log.amount,
+                asset: decoded_remote_commit_log.asset,
+                sender: decoded_remote_commit_log.sender,
+            };
+
+        Ok(decoded_remote_commit)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, TypeInfo)]
+pub struct RemoteEVMCommitAppliedLocalized {
+    pub sfx_id: H256,
+    pub executor: H160,
+}
+
+impl RemoteEVMCommitAppliedLocalized {
+    pub fn rlp_to_remote_commit_log<T: Config>(
+        verified_event_bytes: Vec<u8>,
+    ) -> Result<RemoteEVMCommitAppliedLocalized, DispatchError> {
+        let recoded_message = recode_bytes_with_descriptor(
+            verified_event_bytes.clone(),
+            get_remote_transfer_commit_applied_abi_descriptor(),
+            Codec::Rlp,
+            Codec::Scale,
+        )?;
+
+        let decoded_remote_commit_log = RemoteEVMCommitLog::decode(&mut &recoded_message[..])
+            .map_err(|e| {
+                DispatchError::Other(
+                    "RemoteEVMCommitAppliedLocalized::remote_order -- error decoding RemoteEVMCommitLog",
+                )
+            })?;
+
+        let decoded_remote_commit: RemoteEVMCommitAppliedLocalized =
+            RemoteEVMCommitAppliedLocalized {
+                sfx_id: decoded_remote_commit_log.sfx_id,
+                executor: decoded_remote_commit_log.executor,
+            };
+
+        Ok(decoded_remote_commit)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, TypeInfo)]
+pub struct RemoteEVMBidLocalized {
+    pub sfx_id: H256,
+    pub winner: H160,
+}
+
+impl RemoteEVMBidLocalized {
+    pub fn rlp_to_remote_bid_log<T: Config>(
+        verified_event_bytes: Vec<u8>,
+    ) -> Result<RemoteEVMBidLocalized, DispatchError> {
+        let recoded_message = recode_bytes_with_descriptor(
+            verified_event_bytes.clone(),
+            get_remote_bid_abi_descriptor(),
+            Codec::Rlp,
+            Codec::Scale,
+        )?;
+
+        let decoded_remote_bid_log =
+            RemoteEVMBidLog::decode(&mut &recoded_message[..]).map_err(|e| {
+                DispatchError::Other(
+                    "RemoteEVMBidLocalized::remote_order -- error decoding RemoteEVMBidLog",
+                )
+            })?;
+
+        let decoded_remote_bid: RemoteEVMBidLocalized = RemoteEVMBidLocalized {
+            sfx_id: decoded_remote_bid_log.sfx_id,
+            winner: decoded_remote_bid_log.winner,
+        };
+
+        Ok(decoded_remote_bid)
+    }
 }
 
 impl<AccountId, Balance> TryInto<SideEffect<AccountId, Balance>> for RemoteEVMOrderLocalized
@@ -118,6 +271,12 @@ pub mod pallet {
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
         type CircuitSubmitAPI: CircuitSubmitAPI<Self, BalanceOf<Self>>;
         type Xdns: Xdns<Self, BalanceOf<Self>>;
+
+        type RewardsWriteApi: RewardsWriteApi<
+            Self::AccountId,
+            BalanceOf<Self>,
+            BlockNumberFor<Self>,
+        >;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, BlockNumberFor<Self>>;
         type WeightInfo: weights::WeightInfo;
     }
@@ -137,6 +296,8 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         // Define your errors here
+        XdnsGatewayDoesNotHaveRemoteOrderAddressRegistered,
+        XdnsGatewayDoesNotHaveEscrowAddressRegistered,
     }
 
     #[pallet::hooks]
@@ -281,37 +442,11 @@ pub mod pallet {
             )?
             .message;
 
-            let recoded_message = recode_bytes_with_descriptor(
-                verified_event_bytes.clone(),
-                get_remote_order_abi_descriptor(),
-                Codec::Rlp,
-                Codec::Scale,
-            )?;
-
-            let decoded_remote_order_log = RemoteEVMOrderLog::decode(&mut &recoded_message[..])
-                .map_err(|e| {
-                    log::error!(
-                        "Vecuum::remote_order -- error decoding RemoteEVMOrderLog: {:?}",
-                        e
-                    );
-                    DispatchError::Other("Vecuum::remote_order -- error decoding RemoteEVMOrderLog")
-                })?;
-
-            let decoded_remote_order: RemoteEVMOrderLocalized = RemoteEVMOrderLocalized {
-                from: decoded_remote_order_log.sender,
-                destination: decoded_remote_order_log.destination,
-                asset: T::Xdns::get_token_by_eth_address(
+            let decoded_remote_order: RemoteEVMOrderLocalized =
+                RemoteEVMOrderLocalized::rlp_to_remote_order_log::<T>(
+                    verified_event_bytes.clone(),
                     remote_target_id,
-                    decoded_remote_order_log.reward_asset,
-                )?
-                .token_id,
-                target_account: decoded_remote_order_log.target_account,
-                reward_asset: decoded_remote_order_log.reward_asset,
-                amount: decoded_remote_order_log.amount,
-                insurance: decoded_remote_order_log.insurance,
-                max_reward: decoded_remote_order_log.max_reward,
-                nonce: decoded_remote_order_log.nonce,
-            };
+                )?;
 
             assert!(T::Xdns::is_target_active(
                 remote_target_id.clone(),
@@ -554,88 +689,176 @@ pub mod pallet {
             Ok(true)
         }
 
-        fn evm_submit_correctness_proof(
-            origin: &T::RuntimeOrigin,
-            vacuum_evm_proof: VacuumEVMProof,
-        ) -> Result<bool, DispatchError> {
-            let who = ensure_signed(origin.clone())?;
-
-            let gateway_id = vacuum_evm_proof.gateway_id.clone();
-
-            let verified_order_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
-                SpeedMode::Finalized,
-                None,
-                vacuum_evm_proof.order_proof.clone(),
-            )?;
-
-            let verified_bid_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
-                SpeedMode::Finalized,
-                None,
-                vacuum_evm_proof.bid_proof.clone(),
-            )?;
-
-            let verified_execution_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
-                SpeedMode::Finalized,
-                None,
-                vacuum_evm_proof.execution_proof.clone(),
-            )?;
-
-            let verified_attestation_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
-                SpeedMode::Finalized,
-                None,
-                vacuum_evm_proof.attestation_proof.clone(),
-            )?;
-
-            Self::deposit_event(Event::CorrectnessProofConfirmed(
-                gateway_id,
-                vacuum_evm_proof.clone(),
-            ));
-
-            Ok(true)
-        }
-
         fn evm_submit_fault_proof(
             origin: &T::RuntimeOrigin,
             vacuum_evm_proof: VacuumEVMProof,
         ) -> Result<bool, DispatchError> {
             let who = ensure_signed(origin.clone())?;
 
-            let gateway_id = vacuum_evm_proof.gateway_id.clone();
+            let circuit_gateway_id = vacuum_evm_proof.circuit_gateway_id.clone();
+            let source_gateway_id = vacuum_evm_proof.circuit_gateway_id.clone();
+            let destination_gateway_id = vacuum_evm_proof.destination_gateway_id.clone();
+
+            // Make sure all gateways are active
+            assert!(T::Xdns::is_target_active(
+                circuit_gateway_id.clone(),
+                &SecurityLvl::Optimistic
+            ));
+
+            assert!(T::Xdns::is_target_active(
+                source_gateway_id.clone(),
+                &SecurityLvl::Optimistic
+            ));
+
+            assert!(T::Xdns::is_target_active(
+                destination_gateway_id.clone(),
+                &SecurityLvl::Optimistic
+            ));
+
+            let circuit_bidding_address_generalized: ExecutionSource = ExecutionSource::decode(
+                &mut &T::Xdns::get_remote_bidding_contract_address(source_gateway_id.clone())?[..],
+            )
+            .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveRemoteOrderAddressRegistered)?;
+
+            let source_attesters_address_generalized: ExecutionSource =
+                ExecutionSource::decode(&mut &T::Xdns::get_escrow_account(&source_gateway_id)?[..])
+                    .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered)?;
+
+            let source_remote_order_address_generalized: ExecutionSource = ExecutionSource::decode(
+                &mut &T::Xdns::get_remote_order_contract_address(source_gateway_id)?[..],
+            )
+            .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveRemoteOrderAddressRegistered)?;
+
+            let destination_remote_order_address_generalized: ExecutionSource =
+                ExecutionSource::decode(
+                    &mut &T::Xdns::get_remote_order_contract_address(destination_gateway_id)?[..],
+                )
+                .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveRemoteOrderAddressRegistered)?;
 
             let verified_order_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
+                source_gateway_id,
                 SpeedMode::Finalized,
-                None,
+                Some(source_remote_order_address_generalized),
                 vacuum_evm_proof.order_proof.clone(),
             )?;
 
+            let localized_order = RemoteEVMOrderLocalized::rlp_to_remote_order_log::<T>(
+                verified_order_bytes.message.clone(),
+                source_gateway_id,
+            )?;
+
+            // Local to SFX
+            let side_effect: SideEffect<T::AccountId, BalanceOf<T>> =
+                localized_order.clone().try_into()?;
+
+            // Get the asset amount && asset ID; temporarily only allow for fault-proof claims for the native asset
+            let asset_id = localized_order.asset;
+
+            if asset_id != T::Xdns::get_self_token_id() {
+                return Err(DispatchError::Other("Vacuum::evm_submit_fault_proof -- only native asset fault-proof claims are supported"));
+            }
+
+            // Circuit Bidding Book emits the event WinnerSelected
+            // event WinnerSelected(bytes32 indexed id, address indexed executor);
             let verified_bid_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
+                circuit_gateway_id,
                 SpeedMode::Finalized,
-                None,
+                Some(circuit_bidding_address_generalized),
                 vacuum_evm_proof.bid_proof.clone(),
             )?;
 
-            let verified_execution_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
-                SpeedMode::Finalized,
-                None,
-                vacuum_evm_proof.execution_proof.clone(),
+            let bid = RemoteEVMBidLocalized::rlp_to_remote_bid_log::<T>(
+                verified_bid_bytes.message.clone(),
             )?;
+
+            // message is the topics of the event remoteOrder::confirm
+            let verified_execution_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
+                destination_gateway_id,
+                SpeedMode::Finalized,
+                Some(destination_remote_order_address_generalized),
+                vacuum_evm_proof.execution_proof.clone(),
+            )?
+            .message;
+
+            let decoded_remote_commit: RemoteEVMConfirmationAppliedLocalized =
+                RemoteEVMConfirmationAppliedLocalized::rlp_to_remote_commit_log::<T>(
+                    verified_execution_bytes.clone(),
+                )?;
+
+            // Verify executor's address equals the winner's address
+            assert!(bid.winner == decoded_remote_commit.sender, "Vacuum::evm_submit_fault_proof -- executor's address does not match the winner's address");
+
+            // Verify execution has been provided to correct target account with matching amount & asset
+            assert!(
+                decoded_remote_commit.amount == localized_order.amount,
+                "Vacuum::evm_submit_fault_proof -- amount does not match the execution amount"
+            );
+            assert!(
+                decoded_remote_commit.asset == localized_order.reward_asset,
+                "Vacuum::evm_submit_fault_proof -- asset does not match the execution asset"
+            );
+            // Convert decoded_remote_commit.target from H160 to Localized AccountId32 by pre-pending 12 0-bytes
+            let mut target_account_bytes = [0u8; 32];
+            target_account_bytes[12..32].copy_from_slice(&decoded_remote_commit.target[..]);
+            let target_account =
+                AccountId32::decode(&mut &target_account_bytes[..]).map_err(|_| {
+                    DispatchError::Other(
+                        "Vacuum::evm_submit_fault_proof -- error decoding target_account",
+                    )
+                })?;
+
+            assert!(target_account == localized_order.target_account, "Vacuum::evm_submit_fault_proof -- target account does not match the execution target account");
 
             let verified_attestation_bytes = T::CircuitSubmitAPI::verify_sfx_proof(
-                gateway_id,
+                source_gateway_id,
                 SpeedMode::Finalized,
-                None,
+                Some(source_attesters_address_generalized),
                 vacuum_evm_proof.attestation_proof.clone(),
+            )?
+            .message;
+
+            let attestation = RemoteEVMCommitAppliedLocalized::rlp_to_remote_commit_log::<T>(
+                verified_attestation_bytes.clone(),
             )?;
 
+            // Verify the fault proof - attestation hasn't been released to the bid winner
+            assert!(
+                attestation.executor != bid.winner,
+                "Vacuum::evm_submit_fault_proof -- attestation has been released to the bid winner"
+            );
+
+            // Make sure order id matches
+            assert!(
+                decoded_remote_commit.sfx_id == bid.sfx_id,
+                "Vacuum::evm_submit_fault_proof -- order id does not match the execution order id"
+            );
+            assert!(decoded_remote_commit.sfx_id == attestation.sfx_id, "Vacuum::evm_submit_fault_proof -- order id does not match the attestation order id");
+
+            let sfx_only_fsx = t3rn_types::fsx::FullSideEffect {
+                input: side_effect,
+                confirmed: None,
+                security_lvl: SecurityLvl::Escrow,
+                submission_target_height: Zero::zero(),
+                best_bid: None,
+                index: 0,
+            };
+
+            // Submit fault proof to rewards
+            let success = T::RewardsWriteApi::repatriate_for_faulty_or_missing_attestation(
+                &attestation.sfx_id,
+                &sfx_only_fsx,
+                &CircuitStatus::Finished,
+                // Should be mapping executor's address to local account
+                Some(who.clone()),
+            );
+
+            assert!(
+                success,
+                "Vacuum::evm_submit_fault_proof -- error submitting fault proof to rewards"
+            );
+
             Self::deposit_event(Event::FaultProofConfirmed(
-                gateway_id,
+                destination_gateway_id,
                 vacuum_evm_proof.clone(),
             ));
 

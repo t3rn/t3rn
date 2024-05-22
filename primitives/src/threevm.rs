@@ -175,11 +175,6 @@ where
         vacuum_evm_proof: VacuumEVMProof,
     ) -> Result<bool, DispatchError>;
 
-    fn evm_submit_correctness_proof(
-        origin: &T::RuntimeOrigin,
-        vacuum_evm_proof: VacuumEVMProof,
-    ) -> Result<bool, DispatchError>;
-
     fn evm_3d_order(
         origin: &T::RuntimeOrigin,
         vacuum_evm_order: VacuumEVM3DOrder,

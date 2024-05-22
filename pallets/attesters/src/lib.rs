@@ -268,11 +268,6 @@ pub mod pallet {
     pub type CommitteeTransitionOn<T: Config> = StorageMap<_, Identity, TargetId, u32>;
 
     #[pallet::storage]
-    #[pallet::getter(fn attestations_influx)]
-    pub type AttestationsInflux<T: Config> =
-        StorageDoubleMap<_, Identity, TargetId, Identity, H256, InfluxMessage<BlockNumberFor<T>>>;
-
-    #[pallet::storage]
     pub type CurrentRetributionPerSFXPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
@@ -771,7 +766,7 @@ pub mod pallet {
                 ExecutionSource::decode(&mut &target_escrow_address[..])
                     .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered)?;
 
-            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
+            let escrow_batch_success_descriptor = b"BatchApplied:Event(\
                 MessageHash:H256,\
                 BeneficiaryOnTarget:Account20,\
                 AttestingCommittee:H256,\
@@ -993,7 +988,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> AttestersWriteApi<T::AccountId, DispatchError> for Pallet<T> {
+    impl<T: Config> AttestersWriteApi<T::AccountId, BalanceOf<T>, DispatchError> for Pallet<T> {
         fn request_sfx_attestation_commit(
             target: TargetId,
             sfx_id: H256,
@@ -1852,7 +1847,7 @@ pub mod pallet {
                                             };
 
                                         if let Ok(fsx) = T::ReadSFX::get_fsx(sfx_id_as_hash) {
-                                            if T::Rewards::repatriate_for_late_attestation(
+                                            if T::Rewards::repatriate_for_faulty_or_missing_attestation(
                                                 sfx_id, &fsx, status, requester,
                                             ) {
                                                 repatriated = true;

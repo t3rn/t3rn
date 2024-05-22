@@ -256,13 +256,6 @@ impl<T: Config> VacuumAccess<T> for Pallet<T> {
         <T as Config>::VacuumEVMApi::evm_3d_order(origin, vacuum_evm_order)
     }
 
-    fn evm_submit_correctness_proof(
-        origin: &T::RuntimeOrigin,
-        vacuum_evm_proof: VacuumEVMProof,
-    ) -> Result<bool, DispatchError> {
-        <T as Config>::VacuumEVMApi::evm_submit_correctness_proof(origin, vacuum_evm_proof)
-    }
-
     fn evm_submit_fault_proof(
         origin: &T::RuntimeOrigin,
         vacuum_evm_proof: VacuumEVMProof,

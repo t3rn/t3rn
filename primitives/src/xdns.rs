@@ -279,10 +279,13 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     fn burn(asset_id: AssetId, user: T::AccountId, amount: Balance) -> DispatchResult;
     fn is_target_active(gateway_id: TargetId, security_lvl: &SecurityLvl) -> bool;
     fn get_remote_order_contract_address(gateway_id: TargetId) -> Result<H256, DispatchError>;
+    fn get_remote_bidding_contract_address(gateway_id: TargetId) -> Result<H256, DispatchError>;
     fn get_token_by_eth_address(
         gateway_id: TargetId,
         eth_address: H160,
     ) -> Result<TokenRecord, DispatchError>;
+
+    fn get_self_token_id() -> AssetId;
 
     fn add_new_gateway(
         gateway_id: [u8; 4],
