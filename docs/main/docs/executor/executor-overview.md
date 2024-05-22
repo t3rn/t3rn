@@ -69,8 +69,6 @@ export OPTIMISM_SEPOLIA_PRIVATE_KEY=PRIVATE-KEY-HERE
 
 export ENABLED_NETWORKS='base-sepolia,optimism-sepolia,binance-testnet,scroll-sepolia,arbitrum-sepolia'
 export RPC_HEALTH_CHECK_INTERVAL_SEC=3
-export PRICER_PROVIDER_URL='https://rpc.ankr.com/multichain/API-KEY-HERE'
-export PRICER_USE_MULTICHAIN='false'
 export PRICER_CLEANUP_INTERVAL_SEC=60
 export EXECUTOR_MIN_BALANCE_THRESHOLD_ETH='0.1'
 
