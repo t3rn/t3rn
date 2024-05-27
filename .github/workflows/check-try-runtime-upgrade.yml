@@ -23,10 +23,10 @@ jobs:
         run: cargo build --release --features=try-runtime
 
       - name: Check runtime upgrade on t0rn using try-runtime
-         run: try-runtime --runtime ./target/release/wbuild/t0rn-parachain-runtime/t0rn_parachain_runtime.wasm on-runtime-upgrade live --uri wss://rpc.t0rn.io:443
+        run: try-runtime --runtime ./target/release/wbuild/t0rn-parachain-runtime/t0rn_parachain_runtime.wasm on-runtime-upgrade live --uri wss://rpc.t0rn.io:443
 
       - name: Check runtime upgrade on t1rn using try-runtime
-         run: try-runtime --runtime ./target/release/wbuild/t1rn-parachain-runtime/t1rn_parachain_runtime.wasm on-runtime-upgrade live --uri wss://rpc.t1rn.io:443
+        run: try-runtime --runtime ./target/release/wbuild/t1rn-parachain-runtime/t1rn_parachain_runtime.wasm on-runtime-upgrade live --uri wss://rpc.t1rn.io:443
 
       - name: Check runtime upgrade on t3rn using try-runtime
-          run: try-runtime --runtime ./target/release/wbuild/t3rn-parachain-runtime/t3rn_parachain_runtime.wasm on-runtime-upgrade live --uri wss://ws.t3rn.io:443
+        run: try-runtime --runtime ./target/release/wbuild/t3rn-parachain-runtime/t3rn_parachain_runtime.wasm on-runtime-upgrade live --uri wss://ws.t3rn.io:443
