@@ -59,13 +59,7 @@ We'll therefore focus on describing the orders handling process from EVMs (Ether
 4. Set your keys for dedicated networks in `.env` file (see `.env.example` for reference)
 
 ```
-export ARBITRUM_SEPOLIA_PRIVATE_KEY=PRIVATE-KEY-HERE
-export SCROLL_SEPOLIA_PRIVATE_KEY=PRIVATE-KEY-HERE
-export BINANCE_TESTNET_PRIVATE_KEY=PRIVATE-KEY-HERE
-export SEPOLIA_PRIVATE_KEY=PRIVATE-KEY-HERE
-export BASE_GOERLI_PRIVATE_KEY=PRIVATE-KEY-HERE
-export BASE_SEPOLIA_PRIVATE_KEY=PRIVATE-KEY-HERE
-export OPTIMISM_SEPOLIA_PRIVATE_KEY=PRIVATE-KEY-HERE
+export PRIVATE_KEY_EXECUTOR=PRIVATE-KEY-HERE
 
 export ENABLED_NETWORKS='base-sepolia,optimism-sepolia,binance-testnet,scroll-sepolia,arbitrum-sepolia'
 export RPC_HEALTH_CHECK_INTERVAL_SEC=3
