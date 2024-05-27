@@ -81,9 +81,8 @@ cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cum
 pallet-collator-selection           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v1.0.0', default-features = false }
 
-# try-runtime CLI
+# try-runtime
 frame-try-runtime            = { workspace = true, optional = true }
-try-runtime-cli              = { workspace = true, optional = true }
 
 # Commons
 circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
@@ -174,8 +173,7 @@ runtime-benchmarks = [
 ]
 
 try-runtime = [
-  "frame-try-runtime",
-  "try-runtime-cli",
+  "frame-try-runtime/try-runtime",
   "frame-executive/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "pallet-utility/try-runtime",

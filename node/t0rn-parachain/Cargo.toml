@@ -106,7 +106,7 @@ cumulus-test-relay-sproof-builder       = { git = 'https://github.com/paritytech
 xcm                                     = { workspace = true }
 
 # try-runtime CLI dependencies
-frame-try-runtime = { workspace = true, default-features = true, optional = true }
+frame-try-runtime = { workspace = true, feature = ["std"], optional = true }
 try-runtime-cli   = { workspace = true, optional = true }
 # EVM dependencies
 fp-rpc = { workspace = true }
@@ -129,7 +129,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.
 cli = [ "try-runtime-cli" ]
 try-runtime = [
     "parachain-runtime/try-runtime",
-    "try-runtime-cli",
+    "try-runtime-cli/try-runtime",
 ]
 runtime-benchmarks = [
     "parachain-runtime/runtime-benchmarks",

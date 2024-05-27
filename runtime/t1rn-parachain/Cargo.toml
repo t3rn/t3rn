@@ -33,9 +33,8 @@ frame-system                 = { workspace = true }
 frame-system-benchmarking    = { workspace = true, optional = true }
 frame-system-rpc-runtime-api = { workspace = true }
 
-# try-runtime CLI
+# try-runtime
 frame-try-runtime            = { workspace = true, optional = true }
-try-runtime-cli              = { workspace = true, optional = true }
 
 pallet-asset-tx-payment                    = { workspace = true }
 pallet-assets                              = { workspace = true }
@@ -283,8 +282,7 @@ runtime-benchmarks = [
 
 ]
 try-runtime = [
-  "frame-try-runtime",
-  "try-runtime-cli",
+  "frame-try-runtime/try-runtime",
   "frame-executive/try-runtime",
   "frame-support/try-runtime",
   "frame-system/try-runtime",
