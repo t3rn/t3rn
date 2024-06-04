@@ -6,39 +6,23 @@ sidebar_position: 2
 
 This documentation covers how to become an Executor on the t3rn network. It assumes that you have accounts with the correct funds for the desired blockchains, and that you have Substrate installed. We're using subkey to generate keys but feel free to skip this part if you already have your keys or using another tool to generate some.
 
-## Step 1 - Clone repo
+## Step 1 - Clone Repository
 
-Clone the [t3rn repo](https://github.com/t3rn/t3rn/tree/development/client/packages/executor): `git clone git@github.com:t3rn/t3rn.git`.
+Clone the [Executor repository](https://github.com/t3rn/executor) by running `git clone git@github.com:t3rn/executor.git`.
 
-<p align="center">
-    <img height="150" src="/img/clone-executor-repo.png?raw=true"/>
-</p>
+## Step 2 - Installation Instructions
 
-## Step 2 - Install dependencies
+Follow the installation instructions in the readme: https://github.com/t3rn/executor/blob/main/README.md.
 
-`pnpm install` in the above directory (t3rn/client/packages/executor/).
+## Step 3 - Configure Settings
 
-<p align="center">
-    <img height="150" src="/img/install-executor-dep.png?raw=true"/>
-</p>
+Either in `.env` or `.envrc`:
+
+1. Add your `Executor Private Key`
+2. Add your preferred networks under `ENABLED NETWORKS`
+3. Add your preferred environment under `NODE_ENV`
+4. Create your arbitrage strategies in `executor-arbitrage-strategies.ts`
 
 ## Step 3 - Run Executor
 
-Run the command below and add your keys as in the example.
-Run `LOG_PRETTY=true CIRCUIT_WS_ENDPOINT=wss://rpc.t0rn.io CIRCUIT_SIGNER_KEY=0x1234 RELAYCHAIN_SIGNER_KEY=0x1234 pnpm start`.
-
-<p align="center">
-    <img height="150" src="/img/run-executor-w-keys.png?raw=true"/>
-</p>
-
-## Troubleshooting
-
-#### Not enough funds:
-
-If this error **‘RpcError: 1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low’** is shown it means you need to increase your balance in used accounts, for the specific networks.
-
-Visit [https://faucet.t0rn.io](https://faucet.t0rn.io/) to get some T0RN.
-
-#### Generate keys with subkey:
-
-[Install Subkey](https://docs.substrate.io/reference/command-line-tools/subkey/) and run `subkey generate` to generate keys. Send the correct tokens to the account(s) depending on the networks they will operate on.
+Start Executor by running `pnpm start:executor` in the terminal
