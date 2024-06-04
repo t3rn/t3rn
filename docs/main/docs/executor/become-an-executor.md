@@ -18,8 +18,8 @@ Follow the installation instructions in the readme: https://github.com/t3rn/exec
 
 Either in `.env` or `.envrc`:
 
-1. Add your `Executor Private Key`
-2. Add your preferred networks under `ENABLED NETWORKS`
+1. Add your `PRIVATE_KEY_EXECUTOR`
+2. Add your preferred networks under `ENABLED_NETWORKS`
 3. Add your preferred environment under `NODE_ENV`
 4. Create your arbitrage strategies in `executor-arbitrage-strategies.ts`
 
