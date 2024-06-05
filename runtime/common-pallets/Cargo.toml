@@ -220,6 +220,8 @@ std = [
   "pallet-vacuum/std",
   "pallet-eth2-finality-verifier/std",
   "pallet-sepolia-finality-verifier/std",
+  # try-runtime pallets
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [

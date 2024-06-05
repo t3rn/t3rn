@@ -145,6 +145,8 @@ std = [
   "xcm/std",
   "circuit-runtime-types/std",
   "t3rn-primitives/std",
+  # try-runtime pallets
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [
