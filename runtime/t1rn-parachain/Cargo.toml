@@ -228,6 +228,8 @@ std = [
   "xcm-primitives/std",
   "pallet-asset-registry/std",
   "pallet-withdraw-teleport/std",
+  # try-runtime pallets
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [

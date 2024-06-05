@@ -143,6 +143,7 @@ std = [
   "xcm/std",
   "circuit-runtime-types/std",
   "t3rn-primitives/std",
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [
@@ -172,7 +173,7 @@ runtime-benchmarks = [
 
 try-runtime = [
   "frame-executive/try-runtime",
-  "frame-try-runtime",
+  "frame-try-runtime/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-treasury/try-runtime",

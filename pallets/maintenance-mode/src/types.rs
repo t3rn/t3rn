@@ -95,7 +95,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
         if Pallet::<T>::maintenance_mode() {
             T::MaintenanceExecutiveHooks::pre_upgrade()
         } else {
@@ -104,7 +104,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
         if Pallet::<T>::maintenance_mode() {
             T::MaintenanceExecutiveHooks::post_upgrade(state)
         } else {
@@ -120,7 +120,7 @@ impl<T: frame_system::Config> frame_support::traits::TryState<BlockNumberFor<T>>
     fn try_state(
         _: BlockNumberFor<T>,
         _: frame_support::traits::TryStateSelect,
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), sp_runtime::DispatchError> {
         Ok(())
     }
 }

@@ -219,7 +219,9 @@ std = [
   "pallet-rewards/std",
   "pallet-vacuum/std",
   "pallet-eth2-finality-verifier/std",
+  "pallet-eth2-finality-verifier/std",
   "pallet-sepolia-finality-verifier/std",
+  "frame-try-runtime/std",
 ]
 
 runtime-benchmarks = [
