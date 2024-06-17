@@ -6,7 +6,7 @@ sidebar_position: 1
 
 Welcome to the t3rn Executor Setup! This guided process will help you configure your executor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.
 
-## Executor GUI - macOS v.1.0.15
+## Executor GUI
 
 ### Download Executor GUI
 
@@ -17,7 +17,7 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Configure Settings
 
-**1.** Go to Settings and set your preferred Network Environment - Testnet or Devnet.
+**1.** Go to Settings and set your preferred Network Environment - Testnet.
 
 **2.** Enable your preferred networks to operate on by checking your selections.
 :::info If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
@@ -53,7 +53,7 @@ Save strategy
 
 #### PRIVATE KEYS
 
-**1.** Set the `Executor private key` variable to the private key of the wallet you are going to use. Example: 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+**1.** Set the `Executor private key` variable to the private key of the wallet you are going to use. Example (this is a fake generated key that should/cannot not be used): 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
 
 ### Log Level
 
