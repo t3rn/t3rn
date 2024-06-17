@@ -14,10 +14,10 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Configure Settings
 
-**1.** Set your preferred Network Environment - Testnet or Devnet.
+**1.** Go to Settings and set your preferred Network Environment - Testnet or Devnet.
 
-**2.** Enable your preferred networks to operate on.
-:::info If your wallet balance is below the threshold, on one of your enabled networks, that specific network will be removed.
+**2.** Enable your preferred networks to operate on by checking your selections.
+:::info If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
 ### Configure Your Arbitrage Strategies
@@ -50,11 +50,11 @@ Save strategy
 
 #### PRIVATE KEYS
 
-**1.** Set the `Executor private key` variable. Example: 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+**1.** Set the `Executor private key` variable to the private key of the wallet you are going to use. Example: 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
 
 ### Log Level
 
-Set your preferred log levels - Debug, Warn, Info, or Trace.
+Set your preferred log level - Debug, Warn, Info, or Trace.
 
 ### Start
 

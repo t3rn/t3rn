@@ -16,6 +16,8 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Configure Settings and Environment Required Variables
 
+To set the environment variables, copy and paste each command into your terminal. These commands will configure the necessary settings for your Executor to run properly. Make sure you adjust the variable values to your own.
+
 #### GENERAL SETTINGS
 
 **1.** Set your preferred Node Environment. Example:
@@ -41,7 +43,7 @@ export LOG_PRETTY=true
 
 #### PRIVATE KEYS
 
-**1.** Set the `PRIVATE_KEY_LOCAL` variable to your Executor private key. Example:
+**1.** Set the `PRIVATE_KEY_LOCAL` variable of your Executor, which is the private key of the wallet you will use. Example:
 
 ```bash
 export PRIVATE_KEY_LOCAL=0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
