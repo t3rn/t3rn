@@ -4,41 +4,109 @@ sidebar_position: 2
 
 # How to Become an Executor
 
-This documentation covers how to become an Executor on the t3rn network. It assumes that you have accounts with the correct funds for the desired blockchains, and that you have Substrate installed. We're using subkey to generate keys but feel free to skip this part if you already have your keys or using another tool to generate some.
+Welcome to the t3rn Executor Setup! This guided process will help you configure your executor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.
 
-## Step 1 - Clone repo
+## Executor Binary - MacOS v.0.8.5
 
-Clone the [t3rn repo](https://github.com/t3rn/t3rn/tree/development/client/packages/executor): `git clone git@github.com:t3rn/t3rn.git`.
+### Download Executor Binary
 
-<p align="center">
-    <img height="150" src="/img/clone-executor-repo.png?raw=true"/>
-</p>
+**1.** Download the Executor binary zip file according to your OS from here: https://github.com/t3rn/executor/releases.
 
-## Step 2 - Install dependencies
+**2.** After unzip, in terminal, navigate to the folder that includes the executable file named `executor`.
 
-`pnpm install` in the above directory (t3rn/client/packages/executor/).
+### Configure Settings and Environment Required Variables
 
-<p align="center">
-    <img height="150" src="/img/install-executor-dep.png?raw=true"/>
-</p>
+#### GENERAL SETTINGS
 
-## Step 3 - Run Executor
+**1.** Set your preferred Node Environment. Example:
 
-Run the command below and add your keys as in the example.
-Run `LOG_PRETTY=true CIRCUIT_WS_ENDPOINT=wss://rpc.t0rn.io CIRCUIT_SIGNER_KEY=0x1234 RELAYCHAIN_SIGNER_KEY=0x1234 pnpm start`.
+```bash
+export NODE_ENV=testnet
+```
 
-<p align="center">
-    <img height="150" src="/img/run-executor-w-keys.png?raw=true"/>
-</p>
+:::info Devnet Example
 
-## Troubleshooting
+```bash
+export NODE_ENV=devnet
+```
 
-#### Not enough funds:
+:::
 
-If this error **‘RpcError: 1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low’** is shown it means you need to increase your balance in used accounts, for the specific networks.
+**2.** Set your log settings:
 
-Visit [https://faucet.t0rn.io](https://faucet.t0rn.io/) to get some T0RN.
+```bash
+export LOG_LEVEL=debug
+export LOG_PRETTY=true
+```
 
-#### Generate keys with subkey:
+#### PRIVATE KEYS
 
-[Install Subkey](https://docs.substrate.io/reference/command-line-tools/subkey/) and run `subkey generate` to generate keys. Send the correct tokens to the account(s) depending on the networks they will operate on.
+**1.** Set the `PRIVATE_KEY_LOCAL` variable to your Executor private key. Example:
+
+```bash
+export PRIVATE_KEY_LOCAL=0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+```
+
+#### EXECUTOR SETTINGS
+
+```bash
+export EXECUTOR_MIN_BALANCE_THRESHOLD_ETH='0.1'
+export SUPPORT_TOKENS=true
+export EXCLUDED_LIFECYCLES_FROM_BATCHING='Bid,Attest'
+```
+
+#### NETWORKS & RPC
+
+**1.** Add your preferred networks to operate on. Example:
+
+```bash
+export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
+```
+
+:::info For devnet, change 1 to 0, and for testnet, use 1.
+
+Devnet Example
+
+```bash
+export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l0rn'
+```
+
+:::
+
+**2.** Set RPC check interval.
+
+```bash
+export RPC_HEALTH_CHECK_INTERVAL_SEC=3
+```
+
+#### PRICER
+
+**1.** Set the `PRICER_URL` and `PRICER_CORS_ORIGINS` variables. Example:
+
+```bash
+export PRICER_URL='https://pricer.t1rn.io'
+export PRICER_CORS_ORIGINS='https://bridge.t1rn.io'
+```
+
+#### BATCH
+
+```bash
+export BATCH_SIZE=5
+export BATCH_CREATION_TIMEOUT_SEC=30
+```
+
+#### BATCH
+
+```bash
+export PROMETHEUS_PORT_GUARDIAN=9333
+export PROMETHEUS_PORT_EXECUTOR=9334
+export PROMETHEUS_PORT_FASTWRITER=9335
+```
+
+### Start
+
+To start the Executor, run:
+
+```bash
+./executor
+```
