@@ -6,11 +6,14 @@ sidebar_position: 1
 
 Welcome to the t3rn Executor Setup! This guided process will help you configure your executor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.
 
-## Executor GUI - MacOS v.1.0.15
+## Executor GUI - macOS v.1.0.15
 
 ### Download Executor GUI
 
-**1.** Download and install the Executor GUI file from here: (link here).
+**1.** Download and install the Executor GUI file from here:
+
+- Intel: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-apple-darwin/1.0.15/Executor.dmg
+- Apple Silicon: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/aarch64-apple-darwin/1.0.15/Executor.dmg
 
 ### Configure Settings
 
