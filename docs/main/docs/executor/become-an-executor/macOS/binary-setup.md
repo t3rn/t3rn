@@ -35,7 +35,7 @@ export NODE_ENV=testnet
 
 ```bash
 export LOG_LEVEL=debug
-export LOG_PRETTY=true
+export LOG_PRETTY=false
 ```
 
 #### PRIVATE KEYS
@@ -43,7 +43,7 @@ export LOG_PRETTY=true
 **1.** Set the `PRIVATE_KEY_LOCAL` variable of your Executor, which is the private key of the wallet you will use. The example below is a fake generated key that should/cannot not be used:
 
 ```bash
-export PRIVATE_KEY_LOCAL=0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+export PRIVATE_KEY_LOCAL=dead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
 ```
 
 #### NETWORKS & RPC
@@ -55,11 +55,13 @@ export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
 ```
 
 :::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,linea-goerli,optimism-sepolia,l1rn`
+
+If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
 ### Start
 
-To start the Executor, run:
+To start the Executor, run the following command:
 
 ```bash
 ./executor

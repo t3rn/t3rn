@@ -49,7 +49,7 @@ There are 5 fields for each asset.
 
 - Specify the highest percentage of your total balance that your executor can allocate to a single order.
 
-Save strategy
+**6.** Save strategy
 
 #### PRIVATE KEYS
 
