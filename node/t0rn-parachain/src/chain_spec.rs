@@ -424,13 +424,40 @@ fn polkadot_genesis_full(
         // of this.
         aura: Default::default(),
         assets: AssetsConfig {
-            assets: vec![(
+            assets: vec![
+            (
+                1,
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                false,
+                1,
+            )  ,
+            (
                 2,
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 false,
                 1,
+            ),
+            (
+                1984,
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                false,
+                1,
             )],
-            metadata: vec![(2, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18)],
+            metadata: vec![
+                (
+                    1,
+                    "Rococo".as_bytes().to_vec(),
+                    "ROC".as_bytes().to_vec(),
+                    12,
+                ),
+                (2, "TST".as_bytes().to_vec(), "TST".as_bytes().to_vec(), 18),
+                (
+                    1984,
+                    "Tether USD".as_bytes().to_vec(),
+                    "USDT".as_bytes().to_vec(),
+                    6,
+                ),
+            ],
             accounts: vec![
                 (
                     2,
