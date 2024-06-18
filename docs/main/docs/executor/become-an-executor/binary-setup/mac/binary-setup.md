@@ -10,7 +10,7 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Download Executor Binary
 
-**1.** Download the Executor binary zip file according to your OS from here: https://github.com/t3rn/executor/releases.
+**1.** Download the Executor binary zip file according to your OS from here: https://github.com/t3rn/executor-release/releases/.
 
 **2.** After unzip, in terminal, navigate to the folder that includes the executable file named `executor`.
 
