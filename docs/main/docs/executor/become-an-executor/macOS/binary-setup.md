@@ -55,11 +55,13 @@ export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
 ```
 
 :::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,linea-goerli,optimism-sepolia,l1rn`
+
+If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
 ### Start
 
-To start the Executor, run:
+To start the Executor, run the following command:
 
 ```bash
 ./executor
