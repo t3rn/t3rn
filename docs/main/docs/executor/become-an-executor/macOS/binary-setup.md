@@ -43,7 +43,7 @@ export LOG_PRETTY=false
 **1.** Set the `PRIVATE_KEY_LOCAL` variable of your Executor, which is the private key of the wallet you will use. The example below is a fake generated key that should/cannot not be used:
 
 ```bash
-export PRIVATE_KEY_LOCAL=0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+export PRIVATE_KEY_LOCAL=dead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
 ```
 
 #### NETWORKS & RPC
