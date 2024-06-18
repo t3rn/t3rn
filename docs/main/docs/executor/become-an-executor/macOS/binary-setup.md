@@ -35,7 +35,7 @@ export NODE_ENV=testnet
 
 ```bash
 export LOG_LEVEL=debug
-export LOG_PRETTY=true
+export LOG_PRETTY=false
 ```
 
 #### PRIVATE KEYS
