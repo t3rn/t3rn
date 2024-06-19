@@ -10,11 +10,11 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Download Executor Binary
 
-**1.** Download the Executor binary zip file from here: https://github.com/t3rn/executor-release/releases/download/v0.8.5/executor-macosx-v0.8.5.tar.gz.
+**1.** Download the executable (`tar.gz`) Executor binary file according to your OS from here: https://github.com/t3rn/executor-release/releases/
 
 :::info Optional: Verify the download by comparing the SHA256 checksum with the provided sha256sum file to ensure file integrity
 
-https://github.com/t3rn/executor-release/releases/download/v0.8.5/executor-macosx-v0.8.5.tar.gz.sha256sum
+https://github.com/t3rn/executor-release/releases/
 :::
 
 **2.** After unzip, in terminal, navigate to the folder that includes the executable file named `executor`.
