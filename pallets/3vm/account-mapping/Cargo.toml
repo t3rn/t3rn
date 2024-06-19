@@ -38,6 +38,7 @@ default = ["std"]
 std = [
     "serde",
     "scale-codec/std",
+    "hex/std",
     "libsecp256k1/std",
     "scale-info/std",
     "sp-core/std",
@@ -57,4 +58,4 @@ runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "sp-runtime/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "sp-runtime/try-runtime", "pallet-3vm-evm/try-runtime" ]
