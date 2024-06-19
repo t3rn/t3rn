@@ -34,6 +34,8 @@ circuit-mock-runtime    = { path = "../../../../runtime/mock" }
 [features]
 default = [ "std" ]
 std     = [
+    "codec/std",
+    "num_enum/std",
     "frame-support/std",
     "frame-system/std",
     "sp-std/std",
@@ -44,4 +46,6 @@ std     = [
     "fp-evm/std",
     "pallet-evm/std",
     "t3rn-primitives/std",
+    "circuit-runtime-types/std",
+    "precompile-util-solidity/std",
 ]

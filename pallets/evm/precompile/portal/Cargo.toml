@@ -29,11 +29,13 @@ t3rn-mini-mock-runtime = { path = "../../../../runtime/mini-mock" }
 default = [ "std" ]
 std     = [
     "pallet-portal/std",
+    "pallet-assets/std",
     "sp-std/std",
     "codec/std",
     "t3rn-primitives/std",
     "frame-support/std",
     "frame-system/std",
     "fp-evm/std",
-    "pallet-evm/std"
+    "pallet-evm/std",
+    "precompile-util-solidity/std",
 ]

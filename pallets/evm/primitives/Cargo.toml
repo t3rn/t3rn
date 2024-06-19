@@ -32,6 +32,7 @@ std = [
 	"evm/with-serde",
 	"serde/std",
 	"scale-codec/std",
+	"scale-info/std",
 	# Substrate
 	"frame-support/std",
 	"sp-core/std",

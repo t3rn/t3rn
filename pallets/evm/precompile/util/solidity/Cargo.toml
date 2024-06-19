@@ -26,6 +26,8 @@ similar-asserts            = { workspace = true, optional = true }
 [features]
 default = [ "std" ]
 std = [
+  "log/std",
+  "num_enum/std",
   "sp-core/std",
   "sp-std/std",
   "frame-support/std",

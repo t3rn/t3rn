@@ -34,6 +34,7 @@ pallet-evm-precompile-simple       = { path = "../simple", default-features = fa
 default = [ "std" ]
 std = [
   "frame-system/std",
+  "frame-support/std",
   "sp-core/std",
   "sp-std/std",
   "pallet-balances/std",
@@ -52,4 +53,5 @@ std = [
   "pallet-evm-precompile-modexp/std",
   "pallet-evm-precompile-sha3fips/std",
   "pallet-evm-precompile-simple/std",
+  "precompile-util-solidity/std",
 ]
