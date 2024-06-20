@@ -67,3 +67,7 @@ Set your preferred log level - Debug, Warn, Info, or Trace.
 ### Start
 
 Save your settings and click the Play button to start your Executor.
+
+:::info Faucet
+In order to bid on transactions on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
+:::

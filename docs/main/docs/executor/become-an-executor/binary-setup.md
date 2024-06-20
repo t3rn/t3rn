@@ -75,3 +75,7 @@ To start the Executor, run the following command:
 ```bash
 ./executor
 ```
+
+:::info Faucet
+In order to bid on transactions on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
+:::
