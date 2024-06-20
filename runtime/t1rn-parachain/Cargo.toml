@@ -332,5 +332,6 @@ try-runtime = [
   "pallet-sepolia-finality-verifier/try-runtime",
   "pallet-withdraw-teleport/try-runtime",
   "pallet-xdns/try-runtime",
+  "pallet-portal/try-runtime",
   "t3rn-abi/try-runtime",
 ]

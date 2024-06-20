@@ -323,4 +323,5 @@ try-runtime = [
   "parachain-info/try-runtime",
   "sp-runtime/try-runtime",
   "pallet-dynamic-fee/try-runtime",
+  "pallet-portal/try-runtime",
 ]

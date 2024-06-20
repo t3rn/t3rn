@@ -349,6 +349,7 @@ try-runtime = [
   "pallet-maintenance-mode/try-runtime",
   "pallet-membership/try-runtime",
   "pallet-rewards/try-runtime",
+  "pallet-portal/try-runtime",
   "pallet-sepolia-finality-verifier/try-runtime",
   "pallet-withdraw-teleport/try-runtime",
   "pallet-xdns/try-runtime",
