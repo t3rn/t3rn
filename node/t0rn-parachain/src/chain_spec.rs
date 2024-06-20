@@ -425,24 +425,25 @@ fn polkadot_genesis_full(
         aura: Default::default(),
         assets: AssetsConfig {
             assets: vec![
-            (
-                1,
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                false,
-                1,
-            )  ,
-            (
-                2,
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                false,
-                1,
-            ),
-            (
-                1984,
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                false,
-                1,
-            )],
+                (
+                    1,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+                (
+                    2,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+                (
+                    1984,
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    false,
+                    1,
+                ),
+            ],
             metadata: vec![
                 (
                     1,
