@@ -24,6 +24,10 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 :::info If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
+### Optional: Configure Your Network RPC URLs
+
+Click configure your network RPC URLs and add RPC URLs for each enabled network, or skip this step and automatically use the default RPC URLs.
+
 ### Configure Your Arbitrage Strategies
 
 Click configure your arbitrage strategies, and expand for each network and asset to add your own strategies.
@@ -63,3 +67,7 @@ Set your preferred log level - Debug, Warn, Info, or Trace.
 ### Start
 
 Save your settings and click the Play button to start your Executor.
+
+:::info Faucet
+In order to bid on transaction orders on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
+:::

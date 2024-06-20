@@ -12,7 +12,7 @@ We provide two ways to become an Executor.
 
 #### - [Binary Setup](become-an-executor/binary-setup)
 
-#### - [GUI Setup](become-an-executor/gui-setup).
+#### - [GUI Setup](become-an-executor/gui-setup)
 
 ## Understanding Executors
 

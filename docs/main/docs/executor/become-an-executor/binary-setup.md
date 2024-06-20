@@ -59,6 +59,15 @@ export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
 If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
+:::info Optional
+You can add your custom RPC URLs or skip this step to automatically use the default RPC URLs.
+
+`export EXECUTOR_${NETWORK-NAME}_RPC_URLS='url1,url2'`
+
+Example for Arbitrum Sepolia: `export EXECUTOR_ARBITRUM-SEPOLIA_RPC_URLS='url1,url2'`
+
+:::
+
 ### Start
 
 To start the Executor, run the following command:
@@ -66,3 +75,7 @@ To start the Executor, run the following command:
 ```bash
 ./executor
 ```
+
+:::info Faucet
+In order to bid on transaction orders on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
+:::
