@@ -66,6 +66,7 @@ try-runtime = [
   "frame-support/try-runtime",
   "frame-system/try-runtime",
   "t3rn-abi/try-runtime",
+  "pallet-grandpa-finality-verifier/try-runtime",
 ]
 
 testing = [ "pallet-grandpa-finality-verifier/testing" ]

@@ -356,4 +356,5 @@ try-runtime = [
   "t3rn-abi/try-runtime",
   "fp-self-contained/try-runtime",
   "pallet-celestia-light-client/try-runtime",
+  "pallet-grandpa-finality-verifier/try-runtime",
 ]
