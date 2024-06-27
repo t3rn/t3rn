@@ -10,7 +10,6 @@ Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and
 ## Popular 🔥
 
 - [**Run an Executor**](executor/executor-overview)
-- [**Smart Contract Hub**](t3rn-protocol-wiki/smart-contract-hub)
 
 ## Getting Started with t3rn:
 
