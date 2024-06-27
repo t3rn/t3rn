@@ -6,6 +6,6 @@ sidebar_position: 1
 
 ### Explorer
 
-Visit [stats.t0rn.io/explorer](https://stats.t0rn.io/explorer) to see the orders submitted to t3rn's testnet.
+Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to see the orders submitted to t3rn's testnet.
 
-<img src="/img/t3rn-explorer.png"/>
+<img src="/img/t1rn-explorer.png"/>
