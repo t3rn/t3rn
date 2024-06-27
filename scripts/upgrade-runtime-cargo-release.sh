@@ -7,10 +7,6 @@ if [[ $(uname -s 2>/dev/null || echo not) == "Darwin" ]]; then
     SED=gsed
 fi
 
-echo "Replacing version in docs with $NEW_VERSION"
-$SED -i.bak -E "s/v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[0-9]+/v${NEW_VERSION}/g" $DIR/docs/main/docs/collator/testnet/testnet-collator.md
-rm $DIR/docs/main/docs/collator/testnet/testnet-collator.md.bak
-
 PARACHAIN_NAME=t0rn
 if git diff --quiet $DIR/runtime/${PARACHAIN_NAME}-parachain/src/lib.rs; then
     echo "Increment versions for ${PARACHAIN_NAME} runtime"

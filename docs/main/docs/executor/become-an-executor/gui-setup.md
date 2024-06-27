@@ -12,9 +12,9 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 **1.** Download and run the Executor GUI file according to your OS from here:
 
-- Apple (Intel): https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-apple-darwin/1.0.17/Executor.dmg
-- Apple Silicon: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/aarch64-apple-darwin/1.0.17/Executor.dmg
-- Windows: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-pc-windows-msvc/1.0.17/Executor_1.0.17_x64-setup.nsis.zip
+- Apple (Intel): https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-apple-darwin/1.0.18/Executor.dmg
+- Apple Silicon: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/aarch64-apple-darwin/1.0.18/Executor.dmg
+- Windows: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-pc-windows-msvc/1.0.18/Executor_1.0.18_x64-setup.nsis.zip
 
 ### Configure Settings
 
@@ -62,7 +62,11 @@ There are 5 fields for each asset.
 
 ### Log Level
 
-Set your preferred log level - Debug, Warn, Info, or Trace.
+Set your preferred log level - Debug or Info.
+
+**Debug:** Contains messages primarily useful for developers to debug issues. These messages provide detailed information about the internal state and operations of the system.
+
+**Info:** Provides general information about the processes running in the system. These messages offer insights into the regular operation and workflow, without the detailed level needed for debugging.
 
 ### Start
 
