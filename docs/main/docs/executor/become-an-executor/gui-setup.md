@@ -62,7 +62,11 @@ There are 5 fields for each asset.
 
 ### Log Level
 
-Set your preferred log level - Debug, Warn, Info, or Trace.
+Set your preferred log level - Debug or Info.
+
+**Debug:** Contains messages primarily useful for developers to debug issues. These messages provide detailed information about the internal state and operations of the system.
+
+**Info:** Provides general information about the processes running in the system. These messages offer insights into the regular operation and workflow, without the detailed level needed for debugging.
 
 ### Start
 
