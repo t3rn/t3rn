@@ -12,9 +12,9 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 **1.** Download and run the Executor GUI file according to your OS from here:
 
-- Apple (Intel): https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-apple-darwin/1.0.18/Executor.dmg
-- Apple Silicon: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/aarch64-apple-darwin/1.0.18/Executor.dmg
-- Windows: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-pc-windows-msvc/1.0.18/Executor_1.0.18_x64-setup.nsis.zip
+- Apple (Intel): https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-apple-darwin/1.0.20/Executor.dmg
+- Apple Silicon: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/aarch64-apple-darwin/1.0.20/Executor.dmg
+- Windows: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-pc-windows-msvc/1.0.20/Executor_1.0.20_x64-setup.nsis.zip
 
 ### Configure Settings
 
