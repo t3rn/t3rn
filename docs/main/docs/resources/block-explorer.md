@@ -13,3 +13,5 @@ Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to see 
 ### Executor Stats
 
 Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to see the stats of an Executor.
+
+<img src="/img/t1rn-executor-stats.png"/>
