@@ -1,8 +1,3 @@
----
-sidebar_position: 3
-id: Tokenomics
----
-
 # Tokenomics and Inflation
 
 **Total token supply**: `100,000,000`
