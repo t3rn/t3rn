@@ -1,7 +1,3 @@
----
-sidebar_position: 4
----
-
 # Gas Costs Breakdown
 
 | Action           | Payer    | Cost (GAS)                                                                                                                                                                 | Remarks                                                                                                                                                    |

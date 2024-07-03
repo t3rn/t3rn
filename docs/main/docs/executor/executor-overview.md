@@ -1,8 +1,4 @@
----
-sidebar_position: 1
----
-
-# Executor
+# What are Executors
 
 Executors are off-chain agents acting as market makers that fulfil cross-chain orders, earning fees and rewards.
 

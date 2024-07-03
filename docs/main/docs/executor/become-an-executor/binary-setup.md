@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Binary Setup
 
 Welcome to the t3rn Executor Setup! This guided process will help you configure your executor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.

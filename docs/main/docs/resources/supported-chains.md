@@ -1,7 +1,3 @@
----
-sidebar_position: 3
----
-
 # Supported Chains
 
 Currently deployed RemoteOrders.sol smart contracts (always consult with latest version on [t3rn's Github](https://github.com/t3rn/t3rn)):
