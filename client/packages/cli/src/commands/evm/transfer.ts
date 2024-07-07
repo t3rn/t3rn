@@ -28,24 +28,29 @@ export const handleEvmTransferCommand = async (
   spinner.start()
   const provider = new JsonRpcProvider(args.endpoint)
   const walletWithProvider = new Wallet(args.sender, provider)
-  await walletWithProvider.sendTransaction({
-    to: args.receiver,
-    value: parseInt(args.amount).toString(),
-  }).then((tx) => {
-    spinner.stopAndPersist({
-      symbol: '\u2713',
-      text: colorLogMsg('INFO', `Transaction hash: ${tx.hash}`),
+  await walletWithProvider
+    .sendTransaction({
+      to: args.receiver,
+      value: parseInt(args.amount).toString(),
     })
-  }).catch((e) => {
-      spinner.fail(`Failed to transfer ${args.amount} wei to ${args.receiver}: ${e}`)
+    .then((tx) => {
+      spinner.stopAndPersist({
+        symbol: '\u2713',
+        text: colorLogMsg('INFO', `Transaction hash: ${tx.hash}`),
+      })
+    })
+    .catch((e) => {
+      spinner.fail(
+        `Failed to transfer ${args.amount} wei to ${args.receiver}: ${e}`,
+      )
       process.exit(1)
-  })
+    })
   await new Promise((resolve) => setTimeout(resolve, 5000))
   spinner.stopAndPersist({
     symbol: '🎉',
     text: colorLogMsg(
-        'SUCCESS',
-        `${walletWithProvider.address} successfully sent ${args.amount} wei to ${args.receiver}`,
+      'SUCCESS',
+      `${walletWithProvider.address} successfully sent ${args.amount} wei to ${args.receiver}`,
     ),
   })
   spinner.stop()

@@ -14,7 +14,7 @@ import { handleXcmTransferCommand } from './commands/xcmTransfer/index.ts'
 import { handleAssetRegistrationCommand } from './commands/registerAsset/index.ts'
 import { handleResetGatewayCommand } from './commands/resetGateway/index.ts'
 import { handleAddSfxAbiCommand } from '@/commands/sfxABI/index.js'
-import { handleEvmClaimAaddressCommand } from '@/commands/evm/claimEvmAddress.ts'
+import { handleEvmClaimAddressCommand } from '@/commands/evm/claimEvmAddress.ts'
 import { handleEvmGetBalanceCommand } from '@/commands/evm/getBalance.ts'
 import { handleEvmTransferCommand } from '@/commands/evm/transfer.ts'
 import { handleEvmDeployCommand } from '@/commands/evm/deploy.ts'
@@ -278,12 +278,8 @@ withExportMode(
       '--endpoint <string>',
       'The RPC endpoint to transfer balance on',
     )
-    .requiredOption(
-      '--substrate-signer <string>',
-      'The substrate account private key',
-    )
-    .requiredOption('--evm-signer <string>', 'The evm account private key')
-    .action(handleEvmClaimAaddressCommand),
+    .requiredOption('--signer <string>', 'The evm account private key')
+    .action(handleEvmClaimAddressCommand),
 )
 
 withExportMode(
@@ -313,17 +309,20 @@ withExportMode(
 )
 
 withExportMode(
-    program
-        .command('evmDeploy')
-        .description('Deploy EVM smart contract.')
-        .requiredOption(
-            '--endpoint <string>',
-            'The RPC endpoint to upload smart contract on',
-        )
-        .requiredOption('--owner <string>', 'The owner account - EVM private key')
-        .requiredOption('--contract-abi <string>', 'The abi file of the contract')
-        .requiredOption('--contract-bytecode <string>', 'The bytecode file of the contract')
-        .action(handleEvmDeployCommand),
+  program
+    .command('evmDeploy')
+    .description('Deploy EVM smart contract.')
+    .requiredOption(
+      '--endpoint <string>',
+      'The RPC endpoint to upload smart contract on',
+    )
+    .requiredOption('--owner <string>', 'The owner account - EVM private key')
+    .requiredOption('--contract-abi <string>', 'The abi file of the contract')
+    .requiredOption(
+      '--contract-bytecode <string>',
+      'The bytecode file of the contract',
+    )
+    .action(handleEvmDeployCommand),
 )
 
 program.parse(process.argv)
