@@ -281,7 +281,7 @@ pub mod pallet {
                 })
                 .ok_or(Error::<T>::EthAddressHasMapped)?;
 
-            Ok(Pays::No.into())
+            Ok(Pays::Yes.into())
         }
     }
 }
