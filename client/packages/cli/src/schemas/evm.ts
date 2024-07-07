@@ -29,7 +29,8 @@ export const EvmTransferSchema = z.object({
     invalid_type_error: 'Sender must be a string',
     required_error: 'Sender is required',
   }),
-  receiver: z.string({
+  receiver: z
+    .string({
       invalid_type_error: 'Receiver must be a string',
       required_error: 'Receiver is required',
     })
@@ -45,25 +46,24 @@ export const EvmTransferSchema = z.object({
 })
 
 export const EvmDeploySchema = z.object({
-    endpoint: z
-        .string({
-            invalid_type_error: 'Endpoint must be a string',
-            required_error: 'Endpoint is required',
-        })
-        .startsWith('http://'),
-    owner: z.string({
-        invalid_type_error: 'Owner must be a string',
-        required_error: 'Owner is required',
-    }),
-    contractAbi: z.string({
-        invalid_type_error: 'Contract abi must be a string',
-        required_error: 'Contract abi is required',
-    }),
-    contractBytecode: z.string({
-        invalid_type_error: 'Contract bytecode must be a string',
-        required_error: 'Contract bytecode is required',
-    }),
-
+  endpoint: z
+    .string({
+      invalid_type_error: 'Endpoint must be a string',
+      required_error: 'Endpoint is required',
+    })
+    .startsWith('http://'),
+  owner: z.string({
+    invalid_type_error: 'Owner must be a string',
+    required_error: 'Owner is required',
+  }),
+  contractAbi: z.string({
+    invalid_type_error: 'Contract abi must be a string',
+    required_error: 'Contract abi is required',
+  }),
+  contractBytecode: z.string({
+    invalid_type_error: 'Contract bytecode must be a string',
+    required_error: 'Contract bytecode is required',
+  }),
 })
 
 export const EvmClaimAddressSchema = z.object({
@@ -74,12 +74,8 @@ export const EvmClaimAddressSchema = z.object({
     })
     .startsWith('ws://')
     .or(z.string().startsWith('wss://')),
-  substrateSigner: z.string({
-    invalid_type_error: 'Substrate signer must be a string',
-    required_error: 'Substrate signer is required',
-  }),
-  evmSigner: z.string({
-    invalid_type_error: 'EVM signer must be a string',
-    required_error: 'EVM signer is required',
+  signer: z.string({
+    invalid_type_error: 'Signer must be a string',
+    required_error: 'Signer is required',
   }),
 })

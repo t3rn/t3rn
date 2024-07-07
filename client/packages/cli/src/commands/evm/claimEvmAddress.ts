@@ -9,8 +9,8 @@ import { ethers, Wallet } from 'ethers'
 
 export const spinner = ora()
 
-export const handleEvmClaimAaddressCommand = async (
-  _args: Args<'endpoint' | 'substrateSigner' | 'evmSigner'>,
+export const handleEvmClaimAddressCommand = async (
+  _args: Args<'endpoint' | 'signer'>,
 ) => {
   const args = validate(
     EvmClaimAddressSchema,
@@ -33,8 +33,8 @@ export const handleEvmClaimAaddressCommand = async (
       provider: new WsProvider(args.endpoint),
     })
     const keyring = new Keyring({ type: 'sr25519' })
-    const signer = keyring.addFromUri(args.substrateSigner)
-    if (args.evmSigner == 'default') {
+    const signer = keyring.addFromUri(args.signer)
+    if (args.signer == 'default') {
       await signAndSendSafe(
         api.tx.accountMapping.claimDefaultAccount(),
         api,
@@ -49,7 +49,7 @@ export const handleEvmClaimAaddressCommand = async (
         ),
       })
     } else {
-      const wallet = new Wallet(args.evmSigner)
+      const wallet = new Wallet(args.signer)
       const evmAccount = wallet.address
       const evmAccountBytes = Buffer.from(evmAccount.slice(2), 'hex')
       const evmAccountDigest = ethers.keccak256(evmAccountBytes)
