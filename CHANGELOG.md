@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.88.4-rc.0] - 2024-06-27
+### :bug: Bug Fixes
+- [`a7f8f29`](https://github.com/t3rn/t3rn/commit/a7f8f29ba619dc4efabf0c29a0ee244e7e010041) - add BRN faucet link in docs *(PR [#1606](https://github.com/t3rn/t3rn/pull/1606) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`a409bab`](https://github.com/t3rn/t3rn/commit/a409bab905a13f5bf91d815f9c7403355fb0dd34) - replace sensitive data with placeholder *(PR [#1605](https://github.com/t3rn/t3rn/pull/1605) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`ef04212`](https://github.com/t3rn/t3rn/commit/ef04212de75f56276bdaa7a4bf5c54c2f2f40510) - docs update executor setup *(PR [#1607](https://github.com/t3rn/t3rn/pull/1607) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`8642fa6`](https://github.com/t3rn/t3rn/commit/8642fa67a1c915f869ec0bb0e15804228c848168) - update binary download link *(PR [#1608](https://github.com/t3rn/t3rn/pull/1608) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`9e34e18`](https://github.com/t3rn/t3rn/commit/9e34e18a60772b64fbb4caecf313fc684759476f) - update docs executor setup *(PR [#1609](https://github.com/t3rn/t3rn/pull/1609) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`64b728c`](https://github.com/t3rn/t3rn/commit/64b728c4159e7ab4f1e79f0c6937cbfd64cd1a61) - update binary download link *(PR [#1610](https://github.com/t3rn/t3rn/pull/1610) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`bb21fcd`](https://github.com/t3rn/t3rn/commit/bb21fcd632b4d6c808581a30dd6069e92c2df340) - update supported chains and addresses *(PR [#1611](https://github.com/t3rn/t3rn/pull/1611) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`e385b23`](https://github.com/t3rn/t3rn/commit/e385b23bad659c93e3d151dd435bc5cac4eb7402) - update gui version *(PR [#1612](https://github.com/t3rn/t3rn/pull/1612) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`5a781d6`](https://github.com/t3rn/t3rn/commit/5a781d6e88cc972c233cab5bc88f4735050d0b2a) - docs add rpc to executor *(PR [#1613](https://github.com/t3rn/t3rn/pull/1613) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`953a618`](https://github.com/t3rn/t3rn/commit/953a6182244c07f0ea4ef5a94cad7dd887ee5703) - update links to dmg *(PR [#1614](https://github.com/t3rn/t3rn/pull/1614) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`4f11d0b`](https://github.com/t3rn/t3rn/commit/4f11d0b2b9cafdc393d0596db4c8602b60945ffb) - update docs getting started *(PR [#1619](https://github.com/t3rn/t3rn/pull/1619) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+
+
 ## [v1.88.3-rc.0] - 2024-05-14
 ### :bug: Bug Fixes
 - [`a24e478`](https://github.com/t3rn/t3rn/commit/a24e478536c76e2378fe65a01f0ba579e0f4dc33) - remove last 18 decimals converted unit for t2rn *(PR [#1602](https://github.com/t3rn/t3rn/pull/1602) by [@chexware](https://github.com/chexware))*
@@ -2121,3 +2136,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.88.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.0-rc.0...v1.88.1-rc.0
 [v1.88.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.1-rc.0...v1.88.2-rc.0
 [v1.88.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.2-rc.0...v1.88.3-rc.0
+[v1.88.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.3-rc.0...v1.88.4-rc.0

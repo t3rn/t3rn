@@ -1,53 +1,26 @@
----
-sidebar_position: 1
-id: intro
----
-
 # Getting Started
 
-Welcome to t3rn, a smart contract hosting platform designed for seamless and fail-safe multichain executions. t3rn is uniquely positioned to bridge the gaps in blockchain interoperability, offering developers and users alike a flexible and efficient environment for blockchain interactions.
-
-## Core Features of t3rn
-
-1. **Enhanced Security with Trustless Validation:**
-   - t3rn maintains high security and trustless validations through Rangers. These specialized participants continuously monitor connected blockchains, submitting the latest block headers to the t3rn Circuit.
-1. **Multichain Smart Contract Executions:**
-   - t3rn enables smart contracts to perform transactions across multiple blockchain networks, ensuring fail-safe operations and expanded functionality.
-1. **Support for Multiple Languages:**
-   - Developers can write smart contracts in Solidity, !ink, or any language that compiles to WASM. t3rn supports both WASM and EVM, offering versatility in development.
-1. **Open-Source Registry:**
-   - Smart contracts on t3rn are stored in an open-source registry, making them accessible for reuse and development by the broader community.
-1. **Remuneration for Creators:**
-   - Contract creators are [rewarded](/tokenomics#gas-fees) each time their code is executed, receiving a share of the gas fee. This incentivizes open-source development and fosters a new paradigm of collaborative creation.
-
-## Key Network Participants
-
-To facilitate its multichain transactions, t3rn relies on essential network participants:
-
-1. **Executors:**
-   - Executors play a crucial role in processing cross-chain transactions. They assess, bid on, and execute orders created by users, ensuring efficient transaction completion.
-1. **Attesters:**
-   - Attesters are responsible for verifying the correctness and completion of cross-chain transactions. They submit attestations that are crucial for the validation and finalization of transactions.
-1. **Collator:**
-   - Callators in the t3rn ecosystem are vital for facilitating cross-chain communication and transactions. They relay transaction information between chains, ensuring accurate and efficient execution of cross-chain calls.
-
-## Getting Started with t3rn:
-
-1. **Collator Node Operation:**
-   - To participate in the t3rn network, you can set up and run a collator node. This involves installing the software, configuring settings, and syncing with the desired network (e.g., t2rn, t0rn, t1rn, or t3rn).
-1. **Smart Contract Development:**
-   - Develop smart contracts using Solidity or any WASM-compatible language. Deploy your contracts to t3rn’s open-source registry to make them available for multichain execution and collaboration. Learn more about the [t3rn Smart Contract Hub](t3rn-protocol-wiki/smart-contract-hub).
-1. **Participate as an Executor or Attester:**
-   - Join the network as an Executor to process transactions or as an Attester to validate them. Engage in the ecosystem by bidding on orders, executing transactions, and submitting attestations.
-1. **Explore t3rn's Capabilities:**
-   - Dive into the world of cross-chain swaps, understand the functionalities of the Remote Order, EscrowGMP, and Attestations Verifier contracts, and explore how t3rn solves blockchain connections.
+Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and cost-efficient cross-chain swapping. t3rn is uniquely positioned to bridge the gaps in blockchain interoperability, offering superior swapping for users and yield for infra providers by becoming t3rn Executors.
 
 ## Popular 🔥
 
-- [**Brain explanation**](/brain-explanation)
-- [**Run an Attester**](attester/attester-overview)
-- [**Run a Collator**](collator/collator-overview)
 - [**Run an Executor**](executor/executor-overview)
-- **Run a Writer** coming soon.
-- **Strategies** coming soon.
-- [**Smart Contract Hub**](t3rn-protocol-wiki/smart-contract-hub)
+- [**Start Swapping**](https://bridge.t1rn.io/)
+
+## Getting Started with t3rn:
+
+1. **Participate as an Executor:**
+   - Join the network as an [Executor](executor/executor-overview) to process transactions and engage in the ecosystem by bidding on orders and executing transactions.
+1. **Explore t3rn's swap UI:**
+   - Explore cross-chain swaps with our intuitive [Swap UI](https://bridge.t1rn.io/). Now live on testnets, it enables fast, secure, and cost-efficient cross-chain transactions.
+
+## Core of t3rn's Modular Stack
+
+1. **Execution & Settlement**
+   - Cross-chain transactions are executed and settled on L2s or target chains, utilizing their scalability and cost-efficiency. This process ensures swift execution followed by definitive settlement, updating balances and recording outcomes on the blockchain’s ledger.
+1. **Consensus**
+   - t3rn leverages Polkadot’s consensus supported by light clients for secure, interoperable transactions. Light clients enable t3rn to validate cross-chain data efficiently on Polkadot, enhancing trust and reducing resources.
+1. **Attestations**
+   - Attestor and staking setup is deployed on Arbitrum L2. Coupled with light client plugins for Ethereum, streamlines t3rn’s infrastructure, offering a plug-and-play solution for cross-chain transactions and preventing any execution bottlenecks effectively.
+1. **Intent Execution**
+   - Executors in the t3rn ecosystem carry out cross-chain transactions on interconnected L1 and L2 solutions or target chains, leveraging the specific benefits of each for efficient and secure execution.
