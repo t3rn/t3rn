@@ -567,7 +567,7 @@ impl AddressMapping<AccountId> for AddressMappingMock {
     /// Returns the AccountId used go generate the given EvmAddress.
     fn into_account_id(evm: &EvmAddress) -> AccountId {
         let mut account_id = [0u8; 32];
-        account_id.copy_from_slice(&evm.0[12..32]);
+        account_id.copy_from_slice(&evm.0);
         AccountId::new(account_id)
     }
 
