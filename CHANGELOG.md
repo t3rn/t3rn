@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.89.0-rc.0] - 2024-07-07
+### :sparkles: New Features
+- [`3f41f60`](https://github.com/t3rn/t3rn/commit/3f41f609e5166f4a63bcec20afbd57d34e9909e9) - add light-client based fault proofs via vacuum *(PR [#1604](https://github.com/t3rn/t3rn/pull/1604) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`f541537`](https://github.com/t3rn/t3rn/commit/f541537c558b5cde8ab86ddf6f4ce843912d2125) - docs cleanup *(PR [#1623](https://github.com/t3rn/t3rn/pull/1623) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`afd1e17`](https://github.com/t3rn/t3rn/commit/afd1e1792df9a9dd713c3e81f88ce78b54c804e0) - upgrade docusaurus version to latest *(PR [#1624](https://github.com/t3rn/t3rn/pull/1624) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`ba4fc96`](https://github.com/t3rn/t3rn/commit/ba4fc9681aad4c60aa52bfcfc0ddc8d369dcf47c) - add new gui version download links *(PR [#1625](https://github.com/t3rn/t3rn/pull/1625) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`e79a4bf`](https://github.com/t3rn/t3rn/commit/e79a4bfab9b85eaa4c9631b08126ef7fc8b0bc10) - update gui version *(PR [#1627](https://github.com/t3rn/t3rn/pull/1627) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`59965dd`](https://github.com/t3rn/t3rn/commit/59965ddcd143dd8102d8d5a770b617b50c31f040) - add executor stats link *(PR [#1630](https://github.com/t3rn/t3rn/pull/1630) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`e881bbd`](https://github.com/t3rn/t3rn/commit/e881bbdcb6e24fe0ba4aca37847d522e54e1bba5) - update docs siderbar *(PR [#1631](https://github.com/t3rn/t3rn/pull/1631) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+- [`6b64ec2`](https://github.com/t3rn/t3rn/commit/6b64ec2c5d8d4aaeb7606b89754d1a8ef8d8f4c5) - update tokenomics page and pie chart *(PR [#1632](https://github.com/t3rn/t3rn/pull/1632) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
+
+
 ## [v1.88.4-rc.0] - 2024-06-27
 ### :bug: Bug Fixes
 - [`a7f8f29`](https://github.com/t3rn/t3rn/commit/a7f8f29ba619dc4efabf0c29a0ee244e7e010041) - add BRN faucet link in docs *(PR [#1606](https://github.com/t3rn/t3rn/pull/1606) by [@jossifelefteriadis](https://github.com/jossifelefteriadis))*
@@ -2137,3 +2151,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.88.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.1-rc.0...v1.88.2-rc.0
 [v1.88.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.2-rc.0...v1.88.3-rc.0
 [v1.88.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.3-rc.0...v1.88.4-rc.0
+[v1.89.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.4-rc.0...v1.89.0-rc.0
