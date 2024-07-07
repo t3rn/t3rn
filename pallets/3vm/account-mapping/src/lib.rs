@@ -264,6 +264,25 @@ pub mod pallet {
 
             Ok(Pays::No.into())
         }
+
+        /// Claim account mapping between Substrate accounts and a generated EVM
+        /// address based off of those accounts.
+        /// Ensure eth_address has not been mapped
+        #[pallet::call_index(2)]
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+        #[transactional]
+        pub fn unclaim(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            T::AddressMapping::get_evm_address(&who)
+                .map(|eth_address| {
+                    Accounts::<T>::remove(eth_address);
+                    EvmAddresses::<T>::remove(&who);
+                })
+                .ok_or(Error::<T>::EthAddressHasMapped)?;
+
+            Ok(Pays::No.into())
+        }
     }
 }
 
