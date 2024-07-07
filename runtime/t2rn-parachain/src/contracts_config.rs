@@ -28,9 +28,7 @@ use sp_runtime::{
     transaction_validity::TransactionValidityError,
     ConsensusEngineId, RuntimeAppPublic,
 };
-use t3rn_primitives::threevm::{
-    get_tokens_precompile_address, Erc20Mapping, H160_POSITION_ASSET_ID_TYPE,
-};
+use t3rn_primitives::threevm::{Erc20Mapping, H160_POSITION_ASSET_ID_TYPE};
 
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
@@ -55,6 +53,7 @@ parameter_types! {
 
 impl pallet_3vm::Config for Runtime {
     type AccountManager = AccountManager;
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type AssetId = AssetId;
     type CircuitTargetId = CircuitTargetId;
     type ContractsRegistry = ContractsRegistry;
@@ -64,6 +63,7 @@ impl pallet_3vm::Config for Runtime {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
+    type VacuumEVMApi = Vacuum;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {

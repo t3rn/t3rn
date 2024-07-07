@@ -275,11 +275,14 @@ impl AttesterInfo {
     }
 }
 
+use crate::circuit::CircuitStatus;
 use k256::{
     ecdsa::{RecoveryId, Signature, VerifyingKey},
     elliptic_curve::sec1::ToEncodedPoint,
     PublicKey,
 };
+use t3rn_types::fsx::FullSideEffect;
+
 pub fn verify_secp256k1_ecdsa_signature(
     message: &Vec<u8>,
     signature: &[u8],

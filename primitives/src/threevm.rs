@@ -21,11 +21,18 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
+use crate::circuit::{VacuumEVM3DOrder, VacuumEVMOrder, VacuumEVMProof, VacuumEVMTeleportOrder};
 use circuit_runtime_types::{EvmAddress, TokenId};
 
 // Precompile pointers baked into the binary.
 // Genesis exists only to map hashes to pointers.
 pub const GET_STATE: u8 = 55;
+pub const VACUUM_ORDER: u8 = 90;
+pub const VACUUM_3D_ORDER: u8 = 91;
+pub const VACUUM_CONFIRM: u8 = 92;
+pub const VACUUM_SUBMIT_CORRECTNESS_PROOF: u8 = 93;
+pub const VACUUM_SUBMIT_FAULT_PROOF: u8 = 94;
+pub const VACUUM_TELEPORT_ORDER: u8 = 95;
 pub const SUBMIT: u8 = 56;
 pub const POST_SIGNAL: u8 = 57;
 pub const PORTAL: u8 = 70;
@@ -48,6 +55,12 @@ where
         SideEffects<T::AccountId, Balance, T::Hash>,
         SpeedMode,
     ),
+    VacuumOrder(T::RuntimeOrigin, VacuumEVMOrder),
+    Vacuum3DOrder(T::RuntimeOrigin, VacuumEVM3DOrder),
+    VacuumConfirm(T::RuntimeOrigin, VacuumEVMOrder),
+    VacuumSubmitCorrectnessProof(T::RuntimeOrigin, VacuumEVMProof),
+    VacuumSubmitFaultProof(T::RuntimeOrigin, VacuumEVMProof),
+    VacuumTeleportOrder(T::RuntimeOrigin, VacuumEVMTeleportOrder),
     Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
     Portal(PortalPrecompileArgs),
 }
@@ -58,6 +71,12 @@ pub enum PrecompileInvocation<T: ConfigSystem, Balance> {
     Submit(LocalStateExecutionView<T, Balance>),
     Signal,
     Portal(PortalExecution<T>),
+    VacuumOrder(bool),
+    VacuumConfirm(bool),
+    Vacuum3DOrder(bool),
+    VacuumSubmitFaultProof(bool),
+    VacuumSubmitCorrectnessProof(bool),
+    VacuumTeleportOrder(bool),
 }
 
 impl<T: ConfigSystem, Balance> PrecompileInvocation<T, Balance> {
@@ -130,6 +149,36 @@ where
         origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
+}
+
+pub trait VacuumAccess<T>
+where
+    T: ConfigSystem,
+{
+    fn evm_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMOrder,
+    ) -> Result<bool, DispatchError>;
+
+    fn evm_teleport_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMTeleportOrder,
+    ) -> Result<bool, DispatchError>;
+
+    fn evm_confirm(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMOrder,
+    ) -> Result<bool, DispatchError>;
+
+    fn evm_submit_fault_proof(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_proof: VacuumEVMProof,
+    ) -> Result<bool, DispatchError>;
+
+    fn evm_3d_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVM3DOrder,
+    ) -> Result<bool, DispatchError>;
 }
 
 pub struct Remunerated<Hash> {

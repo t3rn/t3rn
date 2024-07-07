@@ -242,6 +242,7 @@ construct_runtime!(
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
+        AccountMapping: pallet_3vm_account_mapping = 126,
 
          // Portal
         Portal: pallet_portal = 128,

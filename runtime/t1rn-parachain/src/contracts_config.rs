@@ -15,13 +15,18 @@ use circuit_runtime_types::{
 };
 
 // use evm_precompile_util::KnownPrecompile;
+use frame_support::PalletId;
+pub use pallet_3vm_account_mapping::EvmAddressMapping;
 use pallet_3vm_contracts::NoopMigration;
 use pallet_3vm_evm::{EnsureAddressTruncated, HashedAddressMapping, SubstrateBlockHashMapping};
 use pallet_3vm_evm_primitives::FeeCalculator;
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use sp_core::{H160, U256};
-use sp_runtime::{traits::Keccak256, ConsensusEngineId, RuntimeAppPublic};
+use sp_runtime::{
+    traits::{AccountIdConversion, Keccak256},
+    ConsensusEngineId, RuntimeAppPublic,
+};
 
 const _EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
@@ -46,6 +51,7 @@ parameter_types! {
 
 impl pallet_3vm::Config for Runtime {
     type AccountManager = AccountManager;
+    type AddressMapping = EvmAddressMapping<Runtime>;
     type AssetId = AssetId;
     type CircuitTargetId = CircuitTargetId;
     type ContractsRegistry = ContractsRegistry;
@@ -55,6 +61,22 @@ impl pallet_3vm::Config for Runtime {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
+    type VacuumEVMApi = Vacuum;
+}
+
+parameter_types! {
+    pub const T3rnPalletId: PalletId = PalletId(*b"trn/trsy");
+    pub TreasuryModuleAccount: AccountId = T3rnPalletId::get().into_account_truncating();
+    pub const StorageDepositFee: Balance = MILLIUNIT / 100;
+}
+
+impl pallet_3vm_account_mapping::Config for Runtime {
+    type AddressMapping = EvmAddressMapping<Runtime>;
+    type ChainId = ChainId;
+    type Currency = Balances;
+    type NetworkTreasuryAccount = TreasuryModuleAccount;
+    type RuntimeEvent = RuntimeEvent;
+    type StorageDepositFee = StorageDepositFee;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {
@@ -117,6 +139,10 @@ parameter_types! {
     // pub PrecompilesValue: evm_precompile_util::T3rnPrecompiles<Runtime> = evm_precompile_util::T3rnPrecompiles::<_>::new();;
 }
 
+// pub struct Precompiles<Runtime> {
+//     pub inner: BTreeMap<H160, KnownPrecompile<Runtime>>,
+//     phantom: PhantomData<Runtime>,
+// }
 // TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = HashedAddressMapping<Keccak256>;
@@ -132,9 +158,9 @@ impl pallet_3vm_evm::Config for Runtime {
     type GasWeightMapping = pallet_3vm_evm::FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ();
     type OnCreate = ();
-    // type PrecompilesType = evm_precompile_util::T3rnPrecompiles<Self>;
-    // type PrecompilesValue = PrecompilesValue;
     type PrecompilesType = ();
+    // type PrecompilesValue = PrecompilesValue;
+    // fixme: add and compile pre-compiles compile_error!("the wasm*-unknown-unknown targets are not supported by \
     type PrecompilesValue = ();
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;

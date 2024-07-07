@@ -11,11 +11,13 @@ pub use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
 pub use pallet_evm_precompile_simple::{
     ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256,
 };
+
 use portal_precompile::PortalPrecompile;
 use precompile_util_solidity::data::EvmData;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
 use tokens_precompile::TokensPrecompile;
+use vacuum_precompile::VacuumPrecompile;
 
 pub mod precompile_mock;
 
@@ -55,22 +57,32 @@ where
     >,
     TokensPrecompile<T>: Precompile,
     PortalPrecompile<T>: Precompile,
+    VacuumPrecompile<T>: Precompile,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         let address = handle.code_address();
         match address {
             // Ethereum precompiles
-            a if hash(&1) == a => Some(<ECRecover as Precompile>::execute(handle)),
-            a if hash(&2) == a => Some(<Sha256 as Precompile>::execute(handle)),
-            a if hash(&3) == a => Some(<Ripemd160 as Precompile>::execute(handle)),
-            a if hash(&4) == a => Some(<Identity as Precompile>::execute(handle)),
-            a if hash(&5) == a => Some(<Modexp as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]) == a =>
+                Some(<ECRecover as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]) == a =>
+                Some(<Sha256 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]) == a =>
+                Some(<Ripemd160 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4]) == a =>
+                Some(<Identity as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]) == a =>
+                Some(<Modexp as Precompile>::execute(handle)),
             // Non-Ethereum precompiles
-            a if hash(&101) == a => Some(<Sha3FIPS256 as Precompile>::execute(handle)),
-            a if hash(&102) == a => Some(<Sha3FIPS512 as Precompile>::execute(handle)),
-            a if hash(&103) == a => Some(<ECRecoverPublicKey as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101]) == a =>
+                Some(<Sha3FIPS256 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102]) == a =>
+                Some(<Sha3FIPS512 as Precompile>::execute(handle)),
+            a if H160([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 103]) == a =>
+                Some(<ECRecoverPublicKey as Precompile>::execute(handle)),
             // t3rn precompiles
-            a if hash(&10001) == a => Some(PortalPrecompile::<T>::execute(handle)),
+            a if H160([7u8; 20]) == a => Some(PortalPrecompile::<T>::execute(handle)),
+            a if H160([8u8; 20]) == a => Some(VacuumPrecompile::<T>::execute(handle)),
             a if &a.to_fixed_bytes()[0..16] == TOKENS_PRECOMPILE_PREFIX =>
                 Some(TokensPrecompile::<T>::execute(handle)),
             // Default

@@ -268,11 +268,6 @@ pub mod pallet {
     pub type CommitteeTransitionOn<T: Config> = StorageMap<_, Identity, TargetId, u32>;
 
     #[pallet::storage]
-    #[pallet::getter(fn attestations_influx)]
-    pub type AttestationsInflux<T: Config> =
-        StorageDoubleMap<_, Identity, TargetId, Identity, H256, InfluxMessage<BlockNumberFor<T>>>;
-
-    #[pallet::storage]
     pub type CurrentRetributionPerSFXPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
@@ -636,140 +631,6 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
-        pub fn submit_for_influx_attestation(
-            // Must be signed by the attester in current Committee
-            origin: OriginFor<T>,
-            // Message being a hash of the message to sign
-            message: H256,
-            // Message hash of the message
-            message_hash: H256,
-            // Message hash of the message
-            height_there: BlockNumberFor<T>,
-            // Target of the attestation
-            target: TargetId,
-            // Signature of the message
-            signature: Vec<u8>,
-        ) -> DispatchResult {
-            let account_id = ensure_signed(origin)?;
-
-            // Ensure target is activated
-            ensure!(
-                AttestationTargets::<T>::get().contains(&target),
-                Error::<T>::TargetNotActive
-            );
-
-            // Lookup the attester in the storage
-            let attester = Attesters::<T>::get(&account_id).ok_or(Error::<T>::NotRegistered)?;
-
-            // Check if Current Committee
-            ensure!(
-                CurrentCommittee::<T>::get().contains(&account_id),
-                Error::<T>::NotInCurrentCommittee
-            );
-
-            // Check if the attester has agreed to the target
-            let recoverable = AttestersAgreements::<T>::get(&account_id, &target)
-                .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
-
-            // Get the codec of target from XDNS
-            let target_codec = <T as Config>::Xdns::get_target_codec(&target)?;
-
-            let mut message_bytes = message.as_bytes().to_vec();
-            // add target to the message (assumed encoded on 32 bytes)
-            message_bytes.extend_from_slice(&target.encode());
-            // add height_there to the message (assumed encoded on 4 bytes)
-
-            // Check if message_hash is correct
-            let recalculate_message_hash: H256 = match target_codec {
-                Codec::Scale => {
-                    message_bytes.extend_from_slice(&height_there.encode());
-                    let substrate_message_hash =
-                        <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::hash(
-                            &message_bytes.as_slice(),
-                        );
-                    H256::from(substrate_message_hash)
-                },
-                Codec::Rlp => {
-                    // reverse order for BigEndian encoding
-                    let height_there = height_there
-                        .encode()
-                        .iter()
-                        .rev()
-                        .cloned()
-                        .collect::<Vec<u8>>();
-                    message_bytes.extend_from_slice(&height_there);
-                    // calculate the hash of the message with tiny-keccak
-                    let mut keccak = Keccak::v256();
-                    keccak.update(&message_bytes);
-                    let mut evm_message_hash: [u8; 32] = [0; 32];
-                    keccak.finalize(&mut evm_message_hash);
-                    H256::from(evm_message_hash)
-                },
-            };
-
-            ensure!(
-                recalculate_message_hash == message_hash,
-                Error::<T>::InfluxMessageHashIncorrect
-            );
-
-            // Get XDNS targer's vendor
-            let vendor = <T as Config>::Xdns::get_verification_vendor(&target)
-                .map_err(|_| Error::<T>::XdnsTargetNotActive)?;
-
-            let is_verified = attester
-                .verify_attestation_signature(
-                    ECDSA_ATTESTER_KEY_TYPE_ID,
-                    &message_hash.encode(),
-                    &signature,
-                    recoverable,
-                    &vendor,
-                )
-                .map_err(|_| Error::<T>::InvalidSignature)?;
-
-            ensure!(is_verified, Error::<T>::InvalidSignature);
-
-            // Recover or create attestation influx from storage
-            let maybe_attestation_influx_msg = AttestationsInflux::<T>::get(&target, &message_hash);
-
-            let mut attestation_influx = if let Some(mut attestation) = maybe_attestation_influx_msg
-            {
-                // Check if the attestation is already submitted into Signatures vector
-                ensure!(
-                    !attestation.signatures.contains(&signature),
-                    Error::<T>::InfluxSignatureAlreadySubmitted
-                );
-                // Update Influx attestation with attestator's signature
-                attestation.signatures.push(signature);
-                attestation
-            } else {
-                InfluxMessage {
-                    message_hash,
-                    message,
-                    height_there,
-                    gateway: target,
-                    signatures: vec![signature],
-                    created: <frame_system::Pallet<T>>::block_number(),
-                    status: BatchStatus::PendingAttestation,
-                }
-            };
-
-            // Set status based on if signed by majority of the committee
-            let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
-            let status = if attestation_influx.signatures.len() >= quorum {
-                BatchStatus::ReadyForSubmissionByMajority
-            } else if (attestation_influx.signatures.len() as u32) == T::CommitteeSize::get() {
-                BatchStatus::ReadyForSubmissionFullyApproved
-            } else {
-                BatchStatus::PendingAttestation
-            };
-            attestation_influx.status = status;
-            // Save Influx attestation into storage
-            AttestationsInflux::<T>::insert(&target, &message_hash, attestation_influx);
-
-            Ok(())
-        }
-
-        #[pallet::weight(10_000)]
         pub fn submit_attestation(
             // Must be signed by the attester in current Committee
             origin: OriginFor<T>,
@@ -905,7 +766,7 @@ pub mod pallet {
                 ExecutionSource::decode(&mut &target_escrow_address[..])
                     .map_err(|_| Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered)?;
 
-            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
+            let escrow_batch_success_descriptor = b"BatchApplied:Event(\
                 MessageHash:H256,\
                 BeneficiaryOnTarget:Account20,\
                 AttestingCommittee:H256,\
@@ -1986,7 +1847,7 @@ pub mod pallet {
                                             };
 
                                         if let Ok(fsx) = T::ReadSFX::get_fsx(sfx_id_as_hash) {
-                                            if T::Rewards::repatriate_for_late_attestation(
+                                            if T::Rewards::repatriate_for_faulty_or_missing_attestation(
                                                 sfx_id, &fsx, status, requester,
                                             ) {
                                                 repatriated = true;
@@ -2726,125 +2587,6 @@ pub mod attesters_test {
             let batch_latency = Attesters::read_attestation_latency(&ETHEREUM_TARGET);
             assert!(batch_latency.is_some());
             assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
-        });
-    }
-
-    #[test]
-    fn submit_first_influx_attestation_rlp_encoded_with_correct_signature_sets_status_to_pending_attestation(
-    ) {
-        let mut ext = ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_eth_gateway_record()
-            .build();
-
-        ext.execute_with(|| {
-            // Register an attester
-            let attester = AccountId::from([1; 32]);
-            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
-
-            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 0);
-
-            // Submit an attestation signed with the Ed25519 key
-            let influx_message_32b = *b"message_that_needs_attestation32";
-            let mut influx_message_to_sign_on: Vec<u8> = influx_message_32b.to_vec();
-            let target_there: [u8; 4] = ETHEREUM_TARGET;
-            let height_there: u32 = 8;
-            // Add target and height to the message
-            influx_message_to_sign_on.extend_from_slice(&target_there);
-            influx_message_to_sign_on.extend_from_slice(&height_there.to_be_bytes());
-
-            // Calculate the hash of the message
-            let mut hasher = Keccak::v256();
-            hasher.update(&influx_message_to_sign_on);
-            let mut hash = [0u8; 32];
-            hasher.finalize(&mut hash);
-            let sfx_id_to_sign_on = H256::from(hash);
-
-            // Sign the message
-            let signature = ecdsa::Pair::from_seed(&[1u8; 32])
-                .sign_prehashed(&sfx_id_to_sign_on.into())
-                .encode();
-
-            assert_ok!(Attesters::submit_for_influx_attestation(
-                RuntimeOrigin::signed(attester),
-                influx_message_32b.into(),
-                sfx_id_to_sign_on,
-                height_there,
-                ETHEREUM_TARGET,
-                signature.clone(),
-            ));
-
-            // current block
-            assert_eq!(
-                Attesters::attestations_influx(&ETHEREUM_TARGET, sfx_id_to_sign_on),
-                Some(InfluxMessage {
-                    message_hash: sfx_id_to_sign_on,
-                    message: influx_message_32b.into(),
-                    height_there,
-                    gateway: ETHEREUM_TARGET,
-                    signatures: vec![signature],
-                    created: System::block_number(),
-                    status: BatchStatus::PendingAttestation,
-                })
-            );
-        });
-    }
-
-    #[test]
-    fn submit_first_influx_attestation_scale_encoded_with_correct_signature_sets_status_to_pending_attestation(
-    ) {
-        let mut ext = ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_polkadot_gateway_record()
-            .build();
-
-        ext.execute_with(|| {
-            // Register an attester
-            let attester = AccountId::from([1; 32]);
-            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
-
-            add_target_and_transition_to_next_batch(POLKADOT_TARGET, 0);
-
-            // Submit an attestation signed with the Ed25519 key
-            let influx_message_32b = *b"message_that_needs_attestation32";
-            let mut influx_message_to_sign_on: Vec<u8> = influx_message_32b.to_vec();
-            let target_there: [u8; 4] = POLKADOT_TARGET;
-            let height_there: u32 = 8;
-            // Add target and height to the message
-            influx_message_to_sign_on.extend_from_slice(&target_there);
-            influx_message_to_sign_on.extend_from_slice(&height_there.to_le_bytes());
-
-            // Calculate the Blake256 hash of the message
-            let sfx_id_to_sign_on =
-                H256::from(sp_core::hashing::blake2_256(&influx_message_to_sign_on));
-
-            // Sign the message
-            let signature = ecdsa::Pair::from_seed(&[1u8; 32])
-                .sign_prehashed(&sfx_id_to_sign_on.into())
-                .encode();
-
-            assert_ok!(Attesters::submit_for_influx_attestation(
-                RuntimeOrigin::signed(attester),
-                influx_message_32b.into(),
-                sfx_id_to_sign_on,
-                height_there,
-                POLKADOT_TARGET,
-                signature.clone(),
-            ));
-
-            // current block
-            assert_eq!(
-                Attesters::attestations_influx(&POLKADOT_TARGET, sfx_id_to_sign_on),
-                Some(InfluxMessage {
-                    message_hash: sfx_id_to_sign_on,
-                    message: influx_message_32b.into(),
-                    height_there,
-                    gateway: POLKADOT_TARGET,
-                    signatures: vec![signature],
-                    created: System::block_number(),
-                    status: BatchStatus::PendingAttestation,
-                })
-            );
         });
     }
 

@@ -31,6 +31,10 @@ frame-benchmarking = { workspace = true, optional = true }
 t3rn-abi        = { path = "../../types/abi", default-features = false }
 t3rn-primitives = { path = "../../primitives", default-features = false }
 
+rlp = { workspace = true, default-features = false }
+rlp-derive = { version = "0.1.0", default-features = false }
+alloy-rlp = { version = "0.3.4", default-features = false, features = ["derive"] }
+
 [dev-dependencies]
 hex                    = "0.4.2"
 hex-literal            = "0.2.1"
@@ -52,6 +56,8 @@ std = [
   "frame-system/std",
   "t3rn-primitives/std",
   "t3rn-abi/std",
+  "rlp/std",
+  "alloy-rlp/std",
 ]
 
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime" ]

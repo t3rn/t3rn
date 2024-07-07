@@ -4,7 +4,7 @@ use sp_core::H256;
 use t3rn_types::fsx::FullSideEffect;
 
 pub trait RewardsWriteApi<Account, Balance, BlockNumber> {
-    fn repatriate_for_late_attestation(
+    fn repatriate_for_faulty_or_missing_attestation(
         sfx_id: &H256,
         fsx: &FullSideEffect<Account, BlockNumber, Balance>,
         status: &CircuitStatus,

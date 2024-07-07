@@ -12,12 +12,15 @@ use sp_runtime::traits::StaticLookup;
 use sp_std::vec::Vec;
 use t3rn_primitives::{
     account_manager::Outcome,
-    circuit::{LocalStateExecutionView, OnLocalTrigger},
+    circuit::{
+        LocalStateExecutionView, OnLocalTrigger, VacuumEVM3DOrder, VacuumEVMOrder, VacuumEVMProof,
+        VacuumEVMTeleportOrder,
+    },
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, ContractsRegistry, KindValidator, RegistryContract},
     threevm::{
         LocalStateAccess, ModuleOperations, Precompile, PrecompileArgs, PrecompileInvocation,
-        Remunerated, Remuneration, SignalOpcode, ThreeVm,
+        Remunerated, Remuneration, SignalOpcode, ThreeVm, VacuumAccess,
     },
 };
 use t3rn_sdk_primitives::signal::{ExecutionSignal, Signaller};
@@ -49,8 +52,13 @@ pub mod pallet {
     use frame_system::pallet_prelude::BlockNumberFor;
     use sp_std::vec::Vec;
     use t3rn_primitives::{
-        account_manager::AccountManager, circuit::OnLocalTrigger, contract_metadata::ContractType,
-        contracts_registry::ContractsRegistry, portal::Portal, ChainId,
+        account_manager::AccountManager,
+        circuit::OnLocalTrigger,
+        contract_metadata::ContractType,
+        contracts_registry::ContractsRegistry,
+        portal::Portal,
+        threevm::{AddressMapping, VacuumAccess},
+        ChainId,
     };
 
     use t3rn_sdk_primitives::signal::SignalKind;
@@ -86,6 +94,9 @@ pub mod pallet {
             BlockNumberFor<Self>,
             Self::AssetId,
         >;
+        type AddressMapping: AddressMapping<Self::AccountId>;
+
+        type VacuumEVMApi: VacuumAccess<Self>;
 
         /// A provider that will give us access to on_local_trigger
         type OnLocalTrigger: OnLocalTrigger<Self, BalanceOf<Self>>;
@@ -213,6 +224,43 @@ impl<T: Config> LocalStateAccess<T, BalanceOf<T>> for Pallet<T> {
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
         <T as Config>::OnLocalTrigger::load_local_state(origin, xtx_id.cloned())
+    }
+}
+
+impl<T: Config> VacuumAccess<T> for Pallet<T> {
+    fn evm_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMOrder,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_order(origin, vacuum_evm_order)
+    }
+
+    fn evm_teleport_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMTeleportOrder,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_teleport_order(origin, vacuum_evm_order)
+    }
+
+    fn evm_confirm(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVMOrder,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_confirm(origin, vacuum_evm_order)
+    }
+
+    fn evm_3d_order(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_order: VacuumEVM3DOrder,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_3d_order(origin, vacuum_evm_order)
+    }
+
+    fn evm_submit_fault_proof(
+        origin: &T::RuntimeOrigin,
+        vacuum_evm_proof: VacuumEVMProof,
+    ) -> Result<bool, DispatchError> {
+        <T as Config>::VacuumEVMApi::evm_submit_fault_proof(origin, vacuum_evm_proof)
     }
 }
 

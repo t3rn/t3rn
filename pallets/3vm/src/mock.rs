@@ -8,7 +8,7 @@ use frame_system as system;
 use circuit_runtime_types::AssetId;
 use frame_support::{
     pallet_prelude::{DispatchResult, DispatchResultWithPostInfo},
-    traits::AsEnsureOriginWithArg,
+    traits::{AsEnsureOriginWithArg, IsType},
 };
 use frame_system::EnsureRoot;
 use pallet_grandpa_finality_verifier::light_clients::{
@@ -19,7 +19,7 @@ use pallet_portal::Error as PortalError;
 use sp_std::boxed::Box;
 use t3rn_primitives::{GatewayVendor, TreasuryAccount, TreasuryAccountProvider};
 
-use sp_core::H256;
+use sp_core::{H160, H256};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup, Keccak256},
@@ -28,15 +28,66 @@ use sp_runtime::{
 use t3rn_primitives::xdns::PalletAssetsOverlay;
 
 type Header = generic::Header<u32, BlakeTwo256>;
-pub type AccountId = u64;
-pub const ALICE: AccountId = 1;
-pub const BOB: AccountId = 2;
-pub const CHARLIE: AccountId = 3;
-pub const DJANGO: AccountId = 4;
-pub const FRED: AccountId = 5;
-pub const ESCROW: AccountId = 15;
+pub type AccountId = AccountId32;
+pub const ALICE: AccountId = AccountId32::new([1u8; 32]);
+pub const BOB: AccountId = AccountId32::new([2u8; 32]);
+pub const CHARLIE: AccountId = AccountId32::new([3u8; 32]);
+pub const DJANGO: AccountId = AccountId32::new([4u8; 32]);
+pub const FRED: AccountId = AccountId32::new([5u8; 32]);
+pub const ESCROW: AccountId = AccountId32::new([15u8; 32]);
 
 pub type BlockNumber = u32;
+
+pub type EvmAddress = H160;
+
+pub struct EvmAddressMapping<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: pallet_3vm::Config> AddressMapping<T::AccountId> for EvmAddressMapping<T>
+where
+    T::AccountId: IsType<AccountId32>,
+{
+    // Returns the AccountId used go generate the given EvmAddress.
+    fn into_account_id(address: &EvmAddress) -> T::AccountId {
+        let mut data: [u8; 32] = [0u8; 32];
+        data[0..4].copy_from_slice(b"evm:");
+        data[4..24].copy_from_slice(&address[..]);
+        AccountId32::from(data).into()
+    }
+
+    // Returns the EvmAddress associated with a given AccountId or the
+    // underlying EvmAddress of the AccountId.
+    // Returns None if there is no EvmAddress associated with the AccountId
+    // and there is no underlying EvmAddress in the AccountId.
+    fn get_evm_address(account_id: &T::AccountId) -> Option<EvmAddress> {
+        // Return the EvmAddress if a mapping to account_id exists
+        let data: &[u8] = account_id.into_ref().as_ref();
+        // Return the underlying EVM address if it exists otherwise return None
+        if data.starts_with(b"evm:") {
+            Some(EvmAddress::from_slice(&data[4..24]))
+        } else {
+            None
+        }
+    }
+
+    // Returns the EVM address associated with an account ID and generates an
+    // account mapping if no association exists.
+    fn get_or_create_evm_address(account_id: &T::AccountId) -> EvmAddress {
+        Self::get_evm_address(account_id).unwrap_or_default()
+    }
+
+    // Returns the default EVM address associated with an account ID.
+    fn get_default_evm_address(account_id: &T::AccountId) -> EvmAddress {
+        // Cut off the first 12 bytes
+        let data: &[u8] = account_id.into_ref().as_ref();
+        EvmAddress::from_slice(&data[12..32])
+    }
+
+    // Returns true if a given AccountId is associated with a given EvmAddress
+    // and false if is not.
+    fn is_linked(account_id: &T::AccountId, evm: &EvmAddress) -> bool {
+        Self::get_evm_address(account_id).as_ref() == Some(evm)
+    }
+}
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = sp_runtime::generic::Block<
@@ -60,6 +111,7 @@ frame_support::construct_runtime!(
         ContractsRegistry: pallet_contracts_registry,
         Sudo: pallet_sudo,
         Circuit: pallet_circuit,
+        Vacuum: pallet_circuit_vacuum,
         Portal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
@@ -71,7 +123,7 @@ frame_support::construct_runtime!(
 
 impl system::Config for Test {
     type AccountData = pallet_balances::AccountData<u64>;
-    type AccountId = u64;
+    type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
     type Block = Block;
     type BlockHashCount = ConstU32<250>;
@@ -181,6 +233,7 @@ impl pallet_assets::Config for Test {
 }
 impl pallet_3vm::Config for Test {
     type AccountManager = AccountManager;
+    type AddressMapping = EvmAddressMapping<Test>;
     type AssetId = u32;
     type CircuitTargetId = CircuitTargetId;
     type ContractsRegistry = ContractsRegistry;
@@ -190,6 +243,31 @@ impl pallet_3vm::Config for Test {
     type Portal = Portal;
     type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
+    type VacuumEVMApi = Vacuum;
+}
+
+pub struct RewardsMockApi;
+
+impl t3rn_primitives::rewards::RewardsWriteApi<AccountId32, u64, u32> for RewardsMockApi {
+    fn repatriate_for_faulty_or_missing_attestation(
+        _sfx_id: &H256,
+        _fsx: &t3rn_types::fsx::FullSideEffect<AccountId, BlockNumber, Balance>,
+        _status: &t3rn_primitives::circuit::CircuitStatus,
+        _requester: Option<AccountId>,
+    ) -> bool {
+        true
+    }
+}
+
+impl pallet_circuit_vacuum::Config for Test {
+    type AddressMapping = EvmAddressMapping<Test>;
+    type CircuitSubmitAPI = Circuit;
+    type Currency = Balances;
+    type ReadSFX = Circuit;
+    type RewardsWriteApi = RewardsMockApi;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_circuit_vacuum::weights::SubstrateWeight<Test>;
+    type Xdns = Xdns;
 }
 
 impl pallet_contracts_registry::Config for Test {
@@ -213,7 +291,7 @@ impl pallet_account_manager::Config for Test {
 }
 
 parameter_types! {
-    pub const CircuitAccountId: AccountId = 33;
+    pub const CircuitAccountId: AccountId = AccountId32::new([33u8; 32]);
 }
 
 impl pallet_circuit::Config for Test {
@@ -395,7 +473,8 @@ impl pallet_portal::Config for Test {
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;
 }
-use sp_runtime::BuildStorage;
+use sp_runtime::{traits::Zero, BuildStorage};
+use t3rn_primitives::threevm::AddressMapping;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {

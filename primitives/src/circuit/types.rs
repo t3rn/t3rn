@@ -3,19 +3,342 @@ use crate::{
     xtx::LocalState,
     SpeedMode,
 };
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::dispatch::DispatchError;
 use frame_system::{pallet_prelude::BlockNumberFor, Config};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hexdisplay::AsBytesRef, Hasher};
+use sp_core::{crypto::AccountId32, hexdisplay::AsBytesRef, Hasher, H160, U256};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{convert::TryInto, default::Default, fmt::Debug, prelude::*};
 use t3rn_types::sfx::TargetId;
 pub use t3rn_types::sfx::{FullSideEffect, SecurityLvl, SideEffect};
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, MaxEncodedLen, TypeInfo)]
+pub struct VacuumEVMOrder {
+    pub destination: TargetId,
+
+    pub asset: u32,
+
+    pub amount: U256,
+
+    pub reward_asset: H160,
+
+    pub max_reward: U256,
+
+    pub insurance: U256,
+
+    pub target_account: AccountId32,
+}
+
+impl VacuumEVMOrder {
+    pub fn new(
+        destination: TargetId,
+        asset: u32,
+        amount: U256,
+        reward_asset: H160,
+        max_reward: U256,
+        insurance: U256,
+        target_account: AccountId32,
+    ) -> Self {
+        VacuumEVMOrder {
+            destination,
+            asset,
+            amount,
+            reward_asset,
+            max_reward,
+            insurance,
+            target_account,
+        }
+    }
+
+    pub fn from_rlp_encoded_packed(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        // Take the first 4 bytes and convert them to a TargetId
+        let destination: TargetId = encoded_slice[0..4]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert destination"))?;
+
+        // Take the next 4 bytes and convert them to a u32
+        let asset: u32 = u32::from_be_bytes(
+            encoded_slice[4..8]
+                .try_into()
+                .map_err(|_| DispatchError::Other("Failed to convert asset"))?,
+        );
+
+        // Take the next 32 bytes and convert them to a Vec<u8>
+        let target_account: AccountId32 = AccountId32::decode(&mut &encoded_slice[8..40])
+            .map_err(|_| DispatchError::Other("Failed to decode AccountId32"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let amount: U256 = encoded_slice[40..72]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert amount"))?;
+
+        // Take the next 4 bytes and convert them to a u32
+        let reward_asset: H160 = H160::decode(&mut &encoded_slice[72..92])
+            .map_err(|_| DispatchError::Other("Failed to decode reward_asset"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let insurance: U256 = encoded_slice[92..124]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert insurance:"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let max_reward: U256 = encoded_slice[124..156]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert max_reward"))?;
+
+        Ok(VacuumEVMOrder {
+            destination,
+            asset,
+            amount,
+            reward_asset,
+            max_reward,
+            insurance,
+            target_account,
+        })
+    }
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+pub struct VacuumEVMTeleportOrder {
+    pub gateway_id: [u8; 4],
+
+    pub order_proof: Vec<u8>,
+}
+
+impl VacuumEVMTeleportOrder {
+    pub fn new(gateway_id: [u8; 4], order_proof: Vec<u8>) -> Self {
+        VacuumEVMTeleportOrder {
+            gateway_id,
+            order_proof,
+        }
+    }
+
+    pub fn from_rlp(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        let mut gateway_id: [u8; 4] = Default::default();
+        let mut order_proof = vec![];
+
+        // Assume at least 4 bytes for the gateway_id
+        if encoded_slice.len() < 4 {
+            return Err(DispatchError::Other("Invalid encoded slice"))
+        }
+
+        // Take the first 4 bytes and convert them to a TargetId
+        gateway_id.copy_from_slice(&encoded_slice[0..4]);
+
+        let encoded_slice = &encoded_slice[4..];
+
+        // Skip the first 4 bytes
+
+        let mut index = 0;
+        let mut proof_vec = vec![&mut order_proof];
+
+        for proof in proof_vec.iter_mut() {
+            let proof_len = encoded_slice[index] as usize;
+            index += 1;
+            proof.extend_from_slice(&encoded_slice[index..index + proof_len]);
+            index += proof_len;
+        }
+
+        Ok(VacuumEVMTeleportOrder {
+            gateway_id,
+            order_proof,
+        })
+    }
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, MaxEncodedLen, TypeInfo)]
+pub struct VacuumEVM3DOrder {
+    pub destination: TargetId,
+
+    pub asset: u32,
+
+    pub amount: U256,
+
+    pub reward_asset: H160,
+
+    pub max_reward: U256,
+
+    pub insurance: U256,
+
+    pub target_account: AccountId32,
+
+    pub nonce: u32,
+}
+
+impl VacuumEVM3DOrder {
+    pub fn new(
+        destination: TargetId,
+        asset: u32,
+        amount: U256,
+        reward_asset: H160,
+        max_reward: U256,
+        insurance: U256,
+        target_account: AccountId32,
+        nonce: u32,
+    ) -> Self {
+        VacuumEVM3DOrder {
+            destination,
+            asset,
+            amount,
+            reward_asset,
+            max_reward,
+            insurance,
+            target_account,
+            nonce,
+        }
+    }
+
+    pub fn from_rlp_encoded_packed(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        // Take the first 4 bytes and convert them to a TargetId
+        let destination: TargetId = encoded_slice[0..4]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert destination"))?;
+
+        // Take the next 4 bytes and convert them to a u32
+        let asset: u32 = u32::from_be_bytes(
+            encoded_slice[4..8]
+                .try_into()
+                .map_err(|_| DispatchError::Other("Failed to convert asset"))?,
+        );
+
+        // Take the next 32 bytes and convert them to a Vec<u8>
+        let target_account: AccountId32 = AccountId32::decode(&mut &encoded_slice[8..40])
+            .map_err(|_| DispatchError::Other("Failed to decode AccountId32"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let amount: U256 = encoded_slice[40..72]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert amount"))?;
+
+        // Take the next 4 bytes and convert them to a u32
+        let reward_asset: H160 = H160::decode(&mut &encoded_slice[72..92])
+            .map_err(|_| DispatchError::Other("Failed to decode reward_asset"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let insurance: U256 = encoded_slice[92..124]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert insurance:"))?;
+
+        // Take the next 32 bytes and convert them to a Balance
+        let max_reward: U256 = encoded_slice[124..156]
+            .try_into()
+            .map_err(|_| DispatchError::Other("Failed to convert max_reward"))?;
+
+        let nonce: u32 = u32::from_be_bytes(
+            encoded_slice[156..160]
+                .try_into()
+                .map_err(|_| DispatchError::Other("Failed to convert nonce"))?,
+        );
+
+        Ok(VacuumEVM3DOrder {
+            destination,
+            asset,
+            amount,
+            reward_asset,
+            max_reward,
+            insurance,
+            target_account,
+            nonce,
+        })
+    }
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+pub struct VacuumEVMProof {
+    pub circuit_gateway_id: [u8; 4],
+
+    pub source_gateway_id: [u8; 4],
+
+    pub destination_gateway_id: [u8; 4],
+
+    pub order_proof: Vec<u8>,
+
+    pub bid_proof: Vec<u8>,
+
+    pub execution_proof: Vec<u8>,
+
+    pub attestation_proof: Vec<u8>,
+}
+
+impl VacuumEVMProof {
+    pub fn new(
+        circuit_gateway_id: [u8; 4],
+        source_gateway_id: [u8; 4],
+        destination_gateway_id: [u8; 4],
+        order_proof: Vec<u8>,
+        bid_proof: Vec<u8>,
+        execution_proof: Vec<u8>,
+        attestation_proof: Vec<u8>,
+    ) -> Self {
+        VacuumEVMProof {
+            circuit_gateway_id,
+            source_gateway_id,
+            destination_gateway_id,
+            order_proof,
+            bid_proof,
+            execution_proof,
+            attestation_proof,
+        }
+    }
+
+    pub fn from_rlp(encoded_slice: &[u8]) -> Result<Self, DispatchError> {
+        let mut circuit_gateway_id: [u8; 4] = Default::default();
+        let mut source_gateway_id: [u8; 4] = Default::default();
+        let mut destination_gateway_id: [u8; 4] = Default::default();
+        let mut order_proof = vec![];
+        let mut bid_proof = vec![];
+        let mut execution_proof = vec![];
+        let mut attestation_proof = vec![];
+
+        // Assume at least 12 bytes for the circuit_gateway_id & source_gateway_id & destination_gateway_id
+        if encoded_slice.len() < 12 {
+            return Err(DispatchError::Other("Invalid encoded slice"))
+        }
+
+        // Take the first 4 bytes and convert them to a TargetId
+        circuit_gateway_id.copy_from_slice(&encoded_slice[0..4]);
+
+        // Take the next 4 bytes and convert them to a TargetId
+        source_gateway_id.copy_from_slice(&encoded_slice[4..8]);
+
+        // Take the next 4 bytes and convert them to a TargetId
+        destination_gateway_id.copy_from_slice(&encoded_slice[8..12]);
+
+        let encoded_slice = &encoded_slice[12..];
+
+        // Skip the first 4 bytes
+
+        let mut index = 0;
+        let mut proof_vec = vec![
+            &mut order_proof,
+            &mut bid_proof,
+            &mut execution_proof,
+            &mut attestation_proof,
+        ];
+
+        for proof in proof_vec.iter_mut() {
+            let proof_len = encoded_slice[index] as usize;
+            index += 1;
+            proof.extend_from_slice(&encoded_slice[index..index + proof_len]);
+            index += proof_len;
+        }
+
+        Ok(VacuumEVMProof {
+            circuit_gateway_id,
+            source_gateway_id,
+            destination_gateway_id,
+            order_proof,
+            bid_proof,
+            execution_proof,
+            attestation_proof,
+        })
+    }
+}
 
 type SystemHashing<T> = <T as Config>::Hashing;
 
