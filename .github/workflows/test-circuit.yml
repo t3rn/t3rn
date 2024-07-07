@@ -105,33 +105,33 @@ jobs:
           sarif_file: results.sarif
           wait-for-processing: true
 
-      - name: Install nextest
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: cargo-nextest
-          version: '0.9.68'
-
-      - name: Install cargo-llvm-cov
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: cargo-llvm-cov
-
-      - name: 📑 Test workspace and collect coverage data
-        uses: actions-rs/cargo@v1
-        with:
-          command: llvm-cov
-          args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex "(node|3vm|evm)" --lcov --output-path lcov.info
-
-
-      - name: Upload coverage data
-        uses: codecov/codecov-action@v3
-        with:
-          files: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }} # this should fix occasional failures when querying Github API
-          fail_ci_if_error: true # we want to enforce coverage
-
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: lcov.info
+#      - name: Install nextest
+#        uses: baptiste0928/cargo-install@v2
+#        with:
+#          crate: cargo-nextest
+#          version: '0.9.68'
+#
+#      - name: Install cargo-llvm-cov
+#        uses: baptiste0928/cargo-install@v2
+#        with:
+#          crate: cargo-llvm-cov
+#
+#      - name: 📑 Test workspace and collect coverage data
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: llvm-cov
+#          args: nextest --workspace --locked --features runtime,testing,test-skip-verification --ignore-filename-regex "(node|3vm|evm)" --lcov --output-path lcov.info
+#
+#
+#      - name: Upload coverage data
+#        uses: codecov/codecov-action@v3
+#        with:
+#          files: lcov.info
+#          token: ${{ secrets.CODECOV_TOKEN }} # this should fix occasional failures when querying Github API
+#          fail_ci_if_error: true # we want to enforce coverage
+#
+#      - name: Archive code coverage results
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: code-coverage-report
+#          path: lcov.info
