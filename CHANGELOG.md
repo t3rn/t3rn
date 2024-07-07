@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.90.0-rc.0] - 2024-07-07
+### :sparkles: New Features
+- [`119a1a1`](https://github.com/t3rn/t3rn/commit/119a1a155207f1dc5bb2782e567855735f0e6abb) - add unclaim eth address extrinsic *(PR [#1634](https://github.com/t3rn/t3rn/pull/1634) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.89.0-rc.0] - 2024-07-07
 ### :sparkles: New Features
 - [`3f41f60`](https://github.com/t3rn/t3rn/commit/3f41f609e5166f4a63bcec20afbd57d34e9909e9) - add light-client based fault proofs via vacuum *(PR [#1604](https://github.com/t3rn/t3rn/pull/1604) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -2152,3 +2157,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.88.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.2-rc.0...v1.88.3-rc.0
 [v1.88.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.3-rc.0...v1.88.4-rc.0
 [v1.89.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.4-rc.0...v1.89.0-rc.0
+[v1.90.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.89.0-rc.0...v1.90.0-rc.0
