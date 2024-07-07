@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.91.0-rc.0] - 2024-07-07
+### :sparkles: New Features
+- [`497e71d`](https://github.com/t3rn/t3rn/commit/497e71d27da3070c0000ea1386e8319fc7c907ff) - add unclaim eth address extrinsic *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`84c83cd`](https://github.com/t3rn/t3rn/commit/84c83cdb0f9f2a38816dd7a2cb746b69e1e9da41) - simplify arguments to claim eth account command *(PR [#1635](https://github.com/t3rn/t3rn/pull/1635) by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`88b34d7`](https://github.com/t3rn/t3rn/commit/88b34d7399f250e58887104f2ec8c66f314e0723) - make unclaim evm address payable *(PR [#1636](https://github.com/t3rn/t3rn/pull/1636) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.90.0-rc.0] - 2024-07-07
 ### :sparkles: New Features
 - [`119a1a1`](https://github.com/t3rn/t3rn/commit/119a1a155207f1dc5bb2782e567855735f0e6abb) - add unclaim eth address extrinsic *(PR [#1634](https://github.com/t3rn/t3rn/pull/1634) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -2158,3 +2167,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.88.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.3-rc.0...v1.88.4-rc.0
 [v1.89.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.88.4-rc.0...v1.89.0-rc.0
 [v1.90.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.89.0-rc.0...v1.90.0-rc.0
+[v1.91.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.90.0-rc.0...v1.91.0-rc.0
