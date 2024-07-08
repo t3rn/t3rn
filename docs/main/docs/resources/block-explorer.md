@@ -2,12 +2,12 @@
 
 ### Explorer
 
-Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to see the orders submitted to t3rn's testnet.
+Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to either see the orders submitted to t3rn's testnet, or the stats of an Executor.
+
+#### Submitted ORder
 
 <img src="/img/t1rn-explorer.png"/>
 
-### Executor Stats
-
-Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to see the stats of an Executor.
+#### Executor Stats
 
 <img src="/img/t1rn-executor-stats.png"/>
