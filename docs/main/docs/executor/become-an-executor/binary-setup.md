@@ -42,6 +42,10 @@ export LOG_PRETTY=false
 export PRIVATE_KEY_LOCAL=dead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
 ```
 
+:::tip Executor Privacy
+Read more about [Executor Privacy and Security](../../resources/executor-privacy.md)
+:::
+
 #### NETWORKS & RPC
 
 **1.** Add your preferred networks to operate on. Example:

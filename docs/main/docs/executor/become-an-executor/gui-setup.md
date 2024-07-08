@@ -56,6 +56,10 @@ There are 5 fields for each asset.
 
 **1.** Set the `Executor private key` variable to the private key of the wallet you are going to use. Example (this is a fake generated key that should/cannot not be used): 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
 
+:::tip Executor Privacy
+Read more about [Executor Privacy and Security](../../resources/executor-privacy.md)
+:::
+
 ### Log Level
 
 Set your preferred log level - Debug or Info.

@@ -46,6 +46,7 @@ export default {
     { type: "doc", id: "resources/block-explorer" },
     { type: "doc", id: "resources/faucet" },
     { type: "doc", id: "resources/supported-chains" },
+    { type: "doc", id: "resources/executor-privacy" },
     { type: "doc", id: "resources/gas-cost-breakdown" },
   ],
 };
