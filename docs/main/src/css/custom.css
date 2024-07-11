@@ -41,7 +41,7 @@
   background-color: #272729;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  padding: 15px 10px;
+  padding: 24px;
   border-radius: 10px;
   position: relative;
 }
@@ -73,13 +73,13 @@
   padding: 5px 30px;
   border-radius: 100px;
   position: absolute;
-  left: 10px;
-  bottom: 15px;
+  left: 25px;
+  bottom: 25px;
 }
 
 @media only screen and (min-width: 350px) {
   .introCard {
-    height: 200px;
+    height: 250px;
   }
 }
 
