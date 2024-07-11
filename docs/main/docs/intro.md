@@ -1,11 +1,12 @@
+import IntroCards from "../src/components/introCards"
+
 # Getting Started
 
 Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and cost-efficient cross-chain swapping. t3rn is uniquely positioned to bridge the gaps in blockchain interoperability, offering superior swapping for users and yield for infra providers by becoming t3rn Executors.
 
 ## Popular 🔥
 
-- [**Run an Executor**](executor/executor-overview)
-- [**Start Swapping**](https://bridge.t1rn.io/)
+<IntroCards />
 
 ## Getting Started with t3rn:
 
