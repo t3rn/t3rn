@@ -24,10 +24,10 @@ export default {
       type: "doc",
       id: "intro",
     },
-    {
-      type: "doc",
-      id: "tokenomics",
-    },
+    // {
+    //   type: "doc",
+    //   id: "tokenomics",
+    // },
     {
       type: "html",
       value:
