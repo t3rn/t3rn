@@ -8,7 +8,7 @@ We strongly advise using a dedicated wallet specifically for your role as an Exe
 
 ## Encryption and Storage
 
-Your private key is encrypted before being stored in your iCloud Keychain, providing an additional layer of security. This double security measure ensures that even if your device is compromised, the encrypted key remains protected.
+In the GUI, your private key is encrypted before being stored in your iCloud Keychain, providing an additional layer of security. This double security measure ensures that even if your device is compromised, the encrypted key remains protected.
 
 ## Technology
 

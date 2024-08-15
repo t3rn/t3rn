@@ -118,6 +118,10 @@ const config = {
                 label: "GitHub",
                 href: "https://github.com/t3rn/t3rn",
               },
+              {
+                label: "Terms of Service",
+                href: "https://www.t3rn.io/terms-of-service",
+              },
             ],
           },
         ],
