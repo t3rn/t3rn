@@ -25,7 +25,7 @@ submit order -> bid -> execute -> submit proof -> get reward
 
 Order evaluation undergoes the following evaluation:
 
-`max reward * reward asset price > gas cost on target + target asset price * target asset amount`
+`Max Reward + Initial Asset Value > Gas Fees + Target Asset Value`
 
 ### Troubleshooting
 
