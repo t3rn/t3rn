@@ -14,17 +14,26 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Configure Settings
 
-**1.** Go to Settings and set your preferred Network Environment - Testnet.
+**1.** Go to Settings.
 
-**2.** Enable your preferred networks to operate on by checking your selections.
+**2.** Set the `Executor private key` variable to the private key of the wallet you are going to use. Example (this is a fake generated key that should/cannot not be used): 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+
+:::tip Executor Privacy
+Read more about [Executor Privacy and Security](../../resources/executor-privacy.md)
+:::
+
+**3.** Set your preferred Network Environment - Testnet.
+
+**4.** Enable your preferred networks to operate on by checking your selections.
+
 :::info If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
-### Optional: Configure Your Network RPC URLs
+**5.** Optional: Configure Your Network RPC URLs
 
 Click configure your network RPC URLs and add RPC URLs for each enabled network, or skip this step and automatically use the default RPC URLs.
 
-### Configure Your Arbitrage Strategies
+<!-- ### Configure Your Arbitrage Strategies
 
 Click configure your arbitrage strategies, and expand for each network and asset to add your own strategies.
 
@@ -50,23 +59,15 @@ There are 5 fields for each asset.
 
 - Specify the highest percentage of your total balance that your executor can allocate to a single order.
 
-**6.** Save strategy
+**6.** Save strategy -->
 
-#### PRIVATE KEYS
-
-**1.** Set the `Executor private key` variable to the private key of the wallet you are going to use. Example (this is a fake generated key that should/cannot not be used): 0xdead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
-
-:::tip Executor Privacy
-Read more about [Executor Privacy and Security](../../resources/executor-privacy.md)
-:::
-
-### Log Level
-
-Set your preferred log level - Debug or Info.
+**6.** Set your preferred log level - Debug or Info.
 
 **Debug:** Contains messages primarily useful for developers to debug issues. These messages provide detailed information about the internal state and operations of the system.
 
 **Info:** Provides general information about the processes running in the system. These messages offer insights into the regular operation and workflow, without the detailed level needed for debugging.
+
+**7.** Optional: Send anonymous usage reports
 
 ### Start
 
