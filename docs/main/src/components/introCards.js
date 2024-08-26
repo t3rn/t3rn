@@ -14,9 +14,9 @@ export default function IntroCard() {
         </Link>
       </section>
       <section className="introCard">
-        <section className="introCard-title">Swap UI</section>
+        <section className="introCard-title">Bridge UI</section>
         <section className="introCard-description">
-          Our Swap UI enables you to make fast, secure, and cost-efficient
+          Our Bridge UI enables you to make fast, secure, and cost-efficient
           cross-chain transactions.
         </section>
         <Link className="introCard-link" to={"/"}>
