@@ -48,5 +48,6 @@ export default {
     { type: "doc", id: "resources/supported-chains" },
     { type: "doc", id: "resources/executor-privacy" },
     { type: "doc", id: "resources/gas-cost-breakdown" },
+    { type: "doc", id: "resources/troubleshooting" },
   ],
 };

@@ -31,3 +31,5 @@ Order evaluation undergoes the following evaluation:
 
 Feel free to reach out to us on [Discord](https://discord.com/invite/S5kHFQTtp6) if you have any questions or issues.
 With obvious errors, please open an issue on [t3rn's Github](https://github.com/t3rn/t3rn/issues/new/choose)
+
+Also, check our [Troubleshooting page](../resources/troubleshooting) for more information.
