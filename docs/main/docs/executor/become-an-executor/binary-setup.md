@@ -6,14 +6,12 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 
 ### Download Executor Binary
 
-**1.** Download the executable (`tar.gz`) Executor binary file according to your OS from here: Coming soon
+**1.** Download the executable (`tar.gz`) Executor binary file according to your OS from here: https://github.com/t3rn/executor-release/releases/
 
-<!-- https://github.com/t3rn/executor-release/releases/ -->
-
-<!-- :::info Optional: Verify the download by comparing the SHA256 checksum with the provided sha256sum file to ensure file integrity
+:::info Optional: Verify the download by comparing the SHA256 checksum with the provided sha256sum file to ensure file integrity
 
 https://github.com/t3rn/executor-release/releases/
-::: -->
+:::
 
 **2.** After unzip, in terminal, navigate to the folder that includes the executable file named `executor`.
 
@@ -56,7 +54,7 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
 ```
 
-:::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,linea-goerli,optimism-sepolia,l1rn`
+:::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,optimism-sepolia,l1rn`
 
 If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
