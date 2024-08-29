@@ -13,7 +13,7 @@ Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and
 1. **Participate as an Executor:**
    - Join the network as an [Executor](executor/executor-overview) to process transactions and engage in the ecosystem by bidding on orders and executing transactions.
 1. **Explore t3rn's Bridge UI:**
-   - Explore cross-chain swaps with our intuitive [Bridge UI](/). Now live on testnets, it enables fast, secure, and cost-efficient cross-chain transactions.
+   - Explore cross-chain swaps with our intuitive [Bridge UI](https://bridge.t1rn.io/). Now live on testnets, it enables fast, secure, and cost-efficient cross-chain transactions.
 
 ## Core of t3rn's Modular Stack
 
