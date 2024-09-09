@@ -62,9 +62,9 @@ If your wallet balance falls below the threshold on one of your enabled networks
 :::info Optional
 You can add your custom RPC URLs or skip this step to automatically use the default RPC URLs.
 
-`export EXECUTOR_${NETWORK-NAME}_RPC_URLS='url1,url2'`
+`export EXECUTOR_${NETWORK_NAME}_RPC_URLS='url1,url2'`
 
-Example for Arbitrum Sepolia: `export EXECUTOR_ARBITRUM-SEPOLIA_RPC_URLS='url1,url2'`
+Example for Arbitrum Sepolia: `export EXECUTOR_ARBITRUM_SEPOLIA_RPC_URLS='url1,url2'`
 
 :::
 
