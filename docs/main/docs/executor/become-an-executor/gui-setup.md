@@ -75,3 +75,7 @@ Save your settings and click the Play button to start your Executor.
 :::info Faucet
 In order to bid on transaction orders on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
 :::
+
+## Executor GUI Walkthrough
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/6FJuaJB6_Vo?si=TGohAI0LVcOxpr7j" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
