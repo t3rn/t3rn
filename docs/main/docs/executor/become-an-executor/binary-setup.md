@@ -66,6 +66,7 @@ You can add your custom RPC URLs or skip this step to automatically use the defa
 
 Example for Arbitrum Sepolia: `export RPC_ENDPOINTS_ARBT='https://url1.io,https://url2.io'`
 
+Supported network names: `arbt, bssp, blss, opsp`.
 :::
 
 ### Start
