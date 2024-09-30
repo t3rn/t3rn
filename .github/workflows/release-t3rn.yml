@@ -33,7 +33,7 @@ jobs:
           args: --manifest-path ./node/${{ env.PARACHAIN_NAME }}-parachain/Cargo.toml --locked --release
 
       - name: 📤 Upload collator binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
           path: ./target/release/${{ env.PARACHAIN_NAME }}-collator
@@ -45,7 +45,7 @@ jobs:
           ./scripts/build_wasm.sh ${{env.PARACHAIN_NAME}}
 
       - name: 📤 Upload runtime WASM binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
           path: ./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
@@ -53,7 +53,7 @@ jobs:
           retention-days: 1
 
       - name: 📤 Upload runtime WASM hash blake2_256
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
           path: ./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
