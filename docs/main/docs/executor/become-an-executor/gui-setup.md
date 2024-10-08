@@ -32,6 +32,8 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 
 Click configure your network RPC URLs and add RPC URLs for each enabled network, or skip this step and automatically use the default RPC URLs.
 
+Check `Enable orders processing via RPC` to process orders via RPCs instead of our API.
+
 <!-- ### Configure Your Arbitrage Strategies
 
 Click configure your arbitrage strategies, and expand for each network and asset to add your own strategies.
@@ -60,13 +62,17 @@ There are 5 fields for each asset.
 
 **6.** Save strategy -->
 
-**6.** Set your preferred log level - Debug or Info.
+**6.** Enable processing.
+
+Check `Orders` and `Claims` if you want your Executor to bid and execute orders, and process claims.
+
+**7.** Set your preferred log level - Debug or Info.
 
 **Debug:** Contains messages primarily useful for developers to debug issues. These messages provide detailed information about the internal state and operations of the system.
 
 **Info:** Provides general information about the processes running in the system. These messages offer insights into the regular operation and workflow, without the detailed level needed for debugging.
 
-**7.** Optional: Send anonymous usage reports
+**8.** Optional: Send anonymous usage reports
 
 ### Start
 
