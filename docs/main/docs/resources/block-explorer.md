@@ -6,8 +6,8 @@ Visit [https://bridge.t1rn.io/explorer](https://bridge.t1rn.io/explorer) to eith
 
 #### Submitted ORder
 
-<img src="/img/t1rn-explorer.png"/>
+<img src="/img/explorer.png"/>
 
 #### Executor Stats
 
-<img src="/img/t1rn-executor-stats.png"/>
+<img src="/img/executor-stats.png"/>
