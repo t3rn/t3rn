@@ -34,6 +34,17 @@ export LOG_LEVEL=debug
 export LOG_PRETTY=false
 ```
 
+**3.** Process orders and claims
+
+```
+export EXECUTOR_PROCESS_ORDERS=true
+export EXECUTOR_PROCESS_CLAIMS=true
+```
+
+Set both to `true` if you want your Executor to process orders and claims.
+
+You can set them to false at any point. I.e. `export EXECUTOR_PROCESS_ORDERS=false` will stop your Executor from processing new orders.
+
 #### PRIVATE KEYS
 
 **1.** Set the `PRIVATE_KEY_LOCAL` variable of your Executor, which is the private key of the wallet you will use. The example below is a fake generated key that should/cannot not be used:
@@ -68,6 +79,14 @@ Example for Arbitrum Sepolia: `export RPC_ENDPOINTS_ARBT='https://url1.io,https:
 
 Supported network names: `arbt, bssp, blss, opsp`.
 :::
+
+**2.** Enable orders processing via RPC
+
+Set `export EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API=false` if you want to process orders via RPC. Set to true to process via our API.
+
+The benefit of setting to false and using your own RPC URLs is to avoid issues caused by overloaded public RPC servers.
+
+The default value to `EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API` is true.
 
 ### Start
 
