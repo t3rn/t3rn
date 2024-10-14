@@ -24,6 +24,10 @@ export default {
       type: "doc",
       id: "intro",
     },
+    {
+      type: "doc",
+      id: "protocol-architecture",
+    },
     // {
     //   type: "doc",
     //   id: "tokenomics",
