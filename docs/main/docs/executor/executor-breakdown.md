@@ -1,14 +1,12 @@
 # Executor Breakdown
 
-Executors in the t3rn network facilitate cross-chain interoperability by executing user-defined intents across different blockchain networks. Their primary responsibilities include executing transactions, processing claims, and ensuring seamless communication across multiple chains.
-
-To fully understand how Executors operate, it's important to first grasp the concepts of interoperability and cross-chain intents in the t3rn ecosystem.
+Executors in the t3rn network facilitate interoperability by executing user-defined intents across different blockchain networks. Their primary responsibilities include executing transactions, processing claims, and ensuring seamless communication across multiple chains.
 
 ## Interoperability and Cross-Chain Intents
 
-t3rn enables cross-chain transactions through an intent-based model. This means users express an "intent" (a desired action, such as a token swap or staking), and the network takes care of executing it across multiple chains. This intent-based approach contrasts with traditional step-by-step transaction models, providing a more user-centric and efficient way to perform multi-chain operations.
+t3rn enables cross-chain transactions through an intent-based model. This means users express an “intent” (a desired action, such as a token swap or staking), and the network takes care of executing it, which can be across multiple blockchain networks. This intent-based approach contrasts with traditional step-by-step transaction models, providing a more user-centric and efficient way to perform multi-chain operations.
 
-Executors play a crucial role in this model, as they handle the execution of these intents by interacting with the different blockchain networks involved. They are also responsible for batching, bidding, and claiming rewards for completed transactions.
+Executors are central to this model, handling the execution of intents by interacting with the specified blockchain networks. They are also responsible for various tasks, including bidding, claiming rewards for completing transactions, and batching. The batching process in t3rn specifically refers to combining multiple attestations (proofs that transactions occurred as intended) into a single batch, reducing gas costs and optimising efficiency.
 
 ## Step-by-Step Process for Cross-Chain Transactions
 
