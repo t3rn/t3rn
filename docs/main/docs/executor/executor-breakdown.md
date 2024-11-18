@@ -1,5 +1,7 @@
 # Executor Breakdown
 
+<img src="/img/executor-breakdown-banner.png"/>
+
 Executors in the t3rn network facilitate interoperability by executing user-defined intents across different blockchain networks. Their primary responsibilities include executing transactions, processing claims, and ensuring seamless communication across multiple chains.
 
 ## Interoperability and Cross-Chain Intents
@@ -54,6 +56,8 @@ The Executor configures the necessary contracts for attestation and batching on 
 
 **Batching:** The contracts enable batching of multiple attestations to reduce gas costs and optimize efficiency. The `LongRangeAttestationsBook` manages long-range batching by combining multiple attestations into a single batch. Each batch is assigned a `batchHash` for tracking and is constructed using the attestation data from multiple orders. The batching process includes anti-duplicate checks, quorum validation, and payload encoding to ensure that only valid and unique attestations are included.
 
+<img src="/img/executor-batching.png"/>
+
 **Key Features of Attestation and Batching Contracts:**
 
 - The `SingleAttestationBookV4` contract tracks individual attestations, while the `LongRangeAttestationsBook` focuses on batching them.
@@ -91,6 +95,8 @@ Log Sequence:
 The Executor initializes transaction processing for various networks, preparing to handle incoming orders. The lifecycle of a transaction includes multiple stages: bidding, execution, attestation, and claiming. Setting up these processes ensures that each stage is handled in sequence for successful cross-chain transaction execution.
 
 ### Step 7: Setting Up Listeners and Event Handlers
+
+<img src="/img/executor-event-listeners.png"/>
 
 Log Sequence:
 
@@ -137,6 +143,10 @@ txHash: "0x502a..."
 In this step, the Executor processes an order, checking timestamps and evaluating if the wallet has enough funds to complete the transaction. Let’s break down these logs:
 
 ### Successful Execution
+
+<img src="/img/executor-successful-execution.png"/>
+
+Log Sequence:
 
 ```
 {
