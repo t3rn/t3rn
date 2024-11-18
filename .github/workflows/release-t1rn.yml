@@ -225,7 +225,7 @@ jobs:
           ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_T1RN }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
           
       - name: 📟 Send Telegram Message
-        uses: appleboy/telegram-action@v0.1.1
+        uses: appleboy/telegram-action@v1.0.1
         with:
           to: ${{ secrets.TELEGRAM_T1RN_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
