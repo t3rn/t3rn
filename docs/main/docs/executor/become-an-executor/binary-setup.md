@@ -99,3 +99,7 @@ To start the Executor, run the following command:
 :::info Faucet
 In order to bid on transaction orders on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
 :::
+
+## Executor Binary Walkthrough
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/KYFWwV6ZkLY?si=OQ3JVyh45XmdCygI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
