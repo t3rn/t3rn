@@ -20,4 +20,4 @@ jobs:
             }
           EOF
 
-      - uses: wagoid/commitlint-github-action@v5.4.5
+      - uses: wagoid/commitlint-github-action@v6.1.2
