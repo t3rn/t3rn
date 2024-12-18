@@ -45,6 +45,13 @@ Set both to `true` if you want your Executor to process orders and claims.
 
 You can set them to false at any point. I.e. `export EXECUTOR_PROCESS_ORDERS=false` will stop your Executor from processing new orders.
 
+**4.** Specify limit on gas usage
+
+This will stop your Executor from running if gas rises above this level. The value is in gwei.
+The default is 10 gwei.
+
+Example: `export EXECUTOR_MAX_L3_GAS_PRICE=100`
+
 #### PRIVATE KEYS
 
 **1.** Set the `PRIVATE_KEY_LOCAL` variable of your Executor, which is the private key of the wallet you will use. The example below is a fake generated key that should/cannot not be used:
