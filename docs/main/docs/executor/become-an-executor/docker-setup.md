@@ -17,18 +17,18 @@ This guide provides instructions for setting up and running a T3RN executor usin
    cd t3rn-executor
    ```
 
-2. The repository contains the necessary Dockerfile and docker-compose.yml files. You'll need to configure your environment by updating the docker-compose.yml file:
+2. The repository contains the necessary Dockerfile and compose.yml files. You'll need to configure your environment by updating the compose.yml file:
    - Replace the `PRIVATE_KEY_LOCAL` value with your actual private key
    - Adjust other settings as needed (gas price, logging, etc.)
 
 3. Start the executor:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 4. Check the logs:
    ```bash
-   docker-compose logs -f
+   docker compose logs -f
    ```
 
 ## Upgrade Guide
@@ -43,16 +43,16 @@ This guide provides instructions for setting up and running a T3RN executor usin
 3. Rebuild and restart your containers:
    ```bash
    # Stop the current container
-   docker-compose down
+   docker compose down
 
    # Rebuild with the new version
-   docker-compose build --no-cache
+   docker compose build --no-cache
 
    # Start the updated container
-   docker-compose up -d
+   docker compose up -d
 
    # Check logs to verify successful upgrade
-   docker-compose logs -f
+   docker compose logs -f
    ```
 
 Note: It's recommended to always check the release notes for any breaking changes or additional configuration requirements before upgrading.
