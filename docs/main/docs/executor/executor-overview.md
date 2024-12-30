@@ -10,6 +10,8 @@ We provide two ways to become an Executor.
 
 #### - [GUI Setup](become-an-executor/gui-setup)
 
+#### - [Docker Setup](become-an-executor/docker-setup)
+
 ## Understanding Executors
 
 When a cross chain transactions is triggered on the t3rn protocol, Executors start bidding on it for the winner to execute the transaction. Once the transaction is finalized an inclusion proof is generated, which is then submitted to the t3rn protocol, proving that the transaction was executed correctly. This unlocks the reward to the Executor, on the t3rn blockchain.
