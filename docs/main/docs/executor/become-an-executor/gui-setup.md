@@ -7,6 +7,8 @@ Welcome to the t3rn Executor Setup! This guided process will help you configure 
 ### Download Executor GUI
 
 **1.** Download and run the Executor GUI file according to your OS from here:
+:::info Windows version is not supported at the moment
+:::
 
 - Apple (Intel): https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/x86_64-apple-darwin/latest/Executor.dmg
 - Apple Silicon: https://s3.eu-west-1.amazonaws.com/release.t3rn.io/t3rn-releases/aarch64-apple-darwin/latest/Executor.dmg
