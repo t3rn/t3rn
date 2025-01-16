@@ -107,6 +107,7 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 
 ```bash
 export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
+export RPC_ENDPOINTS_L1RN='https://brn.rpc.caldera.xyz/'
 ```
 
 :::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,optimism-sepolia,l1rn`
