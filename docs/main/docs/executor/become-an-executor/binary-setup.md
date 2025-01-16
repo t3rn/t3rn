@@ -16,6 +16,7 @@ https://github.com/t3rn/executor-release/releases/
 ### Installation Steps
 
 #### For Ubuntu
+
 ```bash
 # Create and navigate to t3rn directory
 mkdir t3rn
@@ -34,6 +35,7 @@ cd executor/executor/bin
 ```
 
 #### For macOS
+
 ```bash
 # Create and navigate to t3rn directory
 mkdir t3rn
@@ -127,15 +129,16 @@ Supported network names: `arbt, bssp, blss, opsp`.
 
 **2.** Enable orders processing via RPC
 
-Set `export EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API=false` if you want to process orders via RPC. Set to true to process via our API.
-
-The benefit of setting to false and using your own RPC URLs is to avoid issues caused by overloaded public RPC servers.
-
 The default value to `EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API` is true.
+
+The benefit of having this set to true and using the API to process orders is higher reliability in executions and that all events are included.
+
+Set `export EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API=false` if you want to process orders via RPC. Set to true to process via our API.
 
 ### Running the Executor
 
 #### Start
+
 To start the Executor, run the following command:
 
 ```bash
@@ -145,6 +148,7 @@ To start the Executor, run the following command:
 #### Running in Background
 
 ##### Option 1: Using Screen (Recommended for Beginners)
+
 ```bash
 # Install screen (Ubuntu)
 sudo apt-get install screen
@@ -160,6 +164,7 @@ screen -S t3rn-executor
 ```
 
 ##### Option 2: Using tmux (Modern Alternative)
+
 ```bash
 # Install tmux (Ubuntu)
 sudo apt-get install tmux
@@ -175,6 +180,7 @@ tmux new -s t3rn-executor
 ```
 
 ##### Option 3: Using systemd (Ubuntu Only)
+
 For a permanent solution that starts automatically on boot, you can create a systemd service. Contact your system administrator or refer to systemd documentation for setup.
 
 :::info Faucet
@@ -184,11 +190,13 @@ In order to bid on transaction orders on testnet, you need to have our BRN token
 ### Verification & Troubleshooting
 
 To verify the executor is running correctly:
+
 1. Check the terminal output for any error messages
 2. Monitor the logs using the configured log level
 3. Verify network connections to enabled networks
 
 If you encounter issues:
+
 - Verify all environment variables are set correctly
 - Ensure your private key is valid
 - Check network connectivity to enabled networks
