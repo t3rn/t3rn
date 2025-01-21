@@ -127,13 +127,13 @@ Example for Arbitrum Sepolia: `export RPC_ENDPOINTS_ARBT='https://url1.io,https:
 Supported network names: `arbt, bssp, blss, opsp`.
 :::
 
-**2.** Enable orders processing via RPC
+**2.** Enable orders processing via API
 
-The default value to `EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API` is true.
+The default value to `EXECUTOR_PROCESS_ORDERS_API_ENABLED` is true.
 
 The benefit of having this set to true and using the API to process orders is higher reliability in executions and that all events are included.
 
-Set `export EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API=false` if you want to process orders via RPC. Set to true to process via our API.
+Set `export EXECUTOR_PROCESS_ORDERS_API_ENABLED=false` if you want to process orders via RPC. Set to true to process via our API.
 
 ### Running the Executor
 
