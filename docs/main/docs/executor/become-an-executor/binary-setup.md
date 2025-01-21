@@ -54,11 +54,11 @@ tar -xzf executor-macos-*.tar.gz
 cd executor/executor/bin
 ```
 
-### Configure Settings and Environment Required Variables
+## Configure Settings and Environment Required Variables
 
 To set the environment variables, copy and paste each command into your terminal. These commands will configure the necessary settings for your Executor to run properly. Make sure you adjust the variable values to your own.
 
-#### GENERAL SETTINGS
+### GENERAL SETTINGS
 
 **1.** Set your preferred Node Environment. Example:
 
@@ -91,7 +91,7 @@ The default is 10 gwei.
 
 Example: `export EXECUTOR_MAX_L3_GAS_PRICE=100`
 
-#### PRIVATE KEYS
+### PRIVATE KEYS
 
 **1.** Set the `PRIVATE_KEY_LOCAL` variable of your Executor, which is the private key of the wallet you will use. The example below is a fake generated key that should/cannot not be used:
 
@@ -103,13 +103,12 @@ export PRIVATE_KEY_LOCAL=dead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e
 Read more about [Executor Privacy and Security](../../resources/executor-privacy.md)
 :::
 
-#### NETWORKS & RPC
+### NETWORKS & RPC
 
 **1.** Add your preferred networks to operate on. Example:
 
 ```bash
 export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
-export RPC_ENDPOINTS_L1RN='https://brn.rpc.caldera.xyz/'
 ```
 
 :::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,optimism-sepolia,l1rn`
@@ -117,17 +116,20 @@ export RPC_ENDPOINTS_L1RN='https://brn.rpc.caldera.xyz/'
 If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
 :::
 
-:::info Optional
+**2.** Configure RPC URL's
+
 You can add your custom RPC URLs or skip this step to automatically use the default RPC URLs.
 
-`export RPC_ENDPOINTS_${NETWORK_NAME}='https://url1.io,https://url2.io'`
+Change BRN RPC URL on l1rn: `export RPC_ENDPOINTS_L1RN='https://brn.rpc.caldera.xyz/'`
+
+Change RPC URL on enabled networks: `export RPC_ENDPOINTS_${NETWORK_NAME}='https://url1.io,https://url2.io'`
 
 Example for Arbitrum Sepolia: `export RPC_ENDPOINTS_ARBT='https://url1.io,https://url2.io'`
 
-Supported network names: `arbt, bssp, blss, opsp`.
+:::info [Supported network names](../../resources/supported-chains.md).
 :::
 
-**2.** Enable orders processing via API
+**3.** Enable orders processing via API
 
 The default value to `EXECUTOR_PROCESS_ORDERS_API_ENABLED` is true.
 
@@ -135,9 +137,9 @@ The benefit of having this set to true and using the API to process orders is hi
 
 Set `export EXECUTOR_PROCESS_ORDERS_API_ENABLED=false` if you want to process orders via RPC. Set to true to process via our API.
 
-### Running the Executor
+## Running the Executor
 
-#### Start
+### Start
 
 To start the Executor, run the following command:
 
