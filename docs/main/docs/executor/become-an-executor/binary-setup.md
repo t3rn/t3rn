@@ -76,13 +76,13 @@ export LOG_PRETTY=false
 **3.** Process orders and claims
 
 ```bash
-export EXECUTOR_PROCESS_ORDERS=true
-export EXECUTOR_PROCESS_CLAIMS=true
+export EXECUTOR_PROCESS_ORDERS_ENABLED=true
+export EXECUTOR_PROCESS_CLAIMS_ENABLED=true
 ```
 
 Set both to `true` if you want your Executor to process orders and claims.
 
-You can set them to false at any point. I.e. `export EXECUTOR_PROCESS_ORDERS=false` will stop your Executor from processing new orders.
+You can set them to false at any point. I.e. `export EXECUTOR_PROCESS_ORDERS_ENABLED=false` will stop your Executor from processing new orders.
 
 **4.** Specify limit on gas usage
 
