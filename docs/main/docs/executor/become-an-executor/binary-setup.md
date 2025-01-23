@@ -111,9 +111,11 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l1rn'
 ```
 
-:::info Available networks: `arbitrum-sepolia,base-sepolia,blast-sepolia,optimism-sepolia,l1rn`
+:::info Available networks
 
 If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
+
+Here's where you can find all of our supported networks: **[Supported network names](../../resources/supported-chains.md).**
 :::
 
 **2.** Configure RPC URL's
@@ -125,9 +127,6 @@ Change BRN RPC URL on l1rn: `export RPC_ENDPOINTS_L1RN='https://brn.rpc.caldera.
 Change RPC URL on enabled networks: `export RPC_ENDPOINTS_${NETWORK_NAME}='https://url1.io,https://url2.io'`
 
 Example for Arbitrum Sepolia: `export RPC_ENDPOINTS_ARBT='https://url1.io,https://url2.io'`
-
-:::info [Supported network names](../../resources/supported-chains.md).
-:::
 
 **3.** Enable orders processing via API
 
