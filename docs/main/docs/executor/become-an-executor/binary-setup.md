@@ -81,14 +81,18 @@ export EXECUTOR_PROCESS_ORDERS_ENABLED=true
 export EXECUTOR_PROCESS_CLAIMS_ENABLED=true
 ```
 
-Set both to `true` if you want your Executor to process bids, orders and claims.
+Set all three to `true` if you want your Executor to process bids, orders and claims.
 
-You can set them to false at any point. I.e. `export EXECUTOR_PROCESS_ORDERS_ENABLED=false` will stop your Executor from processing new orders.
+You can set them to false at any point.
+
+`export EXECUTOR_PROCESS_BIDS_ENABLED=false` will stop your Executor from processing orders you already been bidding on. You have a 30 min window to pick them up again.
+`export EXECUTOR_PROCESS_ORDERS_ENABLED=false` will stop your Executor from processing new orders.
+`export EXECUTOR_PROCESS_CLAIMS_ENABLED=false` will stop your Executor from processing claims.
 
 **4.** Specify limit on gas usage
 
 This will stop your Executor from running if gas rises above this level. The value is in gwei.
-The default is 10 gwei.
+The default is 1000 gwei.
 
 Example: `export EXECUTOR_MAX_L3_GAS_PRICE=100`
 
