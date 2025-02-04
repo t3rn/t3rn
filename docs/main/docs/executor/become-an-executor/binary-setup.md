@@ -63,7 +63,7 @@ To set the environment variables, copy and paste each command into your terminal
 **1.** Set your preferred Node Environment. Example:
 
 ```bash
-export NODE_ENV=testnet
+export ENVIRONMENT=testnet
 ```
 
 **2.** Set your log settings:
