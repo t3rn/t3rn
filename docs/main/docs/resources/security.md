@@ -212,3 +212,11 @@ t3rn’s smart contracts have undergone rigorous testing and third-party audits 
   - Audited by industry leaders such as Halborn, Quantstamp, and SR Labs.
 - **Testing Strategy**:
   - Unit and integration tests simulate real-world scenarios, including edge cases for high traffic and complex cross-chain interactions.
+
+## Halborn's Smart Contract Security Audit
+
+<iframe
+    src="/halborn-sc-security-audit.pdf"
+    width="100%"
+    height="900"
+  ></iframe>

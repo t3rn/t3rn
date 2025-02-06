@@ -56,6 +56,7 @@ export default {
     { type: "doc", id: "resources/t3rn-glossary" },
     { type: "doc", id: "resources/order-status" },
     { type: "doc", id: "resources/order-flow" },
+    { type: "doc", id: "resources/security" },
     { type: "doc", id: "resources/troubleshooting" },
   ],
 };
