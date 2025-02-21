@@ -28,6 +28,10 @@ export default {
       type: "doc",
       id: "protocol-architecture",
     },
+    {
+      type: "doc",
+      id: "connect-to-t3rn",
+    },
     // {
     //   type: "doc",
     //   id: "tokenomics",
