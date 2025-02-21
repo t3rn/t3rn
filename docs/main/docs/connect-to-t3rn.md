@@ -15,8 +15,8 @@ Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and
    <tbody>
       <tr>
          <td>Name</td>
-         <td>t3rn Testnet V1</td>
-         <td>t3rn Testnet V2</td>
+         <td>BRN</td>
+         <td>B2N</td>
       </tr>
       <tr>
          <td>Description</td>
