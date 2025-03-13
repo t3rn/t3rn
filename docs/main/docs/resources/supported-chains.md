@@ -13,14 +13,14 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
   </thead>
   <tbody>
     <tr>
-      <td style={{ textAlign: "left" }}>l1rn</td>
+      <td style={{ textAlign: "left" }}>l2rn</td>
       <td>
         <span></span>
       </td>
       <td style={{ textAlign: "center" }}>
-        <span>l1rn</span>
+        <span>l2rn</span>
       </td>
-      <td style={{ textAlign: "right" }}>l1rn</td>
+      <td style={{ textAlign: "right" }}>l2rn</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Arbitrum Sepolia</td>
