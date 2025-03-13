@@ -127,11 +127,26 @@ Here's where you can find all of our supported networks: **[Supported network na
 
 You can add your custom RPC URLs or skip this step to automatically use the default RPC URLs.
 
-Change BRN RPC URL on l1rn: `export RPC_ENDPOINTS_L1RN='https://brn.rpc.caldera.xyz/'`
+Example
 
-Change RPC URL on enabled networks: `export RPC_ENDPOINTS_${NETWORK_NAME}='https://url1.io,https://url2.io'`
+```
+export RPC_ENDPOINTS={
+    "l2rn": [
+        "https://b2n.rpc.caldera.xyz/http"
+    ],
+    "arbt": ["https://arbitrum-sepolia.drpc.org"],
+    "bast": ["https://base-sepolia-rpc.publicnode.com"],
+    "opst": [
+        "https://sepolia.optimism.io",
+    ],
+    "unit": [
+      "https://unichain-sepolia.drpc.org"
+    ],
+}
+```
 
-Example for Arbitrum Sepolia: `export RPC_ENDPOINTS_ARBT='https://url1.io,https://url2.io'`
+You can add multiple RPCs for each network by separating with comma, here's an example:
+`"arbt": ["https://arbitrum-sepolia.drpc.org, https://sepolia-rollup.arbitrum.io/rpc"]`
 
 **3.** Enable orders processing via API
 
