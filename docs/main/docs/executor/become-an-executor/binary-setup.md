@@ -132,15 +132,15 @@ Example
 ```
 export RPC_ENDPOINTS='{
     "l2rn": ["https://b2n.rpc.caldera.xyz/http"],
-    "arbt": ["https://arbitrum-sepolia.drpc.org, https://sepolia-rollup.arbitrum.io/rpc"],
-    "bast": ["https://base-sepolia-rpc.publicnode.com, https://base-sepolia.drpc.org"],
-    "opst": ["https://sepolia.optimism.io, https://optimism-sepolia.drpc.org"],
-    "unit": ["https://unichain-sepolia.drpc.org, https://sepolia.unichain.org"]
+    "arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"],
+    "bast": ["https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.drpc.org"],
+    "opst": ["https://sepolia.optimism.io", "https://optimism-sepolia.drpc.org"],
+    "unit": ["https://unichain-sepolia.drpc.org", "https://sepolia.unichain.org"]
 }'
 ```
 
 You can add multiple RPCs for each network by separating with comma, here's an example:
-`"arbt": ["https://arbitrum-sepolia.drpc.org, https://sepolia-rollup.arbitrum.io/rpc"]`
+`"arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"]`
 
 A good resource for finding RPC URLs for EVM networks is [ChainList](https://chainlist.org/).
 
