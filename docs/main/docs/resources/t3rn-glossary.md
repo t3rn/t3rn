@@ -12,7 +12,7 @@ This glossary provides definitions for technical terms frequently used in the t3
 
 **Binary:** The Binary Executor version is our command line based version for running an Executor, designed for users comfortable with code and terminal commands
 
-**Bridge UI:** This is our Bridge web app. You can find it here: https://bridge.t1rn.io/
+**Bridge UI:** This is our Bridge web app. You can find it here: (coming soon)
 
 **BRN:** The testnet token used to incentivise testnet activities.
 

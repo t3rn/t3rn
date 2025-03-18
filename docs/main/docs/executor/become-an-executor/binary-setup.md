@@ -130,23 +130,19 @@ You can add your custom RPC URLs or skip this step to automatically use the defa
 Example
 
 ```
-export RPC_ENDPOINTS={
-    "l2rn": [
-        "https://b2n.rpc.caldera.xyz/http"
-    ],
-    "arbt": ["https://arbitrum-sepolia.drpc.org"],
-    "bast": ["https://base-sepolia-rpc.publicnode.com"],
-    "opst": [
-        "https://sepolia.optimism.io",
-    ],
-    "unit": [
-      "https://unichain-sepolia.drpc.org"
-    ],
-}
+export RPC_ENDPOINTS='{
+    "l2rn": ["https://b2n.rpc.caldera.xyz/http"],
+    "arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"],
+    "bast": ["https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.drpc.org"],
+    "opst": ["https://sepolia.optimism.io", "https://optimism-sepolia.drpc.org"],
+    "unit": ["https://unichain-sepolia.drpc.org", "https://sepolia.unichain.org"]
+}'
 ```
 
 You can add multiple RPCs for each network by separating with comma, here's an example:
-`"arbt": ["https://arbitrum-sepolia.drpc.org, https://sepolia-rollup.arbitrum.io/rpc"]`
+`"arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"]`
+
+A good resource for finding RPC URLs for EVM networks is [ChainList](https://chainlist.org/).
 
 **3.** Enable orders processing via API
 
