@@ -134,6 +134,7 @@ export RPC_ENDPOINTS='{
     "l2rn": ["https://b2n.rpc.caldera.xyz/http"],
     "arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"],
     "bast": ["https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.drpc.org"],
+    "blst": ["https://sepolia.blast.io", "https://blast-sepolia.drpc.org"],
     "opst": ["https://sepolia.optimism.io", "https://optimism-sepolia.drpc.org"],
     "unit": ["https://unichain-sepolia.drpc.org", "https://sepolia.unichain.org"]
 }'
