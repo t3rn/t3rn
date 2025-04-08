@@ -135,6 +135,7 @@ export RPC_ENDPOINTS='{
     "arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"],
     "bast": ["https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.drpc.org"],
     "blst": ["https://sepolia.blast.io", "https://blast-sepolia.drpc.org"],
+    "mont": ["https://testnet-rpc.monad.xyz"],
     "opst": ["https://sepolia.optimism.io", "https://optimism-sepolia.drpc.org"],
     "unit": ["https://unichain-sepolia.drpc.org", "https://sepolia.unichain.org"]
 }'
