@@ -53,6 +53,12 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "right" }}>blast-sepolia</td>
     </tr>
     <tr>
+      <td style={{ textAlign: "left" }}>Monad Testnet</td>
+      <td>[0x443119e61f571BC0c9715190F3aBE6c91f4cA630](https://testnet.monadexplorer.com/address/0x443119e61f571BC0c9715190F3aBE6c91f4cA630)</td>
+      <td style={{ textAlign: "center" }}>mont</td>
+      <td style={{ textAlign: "right" }}>monad-testnet</td>
+    </tr>
+    <tr>
       <td style={{ textAlign: "left" }}>Optimism Sepolia</td>
       <td>[0xb6Def636914Ae60173d9007E732684a9eEDEF26E](https://sepolia-optimism.etherscan.io/address/0xb6Def636914Ae60173d9007E732684a9eEDEF26E)</td>
       <td style={{ textAlign: "center" }}>opst</td>
