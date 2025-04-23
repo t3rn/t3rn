@@ -45,7 +45,7 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
     <tr>
       <td style={{ textAlign: "left" }}>Blast Sepolia</td>
       <td>
-        <span>[0x9f3871ED60E0C611b751ca2D9F4DCfE1a719A9eB](https://sepolia.blastscan.io/address/0x9f3871ED60E0C611b751ca2D9F4DCfE1a719A9eB)</span>
+        <span>[0x36B2415644d47b8f646697b6c4C5a9D55400f2Dd](https://sepolia.blastscan.io/address/0x36B2415644d47b8f646697b6c4C5a9D55400f2Dd)</span>
       </td>
       <td style={{ textAlign: "center" }}>
         <span>blst</span>
