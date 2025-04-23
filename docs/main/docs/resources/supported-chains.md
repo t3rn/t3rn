@@ -45,7 +45,7 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
     <tr>
       <td style={{ textAlign: "left" }}>Blast Sepolia</td>
       <td>
-        <span>[0x9f3871ED60E0C611b751ca2D9F4DCfE1a719A9eB](https://sepolia.blastscan.io/address/0x9f3871ED60E0C611b751ca2D9F4DCfE1a719A9eB)</span>
+        <span>[0x36B2415644d47b8f646697b6c4C5a9D55400f2Dd](https://sepolia.blastscan.io/address/0x36B2415644d47b8f646697b6c4C5a9D55400f2Dd)</span>
       </td>
       <td style={{ textAlign: "center" }}>
         <span>blst</span>
@@ -63,6 +63,12 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td>[0xb6Def636914Ae60173d9007E732684a9eEDEF26E](https://sepolia-optimism.etherscan.io/address/0xb6Def636914Ae60173d9007E732684a9eEDEF26E)</td>
       <td style={{ textAlign: "center" }}>opst</td>
       <td style={{ textAlign: "right" }}>optimism-sepolia</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>SEI Testnet</td>
+      <td>0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453</td>
+      <td style={{ textAlign: "center" }}>seit</td>
+      <td style={{ textAlign: "right" }}>sei-testnet</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Unichain Sepolia</td>
