@@ -113,7 +113,7 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 **1.** Add your preferred networks to operate on. Example:
 
 ```bash
-export ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l2rn'
+export EXECUTOR_ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l2rn'
 ```
 
 :::info Available networks
@@ -123,7 +123,15 @@ If your wallet balance falls below the threshold on one of your enabled networks
 Here's where you can find all of our supported networks: **[Supported network names](../../resources/supported-chains.md).**
 :::
 
-**2.** Configure RPC URL's
+**2.** Add support for your preferred assets
+
+By default you support all assets, but you can tweak this variable and remove those you don't want to support.
+
+```bash
+export EXECUTOR_ENABLED_ASSETS="eth,t3eth,t3mon,t3sei,mon,sei"
+```
+
+**3.** Configure RPC URL's
 
 You can add your custom RPC URLs or skip this step to automatically use the default RPC URLs.
 
@@ -146,7 +154,7 @@ You can add multiple RPCs for each network by separating with comma, here's an e
 
 A good resource for finding RPC URLs for EVM networks is [ChainList](https://chainlist.org/).
 
-**3.** Enable orders processing via API
+**4.** Enable orders processing via API
 
 The default value to `EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API` is true.
 

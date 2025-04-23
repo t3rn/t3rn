@@ -65,6 +65,12 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "right" }}>optimism-sepolia</td>
     </tr>
     <tr>
+      <td style={{ textAlign: "left" }}>SEI Testnet</td>
+      <td>0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453</td>
+      <td style={{ textAlign: "center" }}>seit</td>
+      <td style={{ textAlign: "right" }}>sei-testnet</td>
+    </tr>
+    <tr>
       <td style={{ textAlign: "left" }}>Unichain Sepolia</td>
       <td>[0x1cEAb5967E5f078Fa0FEC3DFfD0394Af1fEeBCC9](https://sepolia.uniscan.xyz/address/0x1cEAb5967E5f078Fa0FEC3DFfD0394Af1fEeBCC9)</td>
       <td style={{ textAlign: "center" }}>unit</td>
