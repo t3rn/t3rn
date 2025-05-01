@@ -7,7 +7,7 @@ export default function IntroCard() {
         <section className="introCard-title">Executor</section>
         <section className="introCard-description">
           Executors are off-chain agents acting as market makers that fulfil
-          cross-chain orders, earning fees and rewards.
+          crosschain orders, earning fees and rewards.
         </section>
         <Link className="introCard-link" to={"executor/executor-overview"}>
           Become an Executor
@@ -17,7 +17,7 @@ export default function IntroCard() {
         <section className="introCard-title">Bridge UI</section>
         <section className="introCard-description">
           Our Bridge UI enables you to make fast, secure, and cost-efficient
-          cross-chain transactions.
+          crosschain transactions.
         </section>
         <Link className="introCard-link" to={"https://bridge.t2rn.io/"}>
           Start Swapping

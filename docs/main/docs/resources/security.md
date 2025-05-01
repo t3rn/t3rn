@@ -4,11 +4,11 @@ At t3rn, security is paramount in enabling seamless, trustless execution of smar
 
 t3rn’s smart contracts have been audited by Halborn, Quantstamp, and SR Labs, reflecting our commitment to robust security.
 
-The **core mission of t3rn** is to empower developers and users with a reliable platform for interoperable decentralized applications. Cross-chain interoperability presents unique challenges, especially in ensuring transactions are executed securely without exposing vulnerabilities. To address these, t3rn combines fault tolerance, validation mechanisms, and a focus on trustless, decentralized architecture.
+The **core mission of t3rn** is to empower developers and users with a reliable platform for interoperable decentralized applications. Crosschain interoperability presents unique challenges, especially in ensuring transactions are executed securely without exposing vulnerabilities. To address these, t3rn combines fault tolerance, validation mechanisms, and a focus on trustless, decentralized architecture.
 
 ### **Scope of This Documentation**
 
-This document is intended for developers, auditors, and users seeking a deep understanding of t3rn's secure and reliable cross-chain operations. Topics include:
+This document is intended for developers, auditors, and users seeking a deep understanding of t3rn's secure and reliable crosschain operations. Topics include:
 
 - A detailed examination of the **order flow**, focusing on smart contracts and Executors.
 - Validation and fault tolerance mechanisms.
@@ -21,7 +21,7 @@ By the end of this documentation, you’ll understand:
 
 - The security principles underpinning t3rn’s design.
 - The smart contract mechanisms securing the protocol’s order flow.
-- How t3rn ensures integrity and resilience in cross-chain operations.
+- How t3rn ensures integrity and resilience in crosschain operations.
 
 ## Order Flow Overview
 
@@ -93,7 +93,7 @@ function bidOrder(bytes32 orderId, uint256 newProposedReward, address bidder) pu
 ### **Key Actors and Roles**
 
 - **Order Creators**:
-  Initiate cross-chain transactions by submitting orders with specified parameters.
+  Initiate crosschain transactions by submitting orders with specified parameters.
 - **Executors**:
   Decentralized actors responsible for bid placement and transaction execution. Incentivized via rewards locked in the protocol.
 
@@ -108,13 +108,13 @@ function bidOrder(bytes32 orderId, uint256 newProposedReward, address bidder) pu
 
 ## Smart Contract Functionality in Order Flow
 
-t3rn utilizes a suite of interconnected contracts to manage secure and efficient cross-chain operations.
+t3rn utilizes a suite of interconnected contracts to manage secure and efficient crosschain operations.
 
 ### **Core Contracts in the Order Flow**
 
 1. **OrderBook**
 
-   The central repository for all cross-chain orders. It handles:
+   The central repository for all crosschain orders. It handles:
 
    - **Order Creation**: Tracks and verifies new orders.
    - **Order Attestation**: Ensures orders meet quorum through committee-based validation.
@@ -148,7 +148,7 @@ t3rn utilizes a suite of interconnected contracts to manage secure and efficient
 
    **Key Functions**:
 
-   - **`escrowLock`**: Locks funds for a specific cross-chain transaction.
+   - **`escrowLock`**: Locks funds for a specific crosschain transaction.
    - **`refundEscrowToSender`**: Releases locked funds back to the sender if conditions are met.
 
 ### **2. Security Mechanisms Embedded in Smart Contracts**
@@ -174,7 +174,7 @@ Role-based permissions are enforced across critical smart contract functions usi
 
 - **Roles in t3rn**:
   - **Administrator**: Manages protocol parameters and upgrades.
-  - **Executor**: Facilitates cross-chain order execution.
+  - **Executor**: Facilitates crosschain order execution.
 
 This restricts potentially destructive operations, such as modifying reward parameters, to trusted parties.
 
@@ -191,7 +191,7 @@ This restricts potentially destructive operations, such as modifying reward para
 
 Events provide an immutable log for transaction states, ensuring transparency and aiding in real-time monitoring.
 
-### **2. Secure Cross-Chain Messaging**
+### **2. Secure CrossChain Messaging**
 
 t3rn prevents tampering and replay attacks through cryptographic attestations and unique identifiers.
 
@@ -211,7 +211,7 @@ t3rn’s smart contracts have undergone rigorous testing and third-party audits 
 - **Auditing Partners**:
   - Audited by industry leaders such as Halborn, Quantstamp, and SR Labs.
 - **Testing Strategy**:
-  - Unit and integration tests simulate real-world scenarios, including edge cases for high traffic and complex cross-chain interactions.
+  - Unit and integration tests simulate real-world scenarios, including edge cases for high traffic and complex crosschain interactions.
 
 ## Halborn's Smart Contract Security Audit
 
