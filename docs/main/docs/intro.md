@@ -4,7 +4,7 @@ import IntroCards from "../src/components/introCards"
 
 <img src="/img/docs-intro-banner.png"/>
 
-Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and cost-efficient cross-chain swapping. t3rn is uniquely positioned to bridge the gaps in blockchain interoperability, offering superior swapping for users and yield for infra providers by becoming t3rn Executors.
+Welcome to t3rn, the Universal Execution Protocol designed for coordinating smart contracts, capital, and computation across ecosystems without complexity, delay, or risk. t3rn enables any smart contract to run across multiple blockchains, both EVM and non-EVM, instantly and atomically, with no need for fragile bridges or complex integrations.
 
 ## Popular 🔥
 
@@ -12,27 +12,30 @@ Welcome to t3rn, a Modular Interoperability Layer designed for fast, secure, and
 
 ## What is t3rn?
 
-At its core, t3rn is an interoperable platform that enables smart contract execution across multiple blockchains. Our system allows developers to write and execute cross-chain smart contracts while providing end users with trustless and transparent operations.
+At its core, t3rn is a Universal Execution Protocol where smart contracts and executions have no boundaries. To achieve this we are building the Universal Execution Protocol where smart contracts operate across all chains, atomically, and with full composability, enabling decentralized applications, agents, and protocols to coordinate without fragmentation or custom integration overhead.
+
+that evolves with the network—adapting execution strategies in real time to maximize efficiency, resilience, and outcomes across chains.
+We’re not building the bridge. We’re building the operating system for universal executions.
 
 With t3rn, you can:
 
-- Perform secure, multi-chain smart contract executions.
-- Seamlessly bridge assets across networks.
-- Provide liquidity for cross-chain transactions as an Executor.
+- Bridge assets across networks.
+- Perform secure, crosschain smart contract executions.
+- Provide liquidity for crosschain transactions as an Executor.
 - Participate in a growing ecosystem with governance and rewards.
 
 ## Why Use t3rn?
 
-- **Seamless Cross-chain Integration**: t3rn removes the complexities of working across multiple blockchain networks, making cross-chain interactions as simple as interacting on a single chain.
-- **Guaranteed Security**: Built with a modular approach, t3rn guarantees transaction security by using fail-safe mechanisms like rolling back unsuccessful cross-chain transactions.
-- **Reward Opportunities**: Liquidity providers, known as Executors, earn fees for facilitating cross-chain transactions, making t3rn a rewarding platform for active participants.
+- **Crosschain Integration**: t3rn removes the complexities of working across multiple blockchain networks, making crosschain interactions as simple as interacting on a single chain.
+- **Guaranteed Security**: Built with an optimized approach, t3rn guarantees transaction security by using fail-safe mechanisms like rolling back unsuccessful crosschain transactions.
+- **Reward Opportunities**: Liquidity providers, known as Executors, earn fees for facilitating crosschain transactions, making t3rn a rewarding platform for active participants.
 
 ## Getting Started with t3rn:
 
 1. **Participate as an Executor:**
    - Join the network as an [Executor](executor/executor-overview) to process transactions and engage in the ecosystem by bidding on orders and executing transactions.
 1. **Explore t3rn's Bridge UI:**
-   - Explore cross-chain swaps with our intuitive [Bridge UI](https://bridge.t2rn.io/). Now live on testnets, it enables fast, secure, and cost-efficient cross-chain transactions.
+   - Explore crosschain swaps with our intuitive [Bridge UI](https://bridge.t2rn.io/). Now live on testnets, it enables fast, secure, and cost-efficient crosschain transactions.
 
 ## Getting Help
 
