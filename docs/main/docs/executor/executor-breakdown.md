@@ -4,15 +4,15 @@
 
 Executors in the t3rn network facilitate interoperability by executing user-defined intents across different blockchain networks. Their primary responsibilities include executing transactions, processing claims, and ensuring seamless communication across multiple chains.
 
-## Interoperability and Cross-Chain Intents
+## Interoperability and CrossChain Intents
 
-t3rn enables cross-chain transactions through an intent-based model. This means users express an “intent” (a desired action, such as a token swap or staking), and the network takes care of executing it, which can be across multiple blockchain networks. This intent-based approach contrasts with traditional step-by-step transaction models, providing a more user-centric and efficient way to perform multi-chain operations.
+t3rn enables crosschain transactions through an intent-based model. This means users express an “intent” (a desired action, such as a token swap or staking), and the network takes care of executing it, which can be across multiple blockchain networks. This intent-based approach contrasts with traditional step-by-step transaction models, providing a more user-centric and efficient way to perform multi-chain operations.
 
 Executors are central to this model, handling the execution of intents by interacting with the specified blockchain networks. They are also responsible for various tasks, including bidding, claiming rewards for completing transactions, and batching. The batching process in t3rn specifically refers to combining multiple attestations (proofs that transactions occurred as intended) into a single batch, reducing gas costs and optimising efficiency.
 
-## Step-by-Step Process for Cross-Chain Transactions
+## Step-by-Step Process for CrossChain Transactions
 
-This section outlines the lifecycle of a cross-chain transaction within the t3rn ecosystem, with a focus on the role of Executors.
+This section outlines the lifecycle of a crosschain transaction within the t3rn ecosystem, with a focus on the role of Executors.
 
 ### Step 1: Executor Initialization
 
@@ -52,7 +52,7 @@ Log Sequence:
 
 The Executor configures the necessary contracts for attestation and batching on the networks. These include the `SingleAttestationBook` and `LongRangeAttestationsBook` contracts, which are pivotal in managing the attestation and batching processes.
 
-**Attestation Configuration:** Attestations ensure the correctness and validity of cross-chain transactions. They involve submitting proofs that a transaction occurred as intended. In the `SingleAttestationBookV4` contract, attestations are submitted by committee members who provide signatures and message payloads associated with specific orders. The attestation data is stored in a linked list structure within the `LongRangeAttestationsBook` contract.
+**Attestation Configuration:** Attestations ensure the correctness and validity of crosschain transactions. They involve submitting proofs that a transaction occurred as intended. In the `SingleAttestationBookV4` contract, attestations are submitted by committee members who provide signatures and message payloads associated with specific orders. The attestation data is stored in a linked list structure within the `LongRangeAttestationsBook` contract.
 
 **Batching:** The contracts enable batching of multiple attestations to reduce gas costs and optimize efficiency. The `LongRangeAttestationsBook` manages long-range batching by combining multiple attestations into a single batch. Each batch is assigned a `batchHash` for tracking and is constructed using the attestation data from multiple orders. The batching process includes anti-duplicate checks, quorum validation, and payload encoding to ensure that only valid and unique attestations are included.
 
@@ -92,7 +92,7 @@ Log Sequence:
 🚀 Start tx processing in Transmitter...
 ```
 
-The Executor initializes transaction processing for various networks, preparing to handle incoming orders. The lifecycle of a transaction includes multiple stages: bidding, execution, attestation, and claiming. Setting up these processes ensures that each stage is handled in sequence for successful cross-chain transaction execution.
+The Executor initializes transaction processing for various networks, preparing to handle incoming orders. The lifecycle of a transaction includes multiple stages: bidding, execution, attestation, and claiming. Setting up these processes ensures that each stage is handled in sequence for successful crosschain transaction execution.
 
 ### Step 7: Setting Up Listeners and Event Handlers
 
@@ -118,9 +118,9 @@ Log Sequence:
 🔃 Processing pending claims...
 ```
 
-The Executor fetches any pending orders, executions, or claims from the network. These include cross-chain transactions that need to be processed, orders awaiting execution, or claims for rewards.
+The Executor fetches any pending orders, executions, or claims from the network. These include crosschain transactions that need to be processed, orders awaiting execution, or claims for rewards.
 
-The `RemoteOrderCreated` event is emitted when a new cross-chain order is created. This marks the starting point for Executors to bid on the order. The event provides information such as the source and destination networks, asset details, and the reward offered for executing the order.
+The `RemoteOrderCreated` event is emitted when a new crosschain order is created. This marks the starting point for Executors to bid on the order. The event provides information such as the source and destination networks, asset details, and the reward offered for executing the order.
 
 ```
 ex📝 RemoteOrderCreated event received
@@ -226,7 +226,7 @@ Log Sequence:
 
 At this step, the Executor first verifies the order's timestamp to confirm that the order is still within the valid time window for processing. Then, the system evaluates the profitability of the trade by calculating the potential gains based on the specified strategy parameters, such as minimum profit and maximum share of balance allowed per order. Since the order is determined to be profitable, the Executor proceeds to place a bid for the specified amount on the source network. After successfully bidding, the order is executed, transferring the funds to the target account on the destination network. The transaction is completed and confirmed with a recorded transaction hash, ensuring the process was successfully finalized without errors.
 
-After execution, the cross-chain order must undergo an attestation step to confirm its validity across networks. The attestation process verifies that the transaction details are consistent and recognized on all relevant networks. The `TransferCommitApplied` event serves as an inclusion proof, indicating that the transaction has been successfully validated and included in the network state. This step is crucial for ensuring the correctness of the executed transaction and securing the reward distribution process.
+After execution, the crosschain order must undergo an attestation step to confirm its validity across networks. The attestation process verifies that the transaction details are consistent and recognized on all relevant networks. The `TransferCommitApplied` event serves as an inclusion proof, indicating that the transaction has been successfully validated and included in the network state. This step is crucial for ensuring the correctness of the executed transaction and securing the reward distribution process.
 
 ```
 🌺➡️ TransferCommitApplied event received
