@@ -43,6 +43,16 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "right" }}>base-sepolia</td>
     </tr>
     <tr>
+      <td style={{ textAlign: "left" }}>BNB Testnet</td>
+      <td>
+        <span>[0x7fA0186d0394b4685931D1Aa549cA79c49004353](https://testnet.bscscan.com/address/0x7fA0186d0394b4685931D1Aa549cA79c49004353)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>bsct</span>
+      </td>
+      <td style={{ textAlign: "right" }}>binance-testnet</td>
+    </tr>
+    <tr>
       <td style={{ textAlign: "left" }}>Blast Sepolia</td>
       <td>
         <span>[0x36B2415644d47b8f646697b6c4C5a9D55400f2Dd](https://sepolia.blastscan.io/address/0x36B2415644d47b8f646697b6c4C5a9D55400f2Dd)</span>
