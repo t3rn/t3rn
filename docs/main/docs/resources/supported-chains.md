@@ -43,6 +43,17 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "right" }}>base-sepolia</td>
     </tr>
     <tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Berachain Bepolia</td>
+      <td>
+        <span>[0x13c5e5320c692c9D2c5157744E37a1d79E3d2F5C](https://testnet.berascan.com/address/0x13c5e5320c692c9D2c5157744E37a1d79E3d2F5C)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>bert</span>
+      </td>
+      <td style={{ textAlign: "right" }}>berachain-bepolia</td>
+    </tr>
+    <tr>
       <td style={{ textAlign: "left" }}>BNB Testnet</td>
       <td>
         <span>[0x7fA0186d0394b4685931D1Aa549cA79c49004353](https://testnet.bscscan.com/address/0x7fA0186d0394b4685931D1Aa549cA79c49004353)</span>
