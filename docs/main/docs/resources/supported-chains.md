@@ -43,7 +43,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "right" }}>base-sepolia</td>
     </tr>
     <tr>
-    <tr>
       <td style={{ textAlign: "left" }}>Berachain Bepolia</td>
       <td>
         <span>[0x13c5e5320c692c9D2c5157744E37a1d79E3d2F5C](https://testnet.berascan.com/address/0x13c5e5320c692c9D2c5157744E37a1d79E3d2F5C)</span>
@@ -87,7 +86,7 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>SEI Testnet</td>
-      <td>0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453</td>
+      <td>[0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453](https://seitrace.com/address/0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453?chain=atlantic-2)</td>
       <td style={{ textAlign: "center" }}>seit</td>
       <td style={{ textAlign: "right" }}>sei-testnet</td>
     </tr>
