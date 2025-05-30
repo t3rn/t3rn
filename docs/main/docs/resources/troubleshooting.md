@@ -17,7 +17,6 @@
 - **BD#10:** Ensures that the bidding period has not elapsed before allowing a new bid.
 - **BD#11:** Ensures that the insurance amount provided with the bid matches the required amount when the previous best bidder's insurance needs to be refunded.
 - **BD#12:** Ensures that the bid amount provided matches the required insurance amount when no previous bid exists.
-- **BD#13:** Ensures that the proposed reward matches the order's maximum reward if underbidding is disabled.
 - **BD#14:** Ensures that the `claimer` is the current best bidder for the specified order.
 - **BD#15:** Ensures that the insurance for the specified order has not already been claimed.
 - **BD#16:** Ensures that the order has been properly attested and meets the quorum requirements before allowing the insurance claim.
@@ -26,36 +25,24 @@
 
 ### escrowOrder.sol
 
-- **EO#0:** Ensures that only the owner of the contract can execute functions protected by this modifier.
-- **EO#1:** Requires that the owner address provided during contract initialization is not the zero address.
-- **EO#2:** Protects functions from being executed while the contract is paused.
-- **EO#3:** Requires that the caller is the designated attesters address.
-- **EO#4:** Ensures that each escrow order in a batch operation is correctly paired with corresponding parameters.
-- **EO#5:** Verifies that the provided value equals the total required sum for native currency withdrawals
-- **EO#6:** Verifies that the native currency provided equals the reward amount when the reward asset is the native currency.
-- **EO#7:** Prevents unsupported assets from being used in escrow orders
-- **EO#8:** Ensures that the reward amount is within the defined limits for the asset
-- **EO#9:** Ensures that the main asset amount adheres to pre-defined limits
-- **EO#10:** Ensures that the `escrowGMP.storeEscrowOrderPayload` function successfully stores the payload associated with the creation of an escrow order or its corresponding lock.
-- **EO#11:** Ensures that the correct amount of native currency is locked in escrow.
-- **EO#12:** Ensures that the `escrowGMP.storeEscrowOrderPayload` function successfully stores the payload specifically associated with the locking of funds in escrow.
-- **EO#13:** Ensures that the escrow lock is claimable.
-- **EO#14:** Ensures that the escrow can be refunded.
-- **EO#15:** Ensures that both the payout and the associated fees are successfully settled.
+- **ZERO_ADDRESS_NOT_ALLOWED:** This error indicates that a zero address was provided where a valid address is required.
+- **ONLY_OWNER:** This error ensures that only the contract owner can execute a specific function.
+- **ONLY_ATTESTERS:** This error ensures that only authorized attesters can execute a specific function.
+- **IS_HALTED:** This error indicates that the contract is currently halted and cannot perform the requested operation.
+- **INVALID_ORDER_TYPE:** This error means an unsupported or invalid order type was specified.
+- **INVALID_ASSET:** This error occurs when a specified asset is not supported by the contract.
+- **INVALID_AMOUNT:** This error indicates that the provided amount does not match the expected value for the operation.
+- **AMOUNT_OUT_OF_RANGE:** This error signifies that the provided amount is outside the minimum or maximum allowed range for the asset.
+- **INVALID_COUNT:** This error occurs when an invalid count (i.e zero) is provided for a batch operation.
+- **ESCROW_ORDER_ALREADY_EXISTS:** This error indicates that an escrow order with the given ID already exists.
+- **NOT_CLAIMABLE:** This error signifies that the order is not in a state where it can be claimed.
+- **NOT_REFUNDABLE:** This error means the order is not eligible for a refund at this time.
+- **SETTLE_PAYOUT_WITH_FEES_FAILED:** This error indicates that the process of settling a payout, including deducting fees, failed.
 
 ### remoteOrder.sol
 
-- **RO#0:** Is related to access control and ensuring the integrity of critical contract operations, such as preventing unauthorised access to functions and the assignment of roles to an invalid address.
-- **RO#2:** Ensures that functions are only executed when the contract is active and not in halted state.
-- **RO#3:** This error enforces role-based access control within the contract, preventing unauthorized parties from executing sensitive functions.
-- **RO#4:** Prevents users from attempting to create orders with unsupported assets.
-- **RO#5:** Ensures that `maxReward` is within the accepted range for the specific `rewardAsset`.
-- **RO#7:** Prevents mismatches between the expected reward and the actual funds provided.
-- **RO#10:** Prevents issues where the order payload might not be correctly recorded, which could lead to disputes or untraceable orders.
-- **RO#11:** Ensures that the claim for a refund is only made after the order has timed out.
-- **RO#12:** Ensures that the payment hash matches the expected hash before processing a refund.
-- **RO#13:** Ensures that the payment hash matches the expected hash before processing a payout.
-- **RO#14:** Ensures that only the `attesters` address can settle surplus rewards.
-- **RO#15 in `confirmBatchOrder`:** Ensures that the total amount of native currency expected by the contract matches the amount actually sent with the transaction - `require(totalNativeAmount == msg.value, "RO#15");`
-- **RO#15 in `claimPayoutBatch`:** Enforces checks related to the validity of the payout claim process.
+- **RO#0:** Ensures that a valid address or range of values was provided during initialization.
+- **RO#2:** Ensures that functions are only executed when the contract is active and not in halted state (i.e. amounts outside allowed range, order's timestamp is invalid, order is already confirmet, etc).
+- **RO#7:** Ensures orders aren't accepted after network's order limit has been reached.
+- **RO#13:** Ensures that the order is in a claimable state.
 - **RO#16:** Ensures that the process of settling payouts with associated fees succeeds. This prevents issues during the payout process, such as incorrect fee deductions or failed transfers
