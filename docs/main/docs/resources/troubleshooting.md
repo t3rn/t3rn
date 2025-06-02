@@ -14,7 +14,7 @@
 - **BD#7:** Ensures that the proposed reward does not exceed the maximum reward specified in the order.
 - **BD#8:** Ensures that underbidding is allowed before allowing a new bid to be placed.
 - **BD#9:** Ensures that the new bid's proposed reward is lower than the current best bid when underbidding is enabled.
-- **BD#10:** Ensures that the bidding period has not elapsed before allowing a new bid.
+- **BD#10:** Either orders were already bid by another executor or failed spam prevention filter.
 - **BD#11:** Ensures that the insurance amount provided with the bid matches the required amount when the previous best bidder's insurance needs to be refunded.
 - **BD#12:** Ensures that the bid amount provided matches the required insurance amount when no previous bid exists.
 - **BD#14:** Ensures that the `claimer` is the current best bidder for the specified order.
@@ -42,7 +42,7 @@
 ### remoteOrder.sol
 
 - **RO#0:** Ensures that a valid address or range of values was provided during initialization.
-- **RO#2:** Ensures that functions are only executed when the contract is active and not in halted state (i.e. amounts outside allowed range, order's timestamp is invalid, order is already confirmet, etc).
+- **RO#2:** Ensures that requested cross-chain route is enabled (both source & destination chains and assets are enabled).
 - **RO#7:** Ensures orders aren't accepted after network's order limit has been reached.
-- **RO#13:** Ensures that the order is in a claimable state.
+- **RO#13:** Ensures that the order is in a claimable state (verification has been completed).
 - **RO#16:** Ensures that the process of settling payouts with associated fees succeeds. This prevents issues during the payout process, such as incorrect fee deductions or failed transfers
