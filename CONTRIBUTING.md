@@ -92,42 +92,63 @@ Go to [Issues](https://github.com/t3rn/t3rn/issues), [open a new one](https://gi
 
 When submitting a [pull request](https://github.com/t3rn/t3rn/pulls), the repository has already the template to [fill it](https://github.com/t3rn/t3rn/compare). Also, you can copy-paste the following and complete it in a web browser:
 
-    # Summary of changes
+```
+# Summary of changes
 
-    **Summarize** the description of your changes. 
+**_Summarize_** the description of your changes.
 
-    If it fixes a bug or creates a feature, link the issue.
+If it fixes a bug or creates a feature, link the issue.
 
-    ## Acceptance Checklist
+# Acceptance Checklist
 
-    What types of changes does your code introduce?
-    _Put an `x` in the boxes that apply_
+What types of changes does your code introduce?
+_Put an `x` in the boxes that apply_
 
-    - [ ] Bugfix (non-breaking change which fixes an issue):
-        - [ ] Have you **written tests **to protect against future occurrences of the bug?
-    - [ ] New feature (non-breaking change which adds functionality)
-        - [ ] Have you **seen it working** in a development environment?
-        - [ ] Have you **written tests** for **happy** and **unhappy** paths?
-        - [ ] Have you implemented this feature as per the **issue acceptance criteria**?
-    - [ ] Breaking change (a feature that would cause existing functionality not to work as expected
-        - [ ] Is the breaking change **documented**?
-        - [ ] Has any previous changes been **deprecated**?
-    - [ ] CI/CD
-        - [ ] If introducing new actions, have you **looked at the action code** for anything spurious?
-        - [ ] Have you written **custom scripts** for things that could be actions already on the marketplace?
-        - [ ] If introducing new actions, have you **pegged a static version**?
-    - [ ] Documentation Update
-        - [ ] Have you checked other documentation, such as the docs repository?
-        - [ ] If updating script documentation, have you **tested it on both environments**?
-    - [ ] Substrate
-        - [ ] RPC methods?
-        - [ ] Chainspec, both JSON specs & the module?
-        - [ ] Runtime versioning?
-        - [ ] Benchmarks?
-    - [ ] Any dependent changes have been merged and published in downstream modules
+## Dependencies
 
-    ## Further comments
+- [ ] Any dependent changes have been merged and published in downstream modules
+- [ ] Any teams which manage the dependencies have been notified of the breaking changes
 
-    Feel free to explain in further detail your choices if this is a significant change.
+## Bug (non-breaking change which fixes an issue):
 
-    ## Screenshots (if applicable)
+- [ ] Have you **_written tests_** to protect against future occurrences of the bug?
+
+## Feature (non-breaking change which adds functionality)
+
+- [ ] Have you **_seen it working_** in a development environment?
+- [ ] Have you **_written tests_** for **_happy_** and **_unhappy_** paths?
+- [ ] Have you implemented this feature as per the **_issue acceptance criteria_**?
+
+### Substrate
+
+If this change involves substrate, have you remembered:
+
+- [ ] Storage Migration?
+- [ ] RPC methods?
+- [ ] Chainspec, both JSON specs & the module?
+- [ ] Runtime versioning?
+- [ ] Benchmarks?
+
+## Breaking change (a feature that would cause existing functionality not to work as expected)
+
+- [ ] Is the breaking change **_documented_**?
+- [ ] Are your commits fully representative of the change?
+- [ ] Has any previous functionality been **_deprecated_** and versioned?
+
+## CI/CD
+
+- [ ] If introducing new actions, have you **_looked at the action code_** for anything spurious?
+- [ ] Have you written **_custom scripts_** for things that could be actions already on the marketplace?
+- [ ] If introducing new actions, have you **_pegged a static version_**?
+
+## Documentation Update
+
+- [ ] Have you checked other documentation, such as the docs repository?
+- [ ] If updating script documentation, have you **_tested it on both environments_**?
+
+## Further comments
+
+Feel free to explain in further detail your choices if this is a significant change.
+
+## Screenshots (Please demonstrate this working in PolkadotJS)
+```
