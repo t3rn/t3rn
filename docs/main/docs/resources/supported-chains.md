@@ -33,6 +33,16 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "right" }}>arbitrum-sepolia</td>
     </tr>
     <tr>
+      <td style={{ textAlign: "left" }}>Abstract Sepolia</td>
+      <td>
+        <span>[0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453](https://sepolia.abscan.org/address/0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>abst</span>
+      </td>
+      <td style={{ textAlign: "right" }}>abstract-sepolia</td>
+    </tr>
+    <tr>
       <td style={{ textAlign: "left" }}>Base Sepolia</td>
       <td>
         <span>[0xCEE0372632a37Ba4d0499D1E2116eCff3A17d3C3](https://sepolia.basescan.org/address/0xCEE0372632a37Ba4d0499D1E2116eCff3A17d3C3)</span>
@@ -71,6 +81,12 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
         <span>blst</span>
       </td>
       <td style={{ textAlign: "right" }}>blast-sepolia</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Lisk Sepolia</td>
+      <td>[0xbd0A7087c059f488EEEDC7901cd2B32732fd32B1](https://sepolia-blockscout.lisk.com/address/0xbd0A7087c059f488EEEDC7901cd2B32732fd32B1)</td>
+      <td style={{ textAlign: "center" }}>lskt</td>
+      <td style={{ textAlign: "right" }}>lisk-testnet</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Monad Testnet</td>
