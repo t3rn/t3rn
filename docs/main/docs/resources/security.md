@@ -35,8 +35,6 @@ While graphics aren’t required now, consider a simple linear flow:
 4. **Validation** →
 5. **Settlement & Rewards**
 
-![Screenshot 2024-12-09 at 17.48.06.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/e19bbbe0-c917-4eb1-b936-1515ae9aa86b/8eb32f29-8535-4e77-a966-3784975e2b3c/Screenshot_2024-12-09_at_17.48.06.png)
-
 ### **1. Order Lifecycle**
 
 1. **Order Creation**:
