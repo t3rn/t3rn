@@ -56,13 +56,13 @@ We follow a couple of conventions that very easy to implement in your workflow.
 
 #### Formatting
 
-When working with Rust code, you should always format it using `cargo`. Before commiting the code, this command formats the codebase and fixes problematic stuff:
+When working with Rust code, you should always format it using `cargo`. Before committing the code, this command formats the codebase and fixes problematic stuff:
 
     cargo fmt && cargo fix --allow-dirty --allow-staged
 
 #### Conventional Commits
 
-When commiting, commit messages must adhere to [Conventional Commits](https://www.conventionalcommits.org) guidelines. Here's a short overview of how a commit message should be:
+When committing, commit messages must adhere to [Conventional Commits](https://www.conventionalcommits.org) guidelines. Here's a short overview of how a commit message should be:
 
     <type>[optional scope]: <description>
 
@@ -90,7 +90,7 @@ Go to [Issues](https://github.com/t3rn/t3rn/issues), [open a new one](https://gi
 
 ### Pull requests
 
-When submitting a [pull request](https://github.com/t3rn/t3rn/pulls), the repository has already the template to [fill it](https://github.com/t3rn/t3rn/compare). Also, you can copy-paste the following and complete it in a web browser:
+When submitting a [pull request](https://github.com/t3rn/t3rn/pulls), the repository already has the template to [fill it](https://github.com/t3rn/t3rn/compare). Also, you can copy-paste the following and complete it in a web browser:
 
     # Summary of changes
 
