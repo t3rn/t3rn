@@ -12,7 +12,7 @@ We provide two ways to become an Executor.
 
 ## Understanding Executors
 
-When a cross chain transactions is triggered on the t3rn protocol, Executors start bidding on it for the winner to execute the transaction. Once the transaction is finalized an inclusion proof is generated, which is then submitted to the t3rn protocol, proving that the transaction was executed correctly. This unlocks the reward to the Executor, on the t3rn blockchain.
+When a crosschain transactions is triggered on the t3rn protocol, Executors start bidding on it for the winner to execute the transaction. Once the transaction is finalized an inclusion proof is generated, which is then submitted to the t3rn protocol, proving that the transaction was executed correctly. This unlocks the reward to the Executor, on the t3rn blockchain.
 
 As Executors operate on multiple chains, they periodically need to move funds across chains. Whether they do this through a centralized exchange, OTC, or any other means, is entirely up to them.
 
@@ -29,7 +29,7 @@ Order evaluation undergoes the following evaluation:
 
 ### Troubleshooting
 
-Feel free to reach out to us on [Discord](https://t3rn.io/discord) if you have any questions or issues.
+Feel free to reach out to us on [Discord](https://discord.gg/t3rn) if you have any questions or issues.
 With obvious errors, please open an issue on [t3rn's Github](https://github.com/t3rn/t3rn/issues/new/choose)
 
 Also, check our [Troubleshooting page](../resources/troubleshooting) for more information.
