@@ -12,10 +12,7 @@ Welcome to t3rn, the Universal Execution Protocol designed for coordinating smar
 
 ## What is t3rn?
 
-At its core, t3rn is a Universal Execution Protocol where smart contracts and executions have no boundaries. To achieve this we are building the Universal Execution Protocol where smart contracts operate across all chains, atomically, and with full composability, enabling decentralized applications, agents, and protocols to coordinate without fragmentation or custom integration overhead.
-
-that evolves with the network—adapting execution strategies in real time to maximize efficiency, resilience, and outcomes across chains.
-We’re not building the bridge. We’re building the operating system for universal executions.
+At its core, t3rn is a Universal Execution Protocol where smart contracts and executions have no boundaries. To achieve this we are building a protocol where smart contracts operate across all chains, atomically, and with full composability, enabling decentralized applications, agents, and protocols to coordinate without fragmentation or custom integration overhead.
 
 With t3rn, you can:
 

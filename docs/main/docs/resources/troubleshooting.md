@@ -43,5 +43,5 @@
 
 - **RO#0:** Ensures that a valid address or range of values was provided during initialization.
 - **RO#1:** This error indicates that the specified destination asset or network is not supported, or the order is not claimable or refundable.
-- **RO#2:** Ensures that requested cross-chain route is enabled (both source & destination chains and assets are enabled).
+- **RO#2:** Ensures that requested crosschain route is enabled (both source & destination chains and assets are enabled).
 - **RO#7:** Ensures orders aren't accepted after network's order limit has been reached.
