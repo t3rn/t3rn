@@ -2,13 +2,13 @@
 
 This glossary provides definitions for technical terms frequently used in the t3rn documentation.
 
-**Attestation**: The process of validating cross-chain transactions, ensuring they were executed as intended.
+**Attestation**: The process of validating crosschain transactions, ensuring they were executed as intended.
 
-**Attesters**: Committee members who validate cross-chain transactions and attest to their validity across networks.
+**Attesters**: Committee members who validate crosschain transactions and attest to their validity across networks.
 
 **Batching**: Grouping multiple transactions or attestations to optimize performance and reduce gas costs.
 
-**Bidding Book**: A contract used by Executors to place and manage bids for cross-chain orders.
+**Bidding Book**: A contract used by Executors to place and manage bids for crosschain orders.
 
 **Binary:** The Binary Executor version is our command line based version for running an Executor, designed for users comfortable with code and terminal commands
 
@@ -20,23 +20,23 @@ This glossary provides definitions for technical terms frequently used in the t3
 
 **Claim**: A transaction in which an Executor receives rewards for completing an order.
 
-**Cross-Chain Transaction**: Transactions that span more than one blockchain network, facilitated by t3rn for interoperability.
+**CrossChain Transaction**: Transactions that span more than one blockchain network, facilitated by t3rn for interoperability.
 
 **Destination Chains:** The chain you want to send to.
 
-**Executor**: A role within the t3rn network responsible for carrying out user-defined cross-chain transactions, including bidding, execution, and claiming rewards.
+**Executor**: A role within the t3rn network responsible for carrying out user-defined crosschain transactions, including bidding, execution, and claiming rewards.
 
 **GUI:** The GUI Executor version provides a user-friendly interface for setting up and managing an Executor, making it accessible for users with less technical experience.
 
 **Interoperability**: The capability to interact and perform transactions across multiple blockchain networks seamlessly.
 
-**Order Book**: A contract that tracks cross-chain orders, managing bids, and order status for Executors.
+**Order Book**: A contract that tracks crosschain orders, managing bids, and order status for Executors.
 
 **Order ID:** Each transaction placed on the t3rn protocol gets a unique order ID.
 
 **Prometheus**: A monitoring tool used to track activity and performance within the t3rn network.
 
-**RemoteOrderCreated Event**: Triggers when a cross-chain order is created, initiating the bidding process for Executors.
+**RemoteOrderCreated Event**: Triggers when a crosschain order is created, initiating the bidding process for Executors.
 
 **Source Chain:** The chain you want to send from.
 
@@ -44,4 +44,4 @@ This glossary provides definitions for technical terms frequently used in the t3
 
 **TransferCommitApplied Event**: Serves as an inclusion proof, showing that the transaction has been successfully recognized and included on the destination chain.
 
-**TRN Token**: The primary token within the t3rn ecosystem, often used for transactions and rewards.
+**TRN**: The primary token within the t3rn ecosystem, often used for transactions and rewards.
