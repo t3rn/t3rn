@@ -32,10 +32,10 @@ export default {
       type: "doc",
       id: "connect-to-t3rn",
     },
-    // {
-    //   type: "doc",
-    //   id: "tokenomics",
-    // },
+    {
+      type: "doc",
+      id: "tokenomics",
+    },
     {
       type: "html",
       value:
