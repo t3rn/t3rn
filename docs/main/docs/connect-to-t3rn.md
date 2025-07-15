@@ -10,6 +10,7 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
          <th>Property</th>
          <th>Testnet V1</th>
          <th>Testnet V2</th>
+         <th>Mainnet</th>
       </tr>
    </thead>
    <tbody>
@@ -17,11 +18,13 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
          <td>Name</td>
          <td>BRN</td>
          <td>B2N</td>
+         <td>t3rn</td>
       </tr>
       <tr>
          <td>Description</td>
          <td>The public testnet V1 for t3rn.</td>
          <td>The public testnet V2 for t3rn.</td>
+         <td>The mainnet of t3rn.</td>
       </tr>
       <tr>
          <td>Chain ID</td>
@@ -30,6 +33,9 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
          </td>
          <td>
             <code>334</code>
+         </td>
+         <td>
+            <code>TBA</code>
          </td>
       </tr>
       <tr>
@@ -40,6 +46,9 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
          <td>
             <code>https://b2n.rpc.caldera.xyz/http</code>
          </td>
+         <td>
+            <code>TBA</code>
+         </td>
       </tr>
       <tr>
          <td>RPC URL (Websocket)</td>
@@ -48,6 +57,9 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
          </td>
          <td>
             <code>wss://b2n.rpc.caldera.xyz/ws</code>
+         </td>
+         <td>
+            <code>TBA</code>
          </td>
       </tr>
       <tr>
@@ -58,11 +70,15 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
          <td>
             <code>https://b2n.explorer.caldera.xyz/</code>
          </td>
+         <td>
+            <code>TBA</code>
+         </td>
       </tr>
       <tr>
          <td>Currency Symbol</td>
          <td>BRN</td>
          <td>BRN</td>
+         <td>TRN</td>
       </tr>
    </tbody>
 </table>
