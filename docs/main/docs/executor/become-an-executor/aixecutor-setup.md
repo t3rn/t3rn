@@ -1,0 +1,212 @@
+# AIxecutor Setup
+
+Welcome to the t3rn AIxecutor Setup! This guided process will help you configure your AIxecutor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.
+
+## AIxecutor Binary
+
+### Download AIxecutor Binary
+
+**1.** Download the executable (`tar.gz`) AIxecutor binary file according to your OS from here: https://github.com/t3rn/aixecutor-release/releases
+
+:::info Optional: Verify the download by comparing the SHA256 checksum with the provided sha256sum file to ensure file integrity
+
+https://github.com/t3rn/aixecutor-release/releases
+:::
+
+### Installation Steps
+
+#### For Ubuntu
+
+```bash
+# Create and navigate to t3rn directory
+mkdir t3rn
+cd t3rn
+
+# Download latest release
+curl -s https://api.github.com/repos/t3rn/aixecutor-release/releases/latest | \
+grep -Po '"tag_name": "\K.*?(?=")' | \
+xargs -I {} wget https://github.com/t3rn/aixecutor-release/releases/download/{}/aixecutor-linux-{}.tar.gz
+
+# Extract the archive
+tar -xzf aixecutor-linux-*.tar.gz
+
+# Navigate to the AIxecutor binary location
+cd aixecutor/aixecutor/bin
+```
+
+#### For macOS
+
+```bash
+# Create and navigate to t3rn directory
+mkdir t3rn
+cd t3rn
+
+# Download latest release
+curl -s https://api.github.com/repos/t3rn/aixecutor-release/releases/latest | \
+grep -o '"tag_name": "[^"]*' | \
+cut -d'"' -f4 | \
+xargs -I {} curl -LO https://github.com/t3rn/aixecutor-release/releases/download/{}/aixecutor-macosx-{}.tar.gz
+
+# Extract the archive
+tar -xzf aixecutor-macosx-*.tar.gz
+
+# Navigate to the AIxecutor binary location
+cd aixecutor/aixecutor/bin
+```
+
+## Configure Settings and Environment Required Variables
+
+To set the environment variables, copy and paste each command into your terminal. These commands will configure the necessary settings for your AIxecutor to run properly. Make sure you adjust the variable values to your own.
+
+### GENERAL SETTINGS
+
+**1.** Set your preferred Node Environment. Example:
+
+```bash
+export ENVIRONMENT=testnet
+```
+
+**2.** Set your log settings:
+
+```bash
+export LOG_LEVEL=debug
+export LOG_PRETTY=false
+```
+
+**3.** Specify limit on gas usage
+
+This will stop your AIxecutor from running if gas rises above this level. The value is in gwei.
+The default is 1000 gwei.
+
+Example: `export EXECUTOR_MAX_L3_GAS_PRICE=100`
+
+### PRIVATE KEYS
+
+**1.** Set the `PRIVATE_KEY_LOCAL` variable of your AIxecutor, which is the private key of the wallet you will use. The example below is a fake generated key that should/cannot not be used:
+
+```bash
+export PRIVATE_KEY_LOCAL=dead93c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56dbeef
+```
+
+:::tip AIxecutor Privacy
+Read more about [Executor Privacy and Security](../../resources/executor-privacy.md)
+:::
+
+### NETWORKS & RPC
+
+**1.** Add your preferred networks to operate on. Example:
+
+```bash
+export EXECUTOR_ENABLED_NETWORKS='arbitrum,base,binance,ethereum,linea,,optimism,t3rn'
+```
+
+:::info Available networks
+
+If your wallet balance falls below the threshold on one of your enabled networks, that specific network will be removed.
+
+Here's where you can find all of our supported networks: **[Supported network names](../../resources/supported-chains.md).**
+:::
+
+**2.** Add support for your preferred assets
+
+By default you support all assets, but you can tweak this variable and remove those you don't want to support.
+
+```bash
+export EXECUTOR_ENABLED_ASSETS="eth,trn,t3mon,t3sei,mon,sei"
+```
+
+**3.** Configure RPC URL's
+
+You can add your custom RPC URLs or skip this step to automatically use the default RPC URLs.
+
+Example
+
+```
+export RPC_ENDPOINTS='{
+    "l2rn": ["https://t3rn-b2n.blockpi.network/v1/rpc/public", "https://b2n.rpc.caldera.xyz/http"],
+    "arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"],
+    "bast": ["https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.drpc.org"],
+    "blst": ["https://sepolia.blast.io", "https://blast-sepolia.drpc.org"],
+    "mont": ["https://testnet-rpc.monad.xyz"],
+    "opst": ["https://sepolia.optimism.io", "https://optimism-sepolia.drpc.org"],
+    "unit": ["https://unichain-sepolia.drpc.org", "https://sepolia.unichain.org"]
+}'
+```
+
+You can add multiple RPCs for each network by separating with comma, here's an example:
+`"arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"]`
+
+A good resource for finding RPC URLs for EVM networks is [ChainList](https://chainlist.org/).
+
+**4.** Enable orders processing via API
+
+The default value to `EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API` is true.
+
+The benefit of having this set to true and using the API to process orders is higher reliability in executions and that all events are included.
+
+Set `export EXECUTOR_PROCESS_PENDING_ORDERS_FROM_API=false` if you want to process orders via RPC. Set to true to process via our API.
+
+## Running the AIxecutor
+
+### Start
+
+To start the AIxecutor, run the following command:
+
+```bash
+./aixecutor
+```
+
+#### Running in Background
+
+##### Option 1: Using Screen (Recommended for Beginners)
+
+```bash
+# Install screen (Ubuntu)
+sudo apt-get install screen
+
+# Create and start a new screen session
+screen -S t3rn-aixecutor
+
+# Start the executor in the screen session
+./aixecutor
+
+# To detach: Press Ctrl + A, then D
+# To reattach: screen -r t3rn-executor
+```
+
+##### Option 2: Using tmux (Modern Alternative)
+
+```bash
+# Install tmux (Ubuntu)
+sudo apt-get install tmux
+
+# Create and start new session
+tmux new -s t3rn-aixecutor
+
+# Start the executor in the tmux session
+./aixecutor
+
+# To detach: Press Ctrl + B, then D
+# To reattach: tmux attach -t t3rn-executor
+```
+
+##### Option 3: Using systemd (Ubuntu Only)
+
+For a permanent solution that starts automatically on boot, you can create a systemd service. If you don’t know what this is, you don’t need it. Contact your sysadmin or check the systemd docs for details.
+
+### Verification & Troubleshooting
+
+To verify the executor is running correctly:
+
+1. Check the terminal output for any error messages
+2. Monitor the logs using the configured log level
+3. Verify network connections to enabled networks
+
+If you encounter issues:
+
+- Verify all environment variables are set correctly
+- Ensure your private key is valid
+- Check network connectivity to enabled networks
+- Verify sufficient balance in your wallet for each network
+
+For further assistance, join our [Discord community](https://t3rn.io/discord) or watch the comprehensive setup guide below.
