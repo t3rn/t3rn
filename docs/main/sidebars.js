@@ -44,8 +44,10 @@ export default {
     },
     { type: "doc", id: "executor/executor-overview" },
     { type: "doc", id: "executor/executor-breakdown" },
+    { type: "doc", id: "executor/become-an-executor/docker-setup" },
     { type: "doc", id: "executor/become-an-executor/binary-setup" },
     { type: "doc", id: "executor/become-an-executor/gui-setup" },
+    { type: "doc", id: "executor/become-an-executor/aixecutor-setup" },
     {
       type: "html",
       value:
