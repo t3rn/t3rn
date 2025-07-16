@@ -73,23 +73,7 @@ export LOG_LEVEL=debug
 export LOG_PRETTY=false
 ```
 
-**3.** Process bids, orders and claims
-
-```bash
-export EXECUTOR_PROCESS_BIDS_ENABLED=true
-export EXECUTOR_PROCESS_ORDERS_ENABLED=true
-export EXECUTOR_PROCESS_CLAIMS_ENABLED=true
-```
-
-Set all three to `true` if you want your Executor to process bids, orders and claims.
-
-You can set them to false at any point.
-
-`export EXECUTOR_PROCESS_BIDS_ENABLED=false` will stop your Executor from processing orders you already been bidding on. You have a 30 min window to pick them up again.
-`export EXECUTOR_PROCESS_ORDERS_ENABLED=false` will stop your Executor from processing new orders.
-`export EXECUTOR_PROCESS_CLAIMS_ENABLED=false` will stop your Executor from processing claims.
-
-**4.** Specify limit on gas usage
+**3.** Specify limit on gas usage
 
 This will stop your Executor from running if gas rises above this level. The value is in gwei.
 The default is 1000 gwei.
@@ -113,7 +97,7 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 **1.** Add your preferred networks to operate on. Example:
 
 ```bash
-export EXECUTOR_ENABLED_NETWORKS='arbitrum-sepolia,base-sepolia,optimism-sepolia,l2rn'
+export EXECUTOR_ENABLED_NETWORKS='arbitrum,base,binance,ethereum,linea,,optimism,t3rn'
 ```
 
 :::info Available networks
@@ -128,7 +112,7 @@ Here's where you can find all of our supported networks: **[Supported network na
 By default you support all assets, but you can tweak this variable and remove those you don't want to support.
 
 ```bash
-export EXECUTOR_ENABLED_ASSETS="eth,t3eth,t3mon,t3sei,mon,sei"
+export EXECUTOR_ENABLED_ASSETS="eth,trn,t3mon,t3sei,mon,sei"
 ```
 
 **3.** Configure RPC URL's
@@ -172,6 +156,10 @@ To start the Executor, run the following command:
 ./executor
 ```
 
+## Executor Binary Walkthrough
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/KYFWwV6ZkLY?si=OQ3JVyh45XmdCygI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 #### Running in Background
 
 ##### Option 1: Using Screen (Recommended for Beginners)
@@ -208,11 +196,7 @@ tmux new -s t3rn-executor
 
 ##### Option 3: Using systemd (Ubuntu Only)
 
-For a permanent solution that starts automatically on boot, you can create a systemd service. Contact your system administrator or refer to systemd documentation for setup.
-
-:::info Faucet
-In order to bid on transaction orders on testnet, you need to have our BRN token. You can find the [faucet link here](../../resources/faucet)
-:::
+For a permanent solution that starts automatically on boot, you can create a systemd service. If you don’t know what this is, you don’t need it. Contact your sysadmin or check the systemd docs for details.
 
 ### Verification & Troubleshooting
 
@@ -230,7 +214,3 @@ If you encounter issues:
 - Verify sufficient balance in your wallet for each network
 
 For further assistance, join our [Discord community](https://t3rn.io/discord) or watch the comprehensive setup guide below.
-
-## Executor Binary Walkthrough
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/KYFWwV6ZkLY?si=OQ3JVyh45XmdCygI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
