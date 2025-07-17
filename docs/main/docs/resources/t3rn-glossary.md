@@ -2,6 +2,8 @@
 
 This glossary provides definitions for technical terms frequently used in the t3rn documentation.
 
+**AIxecutor**: The AIxecutor version is our command line based version for running an Executor with the power of AI for auto rebalancing, dymanic enabling and disabling networks based on current market conditions, etc.
+
 **Attestation**: The process of validating crosschain transactions, ensuring they were executed as intended.
 
 **Attesters**: Committee members who validate crosschain transactions and attest to their validity across networks.
@@ -12,7 +14,7 @@ This glossary provides definitions for technical terms frequently used in the t3
 
 **Binary:** The Binary Executor version is our command line based version for running an Executor, designed for users comfortable with code and terminal commands
 
-**Bridge UI:** This is our Bridge web app. You can find it here: https://bridge.t2rn.io/
+**Bridge UI:** This is our Bridge web app. You can find it here: https://bridge.t3rn.io/
 
 **BRN:** The testnet token used to incentivise testnet activities.
 
@@ -26,7 +28,9 @@ This glossary provides definitions for technical terms frequently used in the t3
 
 **Executor**: A role within the t3rn network responsible for carrying out user-defined crosschain transactions, including bidding, execution, and claiming rewards.
 
-**GUI:** The GUI Executor version provides a user-friendly interface for setting up and managing an Executor, making it accessible for users with less technical experience.
+**Docker Compose Executor**: The Executor version you can setup via Docker Compose. It provides both pre-defined configurations for quick setup, and the option for complete customization.
+
+<!-- **GUI:** The GUI Executor version provides a user-friendly interface for setting up and managing an Executor, making it accessible for users with less technical experience. -->
 
 **Interoperability**: The capability to interact and perform transactions across multiple blockchain networks seamlessly.
 
