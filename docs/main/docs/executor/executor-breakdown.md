@@ -39,7 +39,7 @@ Enabled networks: arbitrum-sepolia, base-sepolia, blast-sepolia, optimism-sepoli
 The Executor connects to various networks, including Layer 3 networks and testnets. RPC providers for each network are initialized, allowing the Executor to interact with the blockchain and fetch relevant data.
 
 :::info Custom RPC URLs
-These are the default RPC providers. Executors can add their custom RPC URLs. Find out how to set them up for [Binary](./become-an-executor/binary-setup.md) and [GUI](./become-an-executor/gui-setup.md) in our docs.
+These are the default RPC providers. Executors can add their custom RPC URLs. Find out how to set them up in [Docker Setup](./become-an-executor/docker-setup.md), [Binary Setup](./become-an-executor/binary-setup.md) and [AIxecutors](./become-an-executor/aixecutor-setup.md) in our docs.
 :::
 
 ### Step 3: Configuring Attestation and Batching

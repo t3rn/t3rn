@@ -4,7 +4,7 @@ Executors are off-chain agents acting as market makers that fulfil crosschain or
 
 ## How to become an Executor?
 
-We provide two ways to become an Executor.
+We provide three ways to become an Executor.
 
 #### - [Docker Setup](become-an-executor/docker-setup)
 
