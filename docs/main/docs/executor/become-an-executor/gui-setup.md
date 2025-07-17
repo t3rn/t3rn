@@ -1,4 +1,4 @@
-# GUI Setup
+<!-- # GUI Setup
 
 Welcome to the t3rn Executor Setup! This guided process will help you configure your executor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.
 
@@ -34,7 +34,7 @@ Read more about [Executor Privacy and Security](../../resources/executor-privacy
 
 Click configure your network RPC URLs and add RPC URLs for each enabled network, or skip this step and automatically use the default RPC URLs.
 
-Check `Enable orders processing via RPC` to process orders via RPCs instead of our API.
+Check `Enable orders processing via RPC` to process orders via RPCs instead of our API. -->
 
 <!-- ### Configure Your Arbitrage Strategies
 
@@ -64,7 +64,7 @@ There are 5 fields for each asset.
 
 **6.** Save strategy -->
 
-**6.** Enable processing.
+<!-- **6.** Enable processing.
 
 Check `Orders` and `Claims` if you want your Executor to bid and execute orders, and process claims.
 
@@ -82,4 +82,4 @@ Save your settings and click the Play button to start your Executor.
 
 ## Executor GUI Walkthrough
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/yh1iTl1NzgM?si=60zjs68NrjaFRqxU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/yh1iTl1NzgM?si=60zjs68NrjaFRqxU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> -->
