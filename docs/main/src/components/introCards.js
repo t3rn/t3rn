@@ -19,7 +19,7 @@ export default function IntroCard() {
           Our Bridge UI enables you to make fast, secure, and cost-efficient
           crosschain transactions.
         </section>
-        <Link className="introCard-link" to={"https://bridge.t2rn.io/"}>
+        <Link className="introCard-link" to={"https://bridge.t3rn.io/"}>
           Start Swapping
         </Link>
       </section>
