@@ -32,7 +32,7 @@ With t3rn, you can:
 1. **Participate as an Executor:**
    - Join the network as an [Executor](executor/executor-overview) to process transactions and engage in the ecosystem by bidding on orders and executing transactions.
 1. **Explore t3rn's Bridge UI:**
-   - Explore crosschain swaps with our intuitive [Bridge UI](https://bridge.t2rn.io/). Now live on testnets, it enables fast, secure, and cost-efficient crosschain transactions.
+   - Explore crosschain swaps with our intuitive [Bridge UI](https://bridge.t3rn.io/). Now live on testnets, it enables fast, secure, and cost-efficient crosschain transactions.
 
 ## Getting Help
 
