@@ -47,7 +47,7 @@ Welcome to t3rn, the Universal Execution Protocol designed for fast, secure, and
             <code>wss://brn-testnet.rpc.caldera.xyz/ws</code>
          </td>
          <td>
-            <code>wws://rpc.t3rn.io, wws://t3rn.blockpi.network/rpc/v1/public</code>
+            <code>wss://rpc.t3rn.io, wss://t3rn.blockpi.network/rpc/v1/public</code>
          </td>
       </tr>
       <tr>
