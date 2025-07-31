@@ -2,6 +2,8 @@
 
 Currently deployed RemoteOrders.sol smart contracts (always consult with latest version on [t3rn's Github](https://github.com/t3rn/t3rn)):
 
+## t3rn Mainnet
+
 <table>
   <thead>
     <tr>
@@ -13,14 +15,85 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
   </thead>
   <tbody>
     <tr>
-      <td style={{ textAlign: "left" }}>l2rn</td>
+      <td style={{ textAlign: "left" }}>t3rn</td>
+      <td>
+        <span>[0xBbd85a83f3A60c7784870cb72bE8c36e4dCEc6a4](https://explorer.t3rn.io/address/0xBbd85a83f3A60c7784870cb72bE8c36e4dCEc6a4)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>t3rn</span>
+      </td>
+      <td style={{ textAlign: "right" }}>t3rn</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Arbitrum</td>
+      <td>
+        <span>[0x3F305740E3f7650cA3EaD2597fEB785fa07d621F](https://arbiscan.io/address/0x3F305740E3f7650cA3EaD2597fEB785fa07d621F)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>arbm</span>
+      </td>
+      <td style={{ textAlign: "right" }}>arbitrum</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Base</td>
+      <td>
+        <span>[0xF1D550eA864a29c277602fdA2683E48ff52614eC](https://basescan.org/address/0xF1D550eA864a29c277602fdA2683E48ff52614eC)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>basm</span>
+      </td>
+      <td style={{ textAlign: "right" }}>basm</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Ethereum</td>
+      <td>
+        <span>[0x86EB4faF1574B6Ad8dCF685907a60a5b89f27276](https://etherscan.io/address/0x86EB4faF1574B6Ad8dCF685907a60a5b89f27276)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>ethm</span>
+      </td>
+      <td style={{ textAlign: "right" }}>ethereum</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Linea</td>
+      <td>
+        <span>[0xE441B664929a374Ea23fD72A617b66377A1c33D4](https://lineascan.build/address/0xE441B664929a374Ea23fD72A617b66377A1c33D4)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>linm</span>
+      </td>
+      <td style={{ textAlign: "right" }}>linea</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Optimism</td>
+      <td>[0xbf0C855e8A93930432D21dF08b3C534895650f7f](https://optimistic.etherscan.io/address/0xbf0C855e8A93930432D21dF08b3C534895650f7f)</td>
+      <td style={{ textAlign: "center" }}>opsm</td>
+      <td style={{ textAlign: "right" }}>optimism</td>
+    </tr>
+  </tbody>
+</table>
+
+## t3rn Testnet
+
+<table>
+  <thead>
+    <tr>
+      <th style={{ width: "15%", textAlign: "left" }}>Network</th>
+      <th style={{ width: "40%" }}>Contract Address</th>
+      <th style={{ width: "15%", textAlign: "center" }}>Shortcut</th>
+      <th style={{ width: "15%", textAlign: "right" }}>Enable Network</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{ textAlign: "left" }}>l1rn</td>
       <td>
         <span></span>
       </td>
       <td style={{ textAlign: "center" }}>
-        <span>l2rn</span>
+        <span>l1rn</span>
       </td>
-      <td style={{ textAlign: "right" }}>l2rn</td>
+      <td style={{ textAlign: "right" }}>l1rn</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Arbitrum Sepolia</td>
