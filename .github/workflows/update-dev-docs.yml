@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: ☁️Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: rustup show
@@ -67,7 +67,7 @@ jobs:
     if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
     steps:
       - name: 🎞️ Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
       - name: 📦 Install packages
@@ -95,7 +95,7 @@ jobs:
 
     steps:
       - name: 🎞️ Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
 

@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: dorny/paths-filter@v3
         id: changes
@@ -56,7 +56,7 @@ jobs:
 
     if: needs.changes.outputs.src == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Read .nvmrc
         run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
@@ -99,7 +99,7 @@ jobs:
         working-directory: pallets/attesters/contracts
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -116,7 +116,7 @@ jobs:
 
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build Docker
         working-directory: ./client
@@ -135,7 +135,7 @@ jobs:
         run: echo IMAGE_URL="ghcr.io/t3rn/${{ env.APP }}" >> $GITHUB_ENV
 
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 🐋 Login to the GitHub Container Registry
         uses: docker/login-action@v3

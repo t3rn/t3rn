@@ -20,7 +20,7 @@ jobs:
     concurrency: runtime-upgrade-t7rn
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
@@ -168,7 +168,7 @@ jobs:
 #    needs: build-release
 #    steps:
 #      - name: ☁ Checkout git repo
-#        uses: actions/checkout@v4
+#        uses: actions/checkout@v5
 #
 #      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
 #        run: rustup show
@@ -184,7 +184,7 @@ jobs:
 #    concurrency: runtime-upgrade-t7rn
 #    steps:
 #      - name: ☁ Checkout git repo
-#        uses: actions/checkout@v4
+#        uses: actions/checkout@v5
 #
 #      - name: Set variables
 #        run: |

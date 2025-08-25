@@ -14,7 +14,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }} # checkout the branch of the PR because pull_request_target is on the base branch
           fetch-depth: 0

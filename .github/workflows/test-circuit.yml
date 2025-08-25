@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: dorny/paths-filter@v3
         id: changes
@@ -61,7 +61,7 @@ jobs:
           rm -rf ./.??* || true
           ls -la ./ || true
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
