@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: dorny/paths-filter@v3
         id: changes
@@ -50,7 +50,7 @@ jobs:
     if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁️ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
         run: |

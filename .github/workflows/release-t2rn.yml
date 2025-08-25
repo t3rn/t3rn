@@ -20,7 +20,7 @@ jobs:
     concurrency: runtime-upgrade-t2rn
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
@@ -160,7 +160,7 @@ jobs:
     concurrency: runtime-upgrade-t2rn
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set variables 
         run: |
