@@ -1,4 +1,0 @@
-allow-branch = [ "main", "development" ]
-enable-all-features = true
-pre-release-commit-message = "build(cargo-release): version {{version}}"
-post-release-commit-message = "build(cargo-release): start next development iteration {{next_version}}"
