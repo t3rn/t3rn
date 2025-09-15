@@ -1,5 +1,5 @@
 <p align="center">
-    <img height="150" src="./specification/assets/readme-banner.png?raw=true"/>
+    <img height="150" src="./docs/main/static/img/readme-banner.png?raw=true"/>
 </p>
 <h1 align="center">
 Universal Execution: Coordinate smart contracts, capital, and computation across ecosystems.
