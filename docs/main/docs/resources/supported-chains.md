@@ -7,10 +7,9 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
 <table>
   <thead>
     <tr>
-      <th style={{ width: "15%", textAlign: "left" }}>Network</th>
-      <th style={{ width: "40%" }}>Contract Address</th>
-      <th style={{ width: "15%", textAlign: "center" }}>Short</th>
-      <th style={{ width: "15%", textAlign: "right" }}>Enable Network</th>
+      <th style={{ width: "20%", textAlign: "left" }}>Network</th>
+      <th style={{ width: "60%" }}>Contract Address</th>
+      <th style={{ width: "20%", textAlign: "center" }}>Short</th>
     </tr>
   </thead>
   <tbody>
@@ -22,7 +21,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>t3rn</span>
       </td>
-      <td style={{ textAlign: "right" }}>t3rn</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Arbitrum</td>
@@ -32,7 +30,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>arbm</span>
       </td>
-      <td style={{ textAlign: "right" }}>arbitrum</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Base</td>
@@ -42,7 +39,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>basm</span>
       </td>
-      <td style={{ textAlign: "right" }}>basm</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Ethereum</td>
@@ -52,7 +48,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>ethm</span>
       </td>
-      <td style={{ textAlign: "right" }}>ethereum</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Linea</td>
@@ -62,7 +57,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>linm</span>
       </td>
-      <td style={{ textAlign: "right" }}>linea</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Optimism</td>
@@ -72,7 +66,42 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>opsm</span>
       </td>
-      <td style={{ textAlign: "right" }}>optimism</td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>BNB Smart Chain</td>
+      <td>
+        <span>[0x626A29E45Bb00090054760FdABA04b0AB66AaeA0](https://bscscan.com/address/0x626A29E45Bb00090054760FdABA04b0AB66AaeA0)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>bscm</span>
+      </td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Flow</td>
+      <td>
+        <span>[0x75a9675072cBb46118d6356B87cf3934f317E6d5](https://flowdiver.io/account/0x75a9675072cBb46118d6356B87cf3934f317E6d5)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>flow</span>
+      </td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Hyperliquid</td>
+      <td>
+        <span>[0x7Bdb877933215D7D1534F73af736d339FFD71d03](https://explorer.hyperliquid.xyz/address/0x7Bdb877933215D7D1534F73af736d339FFD71d03)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>hype</span>
+      </td>
+    </tr>
+    <tr>
+      <td style={{ textAlign: "left" }}>Unichain</td>
+      <td>
+        <span>[0x8FbE2a448ceF3069E64bfd0cbE787caab806B30D](https://unichain.org/address/0x8FbE2a448ceF3069E64bfd0cbE787caab806B30D)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>unic</span>
+      </td>
     </tr>
   </tbody>
 </table>
@@ -82,10 +111,9 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
 <table>
   <thead>
     <tr>
-      <th style={{ width: "15%", textAlign: "left" }}>Network</th>
-      <th style={{ width: "40%" }}>Contract Address</th>
-      <th style={{ width: "15%", textAlign: "center" }}>Short</th>
-      <th style={{ width: "15%", textAlign: "right" }}>Enable Network</th>
+      <th style={{ width: "20%", textAlign: "left" }}>Network</th>
+      <th style={{ width: "60%" }}>Contract Address</th>
+      <th style={{ width: "20%", textAlign: "center" }}>Short</th>
     </tr>
   </thead>
   <tbody>
@@ -97,7 +125,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>l1rn</span>
       </td>
-      <td style={{ textAlign: "right" }}>l1rn</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Arbitrum Sepolia</td>
@@ -107,7 +134,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>arbt</span>
       </td>
-      <td style={{ textAlign: "right" }}>arbitrum-sepolia</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Abstract Sepolia</td>
@@ -117,7 +143,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>abst</span>
       </td>
-      <td style={{ textAlign: "right" }}>abstract-sepolia</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Base Sepolia</td>
@@ -127,7 +152,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>bast</span>
       </td>
-      <td style={{ textAlign: "right" }}>base-sepolia</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Berachain Bepolia</td>
@@ -137,7 +161,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>bert</span>
       </td>
-      <td style={{ textAlign: "right" }}>berachain-bepolia</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>BNB Testnet</td>
@@ -147,7 +170,6 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>bsct</span>
       </td>
-      <td style={{ textAlign: "right" }}>binance-testnet</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Blast Sepolia</td>
@@ -157,37 +179,31 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
       <td style={{ textAlign: "center" }}>
         <span>blst</span>
       </td>
-      <td style={{ textAlign: "right" }}>blast-sepolia</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Lisk Sepolia</td>
       <td>[0xbd0A7087c059f488EEEDC7901cd2B32732fd32B1](https://sepolia-blockscout.lisk.com/address/0xbd0A7087c059f488EEEDC7901cd2B32732fd32B1)</td>
       <td style={{ textAlign: "center" }}>lskt</td>
-      <td style={{ textAlign: "right" }}>lisk-testnet</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Monad Testnet</td>
       <td>[0x443119e61f571BC0c9715190F3aBE6c91f4cA630](https://testnet.monadexplorer.com/address/0x443119e61f571BC0c9715190F3aBE6c91f4cA630)</td>
       <td style={{ textAlign: "center" }}>mont</td>
-      <td style={{ textAlign: "right" }}>monad-testnet</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Optimism Sepolia</td>
       <td>[0xb6Def636914Ae60173d9007E732684a9eEDEF26E](https://sepolia-optimism.etherscan.io/address/0xb6Def636914Ae60173d9007E732684a9eEDEF26E)</td>
       <td style={{ textAlign: "center" }}>opst</td>
-      <td style={{ textAlign: "right" }}>optimism-sepolia</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>SEI Testnet</td>
       <td>[0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453](https://seitrace.com/address/0x9a51bdCe902c4701F8C9AEF670cefE6F6Fa0d453?chain=atlantic-2)</td>
       <td style={{ textAlign: "center" }}>seit</td>
-      <td style={{ textAlign: "right" }}>sei-testnet</td>
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Unichain Sepolia</td>
       <td>[0x1cEAb5967E5f078Fa0FEC3DFfD0394Af1fEeBCC9](https://sepolia.uniscan.xyz/address/0x1cEAb5967E5f078Fa0FEC3DFfD0394Af1fEeBCC9)</td>
       <td style={{ textAlign: "center" }}>unit</td>
-      <td style={{ textAlign: "right" }}>unichain-sepolia</td>
     </tr>
   </tbody>
 </table>
