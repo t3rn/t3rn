@@ -71,7 +71,7 @@ jobs:
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
       - name: 📥 Download circuit collator
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
           path: ./target/release/
@@ -89,7 +89,7 @@ jobs:
           > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
 
       - name: 📥 Download runtime WASM
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
           path: ./target/release/
@@ -102,7 +102,7 @@ jobs:
           > ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.sha256sum
 
       - name: 📥 Download runtime WASM hash blake2_256
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
           path: ./target/release/
