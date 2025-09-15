@@ -16,53 +16,54 @@
 export default {
   sidebar: [
     {
-      type: "html",
-      value: "<span style='font-size: 20px; font-weight: bold;'>Welcome</span>",
-      defaultStyle: true,
+      type: "category",
+      label: "Welcome",
+      link: {
+        type: "doc",
+        id: "intro",
+      },
+      collapsed: false,
+      items: [
+        "protocol-architecture",
+        "connect-to-t3rn",
+        "tokenomics",
+      ],
     },
     {
-      type: "doc",
-      id: "intro",
+      type: "category",
+      label: "Executor",
+      link: {
+        type: "doc",
+        id: "executors",
+      },
+      collapsed: false,
+      items: [
+        "executor/executor-breakdown",
+        "executor/become-an-executor/docker-setup",
+        "executor/become-an-executor/binary-setup",
+        "executor/become-an-executor/aixecutor-setup",
+      ],
     },
     {
-      type: "doc",
-      id: "protocol-architecture",
+      type: "category",
+      label: "Resources",
+      link: {
+        type: "doc",
+        id: "resources",
+      },
+      collapsed: false,
+      items: [
+        "resources/block-explorer",
+        "resources/faucet",
+        "resources/supported-chains",
+        "resources/executor-privacy",
+        "resources/gas-cost-breakdown",
+        "resources/t3rn-glossary",
+        "resources/order-status",
+        "resources/order-flow",
+        "resources/security",
+        "resources/troubleshooting",
+      ],
     },
-    {
-      type: "doc",
-      id: "connect-to-t3rn",
-    },
-    {
-      type: "doc",
-      id: "tokenomics",
-    },
-    {
-      type: "html",
-      value:
-        "<span style='font-size: 20px; font-weight: bold;'>Executor</span>",
-      defaultStyle: true,
-    },
-    { type: "doc", id: "executor/executor-overview" },
-    { type: "doc", id: "executor/executor-breakdown" },
-    { type: "doc", id: "executor/become-an-executor/docker-setup" },
-    { type: "doc", id: "executor/become-an-executor/binary-setup" },
-    // { type: "doc", id: "executor/become-an-executor/gui-setup" },
-    { type: "doc", id: "executor/become-an-executor/aixecutor-setup" },
-    {
-      type: "html",
-      value:
-        "<span style='font-size: 20px; font-weight: bold;'>Resources</span>",
-      defaultStyle: true,
-    },
-    { type: "doc", id: "resources/block-explorer" },
-    { type: "doc", id: "resources/faucet" },
-    { type: "doc", id: "resources/supported-chains" },
-    { type: "doc", id: "resources/executor-privacy" },
-    { type: "doc", id: "resources/gas-cost-breakdown" },
-    { type: "doc", id: "resources/t3rn-glossary" },
-    { type: "doc", id: "resources/order-status" },
-    { type: "doc", id: "resources/order-flow" },
-    { type: "doc", id: "resources/security" },
-    { type: "doc", id: "resources/troubleshooting" },
   ],
 };

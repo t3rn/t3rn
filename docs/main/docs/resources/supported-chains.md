@@ -9,7 +9,7 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
     <tr>
       <th style={{ width: "15%", textAlign: "left" }}>Network</th>
       <th style={{ width: "40%" }}>Contract Address</th>
-      <th style={{ width: "15%", textAlign: "center" }}>Shortcut</th>
+      <th style={{ width: "15%", textAlign: "center" }}>Short</th>
       <th style={{ width: "15%", textAlign: "right" }}>Enable Network</th>
     </tr>
   </thead>
@@ -66,8 +66,12 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
     </tr>
     <tr>
       <td style={{ textAlign: "left" }}>Optimism</td>
-      <td>[0xbf0C855e8A93930432D21dF08b3C534895650f7f](https://optimistic.etherscan.io/address/0xbf0C855e8A93930432D21dF08b3C534895650f7f)</td>
-      <td style={{ textAlign: "center" }}>opsm</td>
+      <td>
+        <span>[0xbf0C855e8A93930432D21dF08b3C534895650f7f](https://optimistic.etherscan.io/address/0xbf0C855e8A93930432D21dF08b3C534895650f7f)</span>
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <span>opsm</span>
+      </td>
       <td style={{ textAlign: "right" }}>optimism</td>
     </tr>
   </tbody>
@@ -80,7 +84,7 @@ Currently deployed RemoteOrders.sol smart contracts (always consult with latest 
     <tr>
       <th style={{ width: "15%", textAlign: "left" }}>Network</th>
       <th style={{ width: "40%" }}>Contract Address</th>
-      <th style={{ width: "15%", textAlign: "center" }}>Shortcut</th>
+      <th style={{ width: "15%", textAlign: "center" }}>Short</th>
       <th style={{ width: "15%", textAlign: "right" }}>Enable Network</th>
     </tr>
   </thead>
