@@ -209,4 +209,4 @@ If you encounter issues:
 - Check network connectivity to enabled networks
 - Verify sufficient balance in your wallet for each network
 
-For further assistance, join our [Discord community](https://t3rn.io/discord).
+For further assistance, join our [Discord community](https://discord.gg/nFEq2fRpdn).

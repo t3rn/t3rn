@@ -36,4 +36,4 @@ With t3rn, you can:
 
 ## Getting Help
 
-If you have any questions or need support, feel free to explore our documentation, join our [Telegram Community](https://t.me/T3RN_official), or reach out via [Discord](https://t3rn.io/discord).
+If you have any questions or need support, feel free to explore our documentation, join our [Telegram Community](https://t.me/T3RN_official), or reach out via [Discord](https://discord.gg/nFEq2fRpdn).

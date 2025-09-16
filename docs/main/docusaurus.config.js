@@ -77,6 +77,12 @@ const config = {
             label: "Getting Started",
           },
           {
+            type: "doc",
+            docId: "executors",
+            position: "left",
+            label: "Executors",
+          },
+          {
             href: "https://github.com/t3rn/t3rn",
             label: "GitHub",
             position: "right",
@@ -91,7 +97,7 @@ const config = {
             items: [
               {
                 label: "Discord",
-                href: "https://t3rn.io/discord",
+                href: "https://discord.gg/nFEq2fRpdn",
               },
               {
                 label: "Twitter",
