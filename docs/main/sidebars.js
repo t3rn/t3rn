@@ -40,7 +40,6 @@ export default {
       items: [
         "executor/executor-breakdown",
         "executor/become-an-executor/docker-setup",
-        "executor/become-an-executor/binary-setup",
         "executor/become-an-executor/aixecutor-setup",
       ],
     },
