@@ -120,7 +120,7 @@ Here's where you can find all of our supported networks: **[Supported network na
 **2.** Add support for your preferred assets under the `EXECUTOR_ENABLED_ASSETS` variable. Example:
 
 ```bash
-export EXECUTOR_ENABLED_ASSETS="eth,bnb,hype,flow,trn,linea"
+export EXECUTOR_ENABLED_ASSETS="eth,bnb,hype,flow,trn,linea,mon"
 ```
 
 **3.** Configure RPC URL's
