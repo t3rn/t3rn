@@ -1,4 +1,4 @@
-# Docker Setup
+# Executor Setup
 
 Welcome to the t3rn Executor Setup! This guided process will help you configure your executor with ease, providing step-by-step instructions to ensure a smooth start. Let's get you set up and ready to operate efficiently across multiple blockchain networks.
 
@@ -120,7 +120,7 @@ Here's where you can find all of our supported networks: **[Supported network na
 **2.** Add support for your preferred assets under the `EXECUTOR_ENABLED_ASSETS` variable. Example:
 
 ```bash
-export EXECUTOR_ENABLED_ASSETS="eth,t3eth,t3mon,t3sei,mon,sei"
+export EXECUTOR_ENABLED_ASSETS="eth,bnb,hype,flow,trn,linea"
 ```
 
 **3.** Configure RPC URL's
@@ -130,18 +130,17 @@ You can add your custom RPC URLs or skip this step to automatically use the defa
 Example:
 ```bash
 export RPC_ENDPOINTS='{
-    "l2rn": ["https://t3rn-b2n.blockpi.network/v1/rpc/public", "https://b2n.rpc.caldera.xyz/http"],
-    "arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"],
-    "bast": ["https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.drpc.org"],
-    "blst": ["https://sepolia.blast.io", "https://blast-sepolia.drpc.org"],
-    "mont": ["https://testnet-rpc.monad.xyz"],
-    "opst": ["https://sepolia.optimism.io", "https://optimism-sepolia.drpc.org"],
-    "unit": ["https://unichain-sepolia.drpc.org", "https://sepolia.unichain.org"]
+    "arbm": ["https://arb1.arbitrum.io/rpc"],
+    "basm": ["https://rpc.notadegen.com/base", 'https://base.meowrpc.com", 'https://base-rpc.publicnode.com"],
+    "monm": ["https://rpc-mainnet.monadinfra.com"],
+    "opsm": ["https://mainnet.optimism.io"],
+    "linm: ["https://linea-rpc.publicnode.com"],
+    "unim": ["https://unichain-rpc.publicnode.com"]
 }'
 ```
 
-You can add multiple RPCs for each network by separating with comma, here's an example:
-`"arbt": ["https://arbitrum-sepolia.drpc.org", "https://sepolia-rollup.arbitrum.io/rpc"]`
+You can add multiple RPCs for each network by separating with a comma, here's an example:
+"bscm": ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.defibit.io", "https://bsc-dataseed1.ninicoin.io"]
 
 A good resource for finding RPC URLs for EVM networks is [ChainList](https://chainlist.org/).
 
